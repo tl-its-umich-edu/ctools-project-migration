@@ -1,0 +1,191 @@
+[
+  {
+    "layout": 1,
+    "layoutTitle": "Double Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "a4e30874-d453-4aab-a72b-854ab86f4451",
+    "position": 0,
+    "title": "Home",
+    "tools": [
+      {
+        "toolId": "sakai.iframe.site",
+        "pageOrder": 1,
+        "placementId": "d5bbee80-07fd-4bf7-83aa-7d45deb11f3b",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For displaying Site information.",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "d5bbee80-07fd-4bf7-83aa-7d45deb11f3b",
+        "title": "Site Information Display",
+        "pageId": "a4e30874-d453-4aab-a72b-854ab86f4451",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/a4e30874-d453-4aab-a72b-854ab86f4451",
+        "home": null
+      },
+      {
+        "toolId": "sakai.synoptic.announcement",
+        "pageOrder": 2,
+        "placementId": "f2230f2c-cdcc-4eeb-a692-83da2a647ea8",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "Display recent announcements, updated as messages arrive",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "f2230f2c-cdcc-4eeb-a692-83da2a647ea8",
+        "title": "Recent Announcements",
+        "pageId": "a4e30874-d453-4aab-a72b-854ab86f4451",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/a4e30874-d453-4aab-a72b-854ab86f4451",
+        "home": null
+      },
+      {
+        "toolId": "lecture.tools",
+        "pageOrder": 3,
+        "placementId": "21fe962f-6642-4758-951a-9787f2d4baf8",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For enabling live interactivity during lecture sessions",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "21fe962f-6642-4758-951a-9787f2d4baf8",
+        "title": "LectureTools",
+        "pageId": "a4e30874-d453-4aab-a72b-854ab86f4451",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/a4e30874-d453-4aab-a72b-854ab86f4451",
+        "home": null
+      },
+      {
+        "toolId": "sakai.web.168",
+        "pageOrder": 4,
+        "placementId": "01a0d94b-cbdd-47e7-950d-39265388427f",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For accessing an external website within the site.",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "01a0d94b-cbdd-47e7-950d-39265388427f",
+        "title": "Web Portlet",
+        "pageId": "a4e30874-d453-4aab-a72b-854ab86f4451",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/a4e30874-d453-4aab-a72b-854ab86f4451",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/a4e30874-d453-4aab-a72b-854ab86f4451"
+  },
+  {
+    "layout": 0,
+    "layoutTitle": "Single Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "1faca800-81fb-46d9-8c69-315a5815a5c0",
+    "position": 1,
+    "title": "Announcements",
+    "tools": [
+      {
+        "toolId": "sakai.announcements",
+        "pageOrder": 1,
+        "placementId": "2927f186-e157-44a0-b806-c4067d36ae1b",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For posting information",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "2927f186-e157-44a0-b806-c4067d36ae1b",
+        "title": "Announcements",
+        "pageId": "1faca800-81fb-46d9-8c69-315a5815a5c0",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/1faca800-81fb-46d9-8c69-315a5815a5c0",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/1faca800-81fb-46d9-8c69-315a5815a5c0"
+  },
+  {
+    "layout": 0,
+    "layoutTitle": "Single Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "2eddd6b3-9e0b-43ff-bac3-b6890b2bb5aa",
+    "position": 2,
+    "title": "Assignments",
+    "tools": [
+      {
+        "toolId": "sakai.assignment.grades",
+        "pageOrder": 1,
+        "placementId": "4c548ac5-ae39-424d-983b-a177d08cbf67",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For private submission and grading of coursework",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "4c548ac5-ae39-424d-983b-a177d08cbf67",
+        "title": "Assignments",
+        "pageId": "2eddd6b3-9e0b-43ff-bac3-b6890b2bb5aa",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/2eddd6b3-9e0b-43ff-bac3-b6890b2bb5aa",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/2eddd6b3-9e0b-43ff-bac3-b6890b2bb5aa"
+  },
+  {
+    "layout": 0,
+    "layoutTitle": "Single Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "933042e9-bdf3-4914-9721-d2292a755c0d",
+    "position": 3,
+    "title": "Email Archive",
+    "tools": [
+      {
+        "toolId": "sakai.mailbox",
+        "pageOrder": 1,
+        "placementId": "b797a490-0f1b-40d5-9523-a69639140b73",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For displaying email sent to the site",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "b797a490-0f1b-40d5-9523-a69639140b73",
+        "title": "Email Archive",
+        "pageId": "933042e9-bdf3-4914-9721-d2292a755c0d",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/933042e9-bdf3-4914-9721-d2292a755c0d",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/933042e9-bdf3-4914-9721-d2292a755c0d"
+  },
+  {
+    "layout": 0,
+    "layoutTitle": "Single Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "ad329523-eabc-4888-b4aa-255394511d58",
+    "position": 4,
+    "title": "Resources",
+    "tools": [
+      {
+        "toolId": "sakai.resources",
+        "pageOrder": 1,
+        "placementId": "bf5ebb7c-6012-4e3e-93ef-00d66d986891",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For posting documents, website URLs, etc.",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "bf5ebb7c-6012-4e3e-93ef-00d66d986891",
+        "title": "Resources",
+        "pageId": "ad329523-eabc-4888-b4aa-255394511d58",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/ad329523-eabc-4888-b4aa-255394511d58",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/ad329523-eabc-4888-b4aa-255394511d58"
+  },
+  {
+    "layout": 0,
+    "layoutTitle": "Single Column Layout",
+    "skin": "neo-ctdev",
+    "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+    "id": "4c45a32a-fce5-413e-97b3-27e88f366b98",
+    "position": 5,
+    "title": "Site Info",
+    "tools": [
+      {
+        "toolId": "sakai.siteinfo",
+        "pageOrder": 1,
+        "placementId": "3c83f9fb-7ab8-47d4-80b9-12e2e27954b0",
+        "context": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "description": "For modifying site properties and participants",
+        "siteId": "f6f97555-ff22-495d-b915-30fde4ccf896",
+        "id": "3c83f9fb-7ab8-47d4-80b9-12e2e27954b0",
+        "title": "Site Info",
+        "pageId": "4c45a32a-fce5-413e-97b3-27e88f366b98",
+        "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/4c45a32a-fce5-413e-97b3-27e88f366b98",
+        "home": null
+      }
+    ],
+    "url": "https:\/\/ctdev.dsc.umich.edu\/portal\/site\/f6f97555-ff22-495d-b915-30fde4ccf896\/page\/4c45a32a-fce5-413e-97b3-27e88f366b98"
+  }
+]

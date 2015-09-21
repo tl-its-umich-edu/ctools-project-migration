@@ -1,0 +1,32 @@
+<div ng-repeat="completedProject in completedProjects  track by $index" ng-show="completedProjects.length">
+	<h4 class="row">
+    		<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">	
+    			{{completedProject.entityTitle}}
+	  		</div>
+	  		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">	
+	  			<small><a href="" class="pull-right" ng-click="showReport = ! showReport">Report</a></small>
+	  		</div>
+	</h4>	
+	<div ng-show="showReport">
+		<p>Export completed {{completedProject.migrated.dateStarted}}</p>
+	</div>
+	<div class="well">
+	  <ul class="list-group" style="margin-bottom:0">
+	  	<li class="list-group-item row" ng-repeat="tool in completedProject.tools" ng-if="tool.selected">
+	    		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+	    			{{tool.title}}
+		  		</div>
+		  		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+		  			<small ng-show="tool.title ==='Resources'">Exported to <a href="">Box</a></small>
+		  			<small ng-show="tool.title ==='Announcements'">Exported to <a href="">Sox</a></small>
+		  			<small ng-show="tool.title ==='Email Archive'">Exported to <a href="">Google Mail</a></small>
+		  		</div>
+
+	  	</li>
+	  </ul>	
+	</div>
+</div>
+
+<div ng-hide="completedProjects.length">
+	There are no exports completed.
+</div>
