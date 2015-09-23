@@ -2,7 +2,7 @@
 /* global  projectMigrationApp, _*/
 
 /* TERMS CONTROLLER */
-projectMigrationApp.controller('sourceProjectsController', ['Projects', '$rootScope', '$scope', '$log', function (Projects, $rootScope, $scope, $log) {
+projectMigrationApp.controller('sourceProjectsController', ['Projects', '$rootScope', '$scope', '$http', '$log', function (Projects, $rootScope, $scope, $http, $log) {
 
   $scope.selectedProjects = []; 
   $scope.completedProjects = [];
@@ -20,11 +20,20 @@ projectMigrationApp.controller('sourceProjectsController', ['Projects', '$rootSc
 
 
   //server url
-  var projectsUrl ='/direct/site.json';
+  var projectsUrl ='/direct/site/withPerm/.json?permission=site.upd';
   // test data
   //var projectsUrl ='data/all-sites.json';
     Projects.getProjects(projectsUrl).then(function (result) {
       $scope.sourceProjects = _.where(result.data.site_collection, {type: 'project'});
+      $http({
+          method : 'GET',
+          url : 'ProjectMigration'
+	  }).success(function(data, status, headers, config) {
+	          $scope.folders = data;
+	  }).error(function(data, status, headers, config) {
+	          // called asynchronously if an error occurs
+	          // or server returns response with an error status.\
+	  });
   });
 
   $scope.getTools = function(siteId) {
