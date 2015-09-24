@@ -1,0 +1,23 @@
+[
+    {
+        "id": "some-guid",
+        "site_id": "site_id",
+        "start": "unix-timestamp",
+        "end": "unix-timestamp",
+        "name": "site-title",
+        "tools": [
+            {
+                "tool_id": "sakai.content",
+                "tool_name": "Resources",
+                "destination_type": "Box",
+                "destination_url": "URL"
+            },
+            {
+                "tool_id": "sakai.email",
+                "tool_name": "Email Archive",
+                "destination_type": "?",
+                "destination_url": "URL"
+            }
+        ]
+    }
+]

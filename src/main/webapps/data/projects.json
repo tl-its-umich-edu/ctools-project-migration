@@ -1,0 +1,259 @@
+{
+    "entityPrefix": "site",
+    "site_collection": [
+        {
+            "createdDate": 1390935342436,
+            "createdTime": {
+                "display": "Jan 28, 2014 1:55 pm",
+                "time": 1390935342436
+            },
+            "description": null,
+            "iconUrl": "/ctlib/icon/ctng.gif",
+            "iconUrlFull": "/ctlib/icon/ctng.gif",
+            "id": "14c6a80a-d4b9-41a6-a446-c6954010a88a",
+            "infoUrl": null,
+            "infoUrlFull": null,
+            "joinerRole": null,
+            "lastModified": 1392664090394,
+            "maintainRole": "Owner",
+            "modifiedDate": 1392664090394,
+            "modifiedTime": {
+                "display": "Feb 17, 2014 2:08 pm",
+                "time": 1392664090394
+            },
+            "owner": "740bde33-b98e-4d88-a343-46869fa7b237",
+            "props": {
+                "sections_externally_maintained": "false",
+                "contact-name": "David Haines",
+                "contact-email": "dlhaines@umich.edu",
+                "term": "WINTER 2014",
+                "site-request-course-sections": "2014,3,A,1001,101,1",
+                "term_eid": "WINTER 2014"
+            },
+            "providerGroupId": null,
+            "reference": "/site/14c6a80a-d4b9-41a6-a446-c6954010a88a",
+            "shortDescription": "To AWS Dev with port",
+            "siteGroups": null,
+            "siteOwner": {
+                "userDisplayName": "David Haines",
+                "userEntityURL": "/direct/user/740bde33-b98e-4d88-a343-46869fa7b237",
+                "userId": "740bde33-b98e-4d88-a343-46869fa7b237"
+            },
+            "skin": null,
+            "softlyDeletedDate": null,
+            "title": "1001 101 1 W14",
+            "type": "project",
+            "userRoles": [
+                "Owner",
+                "Assistant",
+                "Instructor",
+                "Observer",
+                "Librarian",
+                "Student",
+                "Affiliate"
+            ],
+            "activeEdit": false,
+            "customPageOrdered": false,
+            "empty": false,
+            "joinable": false,
+            "pubView": true,
+            "published": true,
+            "softlyDeleted": false,
+            "entityReference": "/site/14c6a80a-d4b9-41a6-a446-c6954010a88a",
+            "entityURL": "https://ctdev.dsc.umich.edu/direct/site/14c6a80a-d4b9-41a6-a446-c6954010a88a",
+            "entityId": "14c6a80a-d4b9-41a6-a446-c6954010a88a",
+            "entityTitle": "1001 101 1 W14"
+        },
+        {
+            "createdDate": 1395422037860,
+            "createdTime": {
+                "display": "Mar 21, 2014 1:13 pm",
+                "time": 1395422037860
+            },
+            "description": "<p>\r\n\tcvbcvb</p>",
+            "iconUrl": "/ctlib/icon/ctng.gif",
+            "iconUrlFull": "/ctlib/icon/ctng.gif",
+            "id": "3a6a9d91-c83d-47a4-8d9c-a981f7a940c7",
+            "infoUrl": null,
+            "infoUrlFull": null,
+            "joinerRole": null,
+            "lastModified": 1395422042695,
+            "maintainRole": "Owner",
+            "modifiedDate": 1395422042695,
+            "modifiedTime": {
+                "display": "Mar 21, 2014 1:14 pm",
+                "time": 1395422042695
+            },
+            "owner": "23c36518-205d-43de-9273-3632df0a1cbe",
+            "props": {
+                "sections_externally_maintained": "false",
+                "contact-name": "Margaret Wagner",
+                "contact-email": "mwagner@umich.edu",
+                "term": "FALL 2014",
+                "site-request-course-sections": "2014,2,a,345,345,345",
+                "term_eid": "FALL 2014"
+            },
+            "providerGroupId": null,
+            "reference": "/site/3a6a9d91-c83d-47a4-8d9c-a981f7a940c7",
+            "shortDescription": null,
+            "siteGroups": null,
+            "siteOwner": {
+                "userDisplayName": "Margaret Wagner",
+                "userEntityURL": "/direct/user/23c36518-205d-43de-9273-3632df0a1cbe",
+                "userId": "23c36518-205d-43de-9273-3632df0a1cbe"
+            },
+            "skin": null,
+            "softlyDeletedDate": null,
+            "title": "345 345 345 F14",
+            "type": "project",
+            "userRoles": [
+                "Owner",
+                "Assistant",
+                "Instructor",
+                "Observer",
+                "Librarian",
+                "Student",
+                "Affiliate"
+            ],
+            "activeEdit": false,
+            "customPageOrdered": false,
+            "empty": false,
+            "joinable": false,
+            "pubView": true,
+            "published": false,
+            "softlyDeleted": false,
+            "entityReference": "/site/3a6a9d91-c83d-47a4-8d9c-a981f7a940c7",
+            "entityURL": "https://ctdev.dsc.umich.edu/direct/site/3a6a9d91-c83d-47a4-8d9c-a981f7a940c7",
+            "entityId": "3a6a9d91-c83d-47a4-8d9c-a981f7a940c7",
+            "entityTitle": "345 345 345 F14"
+        },
+        {
+            "createdDate": 1346955505864,
+            "createdTime": {
+                "display": "Sep 6, 2012 2:18 pm",
+                "time": 1346955505864
+            },
+            "description": "<p>\r\n\tasfas</p>",
+            "iconUrl": null,
+            "iconUrlFull": null,
+            "id": "f2dfbbb8-7d9c-4d28-b55a-1fd9f4418f75",
+            "infoUrl": "http://www.umich.edu",
+            "infoUrlFull": "http://www.umich.edu",
+            "joinerRole": null,
+            "lastModified": 1442242462615,
+            "maintainRole": "Owner",
+            "modifiedDate": 1442242462615,
+            "modifiedTime": {
+                "display": "Sep 14, 2015 10:54 am",
+                "time": 1442242462615
+            },
+            "owner": "486f09e9-7472-408a-a9c1-c8bb0631331c",
+            "props": {
+                "sections_externally_maintained": "false",
+                "contact-name": "Zhen Qian",
+                "contact-email": "zqian@umich.edu"
+            },
+            "providerGroupId": "2012,2,A,PHYSICS,160,001",
+            "reference": "/site/f2dfbbb8-7d9c-4d28-b55a-1fd9f4418f75",
+            "shortDescription": null,
+            "siteGroups": null,
+            "siteOwner": {
+                "userDisplayName": "Zhen Qian",
+                "userEntityURL": "/direct/user/486f09e9-7472-408a-a9c1-c8bb0631331c",
+                "userId": "486f09e9-7472-408a-a9c1-c8bb0631331c"
+            },
+            "skin": null,
+            "softlyDeletedDate": null,
+            "title": "555",
+            "type": "project",
+            "userRoles": [
+                "Owner",
+                "Organizer",
+                "Assistant",
+                "Instructor",
+                "Observer",
+                "Section Instructor",
+                "Student",
+                "Member",
+                "Affiliate"
+            ],
+            "activeEdit": false,
+            "customPageOrdered": false,
+            "empty": false,
+            "joinable": false,
+            "pubView": true,
+            "published": true,
+            "softlyDeleted": false,
+            "entityReference": "/site/f2dfbbb8-7d9c-4d28-b55a-1fd9f4418f75",
+            "entityURL": "https://ctdev.dsc.umich.edu/direct/site/f2dfbbb8-7d9c-4d28-b55a-1fd9f4418f75",
+            "entityId": "f2dfbbb8-7d9c-4d28-b55a-1fd9f4418f75",
+            "entityTitle": "555"
+        },
+        {
+            "createdDate": 1369424206082,
+            "createdTime": {
+                "display": "May 24, 2013 3:36 pm",
+                "time": 1369424206082
+            },
+            "description": null,
+            "iconUrl": "/ctlib/icon/lsa.gif",
+            "iconUrlFull": "/ctlib/icon/lsa.gif",
+            "id": "9477dc62-f6fe-4836-ae27-84d594a64127",
+            "infoUrl": null,
+            "infoUrlFull": null,
+            "joinerRole": null,
+            "lastModified": 1441116385586,
+            "maintainRole": "Owner",
+            "modifiedDate": 1441116385586,
+            "modifiedTime": {
+                "display": "Sep 1, 2015 10:06 am",
+                "time": 1441116385586
+            },
+            "owner": "7967cc8b-d477-42ab-be3e-f0cafd047b71",
+            "props": {
+                "sections_externally_maintained": "false",
+                "contact-name": "Gonzalo Silverio",
+                "contact-email": "gsilver@umich.edu",
+                "template_used": "34e2d588-3602-4aea-b798-bbd9913b195b",
+                "term": "FALL 2010",
+                "site-request-course-sections": "2013,2,A,RCRSTemp,101,001+2013,2,A,Boing,100,100",
+                "sakai:htmlInclude": "<script src =\"https://ctdev.dsc.umich.edu/access/content/group/9477dc62-f6fe-4836-ae27-84d594a64127/hide.js\"></script>",
+                "term_eid": "FALL 2010"
+            },
+            "providerGroupId": null,
+            "reference": "/site/9477dc62-f6fe-4836-ae27-84d594a64127",
+            "shortDescription": null,
+            "siteGroups": null,
+            "siteOwner": {
+                "userDisplayName": "Gonzalo Silverio",
+                "userEntityURL": "/direct/user/7967cc8b-d477-42ab-be3e-f0cafd047b71",
+                "userId": "7967cc8b-d477-42ab-be3e-f0cafd047b71"
+            },
+            "skin": null,
+            "softlyDeletedDate": null,
+            "title": "Boing 100 100 F13",
+            "type": "project",
+            "userRoles": [
+                "Owner",
+                "Assistant",
+                "Instructor",
+                "Observer",
+                "Librarian",
+                "Section Instructor",
+                "Student",
+                "Affiliate"
+            ],
+            "activeEdit": false,
+            "customPageOrdered": true,
+            "empty": false,
+            "joinable": false,
+            "pubView": true,
+            "published": true,
+            "softlyDeleted": false,
+            "entityReference": "/site/9477dc62-f6fe-4836-ae27-84d594a64127",
+            "entityURL": "https://ctdev.dsc.umich.edu/direct/site/9477dc62-f6fe-4836-ae27-84d594a64127",
+            "entityId": "9477dc62-f6fe-4836-ae27-84d594a64127",
+            "entityTitle": "Boing 100 100 F13"
+        }
+    ]
+}
