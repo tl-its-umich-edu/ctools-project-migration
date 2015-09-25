@@ -1,0 +1,31 @@
+
+<div ng-repeat="migratedProject in migratedProjects track by $index" ng-show="migratedProjects.length">
+	<h4 class="row">
+    		<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">	
+    			{{migratedProject.name}}
+	  		</div>
+	  		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">	
+	  			<small><a href="" class="pull-right" ng-click="showReport = ! showReport">Report</a></small>
+	  		</div>
+	</h4>	
+	<div ng-show="showReport">
+		<p>Export started {{migratedProject.start}}, completed {{migratedProject.end}}</p>
+	</div>
+	<div class="well">
+	  <ul class="list-group" style="margin-bottom:0">
+	  	<li class="list-group-item row" ng-repeat="tool in migratedProject.tools">
+	    		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+	    			{{tool.tool_name}}
+		  		</div>
+		  		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+		  			<small>Exported to <a href="tool.destination_url">{{tool.destination_type}}</a></small>
+		  		</div>
+
+	  	</li>
+	  </ul>	
+	</div>
+</div>
+
+<div ng-hide="migratedProjects.length">
+	There are no exports completed.
+</div>

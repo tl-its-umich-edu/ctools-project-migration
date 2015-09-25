@@ -15,7 +15,7 @@
             {
                 "tool_id": "sakai.email",
                 "tool_name": "Email Archive",
-                "destination_type": "?",
+                "destination_type": "Gmail",
                 "destination_url": "URL"
             }
         ]
@@ -36,7 +36,7 @@
             {
                 "tool_id": "sakai.email",
                 "tool_name": "Email Archive",
-                "destination_type": "?",
+                "destination_type": "Gmail",
                 "destination_url": "URL"
             }
         ]

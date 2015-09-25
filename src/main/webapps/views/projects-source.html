@@ -1,8 +1,9 @@
 <div ng-repeat="project in sourceProjects">
 	<h4>
-		<a ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
+		<a ng-hide="project.tools.length" ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
 	  	{{project.entityTitle}}
 		</a>
+		<span ng-show="project.tools.length">{{project.entityTitle}}</span>
 	</h4>	
 	<div class="clearfix"></div>
 	<div class="collapse" id="collapse{{project.entityId}}">
@@ -18,9 +19,21 @@
 	  					<p>Selectable tools {{}}</p>
 	  				</div>
 	  				<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-	  					<button class="btn btn-primary btn-xs pull-right" ng-show="project.selectionExists" ng-click="addToMigrationPanel(project.entityId)">Export</button>
+	  					<button class="btn btn-primary btn-xs pull-right" ng-show="project.selectionExists && !project.exportConfirm" ng-click="startMigrationConfirm(project.entityId)">Export</button>
 	  				</div>	
-	  	</div>			
+	  	</div>
+	  		<div class="alert alert-info row" ng-if="project.exportConfirm && !project.migrated">
+		    	<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+  					Some warning of some sort here.
+	  			</div>
+  				<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+  					<div class="pull-right">
+							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.entityId)">Proceed</button>
+							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.entityId)">Cancel</button>
+						</div>
+					</div>
+	  	</div>
+	  				
 	    <ul class="list-group">
 	    	<li class="list-group-item" ng-repeat="tool in project.tools"  ng-if="tool.tools[0].toolId ==='sakai.resources' || tool.tools[0].toolId ==='sakai.announcements' || tool.tools[0].toolId ==='sakai.mailbox'">
 	    		<div class="row">
