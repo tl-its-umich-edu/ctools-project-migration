@@ -10,9 +10,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   $rootScope.logs = [];
 
   //server url
-  //var projectsUrl ='/direct/site/withPerm/.json?permission=site.upd';
+  var projectsUrl;
   // test data
-  var projectsUrl = 'data/projects.json';
+  var projectsUrl;
+  if ($rootScope.stubs){
+    projectsUrl = 'data/projects.json';
+  } else {
+    projectsUrl = 'someserverurl';
+  }
+
   Projects.getProjects(projectsUrl).then(function(result) {
     $scope.sourceProjects = _.where(result.data.site_collection, {
       type: 'project'
@@ -21,10 +27,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     $log.info(' - - - - GET /projects');
   });
 
-  //server url
-  //var migrationsUrl ='';
-  // test data
-  var migrationsUrl = 'data/migrations.json';
+  var migrationsUrl;
+  if ($rootScope.stubs){
+    migrationsUrl = 'data/migrations.json';
+  } else {
+    migrationsUrl = 'someserverurl';
+  }  
   Projects.getProjects(migrationsUrl).then(function(result) {
     $scope.migratingProjects = result.data;
     $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
@@ -32,6 +40,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
 
   });
 
+  var migratedUrl;
+  if ($rootScope.stubs){
+    migratedUrl = 'data/migrated.json';
+  } else {
+    migratedUrl = 'someserverurl';
+  }
   //server url
   //var migratedUrl ='';
   // test data

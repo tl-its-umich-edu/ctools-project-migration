@@ -8,6 +8,7 @@ projectMigrationApp.run(function ($rootScope) {
 	$rootScope.server = '';
 	$rootScope.user = {};
 	$rootScope.migrations = {};
+	$rootScope.stubs = true;
 	$rootScope.addProjectSites = [];
 });
 
