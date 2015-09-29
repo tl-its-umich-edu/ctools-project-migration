@@ -138,7 +138,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
       migrationsUrl = 'someserverurl';
     }  
     PollingService.startPolling('migrations' + projectId, migrationsUrl, 15000, function(result){
-
       $scope.migratingProjects = result.data;
       $scope.migrations.update = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled');
