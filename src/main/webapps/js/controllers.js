@@ -7,8 +7,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
-  $rootScope.logs = [];
-
+  $scope.migrations = {};
+  
   //server url
   var projectsUrl;
   // test data
@@ -46,10 +46,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   } else {
     migratedUrl = 'someserverurl';
   }
-  //server url
-  //var migratedUrl ='';
-  // test data
-  var migratedUrl = 'data/migrated.json';
+
   Projects.getProjects(migratedUrl).then(function(result) {
     $scope.migratedProjects = result.data;
     $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
@@ -58,10 +55,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   });
 
   $scope.getTools = function(projectId) {
-    // server url
-    //var projectUrl = '/direct/site/' + siteId + '/pages.json';
-    // test data
-    var projectUrl = 'data/project_id.json';
+    var projectUrl;
+    if ($rootScope.stubs){
+      projectUrl = 'data/project_id.json';
+    } else {
+      projectUrl = 'someserverurl';
+    }
 
     Projects.getProject(projectUrl).then(function(result) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
@@ -118,8 +117,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
       entityId: projectId
     }));
-    $rootScope.logs.push(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
-    $rootScope.logs.push(' - - - - - - POST /migrate/' + projectId);
     $log.info(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
     $log.info(' - - - - POST /migrate/' + projectId);
     //1. POST to /migration/projectId    
@@ -134,17 +131,23 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     //3. POST above will return a migration ID - store this so that when it the related projectId dissapears from the 
       //current migrations list the UI for the projects and the current migrations lists can be updated
     //4. poll /migrations - this would be in a timer
-    var migrationsUrl = 'data/migrations.json';
-
-    PollingService.startPolling('migrations', migrationsUrl, 15000, function(result){
+    var migrationsUrl;
+    if ($rootScope.stubs){
+      migrationsUrl = 'data/migrations.json';
+    } else {
+      migrationsUrl = 'someserverurl';
+    }  
+    PollingService.startPolling('migrations' + projectId, migrationsUrl, 15000, function(result){
 
       $scope.migratingProjects = result.data;
-      $rootScope.migrations.update = moment().format('h:mm:ss');
+      $scope.migrations.update = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled');
       $log.info(' - - - - GET /migrations/');
-      $log.info(' - - - - examine to see IF in the new list we have a project ID =' + projectId);
+      $log.info(' - - - - repaint current migrations list');
+      $log.info(' - - - - examine to see IF in the new MIGRATIONS list we have one with a site ID =' + projectId);
+      $log.info(' - - - - if not - GET /migrated and update the UI of that list');
       // stop if project has been migrated (if there is a project in the
-      // list that has a migration ID = cunnret Migration ID  
+      // list that has a migration ID = current Migration ID  
     });
   };
 
