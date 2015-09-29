@@ -1,32 +1,31 @@
 <div ng-repeat="project in sourceProjects">
 	<h4>
-		<a ng-hide="project.tools.length" ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
+		<a ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
 	  	{{project.entityTitle}}
 		</a>
-		<span ng-show="project.tools.length">{{project.entityTitle}}</span>
 	</h4>	
 	<div class="clearfix"></div>
 	<div class="collapse" id="collapse{{project.entityId}}">
 	  <div class="well">
 	  
-		  <div class="row" ng-if="project.migrated">
+		  <div class="row" ng-if="project.stateMigrating">
 				<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-					<p>{{project.migrated.status}} - started {{project.migrated.dateStarted}} </p>
+					<p>{{project.stateMigrating.status}} - started {{project.stateMigrating.dateStarted}} </p>
 		  	</div>
 		  </div>
-		  	<div class="row" ng-if="!project.migrated">
+		  	<div class="row" ng-if="!project.stateMigrating && !project.stateExportConfirm">
 			    	<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-	  					<p>Selectable tools {{}}</p>
+	  					<p>Select tools to migrate {{project.stateExportConfirm}}</p>
 	  				</div>
 	  				<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-	  					<button class="btn btn-primary btn-xs pull-right" ng-show="project.selectionExists && !project.exportConfirm" ng-click="startMigrationConfirm(project.entityId)">Export</button>
+	  					<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && !project.stateExportConfirm" ng-click="startMigrationConfirm(project.entityId)">Export</button>
 	  				</div>	
 	  	</div>
-	  		<div class="alert alert-info row" ng-if="project.exportConfirm && !project.migrated">
-		    	<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-  					Some warning of some sort here.
+	  		<div class="alert alert-info row" ng-if="project.stateExportConfirm && !project.stateMigrating">
+		    	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="padding:0">
+  					<small>Some warning of some sort here.</small>
 	  			</div>
-  				<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+  				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6"  style="padding:0">
   					<div class="pull-right">
 							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.entityId)">Proceed</button>
 							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.entityId)">Cancel</button>
@@ -38,12 +37,12 @@
 	    	<li class="list-group-item" ng-repeat="tool in project.tools"  ng-if="tool.tools[0].toolId ==='sakai.resources' || tool.tools[0].toolId ==='sakai.announcements' || tool.tools[0].toolId ==='sakai.mailbox'">
 	    		<div class="row">
 			    	<div class="col-md-10 col-lg-10 col-sm-10 col-xs-10">
-			    		<label ng-if="!project.migrated" for="{{project.id}}{{tool.id}}">{{tool.title}}</label>
-			    		<span ng-if="project.migrated">{{tool.title}}</span>
+			    		<label ng-if="!project.stateMigrating" for="{{project.id}}{{tool.id}}">{{tool.title}}</label>
+			    		<span ng-if="project.stateMigrating">{{tool.title}}</span>
 			    	</div>
 			    	<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
-			    		<input type="checkbox" id="{{project.id}}{{tool.id}}" ng-if="!project.migrated" ng-model="tool.selected" ng-change="checkIfSelectionExists(project.entityId)"/ >
-							<span ng-if="project.migrated && tool.selected" class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span>
+			    		<input type="checkbox" id="{{project.id}}{{tool.id}}" ng-if="!project.stateMigrating" ng-model="tool.selected" ng-change="checkIfSelectionExists(project.entityId)"/ >
+							<span ng-if="project.stateMigrating && tool.selected" class="glyphicon glyphicon-ok-sign" aria-hidden="true"></span>
 			    	</div>	
 			    </div>		
 	    	</li>
