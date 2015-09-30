@@ -27,7 +27,7 @@
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Exports in Progress <small ng-if="migrations.update">Updated: {{migrations.update}}</small></h3>
+            <h3 class="panel-title">Exports in Progress <small ng-if="status.migrations">Updated: {{status.migrations}}</small> <span class="badge pull-right">{{migratingProjects.length}}</span></h3>
           </div>
           <div class="panel-body">
             <div ng-include="'views/projects-migrating.html'">
@@ -38,7 +38,8 @@
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Exports completed</h3></div>
+            <h3 class="panel-title">Exports completed  <small ng-if="status.migrated">Updated: {{status.migrated}}</small> <span class="badge pull-right">{{migratedProjects.length}}</span></h3>
+          </div>
           <div class="panel-body">
             <div ng-include="'views/projects-migrated.html'">
             </div>
