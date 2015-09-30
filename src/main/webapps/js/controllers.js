@@ -9,16 +9,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   $scope.migratedProjects = [];
   $scope.migrations = {};
   
-  //server url
-  var projectsUrl;
-  // test data
-  var projectsUrl;
-  if ($rootScope.stubs){
-    projectsUrl = 'data/projects.json';
-  } else {
-    projectsUrl = 'someserverurl';
-  }
-
+  
+  var projectsUrl = $rootScope.urls.projectsUrl;
+  
   Projects.getProjects(projectsUrl).then(function(result) {
     $scope.sourceProjects = _.where(result.data.site_collection, {
       type: 'project'
@@ -27,12 +20,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     $log.info(' - - - - GET /projects');
   });
 
-  var migrationsUrl;
-  if ($rootScope.stubs){
-    migrationsUrl = 'data/migrations.json';
-  } else {
-    migrationsUrl = 'someserverurl';
-  }  
+  var migrationsUrl = $rootScope.urls.migrationsUrl;
+
   Projects.getProjects(migrationsUrl).then(function(result) {
     $scope.migratingProjects = result.data;
     $rootScope.status.migrations = moment().format('h:mm:ss');
@@ -42,12 +31,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
 
   });
 
-  var migratedUrl;
-  if ($rootScope.stubs){
-    migratedUrl = 'data/migrated.json';
-  } else {
-    migratedUrl = 'someserverurl';
-  }
+  var migratedUrl = $rootScope.urls.migratedUrl;
 
   Projects.getProjects(migratedUrl).then(function(result) {
     $scope.migratedProjects = result.data;
@@ -57,6 +41,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   });
 
   $scope.getTools = function(projectId) {
+    // cannot refactor this one as it takes parameters
     var projectUrl;
     if ($rootScope.stubs){
       projectUrl = 'data/project_id.json';
@@ -120,7 +105,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     }));
     $log.info(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
     $log.info(' - - - - POST /migrate/' + projectId);
-    //1. POST to /migration/projectId    
+    //1. POST to /migration/projectId 
+    // cannot refactor this one as it takes parameters
     // TODO: need factory
     //2. adjust UI for this this project
     // state management    
@@ -132,12 +118,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     //3. POST above will return a migration ID - store this so that when it the related projectId dissapears from the 
       //current migrations list the UI for the projects and the current migrations lists can be updated
     //4. poll /migrations - this would be in a timer
-    var migrationsUrl;
-    if ($rootScope.stubs){
-      migrationsUrl = 'data/migrations.json';
-    } else {
-      migrationsUrl = 'someserverurl';
-    }  
+
     PollingService.startPolling('migrations' + projectId, migrationsUrl, 15000, function(result){
       if(result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
