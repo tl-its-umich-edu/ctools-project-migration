@@ -24,12 +24,36 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
 
   Projects.getProjects(migrationsUrl).then(function(result) {
     $scope.migratingProjects = result.data;
+    $scope.migratingProjectsShadow = result.data;    
     $rootScope.status.migrations = moment().format('h:mm:ss');
-    $scope.migratingProjectsShadow = result.data;
     $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
     $log.info(' - - - - GET /migrating');
-
-  });
+    if (result.data.length) {
+      $log.warn('page load got one or more current migrations - will have to poll it');
+      
+      PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, 15000, function(result) {
+        $scope.migratingProjects = result.data;
+        
+        if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
+          Projects.getProjects(migratedUrl).then(function(result) {
+            $scope.migratedProjects = result.data;
+            $rootScope.status.migrated = moment().format('h:mm:ss');
+            $log.info(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
+            $log.info(' - - - - GET /migrated');
+          });
+        }
+        $scope.migratingProjectsShadow = result.data;
+        if (result.data.length === 0){
+          PollingService.stopPolling('migrationsOnPageLoad');
+        }
+        
+        $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled  AFTER PAGE LOAD');
+        $log.info(' - - - - GET /migrations/');
+        $log.info(' - - - - repaint current migrations list');
+        $rootScope.status.migrations = moment().format('h:mm:ss');
+      });      
+    }
+});
 
   var migratedUrl = $rootScope.urls.migratedUrl;
 
@@ -119,11 +143,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
       //current migrations list the UI for the projects and the current migrations lists can be updated
     //4. poll /migrations - this would be in a timer
 
-    PollingService.startPolling('migrations' + projectId, migrationsUrl, 15000, function(result){
-      if(result.data.length === 0) {
+
+    PollingService.stopPolling('migrationsOnPageLoad' + projectId);
+
+    PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, 15000, function(result) {
+      if (result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
-        PollingService.stopPolling('migrations' + projectId)
-      } 
+        PollingService.stopPolling('migrationsAfterPageLoad' + projectId);
+      }
       $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled');
       $log.info(' - - - - GET /migrations/');
       $log.info(' - - - - repaint current migrations list');
