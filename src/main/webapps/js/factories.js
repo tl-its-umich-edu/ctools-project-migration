@@ -47,7 +47,7 @@ projectMigrationApp.factory('PollingService', ['$http', function($http) {
       // Check to make sure poller doesn't already exist
       if (!polls[name]) {
         var poller = function() {
-          $http.get(url).then(callback);
+          $http.get(url, {cache: false}).then(callback);
         };
         poller();
         polls[name] = setInterval(poller, pollingTime || defaultPollingTime);
