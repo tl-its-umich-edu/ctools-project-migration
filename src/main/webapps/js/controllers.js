@@ -144,7 +144,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     //4. poll /migrations - this would be in a timer
 
 
-    PollingService.stopPolling('migrationsOnPageLoad' + projectId);
+    PollingService.stopPolling('migrationsOnPageLoad');
 
     PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, 15000, function(result) {
       if (result.data.length === 0) {
