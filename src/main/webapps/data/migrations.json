@@ -1,16 +1,14 @@
-[{
-  "id": "some-guid",
-  "site_id": "site_id",
-  "start": "unix-timestamp",
-  "name": "site-title"
-}, {
-  "id": "some-guid",
-  "site_id": "site_id",
-  "start": "unix-timestamp",
-  "name": "site-title"
-}, {
-  "id": "some-guid",
-  "site_id": "site_id",
-  "start": "unix-timestamp",
-  "name": "site-title"
-}]
+[
+    {
+        "id": "some-guid",
+        "site_id": "site_id",
+        "start": "unix-timestamp",
+        "name": "site-title"
+    },
+       {
+        "id": "some-guid",
+        "site_id": "site_id",
+        "start": "unix-timestamp",
+        "name": "site-title"
+    }
+]

@@ -44,6 +44,7 @@ projectMigrationApp.factory('PollingService', ['$http', function($http) {
 
   return {
     startPolling: function(name, url, pollingTime, callback) {
+      // Check to make sure poller doesn't already exist
       if (!polls[name]) {
         var poller = function() {
           $http.get(url, {cache: false}).then(callback);
