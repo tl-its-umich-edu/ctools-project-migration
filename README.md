@@ -1,8 +1,8 @@
-# Project description
+# CTools Project Migration
 
-# Technologies used:
+## Technologies used:
 
-## Server side: 
+### Server side: 
 
 Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to create Spring-powered, production-grade applications and services with minimum efforts.
 
@@ -10,9 +10,9 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 * Spring actuator adds several production grade services for server monitoring
 * Spring web provides RESTful web service
 
-##UI: AngularJS
+### UI: AngularJS
 
-# Run the code:
+## Run the code:
 
 * Put database connection information into config/application.properties
 * Example MySQL scripts are provided, for create database and tables 
