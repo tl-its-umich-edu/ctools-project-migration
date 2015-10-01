@@ -18,59 +18,59 @@ import javax.persistence.GenerationType;
 
 @Entity
 public class Migration {
-  @Id
-  @GeneratedValue(strategy=GenerationType.IDENTITY)
-  @Column(name="ID",
-  table="MIGRATION")
-  private Integer id;
-  
-  @Column(name="SITE_ID",
-  columnDefinition="VARCHAR(99) NOT NULL",
-  table="MIGRATION")
-  private String siteId; 
-  
-  @Column(name="SITE_OWNER",
-  columnDefinition="VARCHAR(99) NOT NULL",
-  table="MIGRATION")
-  private String siteOwner;
-  
-  @Column(name="MIGRATED_BY",
-  columnDefinition="VARCHAR(99) NOT NULL",
-  table="MIGRATION")
-  private String migratedBy;
-  
-  @Column(name="START_TIME",
-  columnDefinition="TIMESTAMP",
-  table="MIGRATION")
-  private Timestamp startTime;
-  
-  @Column(name="STOP_TIME",
-  columnDefinition="TIMESTAMP",
-  table="MIGRATION")
-  private Timestamp stopTime;
-  
-  @Column(name="TOOL",
-  columnDefinition="VARCHAR(99) NOT NULL",
-  table="MIGRATION")
-  private String tool;
-  
-  @Column(name="DESTINATION_TYPE",
-  columnDefinition="VARCHAR(99) NOT NULL",
-  table="MIGRATION")
-  private String destinationType;
-  
-  @Column(name="DESTINATION_URL",
-  columnDefinition="VARCHAR(99)",
-  table="MIGRATION")
-  private String destinationUrl;
-
-  public Integer getId() {
-    return id;
-  }
-
-  public void setId(Integer id) {
-    this.id = id;
-  }
+	@Id
+	@GeneratedValue(strategy=GenerationType.IDENTITY)
+	@Column(name="ID",
+	table="MIGRATION")
+	private Integer id;
+	
+	@Column(name="SITE_ID",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	private String siteId; 
+	
+	@Column(name="SITE_OWNER",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	private String siteOwner;
+	
+	@Column(name="MIGRATED_BY",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	private String migratedBy;
+	
+	@Column(name="START_TIME",
+	columnDefinition="TIMESTAMP",
+	table="MIGRATION")
+	private Timestamp startTime;
+	
+	@Column(name="STOP_TIME",
+	columnDefinition="TIMESTAMP",
+	table="MIGRATION")
+	private Timestamp stopTime;
+	
+	@Column(name="TOOL",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	private String tool;
+	
+	@Column(name="DESTINATION_TYPE",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	private String destinationType;
+	
+	@Column(name="DESTINATION_URL",
+	columnDefinition="VARCHAR(99)",
+	table="MIGRATION")
+	private String destinationUrl;
+	
+	public Integer getId() {
+	return id;
+	}
+	
+	public void setId(Integer id) {
+	this.id = id;
+	}
 
 	public String getSiteOwner() {
 		return siteOwner;
@@ -127,17 +127,17 @@ public class Migration {
 	public void setDestinationUrl(String destinationUrl) {
 		this.destinationUrl = destinationUrl;
 	}
-  
+
 	protected Migration() {}
 
 	public Migration(String siteId,
-		  			String siteOwner,
-		  			String migratedBy,
-		  			Timestamp startTime,
-		  			Timestamp stopTime,
-		  			String tool,
-		  			String destinationType,
-		  			String destinationUrl) {
+					String siteOwner,
+					String migratedBy,
+					Timestamp startTime,
+					Timestamp stopTime,
+					String tool,
+					String destinationType,
+					String destinationUrl) {
 		this.siteId = siteId;
 		this.siteOwner = siteOwner;
 		this.migratedBy = migratedBy;

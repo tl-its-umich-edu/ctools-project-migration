@@ -42,12 +42,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
 
   $scope.getTools = function(projectId) {
     // cannot refactor this one as it takes parameters
-    var projectUrl;
-    if ($rootScope.stubs){
-      projectUrl = 'data/project_id.json';
-    } else {
-      projectUrl = 'someserverurl';
-    }
+    var projectUrl = $rootScope.urls.projectUrl;
 
     Projects.getProject(projectUrl).then(function(result) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
