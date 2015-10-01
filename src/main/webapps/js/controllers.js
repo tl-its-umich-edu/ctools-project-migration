@@ -149,7 +149,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, 15000, function(result) {
       if (result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
-        PollingService.stopPolling('migrationsAfterPageLoad' + projectId);
+        PollingService.stopPolling('migrationsAfterPageLoad');
       }
       $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled');
       $log.info(' - - - - GET /migrations/');
