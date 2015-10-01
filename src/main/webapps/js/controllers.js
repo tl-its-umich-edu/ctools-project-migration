@@ -7,8 +7,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
-  $scope.migrations = {};
-  
   
   var projectsUrl = $rootScope.urls.projectsUrl;
   
@@ -29,16 +27,16 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
     $log.info(' - - - - GET /migrating');
     if (result.data.length) {
-      $log.warn('page load got one or more current migrations - will have to poll it');
+      $log.warn('page load got one or more current migrations - will have to poll it every ' + $rootScope.pollInterval/1000 + ' seconds');
       
-      PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, 15000, function(result) {
+      PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
         $scope.migratingProjects = result.data;
         
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
           Projects.getProjects(migratedUrl).then(function(result) {
             $scope.migratedProjects = result.data;
             $rootScope.status.migrated = moment().format('h:mm:ss');
-            $log.info(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
+            $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
             $log.info(' - - - - GET /migrated');
           });
         }
@@ -47,9 +45,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
           PollingService.stopPolling('migrationsOnPageLoad');
         }
         
-        $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled  AFTER PAGE LOAD');
+        $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled  ON PAGE LOAD');
         $log.info(' - - - - GET /migrations/');
-        $log.info(' - - - - repaint current migrations list');
         $rootScope.status.migrations = moment().format('h:mm:ss');
       });      
     }
@@ -127,8 +124,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
       entityId: projectId
     }));
-    $log.info(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
+    $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle);
     $log.info(' - - - - POST /migrate/' + projectId);
+    $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds ' + ' (and stop any previous polling initiated in page load)');
     //1. POST to /migration/projectId 
     // cannot refactor this one as it takes parameters
     // TODO: need factory
@@ -143,34 +141,29 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
       //current migrations list the UI for the projects and the current migrations lists can be updated
     //4. poll /migrations - this would be in a timer
 
-
     PollingService.stopPolling('migrationsOnPageLoad');
-
-    PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, 15000, function(result) {
+    
+    PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
       if (result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
         PollingService.stopPolling('migrationsAfterPageLoad');
       }
       $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled');
       $log.info(' - - - - GET /migrations/');
-      $log.info(' - - - - repaint current migrations list');
       $rootScope.status.migrations = moment().format('h:mm:ss');
 
       $scope.migratingProjects = result.data;
       
       if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
+          $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
+          $log.info(' - - - - GET /migrated');
         Projects.getProjects(migratedUrl).then(function(result) {
           $scope.migratedProjects = result.data;
           $rootScope.status.migrated = moment().format('h:mm:ss');
-          $log.info(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
-          $log.info(' - - - - GET /migrated');
         });
       }
-
       $scope.migratingProjectsShadow = $scope.migratingProjects;
 
     });
   };
-
-
 }]);
