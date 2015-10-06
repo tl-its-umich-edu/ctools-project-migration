@@ -37,7 +37,7 @@ projectMigrationApp.factory('Projects', function($http) {
 
   };
 });
-//PROJECTS FACTORY - does the request for the projects controller
+//PROJECTS FACTORY - does the request for the migrations controller
 projectMigrationApp.factory('Migrations', function($http) {
   return {
     getMigrations: function(url) {
@@ -58,7 +58,7 @@ projectMigrationApp.factory('Migrations', function($http) {
   };
 });
 
-//PROJECTS FACTORY - does the request for the projects controller
+//PROJECTS FACTORY - does the request for the migrated controller
 projectMigrationApp.factory('Migrated', function($http) {
   return {
     getMigrated: function(url) {
@@ -79,6 +79,10 @@ projectMigrationApp.factory('Migrated', function($http) {
   };
 });
 
+/**
+* GENERIC POLLING SERVICE, used by Migrations panel to poll /migrations
+* on page load and on new migration requests
+*/
 
 projectMigrationApp.factory('PollingService', ['$http', function($http) {
   var defaultPollingTime = 10000;
