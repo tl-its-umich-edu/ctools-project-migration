@@ -1,98 +1,98 @@
 [
     {
-        "site_id": "site_id",
+        "site_id": "site_id1",
         "site_name": "site-title 1",
         "tool_id": "some_guid",
         "tool_name": "Resources site 1",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id2",
         "site_name": "site-title 2",
         "tool_id": "some_guid",
         "tool_name": "Resources site 2",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id2",
         "site_name": "site-title 2",
         "tool_id": "some_guid",
         "tool_name": "Ann site 2",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id3",
         "site_name": "site-title 3",
         "tool_id": "some_guid",
         "tool_name": "Resources site 3",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id2",
         "site_name": "site-title 2",
         "tool_id": "some_guid",
         "tool_name": "Email site 2",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id2",
         "site_name": "site-title 2",
         "tool_id": "some_guid",
         "tool_name": "Bang site 2",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id2",
         "site_name": "site-title 2",
         "tool_id": "some_guid",
         "tool_name": "Bong site 2",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     },
     {
-        "site_id": "site_id",
+        "site_id": "site_id3",
         "site_name": "site-title 3",
         "tool_id": "some_guid",
         "tool_name": "Bang site 3",
         "migration_id": "some_guid",
         "start": "unix_timestamp",
-        "end": "unix-timestamp | null",
+        "end": "unix-timestamp",
         "migrated_by": "someone",
         "destination_type": "Box",
-        "destination_url": "URL | null"
+        "destination_url": "URL"
     }
 ]

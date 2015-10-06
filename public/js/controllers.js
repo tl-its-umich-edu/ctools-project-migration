@@ -2,12 +2,13 @@
 /* global  projectMigrationApp, angular, _, moment*/
 
 /* TERMS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, PollingService, $rootScope, $scope, $log) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, Migrations, Migrated, PollingService, $rootScope, $scope, $log) {
 
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
   
+  // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
   
   Projects.getProjects(projectsUrl).then(function(result) {
@@ -18,9 +19,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     $log.info(' - - - - GET /projects');
   });
 
+  // GET the current migrations list
   var migrationsUrl = $rootScope.urls.migrationsUrl;
 
-  Projects.getProjects(migrationsUrl).then(function(result) {
+  Migrations.getMigrations(migrationsUrl).then(function(result) {
     $scope.migratingProjects = result.data;
     $scope.migratingProjectsShadow = result.data;    
     $rootScope.status.migrations = moment().format('h:mm:ss');
@@ -33,7 +35,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
         $scope.migratingProjects = result.data;
         
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
-          Projects.getProjects(migratedUrl).then(function(result) {
+          Migrated.getMigrated(migratedUrl).then(function(result) {
             $scope.migratedProjects = result.data;
             $rootScope.status.migrated = moment().format('h:mm:ss');
             $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
@@ -52,9 +54,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
     }
 });
 
+  // GET the migrations that have completed
   var migratedUrl = $rootScope.urls.migratedUrl;
 
-  Projects.getProjects(migratedUrl).then(function(result) {
+  Migrated.getMigrated(migratedUrl).then(function(result) {
     $scope.migratedProjects = result.data;
     $rootScope.status.migrated = moment().format('h:mm:ss');
     $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
@@ -157,15 +160,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Polli
       $scope.migratingProjects = result.data;
       
       if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
-          $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
-          $log.info(' - - - - GET /migrated');
-        Projects.getProjects(migratedUrl).then(function(result) {
+        $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
+        $log.info(' - - - - GET /migrated');
+        Migrated.getMigrated(migratedUrl).then(function(result) {
           $scope.migratedProjects = result.data;
           $rootScope.status.migrated = moment().format('h:mm:ss');
         });
       }
       $scope.migratingProjectsShadow = $scope.migratingProjects;
-
     });
   };
 }]);

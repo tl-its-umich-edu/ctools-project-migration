@@ -2,24 +2,28 @@
 	There are no exports in progress at this time.
 </div>
 
-
-<div ng-repeat="migratingProject in migratingProjects track by $index" ng-show="migratingProjects.length">
-	<h4>
-	  	{{migratingProject.name}}
-	</h4>	
-	<div class="progress">
-  	<div class="progress-bar progress-bar-striped active" role="progressbar" aria-valuenow="45" aria-valuemin="0" aria-valuemax="100" style="width: 100%">
-  </div>
+<div ng-show="migratingProjects.length">
+	<ul class="list-group" style="margin-bottom:0">
+  	<li class="list-group-item" ng-repeat="migratingProject in migratingProjects">
+  		<div class="row">
+	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
+	    			{{migratingProject.tool_name}}
+		  	</div>
+		  	<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
+	    			{{migratingProject.site_name}}
+		  	</div>
+		  	<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
+	    			<div class="spinner"></div>
+		  	</div>
+		  </div>
+		  <div class="row">
+	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
+	    			<small>Started: {{migratingProject.start}}</small>
+		  	</div>
+		  	<div class="col-md-7 col-lg-7 col-sm-7 col-xs-7">
+	    			<small>Destination: {{migratingProject.destination_type}}</small>
+		  	</div>
+		  </div>	
+		</li>
+	</ul>
 </div>
-	<!-- tools - we will add this later, need to check with BSA 
-<div class="clearfix"></div>
-
-	<div class="well">
-	  <ul class="list-group" style="margin-bottom:0">
-	  	<li class="list-group-item" ng-repeat="tool in migratingProject.tools" ng-if="tool.selected">
-    		{{tool.title}}
-	  	</li>
-	  </ul>	
-	</div>
-</div>
--->
