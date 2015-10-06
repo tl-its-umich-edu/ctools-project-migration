@@ -1,26 +1,31 @@
 
-<div ng-repeat="migratedProject in migratedProjects track by $index" ng-show="migratedProjects.length">
+<div ng-repeat="migratedProject in migratedProjects" ng-show="migratedProjects.length">
 	<h4 class="row">
     		<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">	
-    			{{migratedProject.name}}
+    			{{migratedProject.site_name}}
 	  		</div>
 	  		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">	
-	  			<small><a href="" class="pull-right" ng-click="showReport = ! showReport">Report</a></small>
 	  		</div>
 	</h4>	
-	<div ng-show="showReport">
-		<p>Export started {{migratedProject.start}}, completed {{migratedProject.end}}</p>
-	</div>
 	<div class="well">
 	  <ul class="list-group" style="margin-bottom:0">
-	  	<li class="list-group-item row" ng-repeat="tool in migratedProject.tools">
-	    		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+	  	<li class="list-group-item row" ng-repeat="tool in migratedProject.tools" ng-init="showDetails=[]">
+	    		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
 	    			{{tool.tool_name}}
 		  		</div>
-		  		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">	
+		  		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">	
 		  			<small>Exported to <a href="tool.destination_url">{{tool.destination_type}}</a></small>
 		  		</div>
-
+		  		<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">	
+		  			<button ng-click="showDetails[$index] = !showDetails[$index]" class="btn btn btn-xs btn-link"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span><span class="sr-only">Information on migration of {{tool.tool_name}} for {{migratedProject.site_name}}</span></button>		  			
+		  		</div>
+		  		<div class="row" ng-show="showDetails[$index]">
+		  			<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="padding-left:30px">
+							<small>{{tool.start}} - {{tool.start}}</small>
+		  			</div>
+		  			<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+		  				<small> Migrated by {{tool.migrated_by}}</small>
+		  			</div>
 	  	</li>
 	  </ul>	
 	</div>
