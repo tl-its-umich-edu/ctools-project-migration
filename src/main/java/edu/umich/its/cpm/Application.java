@@ -23,8 +23,8 @@ public class Application {
 	public CommandLineRunner demo(MigrationRepository repository) {
 		return (args) -> {
 			// save a couple of Migrations
-			repository.save(new Migration("site1","Jack", "Jack", null, null, "resource", "Box", null));
-			repository.save(new Migration("site1", "Jack", "Chole", null, null, "resource", "Box", null));
+			repository.save(new Migration("site1", "site1 name", "sakai.resource", "Resource", "Jack", null, null, "Box", null));
+			repository.save(new Migration("site1", "site1 name", "sakai.resource", "Resource", "Jane", null, null, "Box", null));
 
 			// fetch all Migrations
 			log.info("Migrations found with findAll():");
@@ -35,18 +35,10 @@ public class Application {
             log.info("");
 
 			// fetch an individual Migration by ID
-			Migration Migration = repository.findOne(27);
-			log.info("Migration found with findOne(27):");
+			Migration Migration = repository.findOne(1);
+			log.info("Migration found with findOne(1):");
 			log.info("--------------------------------");
 			log.info(Migration.toString());
-            log.info("");
-
-			// fetch Migrations by last name
-			log.info("Migration found with findByLastName('Jack'):");
-			log.info("--------------------------------------------");
-			for (Migration jack : repository.findBySiteOwner("Jack")) {
-				log.info(jack.toString());
-			}
             log.info("");
 		};
 	}
