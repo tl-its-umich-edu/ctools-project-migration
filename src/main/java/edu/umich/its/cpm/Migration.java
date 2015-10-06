@@ -16,151 +16,108 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.Id;
 import javax.persistence.GenerationType;
 
+import lombok.Getter;
+import lombok.Setter;
+
 @Entity
 public class Migration {
 	@Id
 	@GeneratedValue(strategy=GenerationType.IDENTITY)
-	@Column(name="ID",
+	@Column(name="MIGRATION_ID",
 	table="MIGRATION")
-	private Integer id;
+	@Getter @Setter
+	private Integer migration_id;
 	
 	@Column(name="SITE_ID",
 	columnDefinition="VARCHAR(99) NOT NULL",
 	table="MIGRATION")
-	private String siteId; 
+	@Getter @Setter
+	private String site_id; 
 	
-	@Column(name="SITE_OWNER",
+	@Column(name="SITE_NAME",
 	columnDefinition="VARCHAR(99) NOT NULL",
 	table="MIGRATION")
-	private String siteOwner;
+	@Getter @Setter
+	private String site_name; 
+	
+	@Column(name="TOOL_NAME",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	@Getter @Setter
+	private String tool_name;
+	
+	@Column(name="TOOL_ID",
+	columnDefinition="VARCHAR(99) NOT NULL",
+	table="MIGRATION")
+	@Getter @Setter
+	private String tool_id; 
 	
 	@Column(name="MIGRATED_BY",
 	columnDefinition="VARCHAR(99) NOT NULL",
 	table="MIGRATION")
-	private String migratedBy;
+	@Getter @Setter
+	private String migrated_by;
 	
-	@Column(name="START_TIME",
+	@Column(name="START",
+	columnDefinition="TIMESTAMP NOT NULL",
+	table="MIGRATION")
+	@Getter @Setter
+	private Timestamp start;
+	
+	@Column(name="END",
 	columnDefinition="TIMESTAMP",
 	table="MIGRATION")
-	private Timestamp startTime;
-	
-	@Column(name="STOP_TIME",
-	columnDefinition="TIMESTAMP",
-	table="MIGRATION")
-	private Timestamp stopTime;
-	
-	@Column(name="TOOL",
-	columnDefinition="VARCHAR(99) NOT NULL",
-	table="MIGRATION")
-	private String tool;
+	@Getter @Setter
+	private Timestamp end;
 	
 	@Column(name="DESTINATION_TYPE",
 	columnDefinition="VARCHAR(99) NOT NULL",
 	table="MIGRATION")
-	private String destinationType;
+	@Getter @Setter
+	private String destination_type;
 	
 	@Column(name="DESTINATION_URL",
 	columnDefinition="VARCHAR(99)",
 	table="MIGRATION")
-	private String destinationUrl;
+	@Getter @Setter
+	private String destination_url;
 	
-	public Integer getId() {
-	return id;
-	}
-	
-	public void setId(Integer id) {
-	this.id = id;
-	}
-
-	public String getSiteOwner() {
-		return siteOwner;
-	}
-
-	public void setSiteOwner(String siteOwner) {
-		this.siteOwner = siteOwner;
-	}
-
-	public String getMigratedBy() {
-		return migratedBy;
-	}
-
-	public void setMigratedBy(String migratedBy) {
-		this.migratedBy = migratedBy;
-	}
-
-	public Timestamp getStartTime() {
-		return startTime;
-	}
-
-	public void setStartTime(Timestamp startTime) {
-		this.startTime = startTime;
-	}
-
-	public Timestamp getStopTime() {
-		return stopTime;
-	}
-
-	public void setStopTime(Timestamp stopTime) {
-		this.stopTime = stopTime;
-	}
-
-	public String getTool() {
-		return tool;
-	}
-
-	public void setTool(String tool) {
-		this.tool = tool;
-	}
-
-	public String getDestination_type() {
-		return destinationType;
-	}
-
-	public void setDestinationType(String destinationType) {
-		this.destinationType = destinationType;
-	}
-
-	public String getDestinationUrl() {
-		return destinationUrl;
-	}
-
-	public void setDestinationUrl(String destinationUrl) {
-		this.destinationUrl = destinationUrl;
-	}
-
 	protected Migration() {}
 
-	public Migration(String siteId,
-					String siteOwner,
-					String migratedBy,
-					Timestamp startTime,
-					Timestamp stopTime,
-					String tool,
-					String destinationType,
-					String destinationUrl) {
-		this.siteId = siteId;
-		this.siteOwner = siteOwner;
-		this.migratedBy = migratedBy;
-		this.startTime = startTime;
-		this.stopTime = stopTime;
-		this.tool = tool;
-		this.destinationType = destinationType;
-		this.destinationUrl = destinationUrl;
+	public Migration(String site_id,
+					String site_name,
+					String tool_id,
+					String tool_name,
+					String migrated_by,
+					Timestamp start,
+					Timestamp end,
+					String destination_type,
+					String destination_url) {
+		this.site_id = site_id;
+		this.site_name = site_name;
+		this.tool_id = tool_id;
+		this.tool_name = tool_name;
+		this.migrated_by = migrated_by;
+		this.start = start;
+		this.end = end;
+		this.destination_type = destination_type;
+		this.destination_url = destination_url;
 	}
 
 	@Override
 	public String toString() {
 		return String.format(
-					"Migration[id=%d, "
+					"Migration[migration_id=%d, "
 					+ "site_id='%s',"
-					+ "site_owner='%s',"
+					+ "site_name='%s',"
+					+ "tool_id='%s',"
+					+ "tool_name='%s',"
 					+ "migrated_by='%s',"
-					+ "start_time='%s',"
-					+ "stop_time='%s',"
-					+ "tool='%s',"
+					+ "start='%s',"
+					+ "end='%s',"
 					+ "destination_type='%s',"
 					+ "destination_url='%s'"
 					+ "]",
-					id, siteId,siteOwner, migratedBy, startTime, stopTime, tool, destinationType, destinationUrl);
+					migration_id, site_id,site_name, tool_id, tool_name, migrated_by, start, end, destination_type, destination_url);
 	}
 }
