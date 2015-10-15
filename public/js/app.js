@@ -13,18 +13,20 @@ projectMigrationApp.run(function($rootScope) {
     'migrations': '',
     'migrated': ''
   };
-  $rootScope.stubs = true;
+  $rootScope.stubs = false;
   if ($rootScope.stubs) {
     $rootScope.urls = {
       'projectsUrl': 'data/projects.json',
       'migrationsUrl': 'data/migrations.json',
-      'migratedUrl': 'data/migrated.json'
+      'migratedUrl': 'data/migrated.json',
+      'projectUrl': 'data/project_id.json'
     };
   } else {
     $rootScope.urls = {
       'projectsUrl': '/projects.json',
       'migrationsUrl': '/migrations',
-      'migratedUrl': '/migrated'
+      'migratedUrl': '/migrated',
+      'projectUrl': '/projects/'
     };
   }
   $rootScope.addProjectSites = [];

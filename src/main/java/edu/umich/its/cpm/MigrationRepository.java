@@ -17,6 +17,21 @@ public interface MigrationRepository extends CrudRepository<Migration, Integer> 
      *          If no persons is found, this method returns an empty list.
      */
     @Query("SELECT m FROM Migration m WHERE m.end IS NOT NULL")
-    public List<Migration> find();
+    public List<Migration> findMigrated();
+    
+    /**
+     * Finds migration with migration_id
+     * @param migration_id
+     * @return  A migration with migration_id
+     */
+    public Migration findOne(Integer migration_id);
+    
+    /**
+     * Finds list of migrations with site id
+     * @param site_id
+     * @return  A list of migration with site_id
+     */
+    @Query("SELECT m FROM Migration m WHERE m.site_id = ?#{[0]}")
+    public List<Migration> findBySiteId(String site_id);
     
 }
