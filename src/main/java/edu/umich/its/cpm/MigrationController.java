@@ -142,7 +142,7 @@ public class MigrationController {
 					+ sessionId);
 
 			// 2. become the user
-			// retrieve from the configuration file for now; Shoudl get from the
+			// retrieve from the configuration file for now; Should get from the
 			// REMOTE_USER setting after CoSign integration
 			restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -219,8 +219,8 @@ public class MigrationController {
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
 				parameterMap.get("tool_name")[0],
-				parameterMap.get("migrated_by")[0], new java.sql.Timestamp(
-						System.currentTimeMillis()), /* start time is now */
+				request.getRemoteUser(),
+				new java.sql.Timestamp(System.currentTimeMillis()), /* start time is now */
 				null, /* no end time */
 				parameterMap.get("destination_type")[0], null);
 		Migration rv = null;
@@ -237,7 +237,7 @@ public class MigrationController {
 					.append(" tool_name=")
 					.append(parameterMap.get("tool_name")[0])
 					.append(" migrated_by=")
-					.append(parameterMap.get("migrated_by")[0])
+					.append(request.getRemoteUser())
 					.append(" destination_type=")
 					.append(parameterMap.get("destination_type")[0])
 					.append(" \n ")

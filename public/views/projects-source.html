@@ -23,11 +23,11 @@
 	  	</div>
 	  		<div class="alert alert-info row" ng-if="project.stateExportConfirm && !project.stateMigrating">
 		    	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="padding:0">
-  					<small>Some warning of some sort here.</small>
+  					<small>Migration Process of selected tools is about to start. Are you sure?</small>
 	  			</div>
   				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6"  style="padding:0">
   					<div class="pull-right">
-							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.entityId)">Proceed</button>
+							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.entityId, project.entityTitle, project.entityId, project.entityTitle, 'Box')">Proceed</button>
 							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.entityId)">Cancel</button>
 						</div>
 					</div>

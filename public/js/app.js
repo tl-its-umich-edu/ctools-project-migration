@@ -18,6 +18,7 @@ projectMigrationApp.run(function($rootScope) {
     $rootScope.urls = {
       'projectsUrl': 'data/projects.json',
       'migrationsUrl': 'data/migrations.json',
+      'migrationUrl': '',
       'migratedUrl': 'data/migrated.json',
       'projectUrl': 'data/project_id.json'
     };
@@ -25,6 +26,7 @@ projectMigrationApp.run(function($rootScope) {
     $rootScope.urls = {
       'projectsUrl': '/ctools-project-migration/projects.json',
       'migrationsUrl': '/ctools-project-migration/migrations',
+      'migrationUrl': '/ctools-project-migration/migration',
       'migratedUrl': '/ctools-project-migration/migrated',
       'projectUrl': '/ctools-project-migration/projects/'
     };
