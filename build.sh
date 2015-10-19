@@ -19,12 +19,6 @@ echo "Generating zip file for build number: ${build_number}"
 gitNum=`git log -n 1 --pretty="format:%h"`
 printf 'github version number is %s.' $gitNum > git_version.txt
 
-## clean target folder
-rm -rf target
-
-## build CPM project
-mvn package
-
 ## relocate the war file
 mv target/ctools-project-migration*.war ctools-project-migration.war
 
