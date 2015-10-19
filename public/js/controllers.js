@@ -1,8 +1,8 @@
 'use strict';
-/* global  projectMigrationApp, angular, _, moment*/
+/* global projectMigrationApp, angular, _, moment */
 
 /* TERMS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, Migrations, Migrated, PollingService, $rootScope, $scope, $log) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log) {
 
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
@@ -74,7 +74,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       }));
       $scope.sourceProjects[targetProjPos].tools = result.data;
 
-      //state management
+      // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
 
       $log.info(moment().format('h:mm:ss') + ' - tools requested for project ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
@@ -89,7 +89,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     $scope.sourceProjects[targetProjPos].selectionExists = false;
     _.each($scope.sourceProjects[targetProjPos].tools, function(tool) {
       if (tool.selected) {
-        //state management
+        // state management
         $scope.sourceProjects[targetProjPos].stateSelectionExists = true;
       }
     });
@@ -100,7 +100,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       entityId: projectId
     }));
     // pop confirmation panel
-    //state management
+    // state management
     $scope.sourceProjects[targetProjPos].stateExportConfirm = true;
   };
 
@@ -113,42 +113,52 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     _.each($scope.sourceProjects[targetProjPos].tools, function(tool) {
       tool.selected = false;
     });
-    //state management
+    // state management
     $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
     $scope.sourceProjects[targetProjPos].stateSelectionExists = false;
   };
 
-  $scope.startMigration = function(projectId) {
-    var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-      entityId: projectId
-    }));
-    $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + $scope.sourceProjects[targetProjPos].entityTitle);
-    $log.info(' - - - - POST /migrate/' + projectId);
-    $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-    $log.info(' - - - - stop all (if any) /migrations polls');
-    PollingService.stopPolling('migrationsAfterPageLoad');
-    PollingService.stopPolling('migrationsOnPageLoad');
+  $scope.startMigration = function(siteId, siteName, toolId, toolName, destinationType) {
 
-    //1. POST to /migration/projectId 
-    // cannot refactor this one as it takes parameters
+    
+	// Get the base post url
+	var migrationUrl = $rootScope.urls.migrationUrl;
+	// attach variables to it
+	migrationUrl = migrationUrl + "?site_id=" + siteId + "&site_name=" + siteName + "&tool_id=" + toolId + "&tool_name=" + toolName + "&destination_type=" + destinationType;
+	$log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
+	Migration.postMigration(migrationUrl).then(function(result) {
+        $log.info(' - - - - POST ' + migrationUrl);
+        $log.info('result ' + result.data)
+        $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
+        $log.info(' - - - - stop all (if any) /migrations polls');
+        PollingService.stopPolling('migrationsAfterPageLoad');
+        PollingService.stopPolling('migrationsOnPageLoad');
+      });
+
     // TODO: need factory
-    //2. adjust UI for this this project
-    // state management    
+    // 2. adjust UI for this this project
+    // state management
+	var migrationsUrl = $rootScope.urls.migrationsUrl;
+	var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
+		entityId: siteId
+	}));
     $scope.sourceProjects[targetProjPos].stateMigrating = {
       status: 'Migration in progress',
       dateStarted: moment().format('MM/D/YY, h:mm:ss a')
     };
 
-    //3. POST above will return a migration ID - store this so that when it the related projectId dissapears from the 
-      //current migrations list the UI for the projects and the current migrations lists can be updated
-    //4. poll /migrations - this would be in a timer
+    // 3. POST above will return a migration ID - store this so that when it the
+	// related projectId dissapears from the
+      // current migrations list the UI for the projects and the current
+		// migrations lists can be updated
+    // 4. poll /migrations - this would be in a timer
     
     PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
       if (result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
         PollingService.stopPolling('migrationsAfterPageLoad');
       }
-      $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after request for: ' + projectId);
+      $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after request for: ' + siteId);
       $log.info(' - - - - GET /migrations/');
       $rootScope.status.migrations = moment().format('h:mm:ss');
 

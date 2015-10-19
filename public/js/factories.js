@@ -34,9 +34,31 @@ projectMigrationApp.factory('Projects', function($http) {
         }
       );
     }
-
   };
 });
+
+
+//PROJECTS FACTORY - does the request for the migrations controller
+projectMigrationApp.factory('Migration', function($http) {
+  return {
+	postMigration: function(url) {
+	    return $http.post(url, {
+		      cache: false
+		    }).then(
+		      function success(result) {
+		        //forward the data - let the controller deal with it
+		        return result;
+		      },
+		      function error(result) {
+		        errorDisplay(url, result.status, 'Unable to post new migration');
+		        result.errors.failure = true;
+		        return result;
+		      }
+		    );
+		  }
+	  };
+	});
+  
 //PROJECTS FACTORY - does the request for the migrations controller
 projectMigrationApp.factory('Migrations', function($http) {
   return {
