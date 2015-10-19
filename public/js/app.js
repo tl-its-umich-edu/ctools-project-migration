@@ -23,6 +23,7 @@ projectMigrationApp.run(function($rootScope) {
     };
   } else {
     $rootScope.urls = {
+      // TODO: store "ctools-project-migration" as configuration variable
       'projectsUrl': '/ctools-project-migration/projects.json',
       'migrationsUrl': '/ctools-project-migration/migrations',
       'migratedUrl': '/ctools-project-migration/migrated',
