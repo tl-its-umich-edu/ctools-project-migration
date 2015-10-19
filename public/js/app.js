@@ -23,10 +23,11 @@ projectMigrationApp.run(function($rootScope) {
     };
   } else {
     $rootScope.urls = {
-      'projectsUrl': '/projects.json',
-      'migrationsUrl': '/migrations',
-      'migratedUrl': '/migrated',
-      'projectUrl': '/projects/'
+      // TODO: store "ctools-project-migration" as configuration variable
+      'projectsUrl': '/ctools-project-migration/projects.json',
+      'migrationsUrl': '/ctools-project-migration/migrations',
+      'migratedUrl': '/ctools-project-migration/migrated',
+      'projectUrl': '/ctools-project-migration/projects/'
     };
   }
   $rootScope.addProjectSites = [];
