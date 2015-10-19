@@ -14,10 +14,25 @@ if [ ! -d "artifact" ]; then
     chmod -R 755 artifact
 fi
 echo "Generating zip file for build number: ${build_number}"
+
 ## get git hex number
 gitNum=`git log -n 1 --pretty="format:%h"`
 printf 'github version number is %s.' $gitNum > git_version.txt
-rm target/*
+
+## clean target folder
+rm -rf target
+
+## build CPM project
 mvn package
-mv target/ctools-project-migration*.war target/ctools-project-migration.war
-find . -maxdepth 1 -type f \( -name "*_version.txt" -o -name "target/ctools-project-migration.war" \) -exec tar -rf ./artifact/CPM_$build_number_$gitNum.tar {} \;
+
+## relocate the war file
+mv target/ctools-project-migration*.war ctools-project-migration.war
+
+## clean the target folder
+rm -rf target
+
+## construct new tar file
+find . -maxdepth 2 -type f \( -name "*_version.txt" -o -name "ctools-project-migration.war" \) -exec tar -rf ./artifact/CPM_$build_number_$gitNum.tar {} \;
+
+## remove war file
+rm ctools-project-migration.war
