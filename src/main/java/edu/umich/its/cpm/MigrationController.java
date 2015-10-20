@@ -8,6 +8,8 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.http.HttpServletRequest;
 
 import java.util.Map;
+import java.util.List;
+import java.util.ArrayList;
 import java.net.URI;
 import java.net.URISyntaxException;
 
@@ -25,6 +27,13 @@ import org.springframework.web.client.RestClientException;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
+
+import com.box.sdk.BoxAPIConnection;
+import com.box.sdk.BoxFolder;
+import com.box.sdk.BoxItem;
+import com.box.sdk.BoxUser;
+
+import com.google.gson.Gson;
 
 @RestController
 public class MigrationController {
@@ -141,9 +150,7 @@ public class MigrationController {
 					+ " with sessionId = "
 					+ sessionId);
 
-			// 2. become the user
-			// retrieve from the configuration file for now; Should get from the
-			// REMOTE_USER setting after CoSign integration
+			// 2. become the user based on REMOTE_USER setting after CoSign integration
 			restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/session/SESSION_ID.json"
@@ -244,6 +251,62 @@ public class MigrationController {
 					.append(e.getMessage());
 			log.error(buffer.toString());
 		}
+		return rv;
+	}
+	
+	/************* Box integration *****************/
+	/**
+	 * get json string og box folders
+	 * @return
+	 */
+	private String DEVELOPER_TOKEN = "";
+    private static final int MAX_DEPTH = 1;
+    
+	@RequestMapping("/box/folders")
+	public String getBoxFolders() {
+		String rv = "";
+		DEVELOPER_TOKEN = env.getProperty("box_api_token");
+		// TODO: get the DEVELOPER_TOKEN from configuratio for now, will do token auto-generation in the future
+		BoxAPIConnection api = new BoxAPIConnection(DEVELOPER_TOKEN);
+		BoxUser.Info userInfo = BoxUser.getCurrentUser(api).getInfo();
+		log.info("Box user log in success: user name = " + userInfo.getName() + " user login = " + userInfo.getLogin());
+		
+		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+		List<BoxFolder> folders = listFolder(rootFolder, 0);
+		
+		// create a new Gson instance
+		 Gson gson = new Gson();
+		 // convert your list to json
+		 rv = gson.toJson(folders);
+		
+		return rv;
+	}
+	
+	/**
+	 * recursively return list of BoxFolder object
+	 * @param folder
+	 * @param depth
+	 * @return
+	 */
+	private static List<BoxFolder> listFolder(BoxFolder folder, int depth) {
+		List<BoxFolder> rv = new ArrayList<BoxFolder>();
+		
+		for (BoxItem.Info itemInfo : folder) {
+			String indent = "";
+			for (int i = 0; i < depth; i++) {
+				indent += "    ";
+			}
+
+			log.info(indent + itemInfo.getName());
+			if (itemInfo instanceof BoxFolder.Info) {
+				BoxFolder childFolder = (BoxFolder) itemInfo.getResource();
+				rv.add(childFolder);
+				if (depth < MAX_DEPTH) {
+					listFolder(childFolder, depth + 1);
+				}
+			}
+		}
+		
 		return rv;
 	}
 }
