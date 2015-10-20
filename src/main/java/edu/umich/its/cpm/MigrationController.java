@@ -260,13 +260,16 @@ public class MigrationController {
 	 * @return
 	 */
 	private String DEVELOPER_TOKEN = "";
-    private static final int MAX_DEPTH = 1;
+	private static final int MAX_DEPTH = 1;
     
 	@RequestMapping("/box/folders")
 	public String getBoxFolders() {
+		
 		String rv = "";
-		DEVELOPER_TOKEN = env.getProperty("box_api_token");
+
 		// TODO: get the DEVELOPER_TOKEN from configuratio for now, will do token auto-generation in the future
+		DEVELOPER_TOKEN = env.getProperty("box_api_token");
+		
 		BoxAPIConnection api = new BoxAPIConnection(DEVELOPER_TOKEN);
 		BoxUser.Info userInfo = BoxUser.getCurrentUser(api).getInfo();
 		log.info("Box user log in success: user name = " + userInfo.getName() + " user login = " + userInfo.getLogin());
@@ -276,14 +279,14 @@ public class MigrationController {
 		
 		// create a new Gson instance
 		 Gson gson = new Gson();
-		 // convert your list to json
+		 // convert BoxFolder list to json
 		 rv = gson.toJson(folders);
 		
 		return rv;
 	}
 	
 	/**
-	 * recursively return list of BoxFolder object
+	 * get list of BoxFolder object recursively
 	 * @param folder
 	 * @param depth
 	 * @return
