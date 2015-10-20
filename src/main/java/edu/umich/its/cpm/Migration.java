@@ -12,6 +12,7 @@ import java.sql.Timestamp;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
+import javax.persistence.SequenceGenerator;
 import javax.persistence.Id;
 import javax.persistence.GenerationType;
 
@@ -21,7 +22,8 @@ import lombok.Setter;
 @Entity
 public class Migration {
 	@Id
-	@GeneratedValue(strategy = GenerationType.IDENTITY)
+    @SequenceGenerator(name="seq_id", sequenceName="seq_id", allocationSize=1)
+    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="seq_id")
 	@Column(name = "MIGRATION_ID", table = "MIGRATION")
 	@Getter
 	@Setter
@@ -52,15 +54,15 @@ public class Migration {
 	@Setter
 	private String migrated_by;
 
-	@Column(name = "START", columnDefinition = "TIMESTAMP NOT NULL", table = "MIGRATION")
+	@Column(name = "START_TIME", columnDefinition = "TIMESTAMP NOT NULL", table = "MIGRATION")
 	@Getter
 	@Setter
-	private Timestamp start;
+	private Timestamp start_time;
 
-	@Column(name = "END", columnDefinition = "TIMESTAMP", table = "MIGRATION")
+	@Column(name = "END_TIME", columnDefinition = "TIMESTAMP", table = "MIGRATION")
 	@Getter
 	@Setter
-	private Timestamp end;
+	private Timestamp end_time;
 
 	@Column(name = "DESTINATION_TYPE", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter
@@ -76,15 +78,15 @@ public class Migration {
 	}
 
 	public Migration(String site_id, String site_name, String tool_id,
-			String tool_name, String migrated_by, Timestamp start,
-			Timestamp end, String destination_type, String destination_url) {
+			String tool_name, String migrated_by, Timestamp start_time,
+			Timestamp end_time, String destination_type, String destination_url) {
 		this.site_id = site_id;
 		this.site_name = site_name;
 		this.tool_id = tool_id;
 		this.tool_name = tool_name;
 		this.migrated_by = migrated_by;
-		this.start = start;
-		this.end = end;
+		this.start_time = start_time;
+		this.end_time = end_time;
 		this.destination_type = destination_type;
 		this.destination_url = destination_url;
 	}
@@ -93,9 +95,9 @@ public class Migration {
 	public String toString() {
 		return String.format("Migration[migration_id=%d, " + "site_id='%s',"
 				+ "site_name='%s'," + "tool_id='%s'," + "tool_name='%s',"
-				+ "migrated_by='%s'," + "start='%s'," + "end='%s',"
+				+ "migrated_by='%s'," + "start_time='%s'," + "end_time='%s',"
 				+ "destination_type='%s'," + "destination_url='%s'" + "]",
 				migration_id, site_id, site_name, tool_id, tool_name,
-				migrated_by, start, end, destination_type, destination_url);
+				migrated_by, start_time, end_time, destination_type, destination_url);
 	}
 }
