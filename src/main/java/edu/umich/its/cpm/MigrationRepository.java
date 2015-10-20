@@ -16,7 +16,7 @@ public interface MigrationRepository extends CrudRepository<Migration, Integer> 
 	 *         given last name. If no persons is found, this method returns an
 	 *         empty list.
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end IS NOT NULL")
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL")
 	public List<Migration> findMigrated();
 
 	/**
