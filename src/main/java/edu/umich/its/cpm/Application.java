@@ -13,13 +13,14 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 import java.sql.Timestamp;
 
 @SpringBootApplication
-public class Application extends SpringBootServletInitializer{
+public class Application extends SpringBootServletInitializer {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(Application.class);
-	
+
 	@Override
-	protected SpringApplicationBuilder configure(SpringApplicationBuilder application) {
+	protected SpringApplicationBuilder configure(
+			SpringApplicationBuilder application) {
 		return application.sources(Application.class);
 	}
 

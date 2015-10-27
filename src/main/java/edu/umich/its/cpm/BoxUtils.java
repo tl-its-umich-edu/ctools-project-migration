@@ -49,24 +49,24 @@ public class BoxUtils {
 	private static final int MAX_DEPTH = 0;
 
 	private static final String CODE = "code";
-	
+
 	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
 			"yyyy-MM-dd-hh.mm.ss");
-	
+
 	private static final Logger log = LoggerFactory.getLogger(BoxUtils.class);
 
 	public static void authenticate(String boxAPIUrl, String boxClientId,
-			String boxClientRedirectUri, String remoteUserEmail, HttpServletResponse response) {
+			String boxClientRedirectUri, String remoteUserEmail,
+			HttpServletResponse response) {
 		// Box authorization
 		RestTemplate restTemplate = new RestTemplate();
-		
-		if (boxAPIUrl == null)
-		{
+
+		if (boxAPIUrl == null) {
 			// log error
 			log.error("No Box API url specified. ");
 			return;
 		}
-		
+
 		String requestUrl = boxAPIUrl + "/oauth2/authorize"
 				+ "?response_type=code" + "&client_id=" + boxClientId
 				+ "&redirect_uri=" + boxClientRedirectUri
@@ -106,10 +106,10 @@ public class BoxUtils {
 
 		return authCode;
 	}
-	
+
 	/**
-	 * recursively get all file and folder items inside the root folder
-	 * this is a depth-first list
+	 * recursively get all file and folder items inside the root folder this is
+	 * a depth-first list
 	 */
 	public static List<HashMap<String, String>> listBoxFolders(
 			List<HashMap<String, String>> folderMap, BoxAPIConnection api,
@@ -122,13 +122,14 @@ public class BoxUtils {
 
 				BoxFolder.Info folderInfo = (BoxFolder.Info) itemInfo;
 				BoxFolder xfolder = new BoxFolder(api, folderInfo.getID());
-				String currentFolderPath = folderPath + "/" + folderInfo.getName();
+				String currentFolderPath = folderPath + "/"
+						+ folderInfo.getName();
 				folderMap.add(getBoxItemProperties(xfolder.getInfo(),
 						currentFolderPath));
-				if (folderDepth < MAX_DEPTH)
-				{
+				if (folderDepth < MAX_DEPTH) {
 					// go one level deeper in folder structure
-					listBoxFolders(folderMap, api, xfolder, currentFolderPath, folderDepth+1);
+					listBoxFolders(folderMap, api, xfolder, currentFolderPath,
+							folderDepth + 1);
 				}
 			}
 		}
@@ -140,7 +141,8 @@ public class BoxUtils {
 	/**
 	 * get BoxItem properties
 	 */
-	private static HashMap<String, String> getBoxItemProperties(BoxItem.Info info, String path) {
+	private static HashMap<String, String> getBoxItemProperties(
+			BoxItem.Info info, String path) {
 		HashMap<String, String> properties = new HashMap<String, String>();
 		properties.put("ID", info.getID());
 		properties.put("name", info.getName());
@@ -154,8 +156,10 @@ public class BoxUtils {
 		}
 		properties.put("type", type);
 
-		properties.put("content_created_at", format_date(info.getContentCreatedAt()));
-		properties.put("content_modified_at", format_date(info.getContentModifiedAt()));
+		properties.put("content_created_at",
+				format_date(info.getContentCreatedAt()));
+		properties.put("content_modified_at",
+				format_date(info.getContentModifiedAt()));
 		properties.put("created_at", format_date(info.getCreatedAt()));
 		properties.put("created_by", get_box_user_name(info.getCreatedBy()));
 		properties.put("modified_by", get_box_user_name(info.getCreatedBy()));
@@ -164,7 +168,7 @@ public class BoxUtils {
 		properties.put("path", path);
 		return properties;
 	}
-	
+
 	/**
 	 * a function to format Date object
 	 */

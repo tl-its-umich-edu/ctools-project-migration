@@ -54,7 +54,7 @@ import com.google.gson.Gson;
 
 @RestController
 public class MigrationController {
-	
+
 	private static final String BOX_CLIENT_ID = "box_client_id";
 	private static final String BOX_CLIENT_SECRET = "box_client_secret";
 	private static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
@@ -69,11 +69,13 @@ public class MigrationController {
 
 	@Autowired
 	private Environment env;
-	
-	@Context  //injected response proxy supporting multiple threads
+
+	@Context
+	// injected response proxy supporting multiple threads
 	private HttpServletResponse response;
-	
-	@Context  //injected request proxy supporting multiple threads
+
+	@Context
+	// injected request proxy supporting multiple threads
 	private HttpServletRequest request;
 
 	/**
@@ -83,7 +85,8 @@ public class MigrationController {
 	 */
 	@GET
 	@RequestMapping("/projects")
-	public void getProjectSites(HttpServletResponse response) {
+	public void getProjectSites(HttpServletRequest request,
+			HttpServletResponse response) {
 		String rv = null;
 		String errorMessage = null;
 
@@ -103,12 +106,12 @@ public class MigrationController {
 				errorMessage = requestUrl + e.getMessage();
 				log.error(errorMessage);
 			}
-			
+
 			// JSON response
 			JSON_response(response, rv, errorMessage, requestUrl);
 		}
 	}
-	
+
 	/**
 	 * get page information
 	 * 
@@ -117,7 +120,8 @@ public class MigrationController {
 	 */
 	@GET
 	@RequestMapping("/projects/{site_id}")
-	public void getProjectSitePages(@PathVariable String site_id, HttpServletResponse response) {
+	public void getProjectSitePages(@PathVariable String site_id,
+			HttpServletRequest request, HttpServletResponse response) {
 		String rv = null;
 		String errorMessage = null;
 
@@ -134,10 +138,11 @@ public class MigrationController {
 			try {
 				rv = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
-				errorMessage = "Cannot find site by siteId: " + site_id + " " + e.getMessage();
+				errorMessage = "Cannot find site by siteId: " + site_id + " "
+						+ e.getMessage();
 				log.error(errorMessage);
 			}
-			
+
 			// JSON response
 			JSON_response(response, rv, errorMessage, requestUrl);
 		}
@@ -210,13 +215,13 @@ public class MigrationController {
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrations() {
-		try
-		{
-			return Response.status(Response.Status.OK).entity(repository.findAll()).build();
-		}
-		catch (Exception e)
-		{
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Cannot get migration records" + e.getMessage()).build();
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(repository.findAll()).build();
+		} catch (Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migration records" + e.getMessage())
+					.build();
 		}
 	}
 
@@ -234,10 +239,12 @@ public class MigrationController {
 		String rv = "";
 		if (o == null) {
 			// no such migration record
-			throw new MigrationNotFoundException("no matching record for /migrations/" + migration_id);
+			throw new MigrationNotFoundException(
+					"no matching record for /migrations/" + migration_id);
 		}
 		// find migration record with id
-		return Response.status(Response.Status.OK).entity((Migration) o).build();
+		return Response.status(Response.Status.OK).entity((Migration) o)
+				.build();
 	}
 
 	/**
@@ -261,84 +268,83 @@ public class MigrationController {
 	@POST
 	@RequestMapping(value = "/migration")
 	@Produces(MediaType.APPLICATION_JSON)
-	public void migration(HttpServletRequest request, HttpServletResponse response) {
+	public void migration(HttpServletRequest request,
+			HttpServletResponse response) {
 		Map<String, String[]> parameterMap = request.getParameterMap();
-		Migration m = new Migration(
-				parameterMap.get("site_id")[0],
+		Migration m = new Migration(parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], 
-				request.getRemoteUser(),
-				new java.sql.Timestamp(System.currentTimeMillis()), // start time is now
+				parameterMap.get("tool_name")[0], request.getRemoteUser(),
+				new java.sql.Timestamp(System.currentTimeMillis()), // start
+																	// time is
+																	// now
 				null, // no end time
 				parameterMap.get("destination_type")[0], null);
-		
+
 		Migration newMigration = null;
-		
+
 		StringBuffer insertMigrationDetails = new StringBuffer();
 		insertMigrationDetails.append("Save migration record site_id=")
-				.append(parameterMap.get("site_id")[0])
-				.append(" site_name=")
-				.append(parameterMap.get("site_name")[0])
-				.append(" tool_id=").append(parameterMap.get("tool_id")[0])
-				.append(" tool_name=")
+				.append(parameterMap.get("site_id")[0]).append(" site_name=")
+				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
+				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
 				.append(" migrated_by=").append(request.getRemoteUser())
 				.append(" destination_type=")
-				.append(parameterMap.get("destination_type")[0])
-				.append(" \n ");
+				.append(parameterMap.get("destination_type")[0]).append(" \n ");
 		try {
 			newMigration = repository.save(m);
 		} catch (Exception e) {
-			log.error("Exception " + insertMigrationDetails.toString() + e.getMessage());
+			log.error("Exception " + insertMigrationDetails.toString()
+					+ e.getMessage());
 		}
-		
-	    try {
-	    	if (newMigration != null)
-	    	{
-		    	// new Migration record created
-	    		// set HTTP code to "201 Created"
-			    response.setStatus(HttpServletResponse.SC_CREATED);
-				response.getWriter().println(new JSONObject().put("migration", newMigration).toString());
-	    	}
-	    	else
-	    	{
-	    		// no new Migration record created
-	    		response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.getWriter().println(new JSONObject().put("error", insertMigrationDetails.toString()).toString());
-	    	}
-	        response.flushBuffer();
-	        response.getWriter().close();
-	    }catch(Exception e){
-	    	Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).entity("Cannot insert migration record " + insertMigrationDetails.toString() + e.getMessage()).build();
-	    }
+
+		try {
+			if (newMigration != null) {
+				// new Migration record created
+				// set HTTP code to "201 Created"
+				response.setStatus(HttpServletResponse.SC_CREATED);
+				response.getWriter().println(
+						new JSONObject().put("migration", newMigration)
+								.toString());
+			} else {
+				// no new Migration record created
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				response.getWriter().println(
+						new JSONObject().put("error",
+								insertMigrationDetails.toString()).toString());
+			}
+			response.flushBuffer();
+			response.getWriter().close();
+		} catch (Exception e) {
+			Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
+					.entity("Cannot insert migration record "
+							+ insertMigrationDetails.toString()
+							+ e.getMessage()).build();
+		}
 	}
 
 	/**
 	 * generate output for JSON_ready input value
 	 */
-	private void JSON_response(HttpServletResponse response, String jsonValue, String errorMessage, String requestUrl)
-	{
-		try
-		{
+	private void JSON_response(HttpServletResponse response, String jsonValue,
+			String errorMessage, String requestUrl) {
+		try {
 			// output json
 			response.setContentType(MediaType.APPLICATION_JSON);
-			if (jsonValue == null)
-			{
+			if (jsonValue == null) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().write(errorMessage);
-			}
-			else
-			{
+			} else {
 				response.setStatus(HttpServletResponse.SC_OK);
 				response.getWriter().write(jsonValue);
 			}
-		    response.getWriter().close();
-		}catch (IOException e) {
+			response.getWriter().close();
+		} catch (IOException e) {
 			log.error(requestUrl + e.getMessage());
 		}
 	}
-	
+
 	/************* Box integration *****************/
 	/**
 	 * get json string og box folders
@@ -346,40 +352,43 @@ public class MigrationController {
 	 * @return
 	 */
 	@RequestMapping("/box/folders")
-	public void getBoxFolders(HttpServletRequest request, HttpServletResponse response) {
-		
+	public void getBoxFolders(HttpServletRequest request,
+			HttpServletResponse response) {
+
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
-		String boxClientRedirectUri = env.getProperty(BOX_CLIENT_REDIRECT_URL) + "/box/folders_authorized";
-		
+		String boxClientRedirectUri = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/box/folders_authorized";
+
 		// need to have all Box app configurations
-		if (boxClientId == null || boxClientSecret == null || boxClientRedirectUri == null)
-		{
+		if (boxClientId == null || boxClientSecret == null
+				|| boxClientRedirectUri == null) {
 			log.error("Missing box integration parameters");
 			return;
 		}
 		String remoteUserEmail = request.getRemoteUser();
-		
+
 		// go to authentication screen
 		String boxAPIUrl = env.getProperty("box_api_url");
-		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUri, remoteUserEmail, response);
+		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUri,
+				remoteUserEmail, response);
 	}
-	
+
 	@RequestMapping("/box/folders_authorized")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<HashMap<String, String>> getBoxFoldersAuthorized(HttpServletRequest request) {
+	public List<HashMap<String, String>> getBoxFoldersAuthorized(
+			HttpServletRequest request) {
 		String rv = "";
 		// get the authCode
 		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request);
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
-		
-		if (boxClientId == null || boxClientSecret == null || authCode == null)
-		{
-			log.error("Missing box integration parameters " );
+
+		if (boxClientId == null || boxClientSecret == null || authCode == null) {
+			log.error("Missing box integration parameters ");
 			return null;
 		}
-		
+
 		// make connection
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 				boxClientSecret, authCode);
@@ -391,8 +400,9 @@ public class MigrationController {
 		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
 
 		// get list of properties from all Box items contained
-		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(null, api, rootFolder, "", 0);
-		
+		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
+				null, api, rootFolder, "", 0);
+
 		return folderItems;
 	}
 }

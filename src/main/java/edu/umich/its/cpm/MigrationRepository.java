@@ -25,7 +25,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param migration_id
 	 * @return A migration with migration_id
 	 */
-	//@Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
+	// @Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
 	public Migration findOne(String migration_id);
 
 	/**
