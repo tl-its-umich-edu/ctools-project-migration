@@ -13,20 +13,10 @@ if [ ! -d "artifact" ]; then
     mkdir artifact
     chmod -R 755 artifact
 fi
-echo "Generating zip file for build number: ${build_number}"
-
-## get git hex number
-gitNum=`git log -n 1 --pretty="format:%h"`
-printf 'github version number is %s.' $gitNum > git_version.txt
+echo "For build number: ${build_number}"
 
 ## relocate the war file
-mv target/ctools-project-migration*.war ctools-project-migration.war
+mv target/ctools-project-migration*.war ctools-project-migration.${build_number}.war
 
 ## clean the target folder
 rm -rf target
-
-## construct new tar file
-find . -maxdepth 2 -type f \( -name "*_version.txt" -o -name "ctools-project-migration.war" \) -exec tar -rf ./artifact/CPM_$build_number_$gitNum.tar {} \;
-
-## remove war file
-rm ctools-project-migration.war

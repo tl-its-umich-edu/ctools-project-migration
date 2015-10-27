@@ -25,8 +25,7 @@ import lombok.Setter;
 @Entity
 public class Migration {
 
-	private static final Logger log = LoggerFactory
-			.getLogger(Migration.class);
+	private static final Logger log = LoggerFactory.getLogger(Migration.class);
 	@Id
 	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter
@@ -104,6 +103,7 @@ public class Migration {
 				+ "migrated_by='%s'," + "start_time='%s'," + "end_time='%s',"
 				+ "destination_type='%s'," + "destination_url='%s'" + "]",
 				migration_id, site_id, site_name, tool_id, tool_name,
-				migrated_by, start_time, end_time, destination_type, destination_url);
+				migrated_by, start_time, end_time, destination_type,
+				destination_url);
 	}
 }
