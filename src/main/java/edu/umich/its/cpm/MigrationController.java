@@ -6,6 +6,16 @@ import org.slf4j.LoggerFactory;
 import java.util.concurrent.atomic.AtomicLong;
 
 import javax.servlet.http.HttpServletRequest;
+import javax.servlet.http.HttpServletResponse;
+import javax.ws.rs.DELETE;
+import javax.ws.rs.GET;
+import javax.ws.rs.HEAD;
+import javax.ws.rs.POST;
+import javax.ws.rs.PUT;
+import javax.ws.rs.Produces;
+import javax.ws.rs.core.Context;
+import javax.ws.rs.core.MediaType;
+import javax.ws.rs.core.Response;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -15,6 +25,8 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.util.Date;
 import java.text.SimpleDateFormat;
+import java.io.PrintWriter;
+import java.io.IOException;
 
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -42,9 +54,10 @@ import com.google.gson.Gson;
 
 @RestController
 public class MigrationController {
-
-	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
-			"yyyy-MM-dd-hh.mm.ss");
+	
+	private static final String BOX_CLIENT_ID = "box_client_id";
+	private static final String BOX_CLIENT_SECRET = "box_client_secret";
+	private static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationController.class);
@@ -56,15 +69,23 @@ public class MigrationController {
 
 	@Autowired
 	private Environment env;
+	
+	@Context  //injected response proxy supporting multiple threads
+	private HttpServletResponse response;
+	
+	@Context  //injected request proxy supporting multiple threads
+	private HttpServletRequest request;
 
 	/**
 	 * get all CTools sites where user have site.upd permission
 	 * 
 	 * @return
 	 */
+	@GET
 	@RequestMapping("/projects")
-	public String getProjectSites(HttpServletRequest request) {
-		String rv = "";
+	public void getProjectSites(HttpServletResponse response) {
+		String rv = null;
+		String errorMessage = null;
 
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
@@ -76,26 +97,29 @@ public class MigrationController {
 			String requestUrl = env.getProperty("ctools.direct.url")
 					+ "site/withPerm/.json?permission=site.upd&_sessionId="
 					+ sessionId;
-			log.info(requestUrl);
 			try {
 				rv = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
-				log.error(requestUrl + e.getMessage());
+				errorMessage = requestUrl + e.getMessage();
+				log.error(errorMessage);
 			}
+			
+			// JSON response
+			JSON_response(response, rv, errorMessage, requestUrl);
 		}
-		return rv;
 	}
-
+	
 	/**
 	 * get page information
 	 * 
 	 * @param site_id
 	 * @return
 	 */
+	@GET
 	@RequestMapping("/projects/{site_id}")
-	public String getProjectSitePages(@PathVariable String site_id,
-			HttpServletRequest request) {
-		String rv = "";
+	public void getProjectSitePages(@PathVariable String site_id, HttpServletResponse response) {
+		String rv = null;
+		String errorMessage = null;
 
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
@@ -106,16 +130,17 @@ public class MigrationController {
 			// "https://server/direct/site/SITE_ID.json"
 			String requestUrl = env.getProperty("ctools.direct.url") + "site/"
 					+ site_id + "/pages.json?_sessionId=" + sessionId;
-			log.info(requestUrl);
 
 			try {
 				rv = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
-				log.error(requestUrl + e.getMessage());
-				rv = "Cannot find site by siteId: " + site_id;
+				errorMessage = "Cannot find site by siteId: " + site_id + " " + e.getMessage();
+				log.error(errorMessage);
 			}
+			
+			// JSON response
+			JSON_response(response, rv, errorMessage, requestUrl);
 		}
-		return rv;
 	}
 
 	/**
@@ -140,7 +165,6 @@ public class MigrationController {
 		ResponseEntity<String> response = restTemplate.postForEntity(
 				requestUrl, null, String.class);
 		HttpStatus status = response.getStatusCode();
-
 		if (!status.equals(HttpStatus.CREATED)) {
 			// return error if a new CTools session could not be created using
 			// username and password provided
@@ -182,9 +206,18 @@ public class MigrationController {
 	 * 
 	 * @return
 	 */
+	@GET
 	@RequestMapping("/migrations")
-	public String migrations() {
-		return JSONObject.valueToString(repository.findAll());
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response migrations() {
+		try
+		{
+			return Response.status(Response.Status.OK).entity(repository.findAll()).build();
+		}
+		catch (Exception e)
+		{
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity("Cannot get migration records" + e.getMessage()).build();
+		}
 	}
 
 	/**
@@ -193,16 +226,18 @@ public class MigrationController {
 	 * @param migration_id
 	 * @return
 	 */
+	@GET
 	@RequestMapping("/migrations/{migration_id}")
-	public String migrations(@PathVariable("migration_id") Integer migration_id) {
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response migrations(@PathVariable("migration_id") String migration_id) {
 		Object o = repository.findOne(migration_id);
-		if (o != null) {
-			// find migration record with id
-			return JSONObject.valueToString(o);
-		} else {
+		String rv = "";
+		if (o == null) {
 			// no such migration record
-			return "no matching record for /migrations/" + migration_id;
+			throw new MigrationNotFoundException("no matching record for /migrations/" + migration_id);
 		}
+		// find migration record with id
+		return Response.status(Response.Status.OK).entity((Migration) o).build();
 	}
 
 	/**
@@ -211,9 +246,11 @@ public class MigrationController {
 	 * 
 	 * @return
 	 */
+	@GET
 	@RequestMapping("/migrated")
-	public String migrated() {
-		return JSONObject.valueToString(repository.findMigrated());
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<Migration> migrated() {
+		return repository.findMigrated();
 	}
 
 	/**
@@ -221,57 +258,131 @@ public class MigrationController {
 	 * 
 	 * @param request
 	 */
-	@RequestMapping(value = "/migration", method = RequestMethod.POST)
-	public Migration migrated(HttpServletRequest request) {
+	@POST
+	@RequestMapping(value = "/migration")
+	@Produces(MediaType.APPLICATION_JSON)
+	public void migration(HttpServletRequest request, HttpServletResponse response) {
 		Map<String, String[]> parameterMap = request.getParameterMap();
-		Migration m = new Migration(parameterMap.get("site_id")[0],
+		Migration m = new Migration(
+				parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], request.getRemoteUser(),
+				parameterMap.get("tool_name")[0], 
+				request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start time is now
 				null, // no end time
 				parameterMap.get("destination_type")[0], null);
-		Migration rv = null;
+		
+		Migration newMigration = null;
+		
+		StringBuffer insertMigrationDetails = new StringBuffer();
+		insertMigrationDetails.append("Save migration record site_id=")
+				.append(parameterMap.get("site_id")[0])
+				.append(" site_name=")
+				.append(parameterMap.get("site_name")[0])
+				.append(" tool_id=").append(parameterMap.get("tool_id")[0])
+				.append(" tool_name=")
+				.append(parameterMap.get("tool_name")[0])
+				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" destination_type=")
+				.append(parameterMap.get("destination_type")[0])
+				.append(" \n ");
 		try {
-			rv = repository.save(m);
+			newMigration = repository.save(m);
 		} catch (Exception e) {
-			StringBuffer buffer = new StringBuffer();
-			buffer.append("Exception saving migration record site_id=")
-					.append(parameterMap.get("site_id")[0])
-					.append(" site_name=")
-					.append(parameterMap.get("site_name")[0])
-					.append(" tool_id=").append(parameterMap.get("tool_id")[0])
-					.append(" tool_name=")
-					.append(parameterMap.get("tool_name")[0])
-					.append(" migrated_by=").append(request.getRemoteUser())
-					.append(" destination_type=")
-					.append(parameterMap.get("destination_type")[0])
-					.append(" \n ").append(e.getMessage());
-			log.error(buffer.toString());
+			log.error("Exception " + insertMigrationDetails.toString() + e.getMessage());
 		}
-		return rv;
+		
+	    try {
+	    	if (newMigration != null)
+	    	{
+		    	// new Migration record created
+	    		// set HTTP code to "201 Created"
+			    response.setStatus(HttpServletResponse.SC_CREATED);
+				response.getWriter().println(new JSONObject().put("migration", newMigration).toString());
+	    	}
+	    	else
+	    	{
+	    		// no new Migration record created
+	    		response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				response.getWriter().println(new JSONObject().put("error", insertMigrationDetails.toString()).toString());
+	    	}
+	        response.flushBuffer();
+	        response.getWriter().close();
+	    }catch(Exception e){
+	    	Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR).entity("Cannot insert migration record " + insertMigrationDetails.toString() + e.getMessage()).build();
+	    }
 	}
 
+	/**
+	 * generate output for JSON_ready input value
+	 */
+	private void JSON_response(HttpServletResponse response, String jsonValue, String errorMessage, String requestUrl)
+	{
+		try
+		{
+			// output json
+			response.setContentType(MediaType.APPLICATION_JSON);
+			if (jsonValue == null)
+			{
+				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
+				response.getWriter().write(errorMessage);
+			}
+			else
+			{
+				response.setStatus(HttpServletResponse.SC_OK);
+				response.getWriter().write(jsonValue);
+			}
+		    response.getWriter().close();
+		}catch (IOException e) {
+			log.error(requestUrl + e.getMessage());
+		}
+	}
+	
 	/************* Box integration *****************/
 	/**
 	 * get json string og box folders
 	 * 
 	 * @return
 	 */
-	private String DEVELOPER_TOKEN = "";
-	private static final int MAX_DEPTH = 1;
-
 	@RequestMapping("/box/folders")
-	public String getBoxFolders() {
-
+	public void getBoxFolders(HttpServletRequest request, HttpServletResponse response) {
+		
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxClientRedirectUri = env.getProperty(BOX_CLIENT_REDIRECT_URL) + "/box/folders_authorized";
+		
+		// need to have all Box app configurations
+		if (boxClientId == null || boxClientSecret == null || boxClientRedirectUri == null)
+		{
+			log.error("Missing box integration parameters");
+			return;
+		}
+		String remoteUserEmail = request.getRemoteUser();
+		
+		// go to authentication screen
+		String boxAPIUrl = env.getProperty("box_api_url");
+		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUri, remoteUserEmail, response);
+	}
+	
+	@RequestMapping("/box/folders_authorized")
+	@Produces(MediaType.APPLICATION_JSON)
+	public List<HashMap<String, String>> getBoxFoldersAuthorized(HttpServletRequest request) {
 		String rv = "";
-
-		// TODO: get the DEVELOPER_TOKEN from configuratio for now, will do
-		// token auto-generation in the future
-		DEVELOPER_TOKEN = env.getProperty("box_api_token");
-
-		// log in
-		BoxAPIConnection api = new BoxAPIConnection(DEVELOPER_TOKEN);
+		// get the authCode
+		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request);
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		
+		if (boxClientId == null || boxClientSecret == null || authCode == null)
+		{
+			log.error("Missing box integration parameters " );
+			return null;
+		}
+		
+		// make connection
+		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
+				boxClientSecret, authCode);
 		BoxUser.Info userInfo = BoxUser.getCurrentUser(api).getInfo();
 		log.info("Box user log in success: user name = " + userInfo.getName()
 				+ " user login = " + userInfo.getLogin());
@@ -280,101 +391,8 @@ public class MigrationController {
 		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
 
 		// get list of properties from all Box items contained
-		List<HashMap<String, String>> folderItems = listFolderAndFile(null,
-				api, rootFolder, "");
-
-		// construct JSON
-		Gson gson = new Gson();
-		rv = gson.toJson(folderItems);
-
-		return rv;
-	}
-
-	/**
-	 * recursively get all file and folder items inside the root folder
-	 */
-	public List<HashMap<String, String>> listFolderAndFile(
-			List<HashMap<String, String>> rv, BoxAPIConnection api,
-			BoxFolder folder, String folderPath) {
-		if (rv == null)
-			rv = new ArrayList<HashMap<String, String>>();
-
-		for (BoxItem.Info itemInfo : folder) {
-
-			if (itemInfo instanceof BoxFile.Info) {
-
-				BoxFile.Info fileInfo = (BoxFile.Info) itemInfo;
-				BoxFile file = new BoxFile(api, fileInfo.getID());
-
-				// construct path
-				String filePath = folderPath + "/" + fileInfo.getName();
-
-				// get item properties
-				rv.add(getBoxItemProperties(file.getInfo(), filePath));
-
-			} else if (itemInfo instanceof BoxFolder.Info) {
-
-				BoxFolder.Info folderInfo = (BoxFolder.Info) itemInfo;
-				BoxFolder xfolder = new BoxFolder(api, folderInfo.getID());
-				String currentFolderPath = folderPath + "/"
-						+ folderInfo.getName();
-				rv.add(getBoxItemProperties(xfolder.getInfo(),
-						currentFolderPath));
-				listFolderAndFile(rv, api, xfolder, currentFolderPath);
-			}
-		}
-
-		return rv;
-
-	}
-
-	/**
-	 * get BoxItem properties
-	 */
-	private HashMap<String, String> getBoxItemProperties(BoxItem.Info info,
-			String path) {
-		HashMap<String, String> rv = new HashMap<String, String>();
-		rv.put("name", info.getName());
-		rv.put("size", String.valueOf(info.getSize()));
-
-		// type defaults to folder
-		String type = "folder";
-		if (info instanceof BoxFile.Info) {
-			rv.put("sh1", ((BoxFile.Info) info).getSha1());
-			type = "file";
-		}
-		rv.put("type", type);
-
-		rv.put("content_created_at", format_date(info.getContentCreatedAt()));
-		rv.put("content_modified_at", format_date(info.getContentModifiedAt()));
-		rv.put("created_at", format_date(info.getCreatedAt()));
-		rv.put("created_by", get_box_user_name(info.getCreatedBy()));
-		rv.put("modified_by", get_box_user_name(info.getCreatedBy()));
-		rv.put("owned_by", get_box_user_name(info.getOwnedBy()));
-		rv.put("description", info.getDescription());
-		rv.put("path", path);
-		return rv;
-	}
-
-	/**
-	 * a function to format Date object
-	 */
-	private String format_date(Date date) {
-		String rv = "";
-		if (date != null) {
-			rv = date_formatter.format(date);
-		}
-		return rv;
-	}
-
-	/**
-	 * return the name of BoxUser
-	 */
-	private String get_box_user_name(BoxUser.Info uInfo) {
-		String rv = "";
-		if (uInfo != null) {
-			rv = uInfo.getName();
-		}
-		return rv;
+		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(null, api, rootFolder, "", 0);
+		
+		return folderItems;
 	}
 }
