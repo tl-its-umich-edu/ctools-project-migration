@@ -1,5 +1,8 @@
 package edu.umich.its.cpm;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
 import javax.persistence.GenerationType;
@@ -7,7 +10,7 @@ import javax.persistence.Id;
 
 import java.sql.Timestamp;
 
-import java.sql.Timestamp;
+import java.util.UUID;
 
 import javax.persistence.Column;
 import javax.persistence.Entity;
@@ -21,13 +24,14 @@ import lombok.Setter;
 
 @Entity
 public class Migration {
+
+	private static final Logger log = LoggerFactory
+			.getLogger(Migration.class);
 	@Id
-    @SequenceGenerator(name="seq_id", sequenceName="seq_id", allocationSize=1)
-    @GeneratedValue(strategy=GenerationType.SEQUENCE, generator="seq_id")
-	@Column(name = "MIGRATION_ID", table = "MIGRATION")
+	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter
 	@Setter
-	private Integer migration_id;
+	private String migration_id;
 
 	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter
@@ -80,6 +84,8 @@ public class Migration {
 	public Migration(String site_id, String site_name, String tool_id,
 			String tool_name, String migrated_by, Timestamp start_time,
 			Timestamp end_time, String destination_type, String destination_url) {
+		this.migration_id = UUID.randomUUID().toString();
+		log.info(this.migration_id);
 		this.site_id = site_id;
 		this.site_name = site_name;
 		this.tool_id = tool_id;
