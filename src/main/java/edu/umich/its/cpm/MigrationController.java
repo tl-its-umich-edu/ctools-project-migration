@@ -16,6 +16,7 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
+import javax.inject.Inject;
 
 import java.util.Map;
 import java.util.HashMap;
@@ -39,6 +40,10 @@ import org.springframework.http.HttpStatus;
 import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.context.annotation.Bean;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.context.support.PropertySourcesPlaceholderConfigurer;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -53,6 +58,8 @@ import com.box.sdk.BoxUser;
 import com.google.gson.Gson;
 
 @RestController
+@Configuration
+@PropertySource(value="file:${catalina.base}/home/*.properties", ignoreResourceNotFound = true)
 public class MigrationController {
 
 	private static final String BOX_CLIENT_ID = "box_client_id";
@@ -67,7 +74,7 @@ public class MigrationController {
 	@Autowired
 	MigrationRepository repository;
 
-	@Autowired
+	@Inject
 	private Environment env;
 
 	@Context
@@ -77,6 +84,11 @@ public class MigrationController {
 	@Context
 	// injected request proxy supporting multiple threads
 	private HttpServletRequest request;
+	
+	@Bean
+	public static PropertySourcesPlaceholderConfigurer propertySourcesPlaceholderConfigurer() {
+		return new PropertySourcesPlaceholderConfigurer();
+	}
 
 	/**
 	 * get all CTools sites where user have site.upd permission
