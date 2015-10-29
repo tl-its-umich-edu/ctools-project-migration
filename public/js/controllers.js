@@ -81,6 +81,24 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $log.info(' - - - - GET /projects/' + projectId);
     });
   };
+  
+  $scope.getBoxFolders = function(projectId) {
+    // get the box folder info if it has not been gotten yet
+    if (!$scope.boxFolders) {
+      var boxUrl = $rootScope.urls.boxUrl;    
+      Projects.getBoxFolders(boxUrl).then(function(result) {
+        $scope.boxFolders = result.data;
+        $log.info(moment().format('h:mm:ss') + ' - box folder info requested')
+        $log.info(' - - - - GET /box/folders');
+      });
+    }  
+  };
+
+  $scope.boxFolderSelect = function(folder) {
+    $scope.selectBoxFolder = {'name':folder.name,'id':folder.ID};
+    $log.info($scope.selectBoxFolder);
+  }  
+
 
   $scope.checkIfSelectionExists = function(projectId) {
     var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
