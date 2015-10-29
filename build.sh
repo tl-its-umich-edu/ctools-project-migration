@@ -21,11 +21,4 @@ fi
 echo "For build number: ${build_number}"
 
 ## relocate the war file
-<<<<<<< HEAD
-mv target/ctools-project-migration*.war artifact/ctools-project-migration.war
-=======
-mv target/ctools-project-migration*.war ctools-project-migration.${build_number}.war
-
-## clean the target folder
-rm -rf target
->>>>>>> upstream/master
+mv target/ctools-project-migration*.war artifact/ctools-project-migration.${build_number}.war
