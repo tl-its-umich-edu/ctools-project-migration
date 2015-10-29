@@ -6,6 +6,11 @@ echo "shell env variable BUILD_NUMBER is ${BUILD_NUMBER}"
 build_number=${BUILD_NUMBER:=1}
 
 ## check the artifact folder, whether it exists or not
+## remove the artificat folder first
+if [ -d "artifact" ]; then
+    rm -rf artifact
+fi
+## add the artifact folder back
 if [ ! -d "artifact" ]; then
     ## no artifact folder
     ## create such folder first
@@ -20,13 +25,4 @@ gitNum=`git log -n 1 --pretty="format:%h"`
 printf 'github version number is %s.' $gitNum > git_version.txt
 
 ## relocate the war file
-mv target/ctools-project-migration*.war ctools-project-migration.war
-
-## clean the target folder
-rm -rf target
-
-## construct new tar file
-find . -maxdepth 2 -type f \( -name "*_version.txt" -o -name "ctools-project-migration.war" \) -exec tar -rf ./artifact/CPM_$build_number_$gitNum.tar {} \;
-
-## remove war file
-rm ctools-project-migration.war
+mv target/ctools-project-migration*.war artifact/ctools-project-migration.war
