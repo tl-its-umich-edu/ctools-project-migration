@@ -18,11 +18,14 @@ if [ ! -d "artifact" ]; then
     mkdir artifact
     chmod -R 755 artifact
 fi
-echo "Generating zip file for build number: ${build_number}"
-
-## get git hex number
-gitNum=`git log -n 1 --pretty="format:%h"`
-printf 'github version number is %s.' $gitNum > git_version.txt
+echo "For build number: ${build_number}"
 
 ## relocate the war file
+<<<<<<< HEAD
 mv target/ctools-project-migration*.war artifact/ctools-project-migration.war
+=======
+mv target/ctools-project-migration*.war ctools-project-migration.${build_number}.war
+
+## clean the target folder
+rm -rf target
+>>>>>>> upstream/master

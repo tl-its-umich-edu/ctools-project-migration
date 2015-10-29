@@ -17,6 +17,21 @@
 	<packaging>war</packaging>
     
 	<dependencies>
+		<dependency>
+			<groupId>javax.inject</groupId>
+			<artifactId>javax.inject</artifactId>
+			<version>1</version>
+		</dependency>
+		<dependency>
+			<groupId>javax.ws.rs</groupId>
+			<artifactId>jsr311-api</artifactId>
+			<version>1.1.1</version>
+		</dependency>
+		<dependency>
+			<groupId>com.sun.jersey</groupId>
+			<artifactId>jersey-client</artifactId>
+			<version>1.19</version>
+		</dependency>
 		<!-- rest call -->
 		<dependency>
 			<groupId>org.springframework.boot</groupId>
@@ -52,14 +67,11 @@
 			<groupId>org.springframework.boot</groupId>
 			<artifactId>spring-boot-starter-data-jpa</artifactId>
 		</dependency>
-        
-<!--
 		<dependency>
 			<groupId>mysql</groupId>
 			<artifactId>mysql-connector-java</artifactId>
 			<version>5.1.36</version>
 		</dependency>
--->
 		<dependency>
 			<groupId>org.projectlombok</groupId>
 			<artifactId>lombok</artifactId>
@@ -70,6 +82,17 @@
 			<groupId>org.json</groupId>
 			<artifactId>json</artifactId>
 			<version>20150729</version>
+		</dependency>
+		<dependency>
+			<groupId>com.google.code.gson</groupId>
+			<artifactId>gson</artifactId>
+			<version>2.4</version>
+		</dependency>
+		<!-- Box integration -->
+		<dependency>
+    		<groupId>com.box</groupId>
+    		<artifactId>box-java-sdk</artifactId>
+    		<version>1.1.0</version>
 		</dependency>
 	</dependencies>
     

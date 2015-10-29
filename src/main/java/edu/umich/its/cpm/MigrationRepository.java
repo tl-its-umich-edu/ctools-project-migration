@@ -5,7 +5,7 @@ import java.util.List;
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.jpa.repository.Query;
 
-public interface MigrationRepository extends CrudRepository<Migration, Integer> {
+public interface MigrationRepository extends CrudRepository<Migration, String> {
 	List<Migration> findAll();
 
 	/**
@@ -25,7 +25,8 @@ public interface MigrationRepository extends CrudRepository<Migration, Integer> 
 	 * @param migration_id
 	 * @return A migration with migration_id
 	 */
-	public Migration findOne(Integer migration_id);
+	// @Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
+	public Migration findOne(String migration_id);
 
 	/**
 	 * Finds list of migrations with site id
