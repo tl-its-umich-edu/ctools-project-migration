@@ -316,9 +316,8 @@ public class MigrationController {
 				// new Migration record created
 				// set HTTP code to "201 Created"
 				response.setStatus(HttpServletResponse.SC_CREATED);
-				response.getWriter().println(
-						new JSONObject().put("migration", newMigration)
-								.toString());
+				response.getWriter().write((new JSONObject(newMigration))
+						.toString());
 			} else {
 				// no new Migration record created
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
