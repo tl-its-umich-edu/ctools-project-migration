@@ -85,7 +85,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.getBoxFolders = function(projectId) {
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
-      var boxUrl = $rootScope.urls.boxUrl;    
+      var boxUrl = 'data/box.json';
+      //var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
         $scope.boxFolders = result.data;
         $log.info(moment().format('h:mm:ss') + ' - box folder info requested')
