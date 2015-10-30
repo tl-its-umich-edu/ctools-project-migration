@@ -4,10 +4,10 @@
 
 <div ng-show="migratingProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratingProject in migratingProjects | orderBy:'site_name'">
+  	<li class="list-group-item" ng-repeat="migratingProject in migratingProjects | orderBy:site_id">
   		<!--//this is not very good, but leaves the model untouched for polling needs
   		and presents a categorized view -->
-  		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratingProject.site_name !== migratingProjects[$index - 1].site_name"><strong>{{migratingProject.site_name}}</strong></div>
+  		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratingProject.site_id !== migratingProjects[$index - 1].site_id"><strong>{{migratingProject.site_name}}</strong></div>
   		<div class="row">
 	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
 	    			{{migratingProject.tool_name}}
@@ -21,7 +21,7 @@
 		  </div>
 		  <div class="row">
 	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
-	    			<small>Started: {{migratingProject.start}}</small>
+	    			<small>Started: {{migratingProject.start_time | date:'MM/dd @ h:mma'}}</small>
 		  	</div>
 		  	<div class="col-md-7 col-lg-7 col-sm-7 col-xs-7">
 	    			<small>Destination: {{migratingProject.destination_type}}</small>
