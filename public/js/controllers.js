@@ -89,7 +89,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       //var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
         $scope.boxFolders = result.data;
-        $log.info(moment().format('h:mm:ss') + ' - box folder info requested')
+        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested')
         $log.info(' - - - - GET /box/folders');
       });
     }  
@@ -97,7 +97,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
   $scope.boxFolderSelect = function(folder) {
     $scope.selectBoxFolder = {'name':folder.name,'id':folder.ID};
-    $log.info($scope.selectBoxFolder);
+    $log.info('BOX Folder "' + $scope.selectBoxFolder.name + '" (ID: ' + $scope.selectBoxFolder.id + ') selected');
   }  
 
 
