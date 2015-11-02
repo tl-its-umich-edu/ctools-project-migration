@@ -1,39 +1,16 @@
-
-<div ng-if="!sourceProjects.length && !loadingProjects">
+<div ng-if="!sourceProjects.length">
 	There are no exports in progress at this time.
 </div>
+
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li ng-repeat="project in sourceProjects | orderBy:'site_name'" 
-		ng-class="project.tool_id !== '' ? 'list-group-item toolRow' : 'list-group-item projectRow'">
+  	<li class="list-group-item" ng-repeat="project in sourceProjects | orderBy:'site_name'">
   		<!--// using same contorsions to match the data model of migrations and migrated -->
-  		<div class="row" ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''">
-  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-  				<strong id="{{project.site_id}}">{{project.site_name}}</strong>
-  			</div>
-  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools">
-		  			Get tools
-					</a>
-				</div>
+  		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="project.entityTitle !== sourceProjects[$index - 1].site_name"><strong>{{project.entityTitle}}</strong>
+  			<a ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
+	  			Get tools
+				</a>
 			</div>
-			<div class="row" ng-hide="project.tool_id === 'notools' || project.tool_id === '' ">
-			  <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-					<label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
-				</div>
-				<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
-					<input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}">
-				</div>
-				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-				</div>
-			</div>
-			<div class="row" ng-show="project.tool_id === 'notools'">
-			  <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-			  	{{project.tool_name}}
-				</div>
-			</div>
-
-
 		</li>
 	</ul>
 </div>

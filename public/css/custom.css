@@ -4,3 +4,9 @@
     height: 20px;
     width: 20px;	
 }
+.projectRow {
+	background:#eee;
+}
+.toolRow {
+	background:#fff;
+}
