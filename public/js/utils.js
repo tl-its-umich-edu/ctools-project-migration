@@ -58,15 +58,16 @@ var transformProjects = function (data){
 
 var transformProject = function (data){
   var toolColl = [];
+    var siteId = data.data[0].tools[0].siteId;
+    var siteName = $('#' + siteId).text();
+
 
   $.each(data.data, function(i, item){
-    var siteId = item.siteId;
-
-    var siteName = $('#' + siteId).text();
     // need to make this tool filtering more visible & maintainable
     // maybe put it in app.js
+    var newObj = {};
+    
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
-      var newObj = {};
       newObj.migration_id= '',
       newObj.site_id= siteId,
       newObj.site_name= siteName,
@@ -79,7 +80,24 @@ var transformProject = function (data){
       newObj.destination_url= ''
       toolColl.push(newObj);
     }
+
   });
+
+  if (!toolColl.length){
+    var newObj = {};
+    newObj.migration_id= '',
+    newObj.site_id= siteId,
+    newObj.site_name= siteName,
+    newObj.tool_name= 'No exportable tools found.',
+    newObj.tool_id= 'notools',
+    newObj.migrated_by= '',
+    newObj.start_time= '',
+    newObj.end_time='',
+    newObj.destination_type= '',
+    newObj.destination_url= ''
+    toolColl.push(newObj);
+  }
+  console.log(JSON.stringify(toolColl))
   data.data = toolColl;
   return data;
 }
