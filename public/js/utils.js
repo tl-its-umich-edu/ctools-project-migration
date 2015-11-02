@@ -33,3 +33,53 @@ var categorizeBySite = function (data){
 	data.data = siteCollTools;
 	return data;
 };
+
+
+var transformProjects = function (data){
+  var projectsColl = [];
+
+  $.each(data.data.site_collection, function(i, item){
+    var newObj = {};
+      newObj.migration_id= '',
+      newObj.site_id= item.entityId,
+      newObj.site_name= item.entityTitle,
+      newObj.tool_name= '',
+      newObj.tool_id= '',
+      newObj.migrated_by= '',
+      newObj.start_time= '',
+      newObj.end_time='',
+      newObj.destination_type= '',
+      newObj.destination_url= ''
+    projectsColl.push(newObj);
+  });
+  data.data = projectsColl;
+  return data;
+}
+
+var transformProject = function (data){
+  var toolColl = [];
+
+  $.each(data.data, function(i, item){
+    var siteId = item.siteId;
+
+    var siteName = $('#' + siteId).text();
+    // need to make this tool filtering more visible & maintainable
+    // maybe put it in app.js
+    if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
+      var newObj = {};
+      newObj.migration_id= '',
+      newObj.site_id= siteId,
+      newObj.site_name= siteName,
+      newObj.tool_name= 'Resources',
+      newObj.tool_id= item.tools[0].id,
+      newObj.migrated_by= '',
+      newObj.start_time= '',
+      newObj.end_time='',
+      newObj.destination_type= '',
+      newObj.destination_url= ''
+      toolColl.push(newObj);
+    }
+  });
+  data.data = toolColl;
+  return data;
+}

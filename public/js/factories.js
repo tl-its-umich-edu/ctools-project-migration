@@ -9,8 +9,13 @@ projectMigrationApp.factory('Projects', function($http) {
         cache: false
       }).then(
         function success(result) {
-          //forward the data - let the controller deal with it
-          return result;
+          // filter out everything except project sites
+          var sourceProjects = _.where(result.data.site_collection, {
+            type: 'project'
+          });
+          result.data.site_collection = sourceProjects
+          // use a transform to make project data mirror data in migrations and migrated
+          return transformProjects(result);
         },
         function error(result) {
           errorDisplay(url, result.status, 'Unable to get projects');
@@ -25,7 +30,7 @@ projectMigrationApp.factory('Projects', function($http) {
       }).then(
         function success(result) {
           //forward the data - let the controller deal with it
-          return result;
+          return transformProject(result);
         },
         function error(result) {
           errorDisplay(url, result.status, 'Unable to get projects');
