@@ -68,7 +68,8 @@ projectMigrationApp.factory('Migrations', function($http) {
       }).then(
         function success(result) {
           //forward the data - let the controller deal with it
-          return categorizeBySite(result);
+          //console.log()
+          return result;
         },
         function error(result) {
           errorDisplay(url, result.status, 'Unable to get projects');
@@ -89,7 +90,7 @@ projectMigrationApp.factory('Migrated', function($http) {
       }).then(
         function success(result) {
           //forward the data - let the controller deal with it
-          return categorizeBySite(result);
+          return result;
         },
         function error(result) {
           errorDisplay(url, result.status, 'Unable to get projects');
