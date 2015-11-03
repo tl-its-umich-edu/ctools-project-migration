@@ -8,13 +8,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
   
+  $scope.loadingProjects = true;
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
-  
+  $scope.loadingProjects = false;
   Projects.getProjects(projectsUrl).then(function(result) {
-    $scope.sourceProjects = _.where(result.data.site_collection, {
-      type: 'project'
-    });
+    $scope.sourceProjects = result.data;
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
   });
@@ -70,9 +69,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
     Projects.getProject(projectUrl).then(function(result) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-        entityId: projectId
+        site_id: projectId
       }));
-      $scope.sourceProjects[targetProjPos].tools = result.data;
+      //add the tools after the project object
+      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
 
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
