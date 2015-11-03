@@ -28,12 +28,29 @@ projectMigrationApp.factory('Projects', function($http) {
           return result;
         },
         function error(result) {
-          errorDisplay(url, result.status, 'Unable to get projects');
+          errorDisplay(url, result.status, 'Unable to get project');
+          result.errors.failure = true;
+          return result;
+        }
+      );
+    },
+    getBoxFolders: function(url) {
+      return $http.get(url, {
+        cache: false
+      }).then(
+        function success(result) {
+          //forward the data - let the controller deal with it
+          return result;
+        },
+        function error(result) {
+          errorDisplay(url, result.status, 'Unable to get box folder info');
           result.errors.failure = true;
           return result;
         }
       );
     }
+
+
   };
 });
 
