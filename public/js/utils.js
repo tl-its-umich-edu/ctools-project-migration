@@ -75,6 +75,7 @@ var transformProject = function (data){
       newObj.site_id= siteId,
       newObj.site_name= siteName,
       newObj.tool_name= 'Resources',
+      newObj.tool_type= item.tools[0].toolId,
       newObj.tool_id= item.tools[0].id,
       newObj.migrated_by= '',
       newObj.start_time= '',
@@ -100,7 +101,6 @@ var transformProject = function (data){
     newObj.destination_url= ''
     toolColl.push(newObj);
   }
-  console.log(JSON.stringify(toolColl))
   data.data = toolColl;
   return data;
 }
