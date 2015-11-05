@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, angular, _, moment */
+/* global projectMigrationApp, angular, _, moment, $ */
 
 /* TERMS CONTROLLER */
 projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log) {
@@ -8,13 +8,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
   
+  $scope.loadingProjects = true;
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
-  
+  $scope.loadingProjects = false;
   Projects.getProjects(projectsUrl).then(function(result) {
-    $scope.sourceProjects = _.where(result.data.site_collection, {
-      type: 'project'
-    });
+    $scope.sourceProjects = result.data;
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
   });
@@ -36,7 +35,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
           Migrated.getMigrated(migratedUrl).then(function(result) {
-            $scope.migratedProjects = _.sortBy(result.data, 'site_id');;
+            $scope.migratedProjects = _.sortBy(result.data, 'site_id');
             $rootScope.status.migrated = moment().format('h:mm:ss');
             $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
             $log.info(' - - - - GET /migrated');
@@ -52,13 +51,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         $rootScope.status.migrations = moment().format('h:mm:ss');
       });      
     }
-});
+  });
 
   // GET the migrations that have completed
   var migratedUrl = $rootScope.urls.migratedUrl;
 
   Migrated.getMigrated(migratedUrl).then(function(result) {
-    $scope.migratedProjects = _.sortBy(result.data, 'site_id');; 
+    $scope.migratedProjects = _.sortBy(result.data, 'site_id');
     $rootScope.status.migrated = moment().format('h:mm:ss');
     $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
     $log.info(' - - - - GET /migrated');
@@ -70,9 +69,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
     Projects.getProject(projectUrl).then(function(result) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-        entityId: projectId
+        site_id: projectId
       }));
-      $scope.sourceProjects[targetProjPos].tools = result.data;
+      //add the tools after the project object
+      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
 
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
@@ -82,14 +82,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     });
   };
   
-  $scope.getBoxFolders = function(projectId) {
+  $scope.getBoxFolders = function() {
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
       var boxUrl = 'data/box.json';
       //var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
         $scope.boxFolders = result.data;
-        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested')
+        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
         $log.info(' - - - - GET /box/folders');
       });
     }  
@@ -98,86 +98,97 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxFolderSelect = function(folder) {
     $scope.selectBoxFolder = {'name':folder.name,'id':folder.ID};
     $log.info('BOX Folder "' + $scope.selectBoxFolder.name + '" (ID: ' + $scope.selectBoxFolder.id + ') selected');
-  }  
-
+  };
 
   $scope.checkIfSelectionExists = function(projectId) {
-    var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-      entityId: projectId
-    }));
-    $scope.sourceProjects[targetProjPos].selectionExists = false;
-    _.each($scope.sourceProjects[targetProjPos].tools, function(tool) {
-      if (tool.selected) {
-        // state management
-        $scope.sourceProjects[targetProjPos].stateSelectionExists = true;
-      }
+    var allTargetProjs = _.where($scope.sourceProjects, {
+      site_id: projectId
     });
+    var targetSelections = _.where($scope.sourceProjects, {
+      site_id: projectId,
+      selected:true
+    });
+
+    if(targetSelections.length) {
+      _.first(allTargetProjs).stateSelectionExists = true;
+    }
+    else {
+      _.first(allTargetProjs).stateSelectionExists = false;
+      _.first(allTargetProjs).stateExportConfirm = false;
+    }
   };
 
   $scope.startMigrationConfirm = function(projectId) {
-    var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-      entityId: projectId
-    }));
+    
+    var allTargetProjs = _.where($scope.sourceProjects, {
+      site_id: projectId
+    });
+    
+    var targetSelections = _.where($scope.sourceProjects, {
+      site_id: projectId,
+      selected:true
+    });
+
     // pop confirmation panel
-    // state management
-    $scope.sourceProjects[targetProjPos].stateExportConfirm = true;
+    if(targetSelections.length) {
+      _.first(allTargetProjs).stateExportConfirm = true;
+    }
+    else {
+      _.first(allTargetProjs).stateExportConfirm = false;
+    }
   };
 
   $scope.cancelStartMigrationConfirm = function(projectId) {
-    // close confirmation panel and reset things
-    var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-      entityId: projectId
-    }));
-    // reset all checkboxes
-    _.each($scope.sourceProjects[targetProjPos].tools, function(tool) {
-      tool.selected = false;
+    var allTargetProjs = _.where($scope.sourceProjects, {
+      site_id: projectId
     });
+    
+    var targetSelections = _.where($scope.sourceProjects, {
+      site_id: projectId,
+      selected:true
+    });
+
     // state management
-    $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
-    $scope.sourceProjects[targetProjPos].stateSelectionExists = false;
+    _.first(allTargetProjs).stateExportConfirm = false;
+    _.first(allTargetProjs).stateSelectionExists = false;
+
+    // reset all checkboxes
+    _.each(targetSelections, function(tool) {
+      tool.selected =  false;
+    });
   };
 
-  $scope.startMigration = function(siteId, siteName, toolId, toolName, destinationType) {
+  $scope.startMigration = function(projectId, siteName) {
+    var targetSelections = _.where($scope.sourceProjects, {
+      site_id: projectId,
+      selected:true
+    });
 
-    
-	// Get the base post url
-	var migrationUrl = $rootScope.urls.migrationUrl;
-	// attach variables to it
-	migrationUrl = migrationUrl + "?site_id=" + siteId + "&site_name=" + siteName + "&tool_id=" + toolId + "&tool_name=" + toolName + "&destination_type=" + destinationType;
-	$log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
-	Migration.postMigration(migrationUrl).then(function(result) {
+    $.each(targetSelections, function( key, value ) {
+      // Get the base post url
+      var migrationUrl = $rootScope.urls.migrationUrl;
+      // attach variables to it
+      migrationUrl = migrationUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box';
+      $log.info(migrationUrl);
+
+
+      $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
+      Migration.postMigration(migrationUrl).then(function(result) {
         $log.info(' - - - - POST ' + migrationUrl);
-        $log.info('result ' + result.data)
         $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-        $log.info(' - - - - stop all (if any) /migrations polls');
-        PollingService.stopPolling('migrationsAfterPageLoad');
-        PollingService.stopPolling('migrationsOnPageLoad');
       });
+    });
 
-    // TODO: need factory
-    // 2. adjust UI for this this project
-    // state management
-	var migrationsUrl = $rootScope.urls.migrationsUrl;
-	var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-		entityId: siteId
-	}));
-    $scope.sourceProjects[targetProjPos].stateMigrating = {
-      status: 'Migration in progress',
-      dateStarted: moment().format('MM/D/YY, h:mm:ss a')
-    };
+    $log.info(' - - - - stop all (if any) /migrations polls');
+    PollingService.stopPolling('migrationsAfterPageLoad');
+    PollingService.stopPolling('migrationsOnPageLoad');
 
-    // 3. POST above will return a migration ID - store this so that when it the
-	// related projectId dissapears from the
-      // current migrations list the UI for the projects and the current
-		// migrations lists can be updated
-    // 4. poll /migrations - this would be in a timer
-    
     PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
       if (result.data.length === 0) {
         $log.warn('Nothing being migrated, polling /migrations one last time, reloading /migrated and then stopping polling');
         PollingService.stopPolling('migrationsAfterPageLoad');
       }
-      $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after request for: ' + siteId);
+      $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after  migration request');
       $log.info(' - - - - GET /migrations/');
       $rootScope.status.migrations = moment().format('h:mm:ss');
 
@@ -198,5 +209,4 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.showDetails = function(index){
     $scope.details = index;
   };
-
 }]);

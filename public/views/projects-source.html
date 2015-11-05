@@ -1,3 +1,79 @@
+
+<div ng-if="!sourceProjects.length && !loadingProjects">
+	There are no exports in progress at this time.
+</div>
+<div ng-show="sourceProjects.length">
+	<ul class="list-group" style="margin-bottom:0">
+  	<li ng-repeat="project in sourceProjects | orderBy:'site_name'" 
+		ng-class="project.tool_id !== '' ? 'list-group-item toolRow' : 'list-group-item projectRow'">
+  		<!--// using same contorsions to match the data model of migrations and migrated -->
+  		<div ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''">
+  			<div class="row">
+	  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+	  				<strong id="{{project.site_id}}">{{project.site_name}}</strong>
+	  			</div>
+	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools">
+			  			Get tools
+						</a>
+						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && selectBoxFolder && !project.stateExportConfirm" ng-click="startMigrationConfirm(project.site_id)">Export</button>
+					</div>
+				</div>
+				<div class="row" ng-show="project.stateExportConfirm">
+		    	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+  					<small>Migration Process of selected tools is about to start. Are you sure?</small>
+	  			</div>
+  				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+  					<div class="pull-right">
+  					<br>
+
+<!--
+/migration
+	?site_id=test
+	&site_name=test
+	&tool_id=test_tool
+	&tool_name=test_tool
+	&migrated_by=zqian
+	&destination_type=box
+-->
+
+							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name)">Proceed</button>
+							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)">Cancel</button>
+						</div>
+					</div>
+		  	</div>
+		  </div>
+			<div class="x" ng-hide="project.tool_id === 'notools' || project.tool_id === '' ">
+				<div class="row">
+				  <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+						<label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
+					</div>
+					<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
+						<input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}" ng-if="!project.stateMigrating" ng-model="project.selected" ng-change="checkIfSelectionExists(project.site_id)"/ >
+					</div>
+					<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+					</div>
+				</div>
+				<div class="row" style="margin:0;padding:10px 0 0 5px">
+					<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+						<small ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
+		    		</small>
+		    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs pull-right" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
+		    		</small>
+					</div>
+				</div>
+			</div>
+			<div class="row" ng-show="project.tool_id === 'notools'">
+			  <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+			  	{{project.tool_name}}
+				</div>
+			</div>
+		</li>
+	</ul>
+</div>
+
+<!--
+
 <div ng-repeat="project in sourceProjects">
 	<h4>
 		<a ng-click="getTools(project.entityId)" role="button" data-toggle="collapse" href="#collapse{{project.entityId}}" aria-expanded="false" aria-controls="collapse{{project.entityId}}">
@@ -52,7 +128,7 @@
 	  				
 	    <ul class="list-group">
 	    	<li class="list-group-item" ng-repeat="tool in project.tools"  ng-if="tool.tools[0].toolId ==='sakai.resources'">
-	    		<div class="row"><!-- Button trigger modal -->
+	    		<div class="row">
 			    	<div class="col-md-10 col-lg-10 col-sm-10 col-xs-10">
 			    		<label ng-if="!project.stateMigrating" for="{{project.id}}{{tool.id}}">{{tool.title}}</label>
 			    		<span ng-if="project.stateMigrating">{{tool.title}}</span>
@@ -67,8 +143,7 @@
 	  </div>
 	</div>
 </div>
-<div ng-if="!sourceProjects.length">We found no project sites where you are an owner. </div>
-
+<!-- Button trigger modal -->
 <!-- Box Folder Selection Modal -->
 <div class="modal fade" id="boxFolderModal" tabindex="-1" role="dialog" aria-labelledby="boxFolderModalLabel">
   <div class="modal-dialog" role="document">
