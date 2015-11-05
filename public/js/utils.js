@@ -42,18 +42,18 @@ var transformProjects = function (data){
   var projectsColl = [];
 
   $.each(data.data.site_collection, function(i, item){
-    var newObj = {};
-      newObj.migration_id= '',
-      newObj.site_id= item.entityId,
-      newObj.site_name= item.entityTitle,
-      newObj.tool_name= '',
-      newObj.tool_id= '',
-      newObj.migrated_by= '',
-      newObj.start_time= '',
-      newObj.end_time='',
-      newObj.destination_type= '',
-      newObj.destination_url= ''
-    projectsColl.push(newObj);
+    var projObj = {};
+    projObj.migration_id= '',
+    projObj.site_id= item.entityId,
+    projObj.site_name= item.entityTitle,
+    projObj.tool_name= '',
+    projObj.tool_id= '',
+    projObj.migrated_by= '',
+    projObj.start_time= '',
+    projObj.end_time='',
+    projObj.destination_type= '',
+    projObj.destination_url= ''
+    projectsColl.push(projObj);
   });
   data.data = projectsColl;
   return data;
@@ -68,38 +68,38 @@ var transformProject = function (data){
   $.each(data.data, function(i, item){
     // need to make this tool filtering more visible & maintainable
     // maybe put it in app.js
-    var newObj = {};
+    var toolObj = {};
     
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
-      newObj.migration_id= '',
-      newObj.site_id= siteId,
-      newObj.site_name= siteName,
-      newObj.tool_name= 'Resources',
-      newObj.tool_type= item.tools[0].toolId,
-      newObj.tool_id= item.tools[0].id,
-      newObj.migrated_by= '',
-      newObj.start_time= '',
-      newObj.end_time='',
-      newObj.destination_type= '',
-      newObj.destination_url= ''
-      toolColl.push(newObj);
+      toolObj.migration_id= '',
+      toolObj.site_id= siteId,
+      toolObj.site_name= siteName,
+      toolObj.tool_name= 'Resources',
+      toolObj.tool_type= item.tools[0].toolId,
+      toolObj.tool_id= item.tools[0].id,
+      toolObj.migrated_by= '',
+      toolObj.start_time= '',
+      toolObj.end_time='',
+      toolObj.destination_type= '',
+      toolObj.destination_url= ''
+      toolColl.push(toolObj);
     }
 
   });
 
   if (!toolColl.length){
-    var newObj = {};
-    newObj.migration_id= '',
-    newObj.site_id= siteId,
-    newObj.site_name= siteName,
-    newObj.tool_name= 'No exportable tools found.',
-    newObj.tool_id= 'notools',
-    newObj.migrated_by= '',
-    newObj.start_time= '',
-    newObj.end_time='',
-    newObj.destination_type= '',
-    newObj.destination_url= ''
-    toolColl.push(newObj);
+    var notoolObj = {};
+    notoolObj.migration_id= '',
+    notoolObj.site_id= siteId,
+    notoolObj.site_name= siteName,
+    notoolObj.tool_name= 'No exportable tools found.',
+    notoolObj.tool_id= 'notools',
+    notoolObj.migrated_by= '',
+    notoolObj.start_time= '',
+    notoolObj.end_time='',
+    notoolObj.destination_type= '',
+    notoolObj.destination_url= ''
+    toolColl.push(notoolObj);
   }
   data.data = toolColl;
   return data;
