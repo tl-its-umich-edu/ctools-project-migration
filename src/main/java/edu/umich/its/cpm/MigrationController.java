@@ -48,6 +48,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
+import org.springframework.context.annotation.PropertySource;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -75,6 +76,7 @@ import javax.xml.rpc.ParameterMode;
 import org.apache.axis.client.Call;
 import org.apache.axis.client.Service;
 
+@PropertySource("file:${catalina.home:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
 public class MigrationController {
 
