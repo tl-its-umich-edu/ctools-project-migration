@@ -16,15 +16,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.loadingProjects = false;
   Projects.getProjects(projectsUrl).then(function(result) {
     $scope.sourceProjects = result.data;
-
+    //compare projects list with migrations list, lock the project if it has 
+    //a current migration
     _.each($scope.sourceProjects, function(project) {
       if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-        project.migrating = true
+        project.migrating = true;
       }
     });
         
-
-
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
   });
@@ -42,9 +41,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $log.warn('page load got one or more current migrations - will have to poll it every ' + $rootScope.pollInterval/1000 + ' seconds');
       
       PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
-        $scope.migratingProjects = _.sortBy(result.data.entity, 'site_id');
-        
+        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
         _.each($scope.sourceProjects, function(project) {
+
           if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
             project.migrating = true;
           } else {
@@ -52,7 +51,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
             project.stateSelectionExists = false;
             project.stateExportConfirm = false;
             project.selected = false;
-
           }
         });
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
@@ -225,12 +223,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       Migration.postMigration(migrationUrl).then(function(result) {
         $log.info(' - - - - POST ' + migrationUrl);
         $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-
+        /*
         var targetToolPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
           tool_id: value.tool_id
         }));
         //lock down this item
         $scope.sourceProjects[targetToolPos].migrating=true;
+        */
       });
     });
     // stop all existing polling of /migrations end point if any
@@ -250,7 +249,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       }  
       //update time stamp displayed in the /migrations panel
       $rootScope.status.migrations = moment().format('h:mm:ss');
-      $scope.migratingProjects = _.sortBy(result.data.entity, 'site_id');
+      $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
       
       // if the data from last poll is different from this poll
       if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
