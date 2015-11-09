@@ -76,7 +76,7 @@ import javax.xml.rpc.ParameterMode;
 import org.apache.axis.client.Call;
 import org.apache.axis.client.Service;
 
-@PropertySource("file:${catalina.home:/usr/local/ctools/app/ctools/tl}/home/application.properties")
+@PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
 public class MigrationController {
 
