@@ -1,43 +1,11 @@
 'use strict';
 /* global  $, _, console */
 
-
-var categorizeBySite = function (data){
-	var siteColl = [];
-	$.each(data.data, function(i, item){
-  	siteColl.push(item.site_id);
-	});
-	siteColl = _.uniq(siteColl);
-	var siteCollTools =[];
-
-	$.each(siteColl, function(i, item){
-
-  	var thisColl = _.where(data.data, {site_id: item});
-    if(thisColl.length){ 
-    	var newObj = {};
-    	newObj.site_id = item;
-  		newObj.site_name = thisColl[0].site_name;
-  		newObj.tools = [];
-    	$.each(thisColl, function(i, item){  	
-    		var thisTool = {};
-    		thisTool.tool_id = item.tool_id;
-    		thisTool.tool_name= item.tool_name;
-        thisTool.migration_id = item.migration_id;
-        thisTool.start = item.start;
-        thisTool.end = item.end;
-        thisTool.migrated_by = item.migrated_by;
-        thisTool.destination_type = item.destination_type;
-        thisTool.destination_url = item.destination_url;
-        newObj.tools.push(thisTool);
-    	});		
-    	siteCollTools.push(newObj);
-    }  
-	});
-	data.data = siteCollTools;
-	return data;
-};
-
-
+/*
+/projects returns a Sakai like /direct feed
+utility below turns it into an array of objects with the same structure
+as the CPM feeds of /migrating and /migrations for ease of comparing the three
+*/ 
 var transformProjects = function (data){
   var projectsColl = [];
 
@@ -58,16 +26,20 @@ var transformProjects = function (data){
   data.data = projectsColl;
   return data;
 }
+/*
+user has requested the tools of a given project. Returned json is a Sakai like /direct feed
+utility below turns it into an array of objects with the same structure
+as the CPM feeds of /migrating and /migrations for ease of comparing the three
 
-var transformProject = function (data){
+*/var transformProject = function (data){
   var toolColl = [];
     var siteId = data.data[0].tools[0].siteId;
     var siteName = $('#' + siteId).text();
 
 
   $.each(data.data, function(i, item){
-    // need to make this tool filtering more visible & maintainable
-    // maybe put it in app.js
+    /*need to make this tool filtering more visible & maintainable
+    maybe put it in app.js*/
     var toolObj = {};
     
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
@@ -86,7 +58,11 @@ var transformProject = function (data){
     }
 
   });
-
+/*
+  a request for the tools of a project might return no
+  exportable tools. This adds a dummy object to the empty array
+  so that we can display a helpful message  
+  */
   if (!toolColl.length){
     var notoolObj = {};
     notoolObj.migration_id= '',
