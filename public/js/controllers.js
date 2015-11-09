@@ -7,6 +7,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
+
+  $scope.selectBoxFolder = {'name':'folder.name','id':'folder.ID'};
   
   $scope.loadingProjects = true;
   // GET the project list
@@ -44,11 +46,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         
         _.each($scope.sourceProjects, function(project) {
           if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-            sourceProject.migrating = true;
+            project.migrating = true;
           } else {
             project.migrating = false;
             project.stateSelectionExists = false;
             project.stateExportConfirm = false;
+            project.selected = false;
 
           }
         });
@@ -259,8 +262,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           $rootScope.status.migrated = moment().format('h:mm:ss');
         });
       }
-      // check to see if the sourceProjects have a /migrating correlate - if not, unlock
-      _.each($scope.sourceProjects, function(project) {
+      //TODO: this only really makes sense by comparing /projects and /migrated
+      $.each($scope.sourceProjects, function(index, project ) {
         if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
           project.migrating = true;
         } else {
@@ -268,6 +271,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           project.stateSelectionExists = false;
           project.stateExportConfirm = false;
           project.selected = false;
+          project.stateHasTools = false;
+          project.hideTools = true;
         }
       });
 

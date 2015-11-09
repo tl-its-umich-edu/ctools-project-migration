@@ -20,7 +20,8 @@ var transformProjects = function (data){
     projObj.start_time= '',
     projObj.end_time='',
     projObj.destination_type= '',
-    projObj.destination_url= ''
+    projObj.destination_url= '',
+    projObj.tool_site_id= item.entityId;
     projectsColl.push(projObj);
   });
   data.data = projectsColl;
@@ -53,7 +54,9 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
       toolObj.start_time= '',
       toolObj.end_time='',
       toolObj.destination_type= '',
-      toolObj.destination_url= ''
+      toolObj.destination_url= '',
+      toolObj.tool= true,
+      toolObj.tool_site_id= item.site_id + item.tool_id,
       toolColl.push(toolObj);
     }
 
@@ -78,5 +81,16 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
     toolColl.push(notoolObj);
   }
   data.data = toolColl;
+  return data;
+}
+/*
+/projects returns a Sakai like /direct feed
+utility below turns it into an array of objects with the same structure
+as the CPM feeds of /migrating and /migrations for ease of comparing the three
+*/ 
+var transformMigrations = function (data){
+  $.each(data.data.entity, function(i, item){
+    item.tool_site_id= item.site_id + item.tool_id;
+  });
   return data;
 }
