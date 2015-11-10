@@ -14,7 +14,7 @@
 	  				<strong id="{{project.site_id}}">{{project.site_name}}</strong>
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-	  				<span class="label label-info"  ng-show="project.migrating">Migrating...</span>
+	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
 	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
 			  			Get tools
 						</a>
@@ -50,7 +50,7 @@
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
 							<small ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
 			    		</small>
-			    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs pull-right" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
+			    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
 			    		</small>
 						</div>
 					</div>

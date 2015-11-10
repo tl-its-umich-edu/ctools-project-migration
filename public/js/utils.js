@@ -56,7 +56,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
       toolObj.destination_type= '',
       toolObj.destination_url= '',
       toolObj.tool= true,
-      toolObj.tool_site_id= item.site_id + item.tool_id,
+      toolObj.tool_site_id= siteId + item.tools[0].id,
       toolColl.push(toolObj);
     }
 

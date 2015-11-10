@@ -8,8 +8,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
 
-  $scope.selectBoxFolder = {'name':'folder.name','id':'folder.ID'};
-  
   $scope.loadingProjects = true;
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
@@ -42,17 +40,40 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       
       PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
-        _.each($scope.sourceProjects, function(project) {
 
-          if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-            project.migrating = true;
-          } else {
-            project.migrating = false;
-            project.stateSelectionExists = false;
-            project.stateExportConfirm = false;
-            project.selected = false;
+/*      $.each($scope.sourceProjects, function(index, project ) {
+        if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
+          project.migrating = true;
+        } else if(!project.stateSelectionExists){
+          $log.info('x')
+          project.migrating = false;
+          project.stateSelectionExists = false;
+          project.stateExportConfirm = false;
+          project.selected = false;
+          project.stateHasTools = false;
+          project.hideTools = true;
+        }
+        if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
+          $log.info('y')
+          project.migrating = true;
+        } else {
+          project.migrating = false;
+        }  
+      });
+*/
+        _.each($scope.sourceProjects, function(project) {
+          if(project.migrating) {
+            if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
+              project.migrating = true;
+            } else {
+              project.migrating = false;
+              project.stateSelectionExists = false;
+              project.stateExportConfirm = false;
+              project.selected = false;
+            }
           }
         });
+
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
           Migrated.getMigrated(migratedUrl).then(function(result) {
             $scope.migratedProjects = _.sortBy(result.data, 'site_id');
@@ -263,9 +284,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       }
       //TODO: this only really makes sense by comparing /projects and /migrated
       $.each($scope.sourceProjects, function(index, project ) {
-        if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
+        if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
           project.migrating = true;
-        } else {
+        } else if(!project.stateSelectionExists){
           project.migrating = false;
           project.stateSelectionExists = false;
           project.stateExportConfirm = false;
@@ -273,6 +294,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           project.stateHasTools = false;
           project.hideTools = true;
         }
+        if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
+          project.migrating = true;
+        } else {
+          project.migrating = false;
+        }  
       });
 
       // copy the current data for /migrations to the shadow
