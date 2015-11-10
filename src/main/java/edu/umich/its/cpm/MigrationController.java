@@ -76,12 +76,14 @@ import javax.xml.rpc.ParameterMode;
 import org.apache.axis.client.Call;
 import org.apache.axis.client.Service;
 
-@PropertySource("file:${catalina.home:/usr/local/ctools/app/ctools/tl}/home/application.properties")
+@PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
 public class MigrationController {
 
 	private static final String BOX_CLIENT_ID = "box_client_id";
 	private static final String BOX_CLIENT_SECRET = "box_client_secret";
+	private static final String BOX_API_URL = "box_api_url";
+	private static final String BOX_TOKEN_URL = "box_token_url";
 	private static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
 
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
@@ -195,7 +197,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = request.getRemoteUser();
+		String remoteUser = "zqian";//request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -228,7 +230,7 @@ public class MigrationController {
 			// the url should be in the format of
 			// "https://server/direct/session/SESSION_ID.json"
 			requestUrl = env.getProperty("ctools.server.url")
-					+ "direct/session/becomeuser/" + remoteUser
+					+ "direct/session/becomeuser/" + "zqian"//remoteUser
 					+ ".json?_sessionId=" + sessionId;
 			log.info(requestUrl);
 
@@ -314,7 +316,7 @@ public class MigrationController {
 		Migration m = new Migration(parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], request.getRemoteUser(),
+				parameterMap.get("tool_name")[0], "zqian",//request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
@@ -329,7 +331,7 @@ public class MigrationController {
 				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
 				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
-				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" migrated_by=").append("zqian")//request.getRemoteUser())
 				.append(" destination_type=")
 				.append(parameterMap.get("destination_type")[0]).append(" \n ");
 		try {
@@ -624,62 +626,108 @@ public class MigrationController {
 
 	/************* Box integration *****************/
 	/**
-	 * get json string og box folders
+	 * get json string of box folders
 	 * 
 	 * @return
 	 */
 	@RequestMapping("/box/folders")
-	public void getBoxFolders(HttpServletRequest request,
+	public List<HashMap<String, String>> handleGetBoxFolders(HttpServletRequest request,
 			HttpServletResponse response) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
-		String boxClientRedirectUri = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
 				+ "/box/folders_authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
-				|| boxClientRedirectUri == null) {
+				|| boxClientRedirectUrl == null) {
 			log.error("Missing box integration parameters");
-			return;
+			return null;
 		}
-		String remoteUserEmail = request.getRemoteUser();
-
-		// go to authentication screen
-		String boxAPIUrl = env.getProperty("box_api_url");
-		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUri,
-				remoteUserEmail, response);
+		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
+		
+		if (BoxUtils.getBoxAccessToken() == null)
+		{
+			// go to authentication screen
+			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+					remoteUserEmail, response);
+		}
+		else
+		{
+			// get box folders
+			return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+		}
+		return null;
 	}
 
 	@RequestMapping("/box/folders_authorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<HashMap<String, String>> getBoxFoldersAuthorized(
 			HttpServletRequest request) {
-		String rv = "";
-		// get the authCode
-		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request);
+
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
+		log.info("token url=" + boxTokenUrl);
+		
+		String rv = "";
+		// get the authCode
+		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId, boxClientSecret, boxTokenUrl);
 
 		if (boxClientId == null || boxClientSecret == null || authCode == null) {
 			log.error("Missing box integration parameters ");
 			return null;
 		}
 
-		// make connection
-		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-				boxClientSecret, authCode);
-		BoxUser.Info userInfo = BoxUser.getCurrentUser(api).getInfo();
-		log.info("Box user log in success: user name = " + userInfo.getName()
-				+ " user login = " + userInfo.getLogin());
+		return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+	}
+	
+	/**
+	 * upload CTools resources into Box
+	 * 
+	 * @return
+	 */
+	@PUT
+	@RequestMapping("/box/upload/")
+	public void uploadResourceToBox(HttpServletRequest request,
+			HttpServletResponse response) {
+		
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String site_id = parameterMap.get("site_id")[0];
+		String box_folder_id = parameterMap.get("box_folder_id")[0];
+		if (site_id == null || box_folder_id == null)
+		{
+			// missing required parameter
+			log.error("Need to have both site_id and box_folder_id values when requesting file transfer.");
+			return;
+		}
+		log.info("migrate CTools site " + site_id + " into box folder " + box_folder_id);
+		
+		/*BoxFolder folder = new BoxFolder(api, "id");
 
-		// get the root Box folder
-		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/box/folders_authorized";
 
-		// get list of properties from all Box items contained
-		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
-				null, api, rootFolder, "", 0);
-
-		return folderItems;
+		// need to have all Box app configurations
+		if (boxClientId == null || boxClientSecret == null
+				|| boxClientRedirectUrl == null) {
+			log.error("Missing box integration parameters");
+			return;
+		}
+		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
+		
+		// go to authentication screen
+		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+				remoteUserEmail, response);
+		BoxAPIConnection connection = new BoxAPIConnection(boxClientId, boxClientSecret);
+		BoxUser user = BoxUser.getCurrentUser(connection);
+		BoxUser.Info info = user.getInfo();
+		log.info(info.getLogin());*/
 	}
 }
