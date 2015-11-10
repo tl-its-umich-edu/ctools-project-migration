@@ -134,7 +134,6 @@ public class BoxUtils {
 				+ "?response_type=code" + "&client_id=" + boxClientId
 				+ "&redirect_uri=" + boxClientRedirectUri
 				+ "&state=&box_login=" + remoteUserEmail;
-		log.info(requestUrl);
 
 		try {
 			String resultString = restTemplate.getForObject(requestUrl,
@@ -168,7 +167,6 @@ public class BoxUtils {
 		
 		if (authCode != null)
 		{
-			log.info("authcode=" + authCode);
 			// now that we have the authCode, use it to get access token and fresh token
 		    // Returns a new access_token & refresh_token from an existing refresh_token
 		    // Each access_token is valid for 1 hour. In order to get a new, valid token, you can use the accompanying
@@ -181,18 +179,8 @@ public class BoxUtils {
 		    //    - code: a string containing the code, or a dictionary containing the GET query
 		    // Returns:
 		    //    - a dictionary with the token and additional info
-			log.info(boxTokenUrl);
 			try
 			{
-				/*RestTemplate restTemplate = new RestTemplate();
-				// the url should be in the format of
-				// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
-				String requestUrl = env.getProperty("ctools.server.url")
-						+ "direct/session?_username=" + env.getProperty("username")
-						+ "&_password=" + env.getProperty("password");
-				log.info(requestUrl);
-				ResponseEntity<String> response = restTemplate.postForEntity(
-						requestUrl, null, String.class);*/
 				CloseableHttpClient httpclient = HttpClients.createDefault();
 				HttpPost httpPost = new HttpPost(boxTokenUrl);
 				List <NameValuePair> nvps = new ArrayList <NameValuePair>();
@@ -213,7 +201,6 @@ public class BoxUtils {
 					    InputStream body = entity.getContent();
 						String theString = IOUtils.toString(body, "UTF-8");
 						JSONObject obj = new JSONObject(theString);
-						log.info("access_token=" + obj.get("access_token") + " refresh_token=" + obj.get("refresh_token"));
 						setBoxAccessToken((String) obj.get("access_token"));
 						setBoxRefreshToken((String) obj.get("refresh_token"));
 					
@@ -246,36 +233,30 @@ public class BoxUtils {
 		String boxAccessToken = getBoxAccessToken();
 		String boxRefreshToken = getBoxRefreshToken();
 		
-		log.info("----");
-		log.info(boxClientId + " " + boxClientSecret + " " + boxAccessToken + " " + boxRefreshToken);
-		//try
-		//{
-		// make connection
-		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-				boxClientSecret, boxAccessToken, boxRefreshToken);
-		// If the access token expires, you will have to manually refresh it.
-		api.refresh();
-		log.info(api.canRefresh() + " " + api.needsRefresh());
-
-		// get the root Box folder
-		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
-
-		log.info("2---" + api.canRefresh() + " " + api.needsRefresh());
-
-		for (BoxItem.Info itemInfo : rootFolder) {
-		    System.out.format("[%s] %s\n", itemInfo.getID(), itemInfo.getName());
+		try
+		{
+			// make connection
+			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
+					boxClientSecret, boxAccessToken, boxRefreshToken);
+			// If the access token expires, you will have to manually refresh it.
+			api.refresh();
+	
+			// get the root Box folder
+			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+			
+			// get list of properties from all Box items contained
+			List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
+					null, api, rootFolder, "", 0);
+			
+			setBoxAccessToken(api.getAccessToken());
+			setBoxRefreshToken(api.getRefreshToken());
+			return folderItems;
 		}
-		// get list of properties from all Box items contained
-		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
-				null, api, rootFolder, "", 0);
-		
-		return folderItems;
-		/*}
 		catch (Exception e)
 		{
-			log.info(e.toString());
+			log.info("BoxUtils:getBoxFolders " + e.toString());
 		}
-		return null;*/
+		return null;
 	}
 
 	/**
@@ -291,7 +272,6 @@ public class BoxUtils {
 			if (itemInfo instanceof BoxFolder.Info) {
 
 				BoxFolder.Info folderInfo = (BoxFolder.Info) itemInfo;
-				log.info(api.canRefresh() + " " + api.needsRefresh());
 				BoxFolder xfolder = new BoxFolder(api, folderInfo.getID());
 				String currentFolderPath = folderPath + "/"
 						+ folderInfo.getName();

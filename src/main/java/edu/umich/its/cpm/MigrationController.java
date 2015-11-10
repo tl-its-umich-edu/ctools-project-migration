@@ -197,7 +197,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = "zqian";//request.getRemoteUser();
+		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -230,7 +230,7 @@ public class MigrationController {
 			// the url should be in the format of
 			// "https://server/direct/session/SESSION_ID.json"
 			requestUrl = env.getProperty("ctools.server.url")
-					+ "direct/session/becomeuser/" + "zqian"//remoteUser
+					+ "direct/session/becomeuser/" + remoteUser
 					+ ".json?_sessionId=" + sessionId;
 			log.info(requestUrl);
 
@@ -316,7 +316,7 @@ public class MigrationController {
 		Migration m = new Migration(parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], "zqian",//request.getRemoteUser(),
+				parameterMap.get("tool_name")[0], request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
@@ -331,7 +331,7 @@ public class MigrationController {
 				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
 				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
-				.append(" migrated_by=").append("zqian")//request.getRemoteUser())
+				.append(" migrated_by=").append(request.getRemoteUser())
 				.append(" destination_type=")
 				.append(parameterMap.get("destination_type")[0]).append(" \n ");
 		try {
@@ -646,17 +646,18 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
+		String remoteUserEmail = request.getRemoteUser();
 		
 		if (BoxUtils.getBoxAccessToken() == null)
 		{
-			// go to authentication screen
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
 		}
 		else
 		{
-			// get box folders
+			// get box folders json
 			return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
 		}
 		return null;
@@ -678,56 +679,11 @@ public class MigrationController {
 		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId, boxClientSecret, boxTokenUrl);
 
 		if (boxClientId == null || boxClientSecret == null || authCode == null) {
-			log.error("Missing box integration parameters ");
+			log.error("Missing box integration parameters (Box client id, client secrect or authCode) ");
 			return null;
 		}
 
+		// get box folders json
 		return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
-	}
-	
-	/**
-	 * upload CTools resources into Box
-	 * 
-	 * @return
-	 */
-	@PUT
-	@RequestMapping("/box/upload/")
-	public void uploadResourceToBox(HttpServletRequest request,
-			HttpServletResponse response) {
-		
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		String site_id = parameterMap.get("site_id")[0];
-		String box_folder_id = parameterMap.get("box_folder_id")[0];
-		if (site_id == null || box_folder_id == null)
-		{
-			// missing required parameter
-			log.error("Need to have both site_id and box_folder_id values when requesting file transfer.");
-			return;
-		}
-		log.info("migrate CTools site " + site_id + " into box folder " + box_folder_id);
-		
-		/*BoxFolder folder = new BoxFolder(api, "id");
-
-		String boxClientId = env.getProperty(BOX_CLIENT_ID);
-		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
-		String boxAPIUrl = env.getProperty(BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
-				+ "/box/folders_authorized";
-
-		// need to have all Box app configurations
-		if (boxClientId == null || boxClientSecret == null
-				|| boxClientRedirectUrl == null) {
-			log.error("Missing box integration parameters");
-			return;
-		}
-		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
-		
-		// go to authentication screen
-		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
-				remoteUserEmail, response);
-		BoxAPIConnection connection = new BoxAPIConnection(boxClientId, boxClientSecret);
-		BoxUser user = BoxUser.getCurrentUser(connection);
-		BoxUser.Info info = user.getInfo();
-		log.info(info.getLogin());*/
 	}
 }
