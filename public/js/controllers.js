@@ -70,6 +70,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
               project.stateSelectionExists = false;
               project.stateExportConfirm = false;
               project.selected = false;
+              project.stateHasTools = false;
+              project.hideTools = true;
             }
           }
         });
@@ -286,7 +288,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $.each($scope.sourceProjects, function(index, project ) {
         if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
           project.migrating = true;
-        } else if(!project.stateSelectionExists){
+        } else {
           project.migrating = false;
           project.stateSelectionExists = false;
           project.stateExportConfirm = false;
