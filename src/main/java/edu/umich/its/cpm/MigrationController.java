@@ -59,6 +59,7 @@ import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
 import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
+import com.box.sdk.ProgressListener;
 
 import com.google.gson.Gson;
 
@@ -197,7 +198,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = request.getRemoteUser();
+		String remoteUser = "zqian";//request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -316,7 +317,7 @@ public class MigrationController {
 		Migration m = new Migration(parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], request.getRemoteUser(),
+				parameterMap.get("tool_name")[0], "zqian",//request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
@@ -331,7 +332,7 @@ public class MigrationController {
 				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
 				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
-				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" migrated_by=").append("zqian")//request.getRemoteUser())
 				.append(" destination_type=")
 				.append(parameterMap.get("destination_type")[0]).append(" \n ");
 		try {
@@ -646,7 +647,7 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = request.getRemoteUser();
+		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
 		
 		if (BoxUtils.getBoxAccessToken() == null)
 		{
@@ -685,5 +686,189 @@ public class MigrationController {
 
 		// get box folders json
 		return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+	}
+	
+	/**
+	 * upload resource files into Box folder
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/box/upload")
+	public void boxUpload(HttpServletRequest request,
+			HttpServletResponse response) {
+
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		// need to have all Box app configurations
+		if (boxClientId == null || boxClientSecret == null) {
+			log.error("Missing Box integration parameters (Box client id, client secret)");
+		}
+		
+		// get the CTools site id and target box folder id
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String siteId = parameterMap.get("site_id")[0];
+		String boxFolderId = parameterMap.get("box_folder_id")[0];
+		if (siteId == null || boxFolderId == null)
+		{
+			log.error("Missing params for CTools site id, or target Box folder id.");
+		}
+		
+		// login to CTools and get sessionId
+		String sessionId = login_becomeuser(request);
+		log.info(sessionId);
+		if (sessionId != null) {
+			// 3. get all sites that user have permission site.upd
+			RestTemplate restTemplate = new RestTemplate();
+			// the url should be in the format of
+			// "https://server/direct/site/SITE_ID.json"
+			String requestUrl = env.getProperty("ctools.server.url")
+					+ "direct/content/site/" + siteId + ".json?_sessionId="
+					+ sessionId;
+			String siteResourceJson = null;
+			try {
+				siteResourceJson = restTemplate.getForObject(requestUrl,
+						String.class);
+				boxUploadSiteContent(sessionId, boxClientId, boxClientSecret, siteResourceJson, boxFolderId);
+
+			} catch (RestClientException e) {
+				String errorMessage = "Cannot find site by siteId: " + siteId
+						+ " " + e.getMessage();
+				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
+						.type(MediaType.TEXT_PLAIN).build();
+				log.error(errorMessage);
+			}
+		}
+	}
+	
+	private void boxUploadSiteContent(String sessionId, String boxClientId, String boxClientSecret, String siteResourceJson, String boxFolderId) {
+		BoxAPIConnection api = new BoxAPIConnection(boxClientId, boxClientSecret, BoxUtils.getBoxAccessToken(), BoxUtils.getBoxRefreshToken());
+		// site root folder
+		String rootFolderPath = null;
+
+		JSONObject obj = new JSONObject(siteResourceJson);
+
+		JSONArray array = obj
+				.getJSONArray(CONTENT_JSON_ATTR_CONTENT_COLLECTION);
+
+		for (int i = 0; i < array.length(); i++) {
+			JSONObject contentItem = array.getJSONObject(i);
+
+			// get only the url after "/access/" string
+			String contentUrl = URLDecoder.decode(contentItem
+					.getString(CONTENT_JSON_ATTR_URL));
+			contentUrl = contentUrl.substring(contentUrl
+					.indexOf(CTOOLS_ACCESS_STRING)
+					+ CTOOLS_ACCESS_STRING.length());
+
+			// inside the JSON feed, the container string is of format
+			// /content/<folder_url>
+			// remote the prefix "/content"
+			String container = URLDecoder.decode(contentItem
+					.getString(CONTENT_JSON_ATTR_CONTAINER));
+			container = container.substring("/content".length());
+
+			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
+			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+
+			if (COLLECTION_TYPE.equals(type)) {
+				// folders
+				if (rootFolderPath == null) {
+					rootFolderPath = contentUrl;
+				} else {
+					// create box folder
+					log.info("parent folder " + boxFolderId);
+					BoxFolder parentFolder = new BoxFolder(api, boxFolderId);
+					log.info("to create folder " + title);
+					BoxFolder.Info childFolderInfo = parentFolder.createFolder(title);
+				}
+
+			} else {
+				// files
+				if (contentUrl == null && contentUrl.length() == 0) {
+					// log error if the content url is missing
+					log.error("No url for content " + title);
+				} else if (container == null && container.length() == 0) {
+					// log error if the content url is missing
+					log.error("No container folder url for content " + title);
+				} else {
+					//
+					// Call the zipFiles method for creating a zip stream.
+					//
+					String fileName = contentUrl.replace(rootFolderPath, "");
+					uploadFile(fileName, contentUrl, sessionId, api);
+				}
+			}
+		} // for
+	}
+	
+	/**
+	 * upload files to Box
+	 */
+	private void uploadFile(String fileName, String fileUrl, String sessionId, BoxAPIConnection api) {
+		String contentString = "";
+		try {
+			Service service = new Service();
+			Call nc = (Call) service.createCall();
+
+			nc.setTargetEndpointAddress(env.getProperty("ctools.server.url")
+					+ "sakai-axis/ContentHosting.jws");
+
+			nc.removeAllParameters();
+			nc.setOperationName(OPERATION_GET_CONTENT_DATA);
+			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_SESSIONID,
+					XMLType.XSD_STRING, ParameterMode.IN);
+			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_RESOURCEID,
+					XMLType.XSD_STRING, ParameterMode.IN);
+			nc.setReturnType(XMLType.XSD_STRING);
+			contentString = (String) nc.invoke(new Object[] { sessionId,
+					fileUrl });
+
+		} catch (Exception e) {
+			log.error(":zipFiles " + fileUrl + " " + e.getMessage());
+		}
+
+		InputStream content = null;
+
+		Base64.Decoder decoder = Base64.getDecoder();
+		content = new ByteArrayInputStream(decoder.decode(contentString));
+
+		int length = 0;
+		byte data[] = new byte[1024 * 10];
+		BufferedInputStream bContent = null;
+		try {
+
+			bContent = new BufferedInputStream(content);
+			
+		} catch (IllegalArgumentException iException) {
+			log.warn(":zipFiles: problem creating BufferedInputStream with content and length "
+					+ data.length + iException);
+		} finally {
+			if (bContent != null) {
+				try {
+					bContent.close(); // The BufferedInputStream needs to be closed
+					BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+					final String uploadFileName = fileName;
+					rootFolder.uploadFile(bContent, fileName, 1024, new ProgressListener() {
+					    public void onProgressChanged(long numBytes, long totalBytes) {
+					        double percentComplete = numBytes / totalBytes;
+					        log.info(uploadFileName + " uploaded " + percentComplete);
+					    }
+					});
+					bContent.close();
+				} catch (IOException ioException) {
+					log.warn(":zipFiles: problem closing FileChannel "
+							+ ioException);
+				}
+			}
+		}
+		if (content != null) {
+			try {
+				content.close(); // The input stream needs to be closed
+			} catch (IOException ioException) {
+				log.warn(":zipFiles: problem closing Inputstream content "
+						+ ioException);
+			}
+		}
 	}
 }
