@@ -26,7 +26,6 @@ import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
-//import org.springframework.http.HttpStatus;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
 
@@ -165,63 +164,70 @@ public class BoxUtils {
 			}
 		}
 		
-		if (authCode != null)
+		if (authCode == null)
 		{
-			// now that we have the authCode, use it to get access token and fresh token
-		    // Returns a new access_token & refresh_token from an existing refresh_token
-		    // Each access_token is valid for 1 hour. In order to get a new, valid token, you can use the accompanying
-		    // refresh_token. Each refresh token is valid for 14 days. Every time you get a new access_token by using a
-		    // refresh_token, we reset your timer for the 14 day period. This means that as long as your users use your
-		    // application once every 14 days, their login is valid forever.
-		    // Args:
-		    //    - client_id: The client_id you obtained in the initial setup.
-		    //    - client_secret: The client_secret you obtained in the initial setup.
-		    //    - code: a string containing the code, or a dictionary containing the GET query
-		    // Returns:
-		    //    - a dictionary with the token and additional info
-			try
-			{
-				CloseableHttpClient httpclient = HttpClients.createDefault();
-				HttpPost httpPost = new HttpPost(boxTokenUrl);
-				List <NameValuePair> nvps = new ArrayList <NameValuePair>();
-				nvps.add(new BasicNameValuePair("grant_type", "authorization_code"));
-				nvps.add(new BasicNameValuePair("client_id", boxClientId));
-				nvps.add(new BasicNameValuePair("client_secret", boxClientSecret));
-				nvps.add(new BasicNameValuePair("code", authCode));
-				httpPost.setEntity(new UrlEncodedFormEntity(nvps));
-				CloseableHttpResponse response = httpclient.execute(httpPost);
-
-				try {
-					StatusLine statusLine = response.getStatusLine();
-				    log.info("token request status" + statusLine);
-				    if (statusLine.getStatusCode() == HttpStatus.SC_OK)
-				    {
-				    	// if success, get the access_token and refresh_token
-					    HttpEntity entity = response.getEntity();
-					    InputStream body = entity.getContent();
-						String theString = IOUtils.toString(body, "UTF-8");
-						JSONObject obj = new JSONObject(theString);
-						setBoxAccessToken((String) obj.get("access_token"));
-						setBoxRefreshToken((String) obj.get("refresh_token"));
+			log.error("getAuthCodeFromBoxCallback: authCode is null");
+			return null;
+		}
+		
+		// now that we have the authCode, use it to get access token and fresh token
+	    // Returns a new access_token & refresh_token from an existing refresh_token
+	    // Each access_token is valid for 1 hour. In order to get a new, valid token, you can use the accompanying
+	    // refresh_token. Each refresh token is valid for 14 days. Every time you get a new access_token by using a
+	    // refresh_token, we reset your timer for the 14 day period. This means that as long as your users use your
+	    // application once every 14 days, their login is valid forever.
+	    // Args:
+	    //    - client_id: The client_id you obtained in the initial setup.
+	    //    - client_secret: The client_secret you obtained in the initial setup.
+	    //    - code: a string containing the code, or a dictionary containing the GET query
+	    // Returns:
+	    //    - a dictionary with the token and additional info
+		try
+		{
+			CloseableHttpClient httpclient = HttpClients.createDefault();
+			HttpPost httpPost = new HttpPost(boxTokenUrl);
+			List <NameValuePair> nvps = new ArrayList <NameValuePair>();
+			nvps.add(new BasicNameValuePair("grant_type", "authorization_code"));
+			nvps.add(new BasicNameValuePair("client_id", boxClientId));
+			nvps.add(new BasicNameValuePair("client_secret", boxClientSecret));
+			nvps.add(new BasicNameValuePair("code", authCode));
+			httpPost.setEntity(new UrlEncodedFormEntity(nvps));
+			CloseableHttpResponse response = httpclient.execute(httpPost);
+			
+			try {
+				StatusLine statusLine = response.getStatusLine();
+				log.info("token request status" + statusLine);
+				if (statusLine.getStatusCode() == HttpStatus.SC_OK)
+				{
+					// if success, get the access_token and refresh_token
+					HttpEntity entity = response.getEntity();
+					InputStream body = entity.getContent();
+					String theString = IOUtils.toString(body, "UTF-8");
+					JSONObject obj = new JSONObject(theString);
+					setBoxAccessToken((String) obj.get("access_token"));
+					setBoxRefreshToken((String) obj.get("refresh_token"));
 					
-						// close inputstream and entity
-						IOUtils.closeQuietly(body);
-					    EntityUtils.consume(entity);
-				    }
-				} finally {
-				    response.close();
+					// close inputstream and entity
+					IOUtils.closeQuietly(body);
+					EntityUtils.consume(entity);
 				}
-			}
-			catch (java.net.MalformedURLException exception)
-			{
-				log.error("getAuthCodeFromBoxCallback MalformedURLException " + boxTokenUrl);
-			}
-			catch (java.io.IOException exception)
-			{
-				log.error("getAuthCodeFromBoxCallback IOException " + boxTokenUrl);
+				else
+				{
+					// log when the statusLine did not return 200 code
+					log.error("getAuthCodeFromBoxCallback: status code= " + statusLine.getStatusCode() + " " + statusLine.toString());
+				}
+			} finally {
+			    response.close();
 			}
 		}
-
+		catch (java.net.MalformedURLException exception)
+		{
+			log.error("getAuthCodeFromBoxCallback MalformedURLException " + boxTokenUrl);
+		}
+		catch (java.io.IOException exception)
+		{
+			log.error("getAuthCodeFromBoxCallback IOException " + boxTokenUrl);
+		}
 		return authCode;
 	}
 	
@@ -326,7 +332,10 @@ public class BoxUtils {
 	private static String format_date(Date date) {
 		String rv = "";
 		if (date != null) {
-			rv = date_formatter.format(date);
+			// SimpleDateFormat is not threadsafe
+			synchronized(date_formatter){
+				rv = date_formatter.format(date);
+			}
 		}
 		return rv;
 	}
