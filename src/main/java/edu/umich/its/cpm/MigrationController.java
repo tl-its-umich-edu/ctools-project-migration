@@ -54,6 +54,7 @@ import org.json.JSONObject;
 import org.json.JSONArray;
 
 import com.box.sdk.BoxAPIConnection;
+import com.box.sdk.BoxAPIException;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
@@ -88,6 +89,7 @@ public class MigrationController {
 	private static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
 
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
+	private static final String CTOOLS_CONTENT_STRING = "/content";
 
 	private static final String COLLECTION_TYPE = "collection";
 
@@ -198,7 +200,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = "zqian";//request.getRemoteUser();
+		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -317,7 +319,7 @@ public class MigrationController {
 		Migration m = new Migration(parameterMap.get("site_id")[0],
 				parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], "zqian",//request.getRemoteUser(),
+				parameterMap.get("tool_name")[0], request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
@@ -332,7 +334,7 @@ public class MigrationController {
 				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
 				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
-				.append(" migrated_by=").append("zqian")//request.getRemoteUser())
+				.append(" migrated_by=").append(request.getRemoteUser())
 				.append(" destination_type=")
 				.append(parameterMap.get("destination_type")[0]).append(" \n ");
 		try {
@@ -483,10 +485,20 @@ public class MigrationController {
 			// remote the prefix "/content"
 			String container = URLDecoder.decode(contentItem
 					.getString(CONTENT_JSON_ATTR_CONTAINER));
-			container = container.substring("/content".length());
 
 			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
 			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+
+			// files
+			if (contentUrl == null && contentUrl.length() == 0) {
+				// log error if the content url is missing
+				log.error("No url for content " + title);
+				break;
+			} else if (container == null && container.length() == 0) {
+				// log error if the content url is missing
+				log.error("No container folder url for content " + title);
+				break;
+			}
 
 			if (COLLECTION_TYPE.equals(type)) {
 				// folders
@@ -505,20 +517,10 @@ public class MigrationController {
 				}
 
 			} else {
-				// files
-				if (contentUrl == null && contentUrl.length() == 0) {
-					// log error if the content url is missing
-					log.error("No url for content " + title);
-				} else if (container == null && container.length() == 0) {
-					// log error if the content url is missing
-					log.error("No container folder url for content " + title);
-				} else {
-					//
-					// Call the zipFiles method for creating a zip stream.
-					//
-					String filePath = contentUrl.replace(rootFolderPath, "");
-					zipFiles(filePath, contentUrl, sessionId, out);
-				}
+				// Call the zipFiles method for creating a zip stream.
+				//
+				String filePath = contentUrl.replace(rootFolderPath, "");
+				zipFiles(filePath, contentUrl, sessionId, out);
 			}
 		} // for
 	}
@@ -632,14 +634,13 @@ public class MigrationController {
 	 * @return
 	 */
 	@RequestMapping("/box/folders")
-	public List<HashMap<String, String>> handleGetBoxFolders(HttpServletRequest request,
-			HttpServletResponse response) {
+	public List<HashMap<String, String>> handleGetBoxFolders(
+			HttpServletRequest request, HttpServletResponse response) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
-				+ "/box/folders_authorized";
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)+ "/authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
@@ -647,47 +648,37 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = "zqian@umich.edu";//request.getRemoteUser();
-		
-		if (BoxUtils.getBoxAccessToken() == null)
-		{
+		String remoteUserEmail = request.getRemoteUser() + "@umich.edu";
+
+		if (BoxUtils.getBoxAccessToken() == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
-		}
-		else
-		{
+		} else {
 			// get box folders json
 			return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
 		}
 		return null;
 	}
 
-	@RequestMapping("/box/folders_authorized")
+	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<HashMap<String, String>> getBoxFoldersAuthorized(
-			HttpServletRequest request) {
+	public void getBoxAuthzTokens(HttpServletRequest request) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
 		log.info("token url=" + boxTokenUrl);
-		
+
 		String rv = "";
-		// get the authCode
-		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId, boxClientSecret, boxTokenUrl);
-
-		if (boxClientId == null || boxClientSecret == null || authCode == null) {
-			log.error("Missing box integration parameters (Box client id, client secrect or authCode) ");
-			return null;
-		}
-
-		// get box folders json
-		return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+		// get the authCode, 
+		// and get access token and refresh token subsequently
+		BoxUtils.getAuthCodeFromBoxCallback(request,
+				boxClientId, boxClientSecret, boxTokenUrl);
 	}
-	
+
 	/**
 	 * upload resource files into Box folder
 	 * 
@@ -699,21 +690,31 @@ public class MigrationController {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null) {
 			log.error("Missing Box integration parameters (Box client id, client secret)");
 		}
-		
+		String remoteUserEmail = request.getRemoteUser();
+
+		if (BoxUtils.getBoxAccessToken() == null)
+		{
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
+			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+					remoteUserEmail, response);
+			return;
+		}
+
 		// get the CTools site id and target box folder id
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
 		String boxFolderId = parameterMap.get("box_folder_id")[0];
-		if (siteId == null || boxFolderId == null)
-		{
+		if (siteId == null || boxFolderId == null) {
 			log.error("Missing params for CTools site id, or target Box folder id.");
 		}
-		
+
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
 		log.info(sessionId);
@@ -729,7 +730,8 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				boxUploadSiteContent(sessionId, boxClientId, boxClientSecret, siteResourceJson, boxFolderId);
+				boxUploadSiteContent(sessionId, boxClientId, boxClientSecret,
+						siteResourceJson, boxFolderId);
 
 			} catch (RestClientException e) {
 				String errorMessage = "Cannot find site by siteId: " + siteId
@@ -738,11 +740,19 @@ public class MigrationController {
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
 			}
+			
+			log.info("Finished upload site content for site " + siteId);
 		}
 	}
-	
-	private void boxUploadSiteContent(String sessionId, String boxClientId, String boxClientSecret, String siteResourceJson, String boxFolderId) {
-		BoxAPIConnection api = new BoxAPIConnection(boxClientId, boxClientSecret, BoxUtils.getBoxAccessToken(), BoxUtils.getBoxRefreshToken());
+
+	/**
+	 * iterating though content json and upload folders and files to Box
+	 */
+	private void boxUploadSiteContent(String sessionId, String boxClientId,
+			String boxClientSecret, String siteResourceJson, String boxFolderId) {
+		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
+				boxClientSecret, BoxUtils.getBoxAccessToken(),
+				BoxUtils.getBoxRefreshToken());
 		// site root folder
 		String rootFolderPath = null;
 
@@ -751,10 +761,20 @@ public class MigrationController {
 		JSONArray array = obj
 				.getJSONArray(CONTENT_JSON_ATTR_CONTENT_COLLECTION);
 
+		// start a stack object, with element of site folder ids
+		// the top of the stack is the current container folder
+		// since the CTools site content json feed is depth-first search,
+		// we can use the stack to store the current folder id,
+		// and do pop() when moving to a different folder
+		java.util.Stack<String> containerStack = new java.util.Stack<String>();
+		// this is the parallel stack which stored the Box folder of those
+		// container collections
+		java.util.Stack<String> boxFolderIdStack = new java.util.Stack<String>();
+
 		for (int i = 0; i < array.length(); i++) {
 			JSONObject contentItem = array.getJSONObject(i);
 
-			// get only the url after "/access/" string
+			// get only the url after "/access/content" string
 			String contentUrl = URLDecoder.decode(contentItem
 					.getString(CONTENT_JSON_ATTR_URL));
 			contentUrl = contentUrl.substring(contentUrl
@@ -766,46 +786,105 @@ public class MigrationController {
 			// remote the prefix "/content"
 			String container = URLDecoder.decode(contentItem
 					.getString(CONTENT_JSON_ATTR_CONTAINER));
-			container = container.substring("/content".length());
+			container = container.substring(container
+					.indexOf(CTOOLS_CONTENT_STRING)
+					+ CTOOLS_CONTENT_STRING.length());
 
 			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
 			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+			// files
+			if (contentUrl == null && contentUrl.length() == 0) {
+				// log error if the content url is missing
+				log.error("No url for content " + title);
+				break;
+			} else if (container == null && container.length() == 0) {
+				// log error if the content url is missing
+				log.error("No container folder url for content " + title);
+				break;
+			}
 
 			if (COLLECTION_TYPE.equals(type)) {
 				// folders
 				if (rootFolderPath == null) {
+					// root folder
 					rootFolderPath = contentUrl;
+
+					// insert into stack
+					containerStack.push(contentUrl);
+					boxFolderIdStack.push(boxFolderId);
+
 				} else {
+					log.info("Begin to create folder " + title);
+
+					log.debug("before stack peek=" + containerStack.peek()
+							+ " " + " container=" + container);
+					// pop the stack till the container equals to stack top
+					while (!containerStack.empty()
+							&& !container.equals(containerStack.peek())) {
+						// sync pops
+						containerStack.pop();
+						boxFolderIdStack.pop();
+					}
+
 					// create box folder
-					log.info("parent folder " + boxFolderId);
-					BoxFolder parentFolder = new BoxFolder(api, boxFolderId);
-					log.info("to create folder " + title);
-					BoxFolder.Info childFolderInfo = parentFolder.createFolder(title);
+					BoxFolder parentFolder = new BoxFolder(api,
+							boxFolderIdStack.peek());
+					try {
+						BoxFolder.Info childFolderInfo = parentFolder
+								.createFolder(title);
+						log.info("folder " + title + " created.");
+
+						// push the current folder id into the stack
+						containerStack.push(contentUrl);
+						boxFolderIdStack.push(childFolderInfo.getID());
+						log.debug("after stack peek= " + containerStack.peek()
+								+ " " + " container=" + container);
+						log.debug("*******");
+					} catch (BoxAPIException e) {
+						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+							// 409 means name conflict - item already existed
+							log.info("There is already a folder with name "
+									+ title);
+						}
+					}
 				}
 
 			} else {
 				// files
-				if (contentUrl == null && contentUrl.length() == 0) {
-					// log error if the content url is missing
-					log.error("No url for content " + title);
-				} else if (container == null && container.length() == 0) {
-					// log error if the content url is missing
-					log.error("No container folder url for content " + title);
-				} else {
-					//
-					// Call the zipFiles method for creating a zip stream.
-					//
-					String fileName = contentUrl.replace(rootFolderPath, "");
-					uploadFile(fileName, contentUrl, sessionId, api);
+				// Call the uploadFile method to upload file to Box.
+				//
+				log.debug("file stack peek= " + containerStack.peek() + " "
+						+ " container=" + container);
+
+				while (!containerStack.empty()
+						&& !container.equals(containerStack.peek())) {
+					// sync pops
+					containerStack.pop();
+					boxFolderIdStack.pop();
 				}
+
+				if (boxFolderIdStack.empty()) {
+					log.info("Cannot find parent folder for file " + contentUrl);
+					break;
+				}
+
+				String fileName = contentUrl.replace(rootFolderPath, "");
+				uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
+						sessionId, api);
 			}
 		} // for
+		
+		// refresh tokens
+		BoxUtils.refreshAccessAndRefreshTokens(api);
 	}
-	
+
 	/**
 	 * upload files to Box
 	 */
-	private void uploadFile(String fileName, String fileUrl, String sessionId, BoxAPIConnection api) {
+	private void uploadFile(String boxFolderId, String fileName,
+			String fileUrl, String sessionId, BoxAPIConnection api) {
+		log.info("begin to upload file " + fileUrl + " to box folder "
+				+ boxFolderId);
 		String contentString = "";
 		try {
 			Service service = new Service();
@@ -839,23 +918,28 @@ public class MigrationController {
 		try {
 
 			bContent = new BufferedInputStream(content);
-			
+			BoxFolder folder = new BoxFolder(api, boxFolderId);
+			final String uploadFileName = fileName;
+			folder.uploadFile(bContent, fileName, 1024, new ProgressListener() {
+				public void onProgressChanged(long numBytes, long totalBytes) {
+					double percentComplete = numBytes / totalBytes;
+					log.debug(uploadFileName + " uploaded " + percentComplete);
+				}
+			});
+			log.info("upload success for file " + fileUrl);
+		} catch (BoxAPIException e) {
+			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+				// 409 means name conflict - item already existed
+				log.info("There is already a file with name " + fileName);
+			}
 		} catch (IllegalArgumentException iException) {
 			log.warn(":zipFiles: problem creating BufferedInputStream with content and length "
 					+ data.length + iException);
 		} finally {
 			if (bContent != null) {
 				try {
-					bContent.close(); // The BufferedInputStream needs to be closed
-					BoxFolder rootFolder = BoxFolder.getRootFolder(api);
-					final String uploadFileName = fileName;
-					rootFolder.uploadFile(bContent, fileName, 1024, new ProgressListener() {
-					    public void onProgressChanged(long numBytes, long totalBytes) {
-					        double percentComplete = numBytes / totalBytes;
-					        log.info(uploadFileName + " uploaded " + percentComplete);
-					    }
-					});
-					bContent.close();
+					bContent.close(); // The BufferedInputStream needs to be
+										// closed
 				} catch (IOException ioException) {
 					log.warn(":zipFiles: problem closing FileChannel "
 							+ ioException);
