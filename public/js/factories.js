@@ -1,7 +1,12 @@
 'use strict';
 /* global  projectMigrationApp, errorDisplay */
 
-//PROJECTS FACTORY - does the request for the projects controller
+/*
+PROJECTS FACTORY - does the requests for the projects controller
+  getProjects: gets the projects the user has a specific role in
+  getProject: for a given project, get the tools
+  getBoxFolders: get the list of Box folders in user's account so the user can pick one
+*/
 projectMigrationApp.factory('Projects', function($http) {
   return {
     getProjects: function(url) {
@@ -60,7 +65,10 @@ projectMigrationApp.factory('Projects', function($http) {
 });
 
 
-//PROJECTS FACTORY - does the request for the migrations controller
+/*
+PROJECTS FACTORY - does the request for the migration controller
+user has asked that a tool/tools be migrated
+*/
 projectMigrationApp.factory('Migration', function($http) {
   return {
 	postMigration: function(url) {
