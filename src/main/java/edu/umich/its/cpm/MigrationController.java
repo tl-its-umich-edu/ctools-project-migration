@@ -82,6 +82,8 @@ public class MigrationController {
 
 	private static final String BOX_CLIENT_ID = "box_client_id";
 	private static final String BOX_CLIENT_SECRET = "box_client_secret";
+	private static final String BOX_API_URL = "box_api_url";
+	private static final String BOX_TOKEN_URL = "box_token_url";
 	private static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
 
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
@@ -624,62 +626,64 @@ public class MigrationController {
 
 	/************* Box integration *****************/
 	/**
-	 * get json string og box folders
+	 * get json string of box folders
 	 * 
 	 * @return
 	 */
 	@RequestMapping("/box/folders")
-	public void getBoxFolders(HttpServletRequest request,
+	public List<HashMap<String, String>> handleGetBoxFolders(HttpServletRequest request,
 			HttpServletResponse response) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
-		String boxClientRedirectUri = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
 				+ "/box/folders_authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
-				|| boxClientRedirectUri == null) {
+				|| boxClientRedirectUrl == null) {
 			log.error("Missing box integration parameters");
-			return;
+			return null;
 		}
 		String remoteUserEmail = request.getRemoteUser();
-
-		// go to authentication screen
-		String boxAPIUrl = env.getProperty("box_api_url");
-		BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUri,
-				remoteUserEmail, response);
+		
+		if (BoxUtils.getBoxAccessToken() == null)
+		{
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
+			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+					remoteUserEmail, response);
+		}
+		else
+		{
+			// get box folders json
+			return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+		}
+		return null;
 	}
 
 	@RequestMapping("/box/folders_authorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public List<HashMap<String, String>> getBoxFoldersAuthorized(
 			HttpServletRequest request) {
-		String rv = "";
-		// get the authCode
-		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request);
+
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
+		log.info("token url=" + boxTokenUrl);
+		
+		String rv = "";
+		// get the authCode
+		String authCode = BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId, boxClientSecret, boxTokenUrl);
 
 		if (boxClientId == null || boxClientSecret == null || authCode == null) {
-			log.error("Missing box integration parameters ");
+			log.error("Missing box integration parameters (Box client id, client secrect or authCode) ");
 			return null;
 		}
 
-		// make connection
-		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-				boxClientSecret, authCode);
-		BoxUser.Info userInfo = BoxUser.getCurrentUser(api).getInfo();
-		log.info("Box user log in success: user name = " + userInfo.getName()
-				+ " user login = " + userInfo.getLogin());
-
-		// get the root Box folder
-		BoxFolder rootFolder = BoxFolder.getRootFolder(api);
-
-		// get list of properties from all Box items contained
-		List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
-				null, api, rootFolder, "", 0);
-
-		return folderItems;
+		// get box folders json
+		return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
 	}
 }
