@@ -323,8 +323,7 @@ public class MigrationController {
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
-				null, // no end time
-				parameterMap.get("destination_type")[0], null);
+				null, parameterMap.get("destination_type")[0], null, "" /* status */);
 
 		Migration newMigration = null;
 
@@ -640,7 +639,8 @@ public class MigrationController {
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)+ "/authorized";
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
@@ -673,10 +673,10 @@ public class MigrationController {
 		log.info("token url=" + boxTokenUrl);
 
 		String rv = "";
-		// get the authCode, 
+		// get the authCode,
 		// and get access token and refresh token subsequently
-		BoxUtils.getAuthCodeFromBoxCallback(request,
-				boxClientId, boxClientSecret, boxTokenUrl);
+		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+				boxClientSecret, boxTokenUrl);
 	}
 
 	/**
@@ -698,8 +698,7 @@ public class MigrationController {
 		}
 		String remoteUserEmail = request.getRemoteUser();
 
-		if (BoxUtils.getBoxAccessToken() == null)
-		{
+		if (BoxUtils.getBoxAccessToken() == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
@@ -740,7 +739,7 @@ public class MigrationController {
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
 			}
-			
+
 			log.info("Finished upload site content for site " + siteId);
 		}
 	}
@@ -873,7 +872,7 @@ public class MigrationController {
 						sessionId, api);
 			}
 		} // for
-		
+
 		// refresh tokens
 		BoxUtils.refreshAccessAndRefreshTokens(api);
 	}

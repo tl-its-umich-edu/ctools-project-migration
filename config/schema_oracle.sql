@@ -10,4 +10,5 @@ start_time TIMESTAMP NOT NULL,
 end_time TIMESTAMP,
 destination_type VARCHAR(99) NOT NULL,
 destination_url VARCHAR(99),
+status CLOB,
 PRIMARY KEY (MIGRATION_ID));
