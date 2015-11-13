@@ -77,12 +77,18 @@ public class Migration {
 	@Setter
 	private String destination_url;
 
+	@Column(name = "STATUS", columnDefinition = "LOB", table = "MIGRATION")
+	@Getter
+	@Setter
+	private String status;
+
 	protected Migration() {
 	}
 
 	public Migration(String site_id, String site_name, String tool_id,
 			String tool_name, String migrated_by, Timestamp start_time,
-			Timestamp end_time, String destination_type, String destination_url) {
+			Timestamp end_time, String destination_type,
+			String destination_url, String status) {
 		this.migration_id = UUID.randomUUID().toString();
 		log.info(this.migration_id);
 		this.site_id = site_id;
@@ -94,6 +100,7 @@ public class Migration {
 		this.end_time = end_time;
 		this.destination_type = destination_type;
 		this.destination_url = destination_url;
+		this.status = status;
 	}
 
 	@Override
@@ -101,9 +108,9 @@ public class Migration {
 		return String.format("Migration[migration_id=%d, " + "site_id='%s',"
 				+ "site_name='%s'," + "tool_id='%s'," + "tool_name='%s',"
 				+ "migrated_by='%s'," + "start_time='%s'," + "end_time='%s',"
-				+ "destination_type='%s'," + "destination_url='%s'" + "]",
-				migration_id, site_id, site_name, tool_id, tool_name,
-				migrated_by, start_time, end_time, destination_type,
-				destination_url);
+				+ "destination_type='%s'," + "destination_url='%s'"
+				+ "status='%s'" + "]", migration_id, site_id, site_name,
+				tool_id, tool_name, migrated_by, start_time, end_time,
+				destination_type, destination_url, status);
 	}
 }
