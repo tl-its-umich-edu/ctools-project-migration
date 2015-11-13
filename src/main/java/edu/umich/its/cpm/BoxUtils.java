@@ -254,8 +254,9 @@ public class BoxUtils {
 			List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
 					null, api, rootFolder, "", 0);
 			
-			setBoxAccessToken(api.getAccessToken());
-			setBoxRefreshToken(api.getRefreshToken());
+			// update stored access token and refresh token
+			refreshAccessAndRefreshTokens(api);
+			
 			return folderItems;
 		}
 		catch (Exception e)
@@ -263,6 +264,15 @@ public class BoxUtils {
 			log.info("BoxUtils:getBoxFolders " + e.toString());
 		}
 		return null;
+	}
+	
+	/**
+	 * store the current access token and refresh token locally
+	 */
+	public static void refreshAccessAndRefreshTokens (BoxAPIConnection api){
+		// refresh tokens
+		setBoxAccessToken(api.getAccessToken());
+		setBoxRefreshToken(api.getRefreshToken());
 	}
 
 	/**
