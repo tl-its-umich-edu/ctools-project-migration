@@ -330,8 +330,7 @@ public class MigrationController {
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
-				null, // no end time
-				parameterMap.get("destination_type")[0], null);
+				null, parameterMap.get("destination_type")[0], null, "" /* status */);
 
 		Migration newMigration = null;
 

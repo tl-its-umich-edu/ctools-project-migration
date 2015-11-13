@@ -29,7 +29,7 @@ projectMigrationApp.run(function($rootScope) {
       'migrationsUrl': '/migrations',
       'migrationUrl': '/migration',
       'migratedUrl': '/migrated',
-      'projectUrl': '/projects'
+      'projectUrl': '/projects/'
     };
   }
   $rootScope.addProjectSites = [];
