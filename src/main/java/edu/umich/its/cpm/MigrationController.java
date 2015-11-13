@@ -93,6 +93,13 @@ public class MigrationController {
 
 	private static final String COLLECTION_TYPE = "collection";
 
+	// the at sign used in email address
+	private static final String EMAIL_AT = "@";
+	private static final String EMAIL_AT_UMICH = "@umich.edu";
+
+	// integer value of stream operation buffer size
+	private static final int STREAM_BUFFER_CHAR_SIZE = 1024;
+
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationController.class);
 
@@ -559,7 +566,7 @@ public class MigrationController {
 			content = new ByteArrayInputStream(decoder.decode(contentString));
 
 			int length = 0;
-			byte data[] = new byte[1024 * 10];
+			byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE * 10];
 			BufferedInputStream bContent = null;
 			try {
 
@@ -640,7 +647,8 @@ public class MigrationController {
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)+ "/authorized";
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
@@ -648,7 +656,14 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = request.getRemoteUser() + "@umich.edu";
+		String remoteUserEmail = request.getRemoteUser();
+		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
+			// if the remote user value is not of email format
+			// then it is the uniqname of umich user
+			// we need to attach "@umich.edu" to it to make it a full email
+			// address
+			remoteUserEmail = remoteUserEmail + EMAIL_AT_UMICH;
+		}
 
 		if (BoxUtils.getBoxAccessToken() == null) {
 			// go to Box authentication screen
@@ -673,10 +688,10 @@ public class MigrationController {
 		log.info("token url=" + boxTokenUrl);
 
 		String rv = "";
-		// get the authCode, 
+		// get the authCode,
 		// and get access token and refresh token subsequently
-		BoxUtils.getAuthCodeFromBoxCallback(request,
-				boxClientId, boxClientSecret, boxTokenUrl);
+		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+				boxClientSecret, boxTokenUrl);
 	}
 
 	/**
@@ -698,8 +713,7 @@ public class MigrationController {
 		}
 		String remoteUserEmail = request.getRemoteUser();
 
-		if (BoxUtils.getBoxAccessToken() == null)
-		{
+		if (BoxUtils.getBoxAccessToken() == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
@@ -740,7 +754,7 @@ public class MigrationController {
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
 			}
-			
+
 			log.info("Finished upload site content for site " + siteId);
 		}
 	}
@@ -873,7 +887,7 @@ public class MigrationController {
 						sessionId, api);
 			}
 		} // for
-		
+
 		// refresh tokens
 		BoxUtils.refreshAccessAndRefreshTokens(api);
 	}
@@ -913,19 +927,22 @@ public class MigrationController {
 		content = new ByteArrayInputStream(decoder.decode(contentString));
 
 		int length = 0;
-		byte data[] = new byte[1024 * 10];
+		byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE * 10];
 		BufferedInputStream bContent = null;
 		try {
 
 			bContent = new BufferedInputStream(content);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			final String uploadFileName = fileName;
-			folder.uploadFile(bContent, fileName, 1024, new ProgressListener() {
-				public void onProgressChanged(long numBytes, long totalBytes) {
-					double percentComplete = numBytes / totalBytes;
-					log.debug(uploadFileName + " uploaded " + percentComplete);
-				}
-			});
+			folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
+					new ProgressListener() {
+						public void onProgressChanged(long numBytes,
+								long totalBytes) {
+							double percentComplete = numBytes / totalBytes;
+							log.debug(uploadFileName + " uploaded "
+									+ percentComplete);
+						}
+					});
 			log.info("upload success for file " + fileUrl);
 		} catch (BoxAPIException e) {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
