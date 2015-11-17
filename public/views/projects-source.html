@@ -18,7 +18,7 @@
 	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
 			  			Get tools
 						</a>
-						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && selectBoxFolder && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
+						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (selectDestinationType.name ==='local' || (selectDestinationType.name ==='box' && selectBoxFolder)) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
 					</div>
 				</div>
 				<div class="row" ng-show="project.stateExportConfirm">
@@ -28,7 +28,7 @@
   				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
   					<div class="pull-right">
   					<br>
-							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name)">Proceed</button>
+							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name,selectDestinationType.name)">Proceed</button>
 							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)">Cancel</button>
 						</div>
 					</div>
@@ -48,10 +48,25 @@
 					</div>
 					<div class="row" style="margin:0;padding:10px 0 0 5px">
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+			    			<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+			    				<input type="radio" name="destinationSelect" ng-model="destinationTypeSelected" value="destinationTypebox" id="destinationTypebox" ng-change="destinationTypeSelect('box','box')">
+							</div>
+				    		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+				    			<label for="destinationTypebox">Upload To Box</label>
+				    		</div>
+				    		<br/>
 							<small ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
-			    		</small>
-			    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
-			    		</small>
+			    			</small>
+				    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
+				    		</small>
+						</div>
+						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+							<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">	
+								<input type="radio" name="destinationSelect" ng-model="destinationTypeSelected" value="destinationTypelocal" id="destinationTypelocal" ng-change="destinationTypeSelect('local','local')">
+							</div>
+				    		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+				    			<label for="destinationTypelocal">Download as a Zip file</label>
+				    		</div>
 						</div>
 					</div>
 				</div>	

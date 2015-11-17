@@ -317,32 +317,35 @@ public class MigrationController {
 	 * 
 	 * @param request
 	 */
-	@POST
-	@RequestMapping(value = "/migration")
-	@Produces(MediaType.APPLICATION_JSON)
+
+	@GET
+	@Produces("application/zip")
+	@RequestMapping(value = "/migrationZip")
 	public void migration(HttpServletRequest request,
 			HttpServletResponse response) {
 		Map<String, String[]> parameterMap = request.getParameterMap();
-		Migration m = new Migration(parameterMap.get("site_id")[0],
-				parameterMap.get("site_name")[0],
+		String siteId = parameterMap.get("site_id")[0];
+		String destinationType = "zip";
+
+		Migration m = new Migration(siteId, parameterMap.get("site_name")[0],
 				parameterMap.get("tool_id")[0],
 				parameterMap.get("tool_name")[0], request.getRemoteUser(),
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
-				null, parameterMap.get("destination_type")[0], null, "" /* status */);
+				null, destinationType, null, "" /* status */);
 
 		Migration newMigration = null;
 
 		StringBuffer insertMigrationDetails = new StringBuffer();
 		insertMigrationDetails.append("Save migration record site_id=")
-				.append(parameterMap.get("site_id")[0]).append(" site_name=")
+				.append(siteId).append(" site_name=")
 				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
 				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
 				.append(parameterMap.get("tool_name")[0])
 				.append(" migrated_by=").append(request.getRemoteUser())
-				.append(" destination_type=")
-				.append(parameterMap.get("destination_type")[0]).append(" \n ");
+				.append(" destination_type=").append(destinationType)
+				.append(" \n ");
 		try {
 			newMigration = repository.save(m);
 		} catch (Exception e) {
@@ -353,20 +356,22 @@ public class MigrationController {
 		try {
 			if (newMigration != null) {
 				log.info("migration", newMigration);
+
+				downloadZippedFile(request, response, siteId);
 				// new Migration record created
 				// set HTTP code to "201 Created"
-				response.setStatus(HttpServletResponse.SC_CREATED);
-				response.getWriter().write(
-						(new JSONObject(newMigration)).toString());
+				// response.setStatus(HttpServletResponse.SC_CREATED);
+				// response.getWriter().write(
+				// (new JSONObject(newMigration)).toString());
 			} else {
 				// no new Migration record created
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().println(
 						new JSONObject().put("error",
 								insertMigrationDetails.toString()).toString());
+				response.flushBuffer();
+				response.getWriter().close();
 			}
-			response.flushBuffer();
-			response.getWriter().close();
 		} catch (Exception e) {
 			Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
 					.entity("Cannot insert migration record "
@@ -376,16 +381,8 @@ public class MigrationController {
 
 	}
 
-	@GET
-	@RequestMapping(value = "/download/zip")
-	@Produces("application/zip")
-	public void downloadZippedFile(HttpServletRequest request,
-			HttpServletResponse response) {
-		// get the CTools site id
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		String site_id = parameterMap.get("site_id")[0];
-		log.info(site_id);
-
+	private void downloadZippedFile(HttpServletRequest request,
+			HttpServletResponse response, String site_id) {
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
 		log.info(sessionId);
@@ -569,6 +566,7 @@ public class MigrationController {
 			BufferedInputStream bContent = null;
 			try {
 
+				log.info("download file " + fileName);
 				bContent = new BufferedInputStream(content);
 				ZipEntry fileEntry = new ZipEntry(fileName);
 				out.putNextEntry(fileEntry);
@@ -698,7 +696,7 @@ public class MigrationController {
 	 * 
 	 * @return
 	 */
-	@RequestMapping("/box/upload")
+	@RequestMapping("/migrationBox")
 	public void boxUpload(HttpServletRequest request,
 			HttpServletResponse response) {
 
