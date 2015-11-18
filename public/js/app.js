@@ -19,6 +19,8 @@ projectMigrationApp.run(function($rootScope) {
       'projectsUrl': 'data/projects.json',
       'migrationsUrl': 'data/migrations.json',
       'migrationUrl': '',
+      'migrationZipUrl': '',
+      'migrationBoxUrl': '',
       'migratedUrl': 'data/migrated.json',
       'projectUrl': 'data/project_id.json'
     };
@@ -28,6 +30,8 @@ projectMigrationApp.run(function($rootScope) {
       'projectsUrl': '/projects',
       'migrationsUrl': '/migrations',
       'migrationUrl': '/migration',
+      'migrationZipUrl': '/migrationZip',
+      'migrationBoxUrl': '/migrationBox',
       'migratedUrl': '/migrated',
       'projectUrl': '/projects/'
     };

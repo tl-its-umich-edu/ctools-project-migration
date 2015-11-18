@@ -2,7 +2,7 @@
 /* global projectMigrationApp, angular, _, moment, $ */
 
 /* TERMS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
 
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
@@ -132,8 +132,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.getBoxFolders = function() {
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
-      var boxUrl = 'data/box.json';
-      //var boxUrl = '/box/folders';
+      var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
         $scope.boxFolders = result.data;
         $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
@@ -147,6 +146,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxFolderSelect = function(folder) {
     $scope.selectBoxFolder = {'name':folder.name,'id':folder.ID};
     $log.info('BOX Folder "' + $scope.selectBoxFolder.name + '" (ID: ' + $scope.selectBoxFolder.id + ') selected');
+  };
+  
+  //handler for a user's selection of export destination type: local download or export to Box 
+  //as a destination of a migration
+  $scope.destinationTypeSelect = function(name, id) {
+    $scope.selectDestinationType = {'name':name,'id':id};
+    $log.info('Migration destination type "' + $scope.selectDestinationType.name + '" (ID: ' + $scope.selectDestinationType.id + ') selected');
   };
 
   /*
@@ -221,7 +227,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   /*
   handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
   */
-  $scope.startMigration = function(projectId, siteName) {
+  $scope.startMigration = function(projectId, siteName, destinationType) {
     var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
       site_id: projectId
     }));
@@ -237,23 +243,36 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     // for each tool selected
     $.each(targetSelections, function( key, value ) {
       // Get the base post url
-      var migrationUrl = $rootScope.urls.migrationUrl;
+      var migrationZipUrl = $rootScope.urls.migrationZipUrl;
+      var migrationBoxUrl = $rootScope.urls.migrationBoxUrl;
+      var migrationUrl='';
       // attach variables to it
-      migrationUrl = migrationUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box';
-      $log.info(migrationUrl);
+      if (destinationType =='box')
+      {
+    	  // migrate to Box
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'box&box_folder_id=' + $scope.selectBoxFolder.id;
+         
+
+          $log.info("box " + migrationUrl);
+    	  // use promise factory to execute the post
+          Migration.postMigrationBox(migrationUrl).then(function(result) {
+            $log.info(' - - - - POST ' + migrationUrl);
+            $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
+          });
+      }
+      else
+      {
+    	  // download locally
+    	  migrationUrl = migrationZipUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + destinationType;
+
+          $log.info("zip " + migrationUrl);
+    	  // use promise factory to execute the post
+          Migration.getMigrationZip(migrationUrl).then(function(result) {
+            $log.info(' - - - - POST ' + migrationUrl);
+            $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
+          });
+      }
       $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
-      // use promise factory to execute the post
-      Migration.postMigration(migrationUrl).then(function(result) {
-        $log.info(' - - - - POST ' + migrationUrl);
-        $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-        /*
-        var targetToolPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
-          tool_id: value.tool_id
-        }));
-        //lock down this item
-        $scope.sourceProjects[targetToolPos].migrating=true;
-        */
-      });
     });
     // stop all existing polling of /migrations end point if any
     $log.info(' - - - - stop all (if any) /migrations polls');

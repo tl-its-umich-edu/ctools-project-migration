@@ -2,8 +2,12 @@ package edu.umich.its.cpm;
 
 import java.util.List;
 
+import java.sql.Timestamp;
+
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.jpa.repository.Modifying;
+import org.springframework.transaction.annotation.Transactional;
 
 public interface MigrationRepository extends CrudRepository<Migration, String> {
 	List<Migration> findAll();
@@ -36,5 +40,22 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 */
 	@Query("SELECT m FROM Migration m WHERE m.site_id = ?#{[0]}")
 	public List<Migration> findBySiteId(String site_id);
+	
+	/**
+	 * Update the status field
+	 */
+	@Transactional
+	@Modifying(clearAutomatically=false)
+	@Query("update Migration m set m.status = ?#{[0]} where m.id = ?#{[1]}")
+	public int setMigrationStatus(String status, String migrationId);
+	
+
+	/**
+	 * Update the migration end time field
+	 */
+	@Transactional
+	@Modifying(clearAutomatically=false)
+	@Query("update Migration m set m.end_time = ?#{[0]} where m.id = ?#{[1]}")
+	public int setMigrationEndTime(Timestamp t, String migrationId);
 
 }

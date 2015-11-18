@@ -317,75 +317,56 @@ public class MigrationController {
 	 * 
 	 * @param request
 	 */
-	@POST
-	@RequestMapping(value = "/migration")
-	@Produces(MediaType.APPLICATION_JSON)
-	public void migration(HttpServletRequest request,
-			HttpServletResponse response) {
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		Migration m = new Migration(parameterMap.get("site_id")[0],
-				parameterMap.get("site_name")[0],
-				parameterMap.get("tool_id")[0],
-				parameterMap.get("tool_name")[0], request.getRemoteUser(),
-				new java.sql.Timestamp(System.currentTimeMillis()), // start
-																	// time is
-																	// now
-				null, parameterMap.get("destination_type")[0], null, "" /* status */);
-
-		Migration newMigration = null;
-
-		StringBuffer insertMigrationDetails = new StringBuffer();
-		insertMigrationDetails.append("Save migration record site_id=")
-				.append(parameterMap.get("site_id")[0]).append(" site_name=")
-				.append(parameterMap.get("site_name")[0]).append(" tool_id=")
-				.append(parameterMap.get("tool_id")[0]).append(" tool_name=")
-				.append(parameterMap.get("tool_name")[0])
-				.append(" migrated_by=").append(request.getRemoteUser())
-				.append(" destination_type=")
-				.append(parameterMap.get("destination_type")[0]).append(" \n ");
-		try {
-			newMigration = repository.save(m);
-		} catch (Exception e) {
-			log.error("Exception " + insertMigrationDetails.toString()
-					+ e.getMessage());
-		}
-
-		try {
-			if (newMigration != null) {
-				log.info("migration", newMigration);
-				// new Migration record created
-				// set HTTP code to "201 Created"
-				response.setStatus(HttpServletResponse.SC_CREATED);
-				response.getWriter().write(
-						(new JSONObject(newMigration)).toString());
-			} else {
-				// no new Migration record created
-				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
-				response.getWriter().println(
-						new JSONObject().put("error",
-								insertMigrationDetails.toString()).toString());
-			}
-			response.flushBuffer();
-			response.getWriter().close();
-		} catch (Exception e) {
-			Response.status(HttpServletResponse.SC_INTERNAL_SERVER_ERROR)
-					.entity("Cannot insert migration record "
-							+ insertMigrationDetails.toString()
-							+ e.getMessage()).build();
-		}
-
-	}
 
 	@GET
-	@RequestMapping(value = "/download/zip")
 	@Produces("application/zip")
-	public void downloadZippedFile(HttpServletRequest request,
+	@RequestMapping(value = "/migrationZip")
+	public void migrationZip(HttpServletRequest request,
 			HttpServletResponse response) {
-		// get the CTools site id
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		String site_id = parameterMap.get("site_id")[0];
-		log.info(site_id);
+		// the status of migration
+		StringBuffer statusBuffer = new StringBuffer();
+		
+		// save migration record into database
+		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
+		Migration newMigration = null;
+		statusBuffer.append(saveMigration.get("status"));
+		
+		// exit if there is no new Migration record saved into DB
+		if (!saveMigration.containsKey("migration")) {
+			// no new Migration record created
+			return;
+		}
+		else
+		{
+			newMigration = (Migration) saveMigration.get("migration");
+		}
+		
+		log.info("migration", newMigration);
 
+		// download zip file
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String siteId = parameterMap.get("site_id")[0];
+		String downloadStatus = downloadZippedFile(request, response, siteId);
+		// get status
+		statusBuffer.append(downloadStatus + "\n");
+
+		// update the status and end_time of migration record
+		repository.setMigrationEndTime(
+				new java.sql.Timestamp(System.currentTimeMillis()),
+				newMigration.getMigration_id());
+		repository.setMigrationStatus(statusBuffer.toString(),
+				newMigration.getMigration_id());
+	}
+
+	/**
+	 * Download CTools site resource in zip file
+	 * @return status of download
+	 */
+	private String downloadZippedFile(HttpServletRequest request,
+			HttpServletResponse response, String site_id) {
+		// hold download status
+		StringBuffer downloadStatus = new StringBuffer();
+		
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
 		log.info(sessionId);
@@ -412,7 +393,9 @@ public class MigrationController {
 					ZipOutputStream out = new ZipOutputStream(baos);
 
 					// prepare zip entry for site content objects
-					zipSiteContent(siteResourceJson, sessionId, out);
+					String zipStatus = zipSiteContent(siteResourceJson, sessionId, out);
+					log.info(zipStatus);
+					downloadStatus.append(zipStatus + "\n");
 
 					out.flush();
 					baos.flush();
@@ -420,7 +403,9 @@ public class MigrationController {
 					baos.close();
 					zipContent = baos.toByteArray();
 				} catch (IOException ee) {
-					log.warn("downloadZippedFile: IOException of constructing zip file.");
+					String eeString = "downloadZippedFile: IOException of constructing zip file.";
+					log.warn(eeString);
+					downloadStatus.append(eeString + "\n");
 				}
 
 				if (zipContent != null) {
@@ -440,10 +425,14 @@ public class MigrationController {
 					sos.write(zipContent);
 					sos.flush();
 
-					log.info(":downloadZippedFile end: successfully download zip file for site "
-							+ site_id);
+					String downloadEndSuccess = "downloadZippedFile end: successfully download zip file for site "
+							+ site_id;
+					log.info(downloadEndSuccess);
+					downloadStatus.append(downloadEndSuccess + "\n");
 				} else {
-					log.error("Problem download zip file for site " + site_id);
+					String noContent = site_id + " has no content to download."; 
+					log.error(noContent);
+					downloadStatus.append(noContent + "\n");
 				}
 
 			} catch (RestClientException e) {
@@ -452,6 +441,7 @@ public class MigrationController {
 				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
+				downloadStatus.append(errorMessage + "\n");
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
@@ -459,15 +449,27 @@ public class MigrationController {
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
 				log.error(errorMessage);
+				downloadStatus.append(errorMessage + "\n");
+				
 			}
 		}
+		else
+		{
+			String userError = "Cannot become user " + request.getRemoteUser();
+			log.error(userError);
+			downloadStatus.append(userError + "\n");
+		}
+		return downloadStatus.toString();
 	}
 
 	/**
 	 * create zip entry for folders and files
 	 */
-	private void zipSiteContent(String siteResourceJson, String sessionId,
+	private String zipSiteContent(String siteResourceJson, String sessionId,
 			ZipOutputStream out) {
+		// zip status information
+		StringBuffer zipStatus = new StringBuffer();
+		
 		// site root folder
 		String rootFolderPath = null;
 
@@ -498,11 +500,15 @@ public class MigrationController {
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
-				log.error("No url for content " + title);
+				String noUrlError = "No url for content " + title;
+				log.error(noUrlError);
+				zipStatus.append(noUrlError + "\n");
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
-				log.error("No container folder url for content " + title);
+				String noContainerError = "No container folder url for content " + title;
+				log.error(noContainerError);
+				zipStatus.append(noContainerError + "\n");
 				break;
 			}
 
@@ -517,8 +523,10 @@ public class MigrationController {
 					try {
 						out.putNextEntry(folderEntry);
 					} catch (IOException e) {
-						log.error(":zipSiteContent: problem closing zip entry "
-								+ folderName + " " + e);
+						String ioError = "zipSiteContent: problem closing zip entry "
+								+ folderName + " " + e;
+						log.error(ioError);
+						zipStatus.append(ioError + "\n");
 					}
 				}
 
@@ -526,16 +534,21 @@ public class MigrationController {
 				// Call the zipFiles method for creating a zip stream.
 				//
 				String filePath = contentUrl.replace(rootFolderPath, "");
-				zipFiles(filePath, contentUrl, sessionId, out);
+				String zipFileStatus = zipFiles(filePath, contentUrl, sessionId, out);
+				zipStatus.append(zipFileStatus + "\n");
 			}
 		} // for
+		return zipStatus.toString();
 	}
 
 	/**
 	 * create zip entry for files
 	 */
-	private void zipFiles(String fileName, String fileUrl, String sessionId,
+	private String zipFiles(String fileName, String fileUrl, String sessionId,
 			ZipOutputStream out) {
+		// record zip status
+		StringBuffer zipFileStatus = new StringBuffer();
+		
 		String contentString = "";
 		try {
 			Service service = new Service();
@@ -555,7 +568,9 @@ public class MigrationController {
 					fileUrl });
 
 		} catch (Exception e) {
-			log.error(":zipFiles " + fileUrl + " " + e.getMessage());
+			String exceptionString = "zipFiles " + fileUrl + " " + e.getMessage();
+			log.error(exceptionString);
+			zipFileStatus.append(exceptionString + "\n");
 		}
 
 		InputStream content = null;
@@ -569,6 +584,7 @@ public class MigrationController {
 			BufferedInputStream bContent = null;
 			try {
 
+				log.info("download file " + fileName);
 				bContent = new BufferedInputStream(content);
 				ZipEntry fileEntry = new ZipEntry(fileName);
 				out.putNextEntry(fileEntry);
@@ -581,35 +597,53 @@ public class MigrationController {
 				try {
 					out.closeEntry(); // The zip entry need to be closed
 				} catch (IOException ioException) {
-					log.error(":zipFiles: problem closing zip entry "
-							+ fileName + " " + ioException);
+					String ioExceptionString = "zipFiles: problem closing zip entry "
+							+ fileName + " " + ioException;
+					log.error(ioExceptionString);
+					zipFileStatus.append(ioExceptionString + "\n");
 				}
 			} catch (IllegalArgumentException iException) {
-				log.warn(":zipFiles: problem creating BufferedInputStream with content and length "
-						+ data.length + iException);
+				String IAExceptionString = "zipFiles: problem creating BufferedInputStream with content and length "
+						+ data.length + iException;
+				log.warn(IAExceptionString);
+				zipFileStatus.append(IAExceptionString + "\n");
 			} finally {
 				if (bContent != null) {
 					try {
 						bContent.close(); // The BufferedInputStream needs to be
 											// closed
 					} catch (IOException ioException) {
-						log.warn(":zipFiles: problem closing FileChannel "
-								+ ioException);
+						String ioExceptionString = "zipFiles: problem closing FileChannel "
+								+ ioException;
+						log.warn(ioExceptionString);
+						zipFileStatus.append(ioExceptionString + "\n");
 					}
 				}
 			}
 		} catch (IOException e) {
-			log.warn(" zipFiles--IOException: : fileName=" + fileName);
+			String ioExceptionString = " zipFiles--IOException: : fileName=" + fileName;
+			log.warn(ioExceptionString);
+			zipFileStatus.append(ioExceptionString + "\n");
 		} finally {
 			if (content != null) {
 				try {
 					content.close(); // The input stream needs to be closed
 				} catch (IOException ioException) {
-					log.warn(":zipFiles: problem closing Inputstream content "
-							+ ioException);
+					String ioExceptionString = "zipFiles: problem closing Inputstream content for" + fileName
+							+ ioException;
+					log.warn(ioExceptionString);
+					zipFileStatus.append(ioExceptionString + "\n");
 				}
 			}
 		}
+		
+		// return success message
+		if (zipFileStatus.length() == 0)
+		{
+			zipFileStatus.append(fileName + " was added into zip file successfully.");
+		}
+		
+		return zipFileStatus.toString();
 	}
 
 	/**
@@ -692,23 +726,103 @@ public class MigrationController {
 		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
 				boxClientSecret, boxTokenUrl);
 	}
+	
+	/**
+	 * Save Migration record to DB
+	 * @return HasMap key="status", value=status message; key="migration", value=MigrationObject
+	 */
+	private HashMap<String, Object> saveMigrationRecord(HttpServletRequest request)
+	{
+		// the return hashmap provide newly created Migration object, and status message
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+		
+		// status message
+		StringBuffer status = new StringBuffer();
+		
+		// get parameters
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String siteId = parameterMap.get("site_id")[0];
+		String siteName = parameterMap.get("site_name")[0];
+		String toolId = parameterMap.get("tool_id")[0];
+		String toolName = parameterMap.get("tool_name")[0];
+		String destinationType = "zip";
+
+		Migration m = new Migration(siteId, siteName,
+			toolId,
+			toolName, request.getRemoteUser(),
+			new java.sql.Timestamp(System.currentTimeMillis()), // start
+																// time is
+																// now
+			null, destinationType, null, "" /* status */);
+
+		Migration newMigration = null;
+
+		StringBuffer insertMigrationDetails = new StringBuffer();
+		insertMigrationDetails.append("Save migration record site_id=")
+				.append(siteId).append(" site_name=")
+				.append(siteName).append(" tool_id=")
+				.append(toolId).append(" tool_name=")
+				.append(toolName)
+				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" destination_type=").append(destinationType)
+				.append(" \n ");
+		log.info(insertMigrationDetails.toString());
+		try {
+			newMigration = repository.save(m);
+		} catch (Exception e) {
+			log.error("Exception " + insertMigrationDetails.toString() + e.getMessage());
+			status.append(e.getMessage());
+		}
+		
+		// put Migration object into HashMap
+		if (newMigration != null)
+		{
+			rv.put("migration", newMigration);
+		}
+		// put status message into HashMap
+		if (status.length() == 0)
+		{
+			status.append("Database Migration record successfully created.");
+		}
+		rv.put("status", status.toString());
+		
+		return rv;
+	}
 
 	/**
 	 * upload resource files into Box folder
 	 * 
 	 * @return
 	 */
-	@RequestMapping("/box/upload")
-	public void boxUpload(HttpServletRequest request,
+	@RequestMapping("/migrationBox")
+	public void migrationBox(HttpServletRequest request,
 			HttpServletResponse response) {
 
+		StringBuffer boxMigrationStatus = new StringBuffer();
+		// save migration record into database
+		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
+		Migration newMigration = null;
+		boxMigrationStatus.append(saveMigration.get("status"));
+		
+		// exit if there is no new Migration record saved into DB
+		if (!saveMigration.containsKey("migration")) {
+			// no new Migration record created
+			return;
+		}
+		else
+		{
+			newMigration = (Migration) saveMigration.get("migration");
+		}
+		
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null) {
-			log.error("Missing Box integration parameters (Box client id, client secret)");
+			String boxClientIdError = "Missing Box integration parameters (Box client id, client secret)";
+			log.error(boxClientIdError);
+			boxMigrationStatus.append(boxClientIdError + "\n");
 		}
 		String remoteUserEmail = request.getRemoteUser();
 
@@ -725,7 +839,9 @@ public class MigrationController {
 		String siteId = parameterMap.get("site_id")[0];
 		String boxFolderId = parameterMap.get("box_folder_id")[0];
 		if (siteId == null || boxFolderId == null) {
-			log.error("Missing params for CTools site id, or target Box folder id.");
+			String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
+			log.error(boxFolderIdError);
+			boxMigrationStatus.append(boxFolderIdError + "\n");
 		}
 
 		// login to CTools and get sessionId
@@ -743,8 +859,9 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				boxUploadSiteContent(sessionId, boxClientId, boxClientSecret,
+				String downloadStatusString = boxUploadSiteContent(sessionId, boxClientId, boxClientSecret,
 						siteResourceJson, boxFolderId);
+				boxMigrationStatus.append(downloadStatusString + "\n");
 
 			} catch (RestClientException e) {
 				String errorMessage = "Cannot find site by siteId: " + siteId
@@ -752,17 +869,35 @@ public class MigrationController {
 				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
+				boxMigrationStatus.append(errorMessage + "\n");
 			}
 
-			log.info("Finished upload site content for site " + siteId);
+			String uploadFinished = "Finished upload site content for site " + siteId;
+			log.info(uploadFinished);
+			boxMigrationStatus.append(uploadFinished + "\n");
 		}
+		else
+		{
+			String errorBecomeUser = "Problem become user to " + request.getRemoteUser();
+			log.error(errorBecomeUser);
+			boxMigrationStatus.append(errorBecomeUser + "\n");
+		}
+
+		// update the status and end_time of migration record
+		repository.setMigrationEndTime(
+				new java.sql.Timestamp(System.currentTimeMillis()),
+				newMigration.getMigration_id());
+		repository.setMigrationStatus(boxMigrationStatus.toString(),
+					newMigration.getMigration_id());
 	}
 
 	/**
 	 * iterating though content json and upload folders and files to Box
 	 */
-	private void boxUploadSiteContent(String sessionId, String boxClientId,
+	private String boxUploadSiteContent(String sessionId, String boxClientId,
 			String boxClientSecret, String siteResourceJson, String boxFolderId) {
+		StringBuffer status = new StringBuffer();
+		
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 				boxClientSecret, BoxUtils.getBoxAccessToken(),
 				BoxUtils.getBoxRefreshToken());
@@ -808,11 +943,15 @@ public class MigrationController {
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
-				log.error("No url for content " + title);
+				String urlError = "No url for content " + title; 
+				log.error(urlError);
+				status.append(urlError + "\n");
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
-				log.error("No container folder url for content " + title);
+				String containerError = "No container folder url for content " + title;
+				log.error(containerError);
+				status.append(containerError + "\n");
 				break;
 			}
 
@@ -856,8 +995,10 @@ public class MigrationController {
 					} catch (BoxAPIException e) {
 						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 							// 409 means name conflict - item already existed
-							log.info("There is already a folder with name "
-									+ title);
+							String folderExistError = "There is already a folder with name "
+									+ title;
+							log.info(folderExistError);
+							status.append(folderExistError + "\n");
 						}
 					}
 				}
@@ -877,25 +1018,32 @@ public class MigrationController {
 				}
 
 				if (boxFolderIdStack.empty()) {
-					log.info("Cannot find parent folder for file " + contentUrl);
+					String parentError = "Cannot find parent folder for file " + contentUrl;
+					log.info(parentError);
+					status.append(parentError + "\n");
 					break;
 				}
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
-				uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
+				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
 						sessionId, api);
+				status.append(uploadFileStatus + "\n");
 			}
 		} // for
 
 		// refresh tokens
 		BoxUtils.refreshAccessAndRefreshTokens(api);
+		return status.toString();
 	}
 
 	/**
 	 * upload files to Box
 	 */
-	private void uploadFile(String boxFolderId, String fileName,
+	private String uploadFile(String boxFolderId, String fileName,
 			String fileUrl, String sessionId, BoxAPIConnection api) {
+		// status string
+		StringBuffer status = new StringBuffer();
+		
 		log.info("begin to upload file " + fileUrl + " to box folder "
 				+ boxFolderId);
 		String contentString = "";
@@ -917,7 +1065,9 @@ public class MigrationController {
 					fileUrl });
 
 		} catch (Exception e) {
-			log.error(":zipFiles " + fileUrl + " " + e.getMessage());
+			String exceptionString = "zipFiles " + fileUrl + " " + e.getMessage();
+			log.error(exceptionString);
+			status.append(exceptionString + "\n");
 		}
 
 		InputStream content = null;
@@ -946,19 +1096,24 @@ public class MigrationController {
 		} catch (BoxAPIException e) {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 				// 409 means name conflict - item already existed
-				log.info("There is already a file with name " + fileName);
+				String conflictString = "There is already a file with name " + fileName;
+				log.info(conflictString);
+				status.append(conflictString + "\n");
 			}
 		} catch (IllegalArgumentException iException) {
-			log.warn(":zipFiles: problem creating BufferedInputStream with content and length "
-					+ data.length + iException);
+			String ilExceptionString = "problem creating BufferedInputStream for file " + fileName + " with content and length "
+					+ data.length + iException;
+			log.warn(ilExceptionString);
+			status.append(ilExceptionString + "\n");
 		} finally {
 			if (bContent != null) {
 				try {
 					bContent.close(); // The BufferedInputStream needs to be
 										// closed
 				} catch (IOException ioException) {
-					log.warn(":zipFiles: problem closing FileChannel "
-							+ ioException);
+					String ioExceptionString = "problem closing FileChannel for file " + fileName + " " + ioException;
+					log.error(ioExceptionString);
+					status.append(ioExceptionString + "\n");
 				}
 			}
 		}
@@ -966,9 +1121,17 @@ public class MigrationController {
 			try {
 				content.close(); // The input stream needs to be closed
 			} catch (IOException ioException) {
-				log.warn(":zipFiles: problem closing Inputstream content "
-						+ ioException);
+				String ioExceptionString = "zipFiles: problem closing Inputstream content for file " + fileName + " " + ioException;
+				log.error(ioExceptionString);
+				status.append(ioExceptionString + "\n");
 			}
 		}
+		
+		// box upload success
+		if (status.length() == 0)
+		{
+			status.append("Box upload successful for file " + fileName + "\n");
+		}
+		return status.toString();
 	}
 }
