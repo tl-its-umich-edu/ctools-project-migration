@@ -2,7 +2,7 @@
 /* global projectMigrationApp, angular, _, moment, $ */
 
 /* TERMS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
 
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
@@ -251,8 +251,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       {
     	  // migrate to Box
     	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'box&box_folder_id=' + $scope.selectBoxFolder.id;
-          // use promise factory to execute the post
-          Migration.getMigrationZip(migrationUrl).then(function(result) {
+         
+
+          $log.info("box " + migrationUrl);
+    	  // use promise factory to execute the post
+          Migration.postMigrationBox(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
           });
@@ -261,13 +264,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       {
     	  // download locally
     	  migrationUrl = migrationZipUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + destinationType;
-    	// use promise factory to execute the post
-          Migration.postMigrationBox(migrationUrl).then(function(result) {
+
+          $log.info("zip " + migrationUrl);
+    	  // use promise factory to execute the post
+          Migration.getMigrationZip(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
           });
       }
-      $log.info(migrationUrl);
       $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
     });
     // stop all existing polling of /migrations end point if any

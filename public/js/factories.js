@@ -62,10 +62,9 @@ projectMigrationApp.factory('Projects', function($http) {
  * PROJECTS FACTORY - does the request for the migration controller user has
  * asked that a tool/tools be migrated
  */
-projectMigrationApp.factory('Migration', function($q, $timeout, $window) {
+projectMigrationApp.factory('Migration', function($q, $timeout, $window, $http) {
 	return {
 		getMigrationZip : function(url) {
-
 			var defer = $q.defer();
 
 			$timeout(function() {
