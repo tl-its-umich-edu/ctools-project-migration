@@ -67,44 +67,56 @@ public class BoxUtils {
 
 	private static final String CODE = "code";
 
-	private static String box_access_token = null;
+	private static HashMap<String, String> boxAccessTokens = new HashMap<String, String>();
 
-	private static String box_refresh_token = null;
+	private static HashMap<String, String> boxRefreshTokens = new HashMap<String, String>();
 	
 	private static final String BOX_CLIENT_ID = "box_client_id";
 	private static final String BOX_CLIENT_SECRET = "box_client_secret";
 	
 	/**
-	 * get Box access token
+	 * get Box access token for given user
 	 */
-	public static String getBoxAccessToken()
+	public static String getBoxAccessToken(String userId)
 	{
-		return box_access_token;
+		String boxAccessToken = null;
+		if (boxAccessTokens.containsKey(userId))
+		{
+			// if the token exists for given user
+			boxAccessToken = boxAccessTokens.get(userId);
+		}
+		return boxAccessToken;
 	}
 	
 	/**
-	 * set Box access token
+	 * set Box access token for given user
 	 */
-	public static void setBoxAccessToken(String boxAccessToken)
+	public static void setBoxAccessToken(String userId, String boxAccessToken)
 	{
-		box_access_token = boxAccessToken;
+		boxAccessTokens.put(userId, boxAccessToken);
 	}
 	
 	
 	/**
-	 * get Box refresh token
+	 * get Box refresh token for given user
 	 */
-	public static String getBoxRefreshToken()
+	public static String getBoxRefreshToken(String userId)
 	{
-		return box_refresh_token;
+		String boxRefreshToken = null;
+		if (boxRefreshTokens.containsKey(userId))
+		{
+			// if the token exists for given user
+			boxRefreshToken = boxRefreshTokens.get(userId);
+		}
+		return boxRefreshToken;
 	}
 	
 	/**
-	 * set Box refresh token
+	 * set Box refresh token for given user
 	 */
-	public static void setBoxRefreshToken(String boxRefreshToken)
+	public static void setBoxRefreshToken(String userId, String boxRefreshToken)
 	{
-		box_refresh_token = boxRefreshToken;
+		boxRefreshTokens.put(userId, boxRefreshToken);
 	}
 	
 	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
@@ -152,7 +164,7 @@ public class BoxUtils {
 	/**
 	 * get the authCode as embedded from Box callback response
 	 */
-	public static String getAuthCodeFromBoxCallback(HttpServletRequest request, String boxClientId, String boxClientSecret, String boxTokenUrl) {
+	public static String getAuthCodeFromBoxCallback(HttpServletRequest request, String boxClientId, String boxClientSecret, String boxTokenUrl, String userId) {
 		// get the code String from Box authorization callback
 		String authCode = null;
 		java.util.Enumeration<java.lang.String> e = request.getParameterNames();
@@ -166,7 +178,7 @@ public class BoxUtils {
 		
 		if (authCode == null)
 		{
-			log.error("getAuthCodeFromBoxCallback: authCode is null");
+			log.error("getAuthCodeFromBoxCallback: authCode is null for user " + userId);
 			return null;
 		}
 		
@@ -204,8 +216,8 @@ public class BoxUtils {
 					InputStream body = entity.getContent();
 					String theString = IOUtils.toString(body, "UTF-8");
 					JSONObject obj = new JSONObject(theString);
-					setBoxAccessToken((String) obj.get("access_token"));
-					setBoxRefreshToken((String) obj.get("refresh_token"));
+					setBoxAccessToken(userId, (String) obj.get("access_token"));
+					setBoxRefreshToken(userId, (String) obj.get("refresh_token"));
 					
 					// close inputstream and entity
 					IOUtils.closeQuietly(body);
@@ -234,10 +246,10 @@ public class BoxUtils {
 	/**
 	 * method to return json list of Box folders
 	 */
-	public static List<HashMap<String, String>> getBoxFolders(String boxClientId, String boxClientSecret)
+	public static List<HashMap<String, String>> getBoxFolders(String userId, String boxClientId, String boxClientSecret)
 	{
-		String boxAccessToken = getBoxAccessToken();
-		String boxRefreshToken = getBoxRefreshToken();
+		String boxAccessToken = getBoxAccessToken(userId);
+		String boxRefreshToken = getBoxRefreshToken(userId);
 		
 		try
 		{
@@ -255,7 +267,7 @@ public class BoxUtils {
 					null, api, rootFolder, "", 0);
 			
 			// update stored access token and refresh token
-			refreshAccessAndRefreshTokens(api);
+			refreshAccessAndRefreshTokens(userId, api);
 			
 			return folderItems;
 		}
@@ -267,12 +279,12 @@ public class BoxUtils {
 	}
 	
 	/**
-	 * store the current access token and refresh token locally
+	 * store the current access token and refresh token locally for given user
 	 */
-	public static void refreshAccessAndRefreshTokens (BoxAPIConnection api){
+	public static void refreshAccessAndRefreshTokens (String userId, BoxAPIConnection api){
 		// refresh tokens
-		setBoxAccessToken(api.getAccessToken());
-		setBoxRefreshToken(api.getRefreshToken());
+		setBoxAccessToken(userId, api.getAccessToken());
+		setBoxRefreshToken(userId, api.getRefreshToken());
 	}
 
 	/**

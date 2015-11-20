@@ -676,6 +676,9 @@ public class MigrationController {
 	@RequestMapping("/box/folders")
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
+		
+		// get the current user id
+		String userId = request.getRemoteUser();
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
@@ -698,14 +701,14 @@ public class MigrationController {
 			remoteUserEmail = remoteUserEmail + EMAIL_AT_UMICH;
 		}
 
-		if (BoxUtils.getBoxAccessToken() == null) {
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
 		} else {
 			// get box folders json
-			return BoxUtils.getBoxFolders(boxClientId, boxClientSecret);
+			return BoxUtils.getBoxFolders(userId, boxClientId, boxClientSecret);
 		}
 		return null;
 	}
@@ -724,7 +727,7 @@ public class MigrationController {
 		// get the authCode,
 		// and get access token and refresh token subsequently
 		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-				boxClientSecret, boxTokenUrl);
+				boxClientSecret, boxTokenUrl, request.getRemoteUser());
 	}
 	
 	/**
@@ -798,6 +801,9 @@ public class MigrationController {
 	public void migrationBox(HttpServletRequest request,
 			HttpServletResponse response) {
 
+		// get user id
+		String userId = request.getRemoteUser();
+		
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
@@ -826,7 +832,7 @@ public class MigrationController {
 		}
 		String remoteUserEmail = request.getRemoteUser();
 
-		if (BoxUtils.getBoxAccessToken() == null) {
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
@@ -859,7 +865,7 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				String downloadStatusString = boxUploadSiteContent(sessionId, boxClientId, boxClientSecret,
+				String downloadStatusString = boxUploadSiteContent(userId, sessionId, boxClientId, boxClientSecret,
 						siteResourceJson, boxFolderId);
 				boxMigrationStatus.append(downloadStatusString + "\n");
 
@@ -894,13 +900,13 @@ public class MigrationController {
 	/**
 	 * iterating though content json and upload folders and files to Box
 	 */
-	private String boxUploadSiteContent(String sessionId, String boxClientId,
+	private String boxUploadSiteContent(String userId, String sessionId, String boxClientId,
 			String boxClientSecret, String siteResourceJson, String boxFolderId) {
 		StringBuffer status = new StringBuffer();
 		
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-				boxClientSecret, BoxUtils.getBoxAccessToken(),
-				BoxUtils.getBoxRefreshToken());
+				boxClientSecret, BoxUtils.getBoxAccessToken(userId),
+				BoxUtils.getBoxRefreshToken(userId));
 		// site root folder
 		String rootFolderPath = null;
 
@@ -1032,7 +1038,7 @@ public class MigrationController {
 		} // for
 
 		// refresh tokens
-		BoxUtils.refreshAccessAndRefreshTokens(api);
+		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 		return status.toString();
 	}
 
