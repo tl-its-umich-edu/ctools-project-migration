@@ -1005,6 +1005,22 @@ public class MigrationController {
 									+ title;
 							log.info(folderExistError);
 							status.append(folderExistError + "\n");
+							
+							String exisingFolderId = getExistingBoxFolderIdFromBoxException(e, title);
+							if (exisingFolderId != null)
+							{
+								// push the current folder id into the stack
+								containerStack.push(contentUrl);
+								boxFolderIdStack.push(exisingFolderId);
+								log.debug("after stack peek= " + containerStack.peek()
+										+ " " + " container=" + container);
+								log.debug("*******");
+							}
+							else
+							{
+								log.info("Cannot find conflicting Box folder id for folder name " + title);
+							}
+							
 						}
 					}
 				}
@@ -1040,6 +1056,63 @@ public class MigrationController {
 		// refresh tokens
 		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 		return status.toString();
+	}
+	
+	/**
+	 * Based on the JSON returned inside BoxAPIException object, find out the id of conflicting box folder
+	 * @return id 
+	 */
+	private String getExistingBoxFolderIdFromBoxException(BoxAPIException e, String folderTitle)
+	{
+		String existingFolderId = null;
+		// here is the example JSON returned
+		//{  
+		//   "type":"error",
+		//   "status":409,
+		//   "code":"item_name_in_use",
+		//   "context_info":{  
+		//      "conflicts":[  
+		//         {  
+		//            "type":"folder",
+		//            "id":"5443268429",
+		//            "sequence_id":"0",
+		//            "etag":"0",
+		//            "name":"folder1"
+		//         }
+		//      ]
+		//   },
+		//   "help_url":"http:\/\/developers.box.com\/docs\/#errors",
+		//   "message":"Item with the same name already exists",
+		//   "request_id":"153175908556537d483098d"
+		//}
+		if (e.getResponse() == null)
+			return null;
+		JSONObject boxException = new JSONObject(e.getResponse());
+		if (boxException == null)
+			return null;
+		JSONObject context_info = boxException.getJSONObject("context_info");
+		if (context_info == null)
+			return null;
+		JSONArray conflicts = context_info.getJSONArray("conflicts");
+		if (conflicts == null)
+			return null;
+
+		for (int index = 0; index < conflicts.length(); index++) {
+			JSONObject conflict = conflicts.getJSONObject(index);
+			String conflictType = conflict.getString("type");
+			if (conflictType != null && conflictType.equals("folder"))
+			{
+				String folderId = conflict.getString("id");
+				String folderName = conflict.getString("name");
+				if (folderName != null && folderName.equals(folderTitle))
+				{
+					// found the existing folder id, break
+					existingFolderId = folderId;
+					break;
+				}
+			}
+		}
+		return existingFolderId;
 	}
 
 	/**
