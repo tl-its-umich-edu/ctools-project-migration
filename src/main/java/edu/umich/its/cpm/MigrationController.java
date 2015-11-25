@@ -266,13 +266,14 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response migrations() {
+	public Response migrations(HttpServletRequest request) {
+		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
-					.entity(repository.findAll()).build();
+					.entity(repository.findMigrations(userId)).build();
 		} catch (Exception e) {
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migration records" + e.getMessage())
+					.entity("Cannot get migration records for user " + userId + ": " + e.getMessage())
 					.build();
 		}
 	}
@@ -286,7 +287,7 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrations/{migration_id}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response migrations(@PathVariable("migration_id") String migration_id) {
+	public Response migrations(@PathVariable("migration_id") String migration_id, HttpServletRequest request) {
 		Object o = repository.findOne(migration_id);
 		String rv = "";
 		if (o == null) {
@@ -294,9 +295,24 @@ public class MigrationController {
 			throw new MigrationNotFoundException(
 					"no matching record for /migrations/" + migration_id);
 		}
-		// find migration record with id
-		return Response.status(Response.Status.OK).entity((Migration) o)
-				.build();
+		else
+		{
+			String userId = request.getRemoteUser();
+			String migratedBy = ((Migration) o).getMigrated_by();
+			if (!migratedBy.equals(userId))
+			{
+				// different user started the migration
+				throw new MigrationNotFoundException(
+						"record for /migrations/" + migration_id + " was done by user id=" + migratedBy + " , instead of current user " + userId);
+			}
+			else
+			{
+				// find migration record with id
+				return Response.status(Response.Status.OK).entity((Migration) o)
+						.build();
+			}
+			
+		}
 	}
 
 	/**
@@ -308,8 +324,16 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
-	public List<Migration> migrated() {
-		return repository.findMigrated();
+	public Response migrated() {
+		String userId = request.getRemoteUser();
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(repository.findMigrated(userId)).build();
+		} catch (Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrated records for user " + userId + ": " + e.getMessage())
+					.build();
+		}
 	}
 
 	/**
