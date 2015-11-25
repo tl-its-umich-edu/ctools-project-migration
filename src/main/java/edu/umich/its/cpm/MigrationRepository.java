@@ -10,18 +10,23 @@ import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 
 public interface MigrationRepository extends CrudRepository<Migration, String> {
-	List<Migration> findAll();
+	/**
+	 * Finds finished migrations issued by given user
+	 * 
+	 * @param userId
+	 * @return 
+	 */
+	@Query("SELECT m FROM Migration m WHERE m.migrated_by = ?#{[0]}")
+	List<Migration> findMigrations(String userId);
 
 	/**
 	 * Finds finished migrations, with not-null stop time
 	 * 
-	 * @param las
-	 * @return A list of persons whose last name is an exact match with the
-	 *         given last name. If no persons is found, this method returns an
-	 *         empty list.
+	 * @param userId
+	 * @return 
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL")
-	public List<Migration> findMigrated();
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by = ?#{[0]}")
+	public List<Migration> findMigrated(String userId);
 
 	/**
 	 * Finds migration with migration_id
@@ -29,7 +34,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param migration_id
 	 * @return A migration with migration_id
 	 */
-	// @Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
+	//@Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
 	public Migration findOne(String migration_id);
 
 	/**

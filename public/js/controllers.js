@@ -78,7 +78,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
           Migrated.getMigrated(migratedUrl).then(function(result) {
-            $scope.migratedProjects = _.sortBy(result.data, 'site_id');
+            $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
             $rootScope.status.migrated = moment().format('h:mm:ss');
             $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
             $log.info(' - - - - GET /migrated');
@@ -102,7 +102,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   var migratedUrl = $rootScope.urls.migratedUrl;
 
   Migrated.getMigrated(migratedUrl).then(function(result) {
-    $scope.migratedProjects = _.sortBy(result.data, 'site_id');
+    $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
     $rootScope.status.migrated = moment().format('h:mm:ss');
     $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
     $log.info(' - - - - GET /migrated');
@@ -118,7 +118,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         site_id: projectId
       }));
       //add the tools after the project object
-      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
+      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data.entity));
 
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
@@ -299,7 +299,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         $log.info(' - - - - GET /migrated');
         // request the /migrated data and reload the panel
         Migrated.getMigrated(migratedUrl).then(function(result) {
-          $scope.migratedProjects = result.data;
+          $scope.migratedProjects = result.data.entity;
           $rootScope.status.migrated = moment().format('h:mm:ss');
         });
       }
