@@ -27,6 +27,15 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 */
 	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by = ?#{[0]}")
 	public List<Migration> findMigrated(String userId);
+	
+	/**
+	 * Finds ongoing migrations, done by given user
+	 * 
+	 * @param userId
+	 * @return 
+	 */
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NULL and m.migrated_by = ?#{[0]}")
+	public List<Migration> findMigrating(String userId);
 
 	/**
 	 * Finds migration with migration_id

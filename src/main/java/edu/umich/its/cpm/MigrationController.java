@@ -316,7 +316,7 @@ public class MigrationController {
 	}
 
 	/**
-	 * found all migrated records (where the migration record have "end" field
+	 * found all migrated records (where the migration record have "end_time" field
 	 * value
 	 * 
 	 * @return
@@ -336,6 +336,27 @@ public class MigrationController {
 		}
 	}
 
+	/**
+	 * found all migrating records (where the migration record have NO "end_time" field)
+	 * value
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/migrating")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response migrating() {
+		String userId = request.getRemoteUser();
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(repository.findMigrating(userId)).build();
+		} catch (Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrating records for user " + userId + ": " + e.getMessage())
+					.build();
+		}
+	}
+	
 	/**
 	 * insert a new record of Migration
 	 * 
