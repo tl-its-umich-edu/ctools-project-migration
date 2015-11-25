@@ -970,12 +970,11 @@ public class MigrationController {
 					// insert into stack
 					containerStack.push(contentUrl);
 					boxFolderIdStack.push(boxFolderId);
-
 				} else {
 					log.info("Begin to create folder " + title);
 
-					log.debug("before stack peek=" + containerStack.peek()
-							+ " " + " container=" + container);
+					log.debug("top of stack folder id =" + containerStack.peek()
+							+ " " + " container folder id =" + container);
 					// pop the stack till the container equals to stack top
 					while (!containerStack.empty()
 							&& !container.equals(containerStack.peek())) {
@@ -995,8 +994,8 @@ public class MigrationController {
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
 						boxFolderIdStack.push(childFolderInfo.getID());
-						log.debug("after stack peek= " + containerStack.peek()
-								+ " " + " container=" + container);
+						log.debug("top of stack folder id = " + containerStack.peek()
+								+ " " + " container folder id=" + container);
 						log.debug("*******");
 					} catch (BoxAPIException e) {
 						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
@@ -1012,8 +1011,8 @@ public class MigrationController {
 								// push the current folder id into the stack
 								containerStack.push(contentUrl);
 								boxFolderIdStack.push(exisingFolderId);
-								log.debug("after stack peek= " + containerStack.peek()
-										+ " " + " container=" + container);
+								log.debug("top of stack folder id = " + containerStack.peek()
+										+ " " + " container folder id=" + container);
 								log.debug("*******");
 							}
 							else
