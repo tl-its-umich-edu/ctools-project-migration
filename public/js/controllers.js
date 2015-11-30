@@ -258,6 +258,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.postMigrationBox(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
+            pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       else
@@ -270,60 +271,64 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.getMigrationZip(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
+            pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
     });
-    // stop all existing polling of /migrations end point if any
-    $log.info(' - - - - stop all (if any) /migrations polls');
-    PollingService.stopPolling('migrationsAfterPageLoad');
-    PollingService.stopPolling('migrationsOnPageLoad');
-
-    // start a new polling of /migrations endpoint
-    PollingService.startPolling('migrationsAfterPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
-      if (result.data.entity.length === 0) {
-        $log.warn('Nothing being migrated: reloading /migrated and then stopping polling');
-        PollingService.stopPolling('migrationsAfterPageLoad');
-      }
-      else {
-        $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after  migration request');
-        $log.info(' - - - - GET /migrations/');
-      }  
-      //update time stamp displayed in the /migrations panel
-      $rootScope.status.migrations = moment().format('h:mm:ss');
-      $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
-      
-      // if the data from last poll is different from this poll
-      if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
-        $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
-        $log.info(' - - - - GET /migrated');
-        // request the /migrated data and reload the panel
-        Migrated.getMigrated(migratedUrl).then(function(result) {
-          $scope.migratedProjects = result.data.entity;
-          $rootScope.status.migrated = moment().format('h:mm:ss');
-        });
-      }
-      //TODO: this only really makes sense by comparing /projects and /migrated
-      $.each($scope.sourceProjects, function(index, project ) {
-        if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
-          project.migrating = true;
-        } else {
-          project.migrating = false;
-          project.stateSelectionExists = false;
-          project.stateExportConfirm = false;
-          project.selected = false;
-          project.stateHasTools = false;
-          project.hideTools = true;
-        }
-        if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-          project.migrating = true;
-        } else {
-          project.migrating = false;
-        }  
-      });
-
-      // copy the current data for /migrations to the shadow
-      $scope.migratingProjectsShadow = $scope.migratingProjects;
-    });
   };
+
+  var pollMigrations = function (migratingUrl,interval){
+    // stop all existing polling of /migrations end point if any
+      $log.info(' - - - - stop all (if any) /migrations polls');
+      PollingService.stopPolling('migrationsAfterPageLoad');
+      PollingService.stopPolling('migrationsOnPageLoad');
+      // start a new polling of /migrations endpoint
+      PollingService.startPolling('migrationsAfterPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
+        if (result.data.entity.length === 0) {
+          $log.warn('Nothing being migrated: reloading /migrated and then stopping polling');
+          PollingService.stopPolling('migrationsAfterPageLoad');
+        }
+        else {
+          $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after  migration request');
+          $log.info(' - - - - GET /migrations/');
+        }  
+        //update time stamp displayed in the /migrations panel
+        $rootScope.status.migrations = moment().format('h:mm:ss');
+        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        
+        // if the data from last poll is different from this poll
+        if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
+          $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
+          $log.info(' - - - - GET /migrated');
+          // request the /migrated data and reload the panel
+          Migrated.getMigrated(migratedUrl).then(function(result) {
+            $scope.migratedProjects = result.data.entity;
+            $rootScope.status.migrated = moment().format('h:mm:ss');
+          });
+        }
+        //TODO: this only really makes sense by comparing /projects and /migrated
+        $.each($scope.sourceProjects, function(index, project ) {
+          if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
+            project.migrating = true;
+          } else {
+            project.migrating = false;
+            project.stateSelectionExists = false;
+            project.stateExportConfirm = false;
+            project.selected = false;
+            project.stateHasTools = false;
+            project.hideTools = true;
+          }
+          if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
+            project.migrating = true;
+          } else {
+            project.migrating = false;
+          }  
+        });
+        // copy the current data for /migrations to the shadow
+        $scope.migratingProjectsShadow = $scope.migratingProjects;
+      });
+  }
+
+
 }]);
