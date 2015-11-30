@@ -27,9 +27,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   });
 
   // GET the current migrations list
-  var migrationsUrl = $rootScope.urls.migrationsUrl;
+  var migratingUrl = $rootScope.urls.migratingUrl;
 
-  Migrations.getMigrations(migrationsUrl).then(function(result) {
+  Migrations.getMigrations(migratingUrl).then(function(result) {
     $scope.migratingProjects = _.sortBy(result.data.entity, 'site_id');
 
     $rootScope.status.migrations = moment().format('h:mm:ss');
@@ -38,7 +38,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     if (result.data.entity.length) {
       $log.warn('page load got one or more current migrations - will have to poll it every ' + $rootScope.pollInterval/1000 + ' seconds');
       
-      PollingService.startPolling('migrationsOnPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
+      PollingService.startPolling('migrationsOnPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
 
 /*      $.each($scope.sourceProjects, function(index, project ) {
@@ -280,7 +280,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     PollingService.stopPolling('migrationsOnPageLoad');
 
     // start a new polling of /migrations endpoint
-    PollingService.startPolling('migrationsAfterPageLoad', migrationsUrl, $rootScope.pollInterval, function(result) {
+    PollingService.startPolling('migrationsAfterPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
       if (result.data.entity.length === 0) {
         $log.warn('Nothing being migrated: reloading /migrated and then stopping polling');
         PollingService.stopPolling('migrationsAfterPageLoad');
