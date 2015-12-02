@@ -15,18 +15,16 @@ label {
 }
 
 @media (max-width: 480px) {
-.panel-body {
-	padding:0;
-}
-.panel-body div.alert {
-	margin:5px;
-}
-.list-group-item {
-	border-width:0 0 2px 0;
-}
-.list-group-item:first-child {
-	border-radius:0;
-}
-
-
+	.panel-body {
+		padding:0;
+	}
+	.panel-body div.alert {
+		margin:5px;
+	}
+	.list-group-item {
+		border-width:0 0 2px 0;
+	}
+	.list-group-item:first-child {
+		border-radius:0;
+	}
 }
