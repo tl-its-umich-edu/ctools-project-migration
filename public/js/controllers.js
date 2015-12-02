@@ -153,6 +153,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.destinationTypeSelect = function(index, name, id) {
     $log.info($scope.sourceProjects[index])
     $scope.sourceProjects[index].selectDestinationType = {'name':name,'id':id};
+    $scope.sourceProjects[index - 1].selectDestinationType = {'name':name,'id':id};
     $log.info($scope.sourceProjects[index])
     $log.info('Migration destination type "' + $scope.sourceProjects[index].selectDestinationType.name + '" (ID: ' + $scope.sourceProjects[index].selectDestinationType.id + ') selected');
   };
