@@ -150,9 +150,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   
   //handler for a user's selection of export destination type: local download or export to Box 
   //as a destination of a migration
-  $scope.destinationTypeSelect = function(name, id) {
-    $scope.selectDestinationType = {'name':name,'id':id};
-    $log.info('Migration destination type "' + $scope.selectDestinationType.name + '" (ID: ' + $scope.selectDestinationType.id + ') selected');
+  $scope.destinationTypeSelect = function(index, name, id) {
+    $log.info($scope.sourceProjects[index])
+    $scope.sourceProjects[index].selectDestinationType = {'name':name,'id':id};
+    $log.info($scope.sourceProjects[index])
+    $log.info('Migration destination type "' + $scope.sourceProjects[index].selectDestinationType.name + '" (ID: ' + $scope.sourceProjects[index].selectDestinationType.id + ') selected');
   };
 
   /*
@@ -329,6 +331,4 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         $scope.migratingProjectsShadow = $scope.migratingProjects;
       });
   }
-
-
 }]);

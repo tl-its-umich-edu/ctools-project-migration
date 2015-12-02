@@ -46,27 +46,26 @@
 						<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
 						</div>
 					</div>
-					<div class="row" style="margin:0;padding:10px 0 0 5px">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-			    			<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
-			    				<input type="radio" name="destinationSelect" ng-model="destinationTypeSelected" value="destinationTypebox" id="destinationTypebox" ng-change="destinationTypeSelect('box','box')">
-							</div>
-				    		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-				    			<label for="destinationTypebox">Upload To Box</label>
-				    		</div>
-				    		<br/>
-							<small ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
-			    			</small>
-				    		<small ng-show="!selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
-				    		</small>
+					<div class="row" ng-show="project.selected">
+						<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
 						</div>
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-							<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">	
-								<input type="radio" name="destinationSelect" ng-model="destinationTypeSelected" value="destinationTypelocal" id="destinationTypelocal" ng-change="destinationTypeSelect('local','local')">
-							</div>
-				    		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-				    			<label for="destinationTypelocal">Download as a Zip file</label>
-				    		</div>
+						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11">
+							<small>
+		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypebox" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect($index, 'box','box')">
+			    			<label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
+			    		</small>
+		    			<div ng-show="project.selectDestinationType.name ==='box'" style="padding:0 0 5px 16px">
+			    			<small ng-show="selectBoxFolder">
+			    				Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
+				    		</small>
+					    	<small ng-show="!selectBoxFolder">
+					    		You will need to <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">select</a> a Box folder.
+					    	</small>
+				    	</div>
+				    	<small>
+			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypelocal" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect($index, 'local','local')">
+			    			<label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a Zip file</label>
+			    		</small>
 						</div>
 					</div>
 				</div>	
