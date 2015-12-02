@@ -15,10 +15,10 @@
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
-	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
+	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools">
 			  			Get tools
 						</a>
-						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (selectDestinationType.name ==='local' || (selectDestinationType.name ==='box' && selectBoxFolder)) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
+						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='local' || project.selectDestinationType.name==='box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
 					</div>
 				</div>
 				<div class="row" ng-show="project.stateExportConfirm">
