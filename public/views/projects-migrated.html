@@ -1,8 +1,12 @@
-<div ng-hide="migratedProjects.length">
+<div ng-if="!migratedProjects.length && !migratedProjectsError">
 	There are no completed exports at this time.
 </div>
 
-<div ng-show="migratedProjects.length">
+<div ng-if="migratedProjectsError" class="alert alert-danger" role="alert">
+	<span class="emoji">🤕</span> There was an error retrieving completed migrations!
+</div>
+
+<div ng-if="migratedProjects.length && !migratedProjectsError">
 	<ul class="list-group" style="margin-bottom:0">
   	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects | orderBy:'site_id'">
   		<!--//this is not very good, but leaves the model untouched for polling needs

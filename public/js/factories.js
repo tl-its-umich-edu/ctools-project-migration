@@ -25,7 +25,7 @@ projectMigrationApp.factory('Projects', function($http) {
 				errorDisplay(url, result.status, 'Unable to get projects');
 				result.errors.failure = true;
 				return result;
-			});
+			});	
 		},
 		getProject : function(url) {
 			return $http.get(url, {
@@ -101,11 +101,15 @@ projectMigrationApp.factory('Migrations', function($http) {
 			return $http.get(url, {
 				cache : false
 			}).then(function success(result) {
-				// forward the data - let the controller deal with it
-				// console.log()
-				return result;
+				// endpoint will return a 200, but the payload may be an error message with a status flag
+				if(result.data.status ===200){
+					return result;
+				} else {
+					result.status = result.data.status;
+					return result;
+				}
 			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to get projects');
+				errorDisplay(url, result.status, 'Unable to get current migrations');
 				result.errors.failure = true;
 				return result;
 			});
@@ -120,10 +124,16 @@ projectMigrationApp.factory('Migrated', function($http) {
 			return $http.get(url, {
 				cache : false
 			}).then(function success(result) {
-				// forward the data - let the controller deal with it
-				return result;
+				// endpoint will return a 200, but the payload may be an error message with a status flag
+				if(result.data.status ===200){
+					return result;
+				}
+				else {
+					result.status = result.data.status;
+					return result;
+				}
 			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to get projects');
+				errorDisplay(url, result.status, 'Unable to get migrated projects');
 				result.errors.failure = true;
 				return result;
 			});
