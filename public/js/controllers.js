@@ -118,7 +118,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
         site_id: projectId
       }));
       //add the tools after the project object
-      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data.entity));
+      $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
 
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
