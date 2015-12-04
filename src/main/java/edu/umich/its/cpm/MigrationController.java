@@ -207,7 +207,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = request.getRemoteUser();
+		String remoteUser = "gsilver";
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -267,7 +267,7 @@ public class MigrationController {
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrations(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = "gsilver";
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrations(userId)).build();
@@ -297,7 +297,7 @@ public class MigrationController {
 		}
 		else
 		{
-			String userId = request.getRemoteUser();
+			String userId = "gsilver";
 			String migratedBy = ((Migration) o).getMigrated_by();
 			if (!migratedBy.equals(userId))
 			{
@@ -325,7 +325,7 @@ public class MigrationController {
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrated(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = ;
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrated(userId)).build();
@@ -346,7 +346,7 @@ public class MigrationController {
 	@RequestMapping("/migrating")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrating(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = "gsilver";
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrating(userId)).build();
@@ -472,12 +472,15 @@ public class MigrationController {
 
 					String downloadEndSuccess = "downloadZippedFile end: successfully download zip file for site "
 							+ site_id;
+					String downloadEndSuccessReport = "{'downloadZippedFileEnd': 'Successfully download zip file for site " + site_id + "'}";
+
 					log.info(downloadEndSuccess);
-					downloadStatus.append(downloadEndSuccess + "\n");
+					downloadStatus.append(downloadEndSuccessReport + "\n");
 				} else {
 					String noContent = site_id + " has no content to download."; 
+					String noContentReport = "{'noContent':'" + site_id + " has no content to download.'}"; 
 					log.error(noContent);
-					downloadStatus.append(noContent + "\n");
+					downloadStatus.append(noContentReport + "\n");
 				}
 
 			} catch (RestClientException e) {
@@ -490,17 +493,19 @@ public class MigrationController {
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
+				String errorMessageReport = "{'error':'Problem getting content zip file for "
+						+ site_id + " " + e.getMessage() + "'}";
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
 				log.error(errorMessage);
-				downloadStatus.append(errorMessage + "\n");
+				downloadStatus.append(errorMessageReport + "\n");
 				
 			}
 		}
 		else
 		{
-			String userError = "Cannot become user " + request.getRemoteUser();
+			String userError = "Cannot become user " + "gsilver";
 			log.error(userError);
 			downloadStatus.append(userError + "\n");
 		}
@@ -685,7 +690,7 @@ public class MigrationController {
 		// return success message
 		if (zipFileStatus.length() == 0)
 		{
-			zipFileStatus.append(fileName + " was added into zip file successfully.");
+			zipFileStatus.append("{'item':'" + fileName + " was added into zip file successfully.'}");
 		}
 		
 		return zipFileStatus.toString();
@@ -723,7 +728,7 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 		
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "gsilver";
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
@@ -737,7 +742,7 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = request.getRemoteUser();
+		String remoteUserEmail = "gsilver";
 		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
 			// if the remote user value is not of email format
 			// then it is the uniqname of umich user
@@ -772,7 +777,7 @@ public class MigrationController {
 		// get the authCode,
 		// and get access token and refresh token subsequently
 		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-				boxClientSecret, boxTokenUrl, request.getRemoteUser());
+				boxClientSecret, boxTokenUrl, "gsilver");
 	}
 	
 	/**
@@ -797,7 +802,7 @@ public class MigrationController {
 
 		Migration m = new Migration(siteId, siteName,
 			toolId,
-			toolName, request.getRemoteUser(),
+			toolName, "gsilver",
 			new java.sql.Timestamp(System.currentTimeMillis()), // start
 																// time is
 																// now
@@ -811,7 +816,7 @@ public class MigrationController {
 				.append(siteName).append(" tool_id=")
 				.append(toolId).append(" tool_name=")
 				.append(toolName)
-				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" migrated_by=").append("gsilver")
 				.append(" destination_type=").append(destinationType)
 				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
@@ -830,7 +835,7 @@ public class MigrationController {
 		// put status message into HashMap
 		if (status.length() == 0)
 		{
-			status.append("Database Migration record successfully created.");
+			status.append("{'db':'Database Migration record successfully created.'}");
 		}
 		rv.put("status", status.toString());
 		
@@ -847,7 +852,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get user id
-		String userId = request.getRemoteUser();
+		String userId = "gsilver";
 		
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		// save migration record into database
@@ -875,7 +880,7 @@ public class MigrationController {
 			log.error(boxClientIdError);
 			boxMigrationStatus.append(boxClientIdError + "\n");
 		}
-		String remoteUserEmail = request.getRemoteUser();
+		String remoteUserEmail = "gsilver";
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
@@ -929,7 +934,7 @@ public class MigrationController {
 		}
 		else
 		{
-			String errorBecomeUser = "Problem become user to " + request.getRemoteUser();
+			String errorBecomeUser = "Problem become user to " + "gsilver";
 			log.error(errorBecomeUser);
 			boxMigrationStatus.append(errorBecomeUser + "\n");
 		}
