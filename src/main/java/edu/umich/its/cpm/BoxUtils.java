@@ -96,6 +96,14 @@ public class BoxUtils {
 		boxAccessTokens.put(userId, boxAccessToken);
 	}
 	
+	/**
+	 * remote Box access token for given user
+	 */
+	public static void removeBoxAccessToken(String userId)
+	{
+		boxAccessTokens.remove(userId);
+	}
+	
 	
 	/**
 	 * get Box refresh token for given user

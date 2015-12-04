@@ -141,6 +141,18 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     }  
   };
 
+  // remove user authentication information from server memory 
+  // user need to re-authenticate in the future to access their box account 
+  $scope.logOutBox = function() {
+      var boxUrl = '/box/logOutBox';
+      Projects.logOutBox(boxUrl).then(function(result) {
+    	// clean the box folder information
+        $scope.boxFolders = "";
+        $log.info(moment().format('h:mm:ss') + ' - log out of Box account requested');
+        $log.info(' - - - - GET /box/logOutBox');
+      });
+  };
+  
   //handler for a user's selection of a particular Box folder 
   //as a destination of a migration
   $scope.boxFolderSelect = function(folder) {
