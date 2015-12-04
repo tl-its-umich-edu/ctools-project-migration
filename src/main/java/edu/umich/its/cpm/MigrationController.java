@@ -324,7 +324,7 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response migrated() {
+	public Response migrated(HttpServletRequest request) {
 		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
@@ -345,7 +345,7 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrating")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response migrating() {
+	public Response migrating(HttpServletRequest request) {
 		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
