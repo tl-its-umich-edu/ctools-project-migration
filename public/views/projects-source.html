@@ -15,7 +15,7 @@
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
-	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools">
+	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
 			  			Get tools
 						</a>
 						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='local' || project.selectDestinationType.name==='box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
@@ -51,7 +51,7 @@
 						</div>
 						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11">
 							<small>
-		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypebox" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect($index, 'box','box')">
+		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypebox" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'box','box')">
 			    			<label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
 			    		</small>
 		    			<div ng-show="project.selectDestinationType.name ==='box'" style="padding:0 0 5px 16px">
@@ -63,7 +63,7 @@
 					    	</small>
 				    	</div>
 				    	<small>
-			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypelocal" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect($index, 'local','local')">
+			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypelocal" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'local','local')">
 			    			<label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a Zip file</label>
 			    		</small>
 						</div>

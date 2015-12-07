@@ -148,12 +148,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   
   //handler for a user's selection of export destination type: local download or export to Box 
   //as a destination of a migration
-  $scope.destinationTypeSelect = function(index, name, id) {
-    $log.info($scope.sourceProjects[index])
-    $scope.sourceProjects[index].selectDestinationType = {'name':name,'id':id};
-    $scope.sourceProjects[index - 1].selectDestinationType = {'name':name,'id':id};
-    $log.info($scope.sourceProjects[index])
-    $log.info('Migration destination type "' + $scope.sourceProjects[index].selectDestinationType.name + '" (ID: ' + $scope.sourceProjects[index].selectDestinationType.id + ') selected');
+  $scope.destinationTypeSelect = function(site_id, tool_id, name, id) {
+    // decorate both the tool row and the parent site row
+    var toolRow = _.findWhere($scope.sourceProjects, {tool_id: tool_id});
+    toolRow.selectDestinationType = {'name':name,'id':id};
+    var parentRow = _.findWhere($scope.sourceProjects, {site_id: site_id, tool_id:''});
+    parentRow.selectDestinationType = {'name':name,'id':id};
   };
 
   /*
