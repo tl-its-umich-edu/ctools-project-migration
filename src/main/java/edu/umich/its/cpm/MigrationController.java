@@ -207,7 +207,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = "gsilver";
+		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
