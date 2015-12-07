@@ -9,6 +9,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.migratedProjects = [];
 
   $scope.loadingProjects = true;
+  
+  $scope.boxAuthorized = false;
+  // whether the current user authorized app to Box or not
+  var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+  Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+	    $scope.boxAuthorized = result.data == "true";
+	    $log.info(' - - - - User authorized to Box ' + result.data);
+	  });
+  
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
   $scope.loadingProjects = false;
@@ -140,7 +149,33 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       });
     }  
   };
+  
+  //handler for a request for user Box account authentication/authorization
+  $scope.boxAuthorize = function() {
+	$log.info('---- in boxAuthorize ');
+    // get the box folder info if it has not been gotten yet
+    if (!$scope.boxAuthorized) {
+      $log.info(' - - - - GET /box/authorize');
+      var boxUrl = '/box/authorize';
+      Projects.boxAuthorize(boxUrl).then(function(result) {
+    	$scope.boxAuthorizeHtml = result.data;
+        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+        $log.info(' - - - - GET /box/authorize');
+      });
+    }  
+  };
 
+  // remove user authentication information from server memory 
+  // user need to re-authenticate in the future to access their box account 
+  $scope.boxUnauthorize = function() {
+      var boxUrl = '/box/unauthorize';
+      Projects.boxUnauthorize(boxUrl).then(function(result) {
+    	// current user un-authorize the app from accessing Box
+        $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
+        $log.info(' - - - - GET /box/unauthorize');
+      });
+  };
+  
   //handler for a user's selection of a particular Box folder 
   //as a destination of a migration
   $scope.boxFolderSelect = function(folder) {
