@@ -759,12 +759,46 @@ public class MigrationController {
 	}
 	
 	/**
+	 * User authenticates into the Box account
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/box/authorize")
+	public String  boxAuthenticate(
+			HttpServletRequest request, HttpServletResponse response) {
+		// get the current user id
+		String userId = "zqian";
+		String remoteUserEmail = userId + "@umich.edu";
+		
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/authorized";
+		
+		log.info("in /box/authorize");
+		
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
+			log.info("user " + userId + " has not authorized to use Box. Start auth process.");
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
+			return BoxUtils.authenticateString(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+					remoteUserEmail, response);
+		}
+		else
+		{
+			log.info("user " + userId + " already authorized");
+			return "Authorized";
+		}
+	}
+	
+	/**
 	 * get json string of box folders
 	 * 
 	 * @return
 	 */
-	@RequestMapping("/box/logOutBox")
-	public Response logOutBox(
+	@RequestMapping("/box/unauthorize")
+	public Response unauthorizeBox(
 			HttpServletRequest request, HttpServletResponse response) {
 		
 		// get the current user id
@@ -784,6 +818,7 @@ public class MigrationController {
 			rv = "User authentication info is removed. ";
 		}
 		
+		log.info("/box/unauthorize for user " + userId + " " + rv);
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(rv).build();
@@ -796,19 +831,39 @@ public class MigrationController {
 
 	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
-	public void getBoxAuthzTokens(HttpServletRequest request) {
+	public String getBoxAuthzTokens(HttpServletRequest request) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
 		log.info("token url=" + boxTokenUrl);
-
-		String rv = "";
-		// get the authCode,
-		// and get access token and refresh token subsequently
-		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-				boxClientSecret, boxTokenUrl, "zqian");
+		
+		// get the current user id
+		String userId = "zqian";
+		String rv = BoxUtils.getBoxAccessToken(userId);
+		
+		if (rv == null)
+		{
+			// get the authCode,
+			// and get access token and refresh token subsequently
+			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+					boxClientSecret, boxTokenUrl, "zqian");
+			
+			// try to get the access token after parsing the request string
+			rv = BoxUtils.getBoxAccessToken(userId);
+		}
+		
+		return rv != null?"Authorized":"Unauthorized";
+	}
+	
+	@RequestMapping("/box/checkAuthorized")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Boolean boxCheckAuthorized(HttpServletRequest request) {
+		
+		// get the current user id
+		String userId = "zqian";
+		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 	
 	/**

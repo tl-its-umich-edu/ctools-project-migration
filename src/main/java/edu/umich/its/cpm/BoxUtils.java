@@ -136,6 +136,34 @@ public class BoxUtils {
 		BoxUser user = BoxUser.getCurrentUser(connection);
 		BoxUser.Info info = user.getInfo();
 	}
+	
+	public static String authenticateString(String boxAPIUrl, String boxClientId,
+			String boxClientRedirectUri, String remoteUserEmail,
+			HttpServletResponse response) {
+		// Box authorization
+		RestTemplate restTemplate = new RestTemplate();
+
+		if (boxAPIUrl == null) {
+			// log error
+			log.error("No Box API url specified. ");
+			return "";
+		}
+
+		String requestUrl = boxAPIUrl + "/oauth2/authorize"
+				+ "?response_type=code" + "&client_id=" + boxClientId
+				+ "&redirect_uri=" + boxClientRedirectUri
+				+ "&state=&box_login=" + remoteUserEmail;
+
+		try {
+			String resultString = restTemplate.getForObject(requestUrl,
+					String.class);
+			return resultString;
+		} catch (RestClientException e) {
+			log.error(requestUrl + e.getMessage());
+		}
+		
+		return "";
+	}
 
 	public static void authenticate(String boxAPIUrl, String boxClientId,
 			String boxClientRedirectUri, String remoteUserEmail,
