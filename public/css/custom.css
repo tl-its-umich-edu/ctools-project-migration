@@ -1,3 +1,6 @@
+.emoji {
+	font-size:125%
+}
 .spinner {
     background: url("../images/dots.gif") no-repeat scroll 0 0 transparent;
     display: inline-block;
@@ -9,4 +12,22 @@
 }
 .toolRow {
 	background:#fff;
+}
+label {
+	font-weight:normal;
+}
+
+@media (max-width: 480px) {
+	.panel-body {
+		padding:0;
+	}
+	.panel-body div.alert {
+		margin:5px;
+	}
+	.list-group-item {
+		border-width:0 0 2px 0;
+	}
+	.list-group-item:first-child {
+		border-radius:0;
+	}
 }
