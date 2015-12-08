@@ -52,24 +52,8 @@
 						<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
 						</div>
 					</div>
-<<<<<<< HEAD
-					<div class="row" style="margin:0;padding:10px 0 0 5px">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-			    			<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
-			    				<input type="radio" name="destinationSelect" ng-model="destinationTypeSelected" value="destinationTypebox" id="destinationTypebox" ng-change="destinationTypeSelect('box','box')">
-							</div>
-				    		<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-				    			<label for="destinationTypebox">Upload To Box</label>
-				    		</div>
-				    		<br/>
-							<small ng-show="boxAuthorized && selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
-			    			</small>
-				    		<small ng-show="boxAuthorized && !selectBoxFolder">You will need to select a Box folder <strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Select</a></strong>
-				    		</small>
-=======
 					<div class="row" ng-show="project.selected">
 						<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
->>>>>>> upstream/master
 						</div>
 						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11">
 							<small>
