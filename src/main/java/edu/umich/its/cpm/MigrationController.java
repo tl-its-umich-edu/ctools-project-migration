@@ -128,6 +128,8 @@ public class MigrationController {
 	private static final String CONTENT_JSON_ATTR_TITLE = "title";
 	private static final String CONTENT_JSON_ATTR_TYPE = "type";
 	private static final String CONTENT_JSON_ATTR_URL = "url";
+	private static final String CONTENT_JSON_ATTR_DESCRIPTION = "description";
+	private static final String CONTENT_JSON_ATTR_AUTHOR = "author";
 
 	/**
 	 * get all CTools sites where user have site.upd permission
@@ -1083,6 +1085,12 @@ public class MigrationController {
 
 			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
 			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+			
+			// metadata
+			String description = contentItem.getString(CONTENT_JSON_ATTR_DESCRIPTION);
+			String author = contentItem.getString(CONTENT_JSON_ATTR_AUTHOR);
+			
+			
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
@@ -1255,7 +1263,7 @@ public class MigrationController {
 	 * upload files to Box
 	 */
 	private String uploadFile(String boxFolderId, String fileName,
-			String fileUrl, String sessionId, BoxAPIConnection api) {
+			String fileUrl, String fileDescription, String fileAuthor, String sessionId, BoxAPIConnection api) {
 		// status string
 		StringBuffer status = new StringBuffer();
 		
@@ -1298,7 +1306,7 @@ public class MigrationController {
 			bContent = new BufferedInputStream(content);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			final String uploadFileName = fileName;
-			folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
+			BoxFile.info newFile = folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
 					new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
@@ -1307,6 +1315,7 @@ public class MigrationController {
 									+ percentComplete);
 						}
 					});
+			newFile.
 			log.info("upload success for file " + fileUrl);
 		} catch (BoxAPIException e) {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
