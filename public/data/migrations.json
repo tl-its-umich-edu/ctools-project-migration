@@ -1,98 +1,46 @@
-[
-    {
-        "site_id": "site_id1",
-        "site_name": "site-title 1",
-        "tool_id": "some_guid",
-        "tool_name": "Resources site 1",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id2",
-        "site_name": "site-title 2",
-        "tool_id": "some_guid",
-        "tool_name": "Resources site 2",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id2",
-        "site_name": "site-title 2",
-        "tool_id": "some_guid",
-        "tool_name": "Ann site 2",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id3",
-        "site_name": "site-title 3",
-        "tool_id": "some_guid",
-        "tool_name": "Resources site 3",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id2",
-        "site_name": "site-title 2",
-        "tool_id": "some_guid",
-        "tool_name": "Email site 2",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id2",
-        "site_name": "site-title 2",
-        "tool_id": "some_guid",
-        "tool_name": "Bang site 2",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id2",
-        "site_name": "site-title 2",
-        "tool_id": "some_guid",
-        "tool_name": "Bong site 2",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
-    },
-    {
-        "site_id": "site_id3",
-        "site_name": "site-title 3",
-        "tool_id": "some_guid",
-        "tool_name": "Bang site 3",
-        "migration_id": "some_guid",
-        "start": "unix_timestamp",
-        "end": null,
-        "migrated_by": "someone",
-        "destination_type": "Box",
-        "destination_url": null
+
+{
+  "statusType": "OK",
+  "entity": [{
+      "migration_id": "e5f2359a-433d-46f8-b6d6-f69a1fbffc01",
+      "site_id": "56588340-c0d7-4d3b-a657-c25fadfa43a1",
+      "site_name": "Test site 1",
+      "tool_name": "Resources",
+      "tool_id": "edb6f47d-5b0d-4fff-9a44-e898643a8512",
+      "migrated_by": "gsilver",
+      "start_time": 1449072436245,
+      "end_time": null,
+      "destination_type": "zip",
+      "destination_url": null,
+      "status": null
+    }, {
+      "migration_id": "e5f2359a-433d-46f8-b6d6-f69a1fbffc02",
+      "site_id": "56588340-c0d7-4d3b-a657-c25fadfa43a2",
+      "site_name": "Test site 2",
+      "tool_name": "Resources",
+      "tool_id": "edb6f47d-5b0d-4fff-9a44-e898643a8512",
+      "migrated_by": "gsilver",
+      "start_time": 1449072436245,
+      "end_time": null,
+      "destination_type": "zip",
+      "destination_url": null,
+      "status": null
+    }, {
+      "migration_id": "e5f2359a-433d-46f8-b6d6-f69a1fbffc03",
+      "site_id": "56588340-c0d7-4d3b-a657-c25fadfa43a3",
+      "site_name": "Test site 3",
+      "tool_name": "Resources",
+      "tool_id": "edb6f47d-5b0d-4fff-9a44-e898643a8512",
+      "migrated_by": "gsilver",
+      "start_time": 1449072436245,
+      "end_time": null,
+      "destination_type": "zip",
+      "destination_url": null,
+      "status": null
     }
-]
+
+  ],
+  "entityType": "java.util.ArrayList",
+  "status": 200,
+  "metadata": {}
+}
