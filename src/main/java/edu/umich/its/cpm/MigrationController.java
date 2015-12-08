@@ -737,7 +737,7 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = request.getRemoteUser();
+		String remoteUserEmail = userId;
 		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
 			// if the remote user value is not of email format
 			// then it is the uniqname of umich user
@@ -757,22 +757,113 @@ public class MigrationController {
 		}
 		return null;
 	}
+	
+	/**
+	 * User authenticates into the Box account
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/box/authorize")
+	public String  boxAuthenticate(
+			HttpServletRequest request, HttpServletResponse response) {
+		// get the current user id
+		String userId = request.getRemoteUser();
+		String remoteUserEmail = userId + "@umich.edu";
+		
+		String boxClientId = env.getProperty(BOX_CLIENT_ID);
+		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
+		String boxAPIUrl = env.getProperty(BOX_API_URL);
+		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
+				+ "/authorized";
+		
+		log.info("in /box/authorize");
+		
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
+			log.info("user " + userId + " has not authorized to use Box. Start auth process.");
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
+			return BoxUtils.authenticateString(boxAPIUrl, boxClientId, boxClientRedirectUrl,
+					remoteUserEmail, response);
+		}
+		else
+		{
+			log.info("user " + userId + " already authorized");
+			return "Authorized";
+		}
+	}
+	
+	/**
+	 * get json string of box folders
+	 * 
+	 * @return
+	 */
+	@RequestMapping("/box/unauthorize")
+	public Response unauthorizeBox(
+			HttpServletRequest request, HttpServletResponse response) {
+		
+		// get the current user id
+		String userId = request.getRemoteUser();
+		
+		// the return string
+		String rv = "";
+		
+		// check whether the user authentication token is store in memory
+		if (BoxUtils.getBoxAccessToken(userId) == null)
+		{
+			rv = "Cannot find user's Box authentication info. ";
+		}
+		else
+		{
+			BoxUtils.removeBoxAccessToken(userId);
+			rv = "User authentication info is removed. ";
+		}
+		
+		log.info("/box/unauthorize for user " + userId + " " + rv);
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(rv).build();
+		} catch (Exception e) {
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot remove box authentication info for user " + userId + ": " + e.getMessage())
+					.build();
+		}
+	}
 
 	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
-	public void getBoxAuthzTokens(HttpServletRequest request) {
+	public String getBoxAuthzTokens(HttpServletRequest request) {
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
 		log.info("token url=" + boxTokenUrl);
-
-		String rv = "";
-		// get the authCode,
-		// and get access token and refresh token subsequently
-		BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-				boxClientSecret, boxTokenUrl, request.getRemoteUser());
+		
+		// get the current user id
+		String userId = request.getRemoteUser();
+		String rv = BoxUtils.getBoxAccessToken(userId);
+		
+		if (rv == null)
+		{
+			// get the authCode,
+			// and get access token and refresh token subsequently
+			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+					boxClientSecret, boxTokenUrl, userId);
+			
+			// try to get the access token after parsing the request string
+			rv = BoxUtils.getBoxAccessToken(userId);
+		}
+		
+		return rv != null?"Authorized":"Unauthorized";
+	}
+	
+	@RequestMapping("/box/checkAuthorized")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Boolean boxCheckAuthorized(HttpServletRequest request) {
+		
+		// get the current user id
+		String userId = request.getRemoteUser();
+		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 	
 	/**
@@ -794,10 +885,11 @@ public class MigrationController {
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = "zip";
-
+		String userId = request.getRemoteUser();
+		
 		Migration m = new Migration(siteId, siteName,
 			toolId,
-			toolName, request.getRemoteUser(),
+			toolName, userId,
 			new java.sql.Timestamp(System.currentTimeMillis()), // start
 																// time is
 																// now
@@ -811,7 +903,7 @@ public class MigrationController {
 				.append(siteName).append(" tool_id=")
 				.append(toolId).append(" tool_name=")
 				.append(toolName)
-				.append(" migrated_by=").append(request.getRemoteUser())
+				.append(" migrated_by=").append(userId)
 				.append(" destination_type=").append(destinationType)
 				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
@@ -929,7 +1021,7 @@ public class MigrationController {
 		}
 		else
 		{
-			String errorBecomeUser = "Problem become user to " + request.getRemoteUser();
+			String errorBecomeUser = "Problem become user to " + userId;
 			log.error(errorBecomeUser);
 			boxMigrationStatus.append(errorBecomeUser + "\n");
 		}

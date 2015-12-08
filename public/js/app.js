@@ -23,7 +23,8 @@ projectMigrationApp.run(function($rootScope) {
       'migrationBoxUrl': '',
       'migratedUrl': 'data/migrated.json',
       'migratingUrl': 'data/migrations.json',
-      'projectUrl': 'data/project_id.json'
+      'projectUrl': 'data/project_id.json',
+      'checkBoxAuthorizedUrl': ''
     };
   } else {
     $rootScope.urls = {
@@ -35,7 +36,8 @@ projectMigrationApp.run(function($rootScope) {
       'migrationBoxUrl': '/migrationBox',
       'migratedUrl': '/migrated',
       'migratingUrl': '/migrating',
-      'projectUrl': '/projects/'
+      'projectUrl': '/projects/',
+      'checkBoxAuthorizedUrl': '/box/checkAuthorized'
     };
   }
   $rootScope.addProjectSites = [];

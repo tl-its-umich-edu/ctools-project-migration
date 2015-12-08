@@ -96,6 +96,14 @@ public class BoxUtils {
 		boxAccessTokens.put(userId, boxAccessToken);
 	}
 	
+	/**
+	 * remote Box access token for given user
+	 */
+	public static void removeBoxAccessToken(String userId)
+	{
+		boxAccessTokens.remove(userId);
+	}
+	
 	
 	/**
 	 * get Box refresh token for given user
@@ -127,6 +135,34 @@ public class BoxUtils {
 	public static void getCurrentUser(BoxAPIConnection connection) {
 		BoxUser user = BoxUser.getCurrentUser(connection);
 		BoxUser.Info info = user.getInfo();
+	}
+	
+	public static String authenticateString(String boxAPIUrl, String boxClientId,
+			String boxClientRedirectUri, String remoteUserEmail,
+			HttpServletResponse response) {
+		// Box authorization
+		RestTemplate restTemplate = new RestTemplate();
+
+		if (boxAPIUrl == null) {
+			// log error
+			log.error("No Box API url specified. ");
+			return "";
+		}
+
+		String requestUrl = boxAPIUrl + "/oauth2/authorize"
+				+ "?response_type=code" + "&client_id=" + boxClientId
+				+ "&redirect_uri=" + boxClientRedirectUri
+				+ "&state=&box_login=" + remoteUserEmail;
+
+		try {
+			String resultString = restTemplate.getForObject(requestUrl,
+					String.class);
+			return resultString;
+		} catch (RestClientException e) {
+			log.error(requestUrl + e.getMessage());
+		}
+		
+		return "";
 	}
 
 	public static void authenticate(String boxAPIUrl, String boxClientId,
