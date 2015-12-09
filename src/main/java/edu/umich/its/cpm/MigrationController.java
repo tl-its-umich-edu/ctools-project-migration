@@ -60,6 +60,7 @@ import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
 import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
+import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
 import com.google.gson.Gson;
@@ -130,6 +131,7 @@ public class MigrationController {
 	private static final String CONTENT_JSON_ATTR_URL = "url";
 	private static final String CONTENT_JSON_ATTR_DESCRIPTION = "description";
 	private static final String CONTENT_JSON_ATTR_AUTHOR = "author";
+	private static final String CONTENT_JSON_ATTR_COPYRIGHT_ALERT = "copyrightAlert";
 
 	/**
 	 * get all CTools sites where user have site.upd permission
@@ -209,7 +211,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = request.getRemoteUser();
+		String remoteUser = "zqian";
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -269,7 +271,7 @@ public class MigrationController {
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrations(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrations(userId)).build();
@@ -299,7 +301,7 @@ public class MigrationController {
 		}
 		else
 		{
-			String userId = request.getRemoteUser();
+			String userId = "zqian";
 			String migratedBy = ((Migration) o).getMigrated_by();
 			if (!migratedBy.equals(userId))
 			{
@@ -327,7 +329,7 @@ public class MigrationController {
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrated(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrated(userId)).build();
@@ -348,7 +350,7 @@ public class MigrationController {
 	@RequestMapping("/migrating")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrating(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrating(userId)).build();
@@ -502,7 +504,7 @@ public class MigrationController {
 		}
 		else
 		{
-			String userError = "Cannot become user " + request.getRemoteUser();
+			String userError = "Cannot become user " + "zqian";
 			log.error(userError);
 			downloadStatus.append(userError + "\n");
 		}
@@ -725,7 +727,7 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 		
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
@@ -769,7 +771,7 @@ public class MigrationController {
 	public String  boxAuthenticate(
 			HttpServletRequest request, HttpServletResponse response) {
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		String remoteUserEmail = userId + "@umich.edu";
 		
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
@@ -804,7 +806,7 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 		
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		
 		// the return string
 		String rv = "";
@@ -842,7 +844,7 @@ public class MigrationController {
 		log.info("token url=" + boxTokenUrl);
 		
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		String rv = BoxUtils.getBoxAccessToken(userId);
 		
 		if (rv == null)
@@ -864,7 +866,7 @@ public class MigrationController {
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
 		
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 	
@@ -887,7 +889,7 @@ public class MigrationController {
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = "zip";
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		
 		Migration m = new Migration(siteId, siteName,
 			toolId,
@@ -941,7 +943,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get user id
-		String userId = request.getRemoteUser();
+		String userId = "zqian";
 		
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		// save migration record into database
@@ -969,7 +971,7 @@ public class MigrationController {
 			log.error(boxClientIdError);
 			boxMigrationStatus.append(boxClientIdError + "\n");
 		}
-		String remoteUserEmail = request.getRemoteUser();
+		String remoteUserEmail = "zqian";
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
@@ -1085,10 +1087,10 @@ public class MigrationController {
 
 			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
 			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
-			
-			// metadata
 			String description = contentItem.getString(CONTENT_JSON_ATTR_DESCRIPTION);
+			// metadata
 			String author = contentItem.getString(CONTENT_JSON_ATTR_AUTHOR);
+			String copyrightAlert = contentItem.getString(CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
 			
 			
 			// files
@@ -1191,7 +1193,8 @@ public class MigrationController {
 				}
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
-				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
+				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(), fileName, contentUrl, description,
+						author, copyrightAlert,
 						sessionId, api);
 				status.append(uploadFileStatus + "\n");
 			}
@@ -1263,7 +1266,7 @@ public class MigrationController {
 	 * upload files to Box
 	 */
 	private String uploadFile(String boxFolderId, String fileName,
-			String fileUrl, String fileDescription, String fileAuthor, String sessionId, BoxAPIConnection api) {
+			String fileUrl, String fileDescription, String fileAuthor, String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
 		// status string
 		StringBuffer status = new StringBuffer();
 		
@@ -1306,7 +1309,7 @@ public class MigrationController {
 			bContent = new BufferedInputStream(content);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			final String uploadFileName = fileName;
-			BoxFile.info newFile = folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
 					new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
@@ -1315,7 +1318,11 @@ public class MigrationController {
 									+ percentComplete);
 						}
 					});
-			newFile.
+			// get the BoxFile object
+			BoxFile newFile = newFileInfo.getResource();
+			newFileInfo.setDescription(fileDescription);
+			// assign meta data
+			newFile.createMetadata(new Metadata().add("copyrightAlert", fileCopyrightAlert).add("author", fileAuthor));
 			log.info("upload success for file " + fileUrl);
 		} catch (BoxAPIException e) {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {

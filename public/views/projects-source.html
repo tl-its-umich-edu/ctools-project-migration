@@ -57,7 +57,7 @@
 						</div>
 						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11">
 							<small>
-		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypebox" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'box','box')">
+		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'box','box')">
 			    			<label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
 			    		</small>
 		    			<div ng-show="project.selectDestinationType.name ==='box'" style="padding:0 0 5px 16px">
@@ -69,7 +69,7 @@
 					    	</small>
 				    	</div>
 				    	<small>
-			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="destinationTypelocal" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'local','local')">
+			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="local" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'local','local')">
 			    			<label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a Zip file</label>
 			    		</small>
 						</div>
