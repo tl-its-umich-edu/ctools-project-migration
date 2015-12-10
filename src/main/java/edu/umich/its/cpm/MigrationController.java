@@ -60,6 +60,7 @@ import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
 import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
+import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
 import com.google.gson.Gson;
@@ -128,6 +129,9 @@ public class MigrationController {
 	private static final String CONTENT_JSON_ATTR_TITLE = "title";
 	private static final String CONTENT_JSON_ATTR_TYPE = "type";
 	private static final String CONTENT_JSON_ATTR_URL = "url";
+	private static final String CONTENT_JSON_ATTR_DESCRIPTION = "description";
+	private static final String CONTENT_JSON_ATTR_AUTHOR = "author";
+	private static final String CONTENT_JSON_ATTR_COPYRIGHT_ALERT = "copyrightAlert";
 
 	/**
 	 * get all CTools sites where user have site.upd permission
@@ -272,9 +276,10 @@ public class MigrationController {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrations(userId)).build();
 		} catch (Exception e) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migration records for user " + userId + ": " + e.getMessage())
-					.build();
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migration records for user " + userId
+							+ ": " + e.getMessage()).build();
 		}
 	}
 
@@ -287,37 +292,35 @@ public class MigrationController {
 	@GET
 	@RequestMapping("/migrations/{migration_id}")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Response migrations(@PathVariable("migration_id") String migration_id, HttpServletRequest request) {
+	public Response migrations(
+			@PathVariable("migration_id") String migration_id,
+			HttpServletRequest request) {
 		Object o = repository.findOne(migration_id);
 		String rv = "";
 		if (o == null) {
 			// no such migration record
 			throw new MigrationNotFoundException(
 					"no matching record for /migrations/" + migration_id);
-		}
-		else
-		{
+		} else {
 			String userId = request.getRemoteUser();
 			String migratedBy = ((Migration) o).getMigrated_by();
-			if (!migratedBy.equals(userId))
-			{
+			if (!migratedBy.equals(userId)) {
 				// different user started the migration
-				throw new MigrationNotFoundException(
-						"record for /migrations/" + migration_id + " was done by user id=" + migratedBy + " , instead of current user " + userId);
-			}
-			else
-			{
+				throw new MigrationNotFoundException("record for /migrations/"
+						+ migration_id + " was done by user id=" + migratedBy
+						+ " , instead of current user " + userId);
+			} else {
 				// find migration record with id
-				return Response.status(Response.Status.OK).entity((Migration) o)
-						.build();
+				return Response.status(Response.Status.OK)
+						.entity((Migration) o).build();
 			}
-			
+
 		}
 	}
 
 	/**
-	 * found all migrated records (where the migration record have "end_time" field
-	 * value
+	 * found all migrated records (where the migration record have "end_time"
+	 * field value
 	 * 
 	 * @return
 	 */
@@ -330,15 +333,16 @@ public class MigrationController {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrated(userId)).build();
 		} catch (Exception e) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migrated records for user " + userId + ": " + e.getMessage())
-					.build();
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrated records for user " + userId
+							+ ": " + e.getMessage()).build();
 		}
 	}
 
 	/**
-	 * found all migrating records (where the migration record have NO "end_time" field)
-	 * value
+	 * found all migrating records (where the migration record have NO
+	 * "end_time" field) value
 	 * 
 	 * @return
 	 */
@@ -351,12 +355,13 @@ public class MigrationController {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrating(userId)).build();
 		} catch (Exception e) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migrating records for user " + userId + ": " + e.getMessage())
-					.build();
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrating records for user " + userId
+							+ ": " + e.getMessage()).build();
 		}
 	}
-	
+
 	/**
 	 * insert a new record of Migration
 	 * 
@@ -370,22 +375,20 @@ public class MigrationController {
 			HttpServletResponse response) {
 		// the status of migration
 		StringBuffer statusBuffer = new StringBuffer();
-		
+
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
 		statusBuffer.append(saveMigration.get("status"));
-		
+
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
 			// no new Migration record created
 			return;
-		}
-		else
-		{
+		} else {
 			newMigration = (Migration) saveMigration.get("migration");
 		}
-		
+
 		log.info("migration", newMigration);
 
 		// download zip file
@@ -405,13 +408,14 @@ public class MigrationController {
 
 	/**
 	 * Download CTools site resource in zip file
+	 * 
 	 * @return status of download
 	 */
 	private String downloadZippedFile(HttpServletRequest request,
 			HttpServletResponse response, String site_id) {
 		// hold download status
 		StringBuffer downloadStatus = new StringBuffer();
-		
+
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
 		log.info(sessionId);
@@ -438,7 +442,8 @@ public class MigrationController {
 					ZipOutputStream out = new ZipOutputStream(baos);
 
 					// prepare zip entry for site content objects
-					String zipStatus = zipSiteContent(siteResourceJson, sessionId, out);
+					String zipStatus = zipSiteContent(siteResourceJson,
+							sessionId, out);
 					log.info(zipStatus);
 					downloadStatus.append(zipStatus + "\n");
 
@@ -475,7 +480,7 @@ public class MigrationController {
 					log.info(downloadEndSuccess);
 					downloadStatus.append(downloadEndSuccess + "\n");
 				} else {
-					String noContent = site_id + " has no content to download."; 
+					String noContent = site_id + " has no content to download.";
 					log.error(noContent);
 					downloadStatus.append(noContent + "\n");
 				}
@@ -495,11 +500,9 @@ public class MigrationController {
 						.build();
 				log.error(errorMessage);
 				downloadStatus.append(errorMessage + "\n");
-				
+
 			}
-		}
-		else
-		{
+		} else {
 			String userError = "Cannot become user " + request.getRemoteUser();
 			log.error(userError);
 			downloadStatus.append(userError + "\n");
@@ -514,7 +517,7 @@ public class MigrationController {
 			ZipOutputStream out) {
 		// zip status information
 		StringBuffer zipStatus = new StringBuffer();
-		
+
 		// site root folder
 		String rootFolderPath = null;
 
@@ -536,11 +539,11 @@ public class MigrationController {
 			// inside the JSON feed, the container string is of format
 			// /content/<folder_url>
 			// remote the prefix "/content"
-			String container = URLDecoder.decode(contentItem
-					.getString(CONTENT_JSON_ATTR_CONTAINER));
+			String container = URLDecoder.decode(getJSONString(contentItem,
+					CONTENT_JSON_ATTR_CONTAINER));
 
-			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
-			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+			String type = getJSONString(contentItem, CONTENT_JSON_ATTR_TYPE);
+			String title = getJSONString(contentItem, CONTENT_JSON_ATTR_TITLE);
 
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
@@ -551,7 +554,8 @@ public class MigrationController {
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
-				String noContainerError = "No container folder url for content " + title;
+				String noContainerError = "No container folder url for content "
+						+ title;
 				log.error(noContainerError);
 				zipStatus.append(noContainerError + "\n");
 				break;
@@ -579,7 +583,8 @@ public class MigrationController {
 				// Call the zipFiles method for creating a zip stream.
 				//
 				String filePath = contentUrl.replace(rootFolderPath, "");
-				String zipFileStatus = zipFiles(filePath, contentUrl, sessionId, out);
+				String zipFileStatus = zipFiles(filePath, contentUrl,
+						sessionId, out);
 				zipStatus.append(zipFileStatus + "\n");
 			}
 		} // for
@@ -593,7 +598,7 @@ public class MigrationController {
 			ZipOutputStream out) {
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
-		
+
 		String contentString = "";
 		try {
 			Service service = new Service();
@@ -613,7 +618,8 @@ public class MigrationController {
 					fileUrl });
 
 		} catch (Exception e) {
-			String exceptionString = "zipFiles " + fileUrl + " " + e.getMessage();
+			String exceptionString = "zipFiles " + fileUrl + " "
+					+ e.getMessage();
 			log.error(exceptionString);
 			zipFileStatus.append(exceptionString + "\n");
 		}
@@ -666,7 +672,8 @@ public class MigrationController {
 				}
 			}
 		} catch (IOException e) {
-			String ioExceptionString = " zipFiles--IOException: : fileName=" + fileName;
+			String ioExceptionString = " zipFiles--IOException: : fileName="
+					+ fileName;
 			log.warn(ioExceptionString);
 			zipFileStatus.append(ioExceptionString + "\n");
 		} finally {
@@ -674,20 +681,20 @@ public class MigrationController {
 				try {
 					content.close(); // The input stream needs to be closed
 				} catch (IOException ioException) {
-					String ioExceptionString = "zipFiles: problem closing Inputstream content for" + fileName
-							+ ioException;
+					String ioExceptionString = "zipFiles: problem closing Inputstream content for"
+							+ fileName + ioException;
 					log.warn(ioExceptionString);
 					zipFileStatus.append(ioExceptionString + "\n");
 				}
 			}
 		}
-		
+
 		// return success message
-		if (zipFileStatus.length() == 0)
-		{
-			zipFileStatus.append(fileName + " was added into zip file successfully.");
+		if (zipFileStatus.length() == 0) {
+			zipFileStatus.append(fileName
+					+ " was added into zip file successfully.");
 		}
-		
+
 		return zipFileStatus.toString();
 	}
 
@@ -721,7 +728,7 @@ public class MigrationController {
 	@RequestMapping("/box/folders")
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
-		
+
 		// get the current user id
 		String userId = request.getRemoteUser();
 
@@ -757,75 +764,71 @@ public class MigrationController {
 		}
 		return null;
 	}
-	
+
 	/**
 	 * User authenticates into the Box account
 	 * 
 	 * @return
 	 */
 	@RequestMapping("/box/authorize")
-	public String  boxAuthenticate(
-			HttpServletRequest request, HttpServletResponse response) {
+	public String boxAuthenticate(HttpServletRequest request,
+			HttpServletResponse response) {
 		// get the current user id
 		String userId = request.getRemoteUser();
 		String remoteUserEmail = userId + "@umich.edu";
-		
+
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL)
 				+ "/authorized";
-		
+
 		log.info("in /box/authorize");
-		
+
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
-			log.info("user " + userId + " has not authorized to use Box. Start auth process.");
+			log.info("user " + userId
+					+ " has not authorized to use Box. Start auth process.");
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
-			return BoxUtils.authenticateString(boxAPIUrl, boxClientId, boxClientRedirectUrl,
-					remoteUserEmail, response);
-		}
-		else
-		{
+			return BoxUtils.authenticateString(boxAPIUrl, boxClientId,
+					boxClientRedirectUrl, remoteUserEmail, response);
+		} else {
 			log.info("user " + userId + " already authorized");
 			return "Authorized";
 		}
 	}
-	
+
 	/**
 	 * get json string of box folders
 	 * 
 	 * @return
 	 */
 	@RequestMapping("/box/unauthorize")
-	public Response unauthorizeBox(
-			HttpServletRequest request, HttpServletResponse response) {
-		
+	public Response unauthorizeBox(HttpServletRequest request,
+			HttpServletResponse response) {
+
 		// get the current user id
 		String userId = request.getRemoteUser();
-		
+
 		// the return string
 		String rv = "";
-		
+
 		// check whether the user authentication token is store in memory
-		if (BoxUtils.getBoxAccessToken(userId) == null)
-		{
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			rv = "Cannot find user's Box authentication info. ";
-		}
-		else
-		{
+		} else {
 			BoxUtils.removeBoxAccessToken(userId);
 			rv = "User authentication info is removed. ";
 		}
-		
+
 		log.info("/box/unauthorize for user " + userId + " " + rv);
 		try {
-			return Response.status(Response.Status.OK)
-					.entity(rv).build();
+			return Response.status(Response.Status.OK).entity(rv).build();
 		} catch (Exception e) {
-			return Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot remove box authentication info for user " + userId + ": " + e.getMessage())
-					.build();
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot remove box authentication info for user "
+							+ userId + ": " + e.getMessage()).build();
 		}
 	}
 
@@ -838,94 +841,91 @@ public class MigrationController {
 		String boxAPIUrl = env.getProperty(BOX_API_URL);
 		String boxTokenUrl = env.getProperty(BOX_TOKEN_URL);
 		log.info("token url=" + boxTokenUrl);
-		
+
 		// get the current user id
 		String userId = request.getRemoteUser();
 		String rv = BoxUtils.getBoxAccessToken(userId);
-		
-		if (rv == null)
-		{
+
+		if (rv == null) {
 			// get the authCode,
 			// and get access token and refresh token subsequently
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
 					boxClientSecret, boxTokenUrl, userId);
-			
+
 			// try to get the access token after parsing the request string
 			rv = BoxUtils.getBoxAccessToken(userId);
 		}
-		
-		return rv != null?"Authorized":"Unauthorized";
+
+		return rv != null ? "Authorized" : "Unauthorized";
 	}
-	
+
 	@RequestMapping("/box/checkAuthorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
-		
+
 		// get the current user id
 		String userId = request.getRemoteUser();
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
-	
+
 	/**
 	 * Save Migration record to DB
-	 * @return HasMap key="status", value=status message; key="migration", value=MigrationObject
+	 * 
+	 * @return HasMap key="status", value=status message; key="migration",
+	 *         value=MigrationObject
 	 */
-	private HashMap<String, Object> saveMigrationRecord(HttpServletRequest request)
-	{
-		// the return hashmap provide newly created Migration object, and status message
+	private HashMap<String, Object> saveMigrationRecord(
+			HttpServletRequest request) {
+		// the return hashmap provide newly created Migration object, and status
+		// message
 		HashMap<String, Object> rv = new HashMap<String, Object>();
-		
+
 		// status message
 		StringBuffer status = new StringBuffer();
-		
+
 		// get parameters
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
 		String siteName = parameterMap.get("site_name")[0];
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
-		String destinationType = "zip";
+		String destinationType = parameterMap.get("destination_type")[0];
 		String userId = request.getRemoteUser();
-		
-		Migration m = new Migration(siteId, siteName,
-			toolId,
-			toolName, userId,
-			new java.sql.Timestamp(System.currentTimeMillis()), // start
-																// time is
-																// now
-			null, destinationType, null, "" /* status */);
+
+		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
+				new java.sql.Timestamp(System.currentTimeMillis()), // start
+																	// time is
+																	// now
+				null, destinationType, null, "" /* status */);
 
 		Migration newMigration = null;
 
 		StringBuffer insertMigrationDetails = new StringBuffer();
 		insertMigrationDetails.append("Save migration record site_id=")
-				.append(siteId).append(" site_name=")
-				.append(siteName).append(" tool_id=")
-				.append(toolId).append(" tool_name=")
-				.append(toolName)
-				.append(" migrated_by=").append(userId)
+				.append(siteId).append(" site_name=").append(siteName)
+				.append(" tool_id=").append(toolId).append(" tool_name=")
+				.append(toolName).append(" migrated_by=").append(userId)
 				.append(" destination_type=").append(destinationType)
 				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
 		try {
 			newMigration = repository.save(m);
 		} catch (Exception e) {
-			log.error("Exception " + insertMigrationDetails.toString() + e.getMessage());
+			log.error("Exception " + insertMigrationDetails.toString()
+					+ e.getMessage());
 			status.append(e.getMessage());
 		}
-		
+
 		// put Migration object into HashMap
-		if (newMigration != null)
-		{
+		if (newMigration != null) {
 			rv.put("migration", newMigration);
 		}
 		// put status message into HashMap
-		if (status.length() == 0)
-		{
+		if (status.length() == 0) {
 			status.append("Database Migration record successfully created.");
 		}
 		rv.put("status", status.toString());
-		
+
 		return rv;
 	}
 
@@ -940,23 +940,21 @@ public class MigrationController {
 
 		// get user id
 		String userId = request.getRemoteUser();
-		
+
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
 		boxMigrationStatus.append(saveMigration.get("status"));
-		
+
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
 			// no new Migration record created
 			return;
-		}
-		else
-		{
+		} else {
 			newMigration = (Migration) saveMigration.get("migration");
 		}
-		
+
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
 		String boxClientRedirectUrl = env.getProperty(BOX_CLIENT_REDIRECT_URL);
@@ -1002,7 +1000,8 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				String downloadStatusString = boxUploadSiteContent(userId, sessionId, boxClientId, boxClientSecret,
+				String downloadStatusString = boxUploadSiteContent(userId,
+						sessionId, boxClientId, boxClientSecret,
 						siteResourceJson, boxFolderId);
 				boxMigrationStatus.append(downloadStatusString + "\n");
 
@@ -1015,12 +1014,11 @@ public class MigrationController {
 				boxMigrationStatus.append(errorMessage + "\n");
 			}
 
-			String uploadFinished = "Finished upload site content for site " + siteId;
+			String uploadFinished = "Finished upload site content for site "
+					+ siteId;
 			log.info(uploadFinished);
 			boxMigrationStatus.append(uploadFinished + "\n");
-		}
-		else
-		{
+		} else {
 			String errorBecomeUser = "Problem become user to " + userId;
 			log.error(errorBecomeUser);
 			boxMigrationStatus.append(errorBecomeUser + "\n");
@@ -1031,16 +1029,17 @@ public class MigrationController {
 				new java.sql.Timestamp(System.currentTimeMillis()),
 				newMigration.getMigration_id());
 		repository.setMigrationStatus(boxMigrationStatus.toString(),
-					newMigration.getMigration_id());
+				newMigration.getMigration_id());
 	}
 
 	/**
 	 * iterating though content json and upload folders and files to Box
 	 */
-	private String boxUploadSiteContent(String userId, String sessionId, String boxClientId,
-			String boxClientSecret, String siteResourceJson, String boxFolderId) {
+	private String boxUploadSiteContent(String userId, String sessionId,
+			String boxClientId, String boxClientSecret,
+			String siteResourceJson, String boxFolderId) {
 		StringBuffer status = new StringBuffer();
-		
+
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 				boxClientSecret, BoxUtils.getBoxAccessToken(userId),
 				BoxUtils.getBoxRefreshToken(userId));
@@ -1066,8 +1065,8 @@ public class MigrationController {
 			JSONObject contentItem = array.getJSONObject(i);
 
 			// get only the url after "/access/content" string
-			String contentUrl = URLDecoder.decode(contentItem
-					.getString(CONTENT_JSON_ATTR_URL));
+			String contentUrl = URLDecoder.decode(getJSONString(contentItem,
+					CONTENT_JSON_ATTR_URL));
 			contentUrl = contentUrl.substring(contentUrl
 					.indexOf(CTOOLS_ACCESS_STRING)
 					+ CTOOLS_ACCESS_STRING.length());
@@ -1081,18 +1080,26 @@ public class MigrationController {
 					.indexOf(CTOOLS_CONTENT_STRING)
 					+ CTOOLS_CONTENT_STRING.length());
 
-			String type = contentItem.getString(CONTENT_JSON_ATTR_TYPE);
-			String title = contentItem.getString(CONTENT_JSON_ATTR_TITLE);
+			String type = getJSONString(contentItem, CONTENT_JSON_ATTR_TYPE);
+			String title = getJSONString(contentItem, CONTENT_JSON_ATTR_TITLE);
+			String description = getJSONString(contentItem,
+					CONTENT_JSON_ATTR_DESCRIPTION);
+			// metadata
+			String author = getJSONString(contentItem, CONTENT_JSON_ATTR_AUTHOR);
+			String copyrightAlert = getJSONString(contentItem,
+					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
+
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
-				String urlError = "No url for content " + title; 
+				String urlError = "No url for content " + title;
 				log.error(urlError);
 				status.append(urlError + "\n");
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
-				String containerError = "No container folder url for content " + title;
+				String containerError = "No container folder url for content "
+						+ title;
 				log.error(containerError);
 				status.append(containerError + "\n");
 				break;
@@ -1110,8 +1117,9 @@ public class MigrationController {
 				} else {
 					log.info("Begin to create folder " + title);
 
-					log.debug("top of stack folder id =" + containerStack.peek()
-							+ " " + " container folder id =" + container);
+					log.debug("top of stack folder id ="
+							+ containerStack.peek() + " "
+							+ " container folder id =" + container);
 					// pop the stack till the container equals to stack top
 					while (!containerStack.empty()
 							&& !container.equals(containerStack.peek())) {
@@ -1131,9 +1139,17 @@ public class MigrationController {
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
 						boxFolderIdStack.push(childFolderInfo.getID());
-						log.debug("top of stack folder id = " + containerStack.peek()
-								+ " " + " container folder id=" + container);
+						log.debug("top of stack folder id = "
+								+ containerStack.peek() + " "
+								+ " container folder id=" + container);
 						log.debug("*******");
+
+						// get the BoxFolder object, get BoxFolder.Info object,
+						// set description, and commit change
+						BoxFolder childFolder = childFolderInfo.getResource();
+						childFolderInfo.setDescription(description);
+						childFolder.updateInfo(childFolderInfo);
+
 					} catch (BoxAPIException e) {
 						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 							// 409 means name conflict - item already existed
@@ -1141,22 +1157,22 @@ public class MigrationController {
 									+ title;
 							log.info(folderExistError);
 							status.append(folderExistError + "\n");
-							
-							String exisingFolderId = getExistingBoxFolderIdFromBoxException(e, title);
-							if (exisingFolderId != null)
-							{
+
+							String exisingFolderId = getExistingBoxFolderIdFromBoxException(
+									e, title);
+							if (exisingFolderId != null) {
 								// push the current folder id into the stack
 								containerStack.push(contentUrl);
 								boxFolderIdStack.push(exisingFolderId);
-								log.debug("top of stack folder id = " + containerStack.peek()
-										+ " " + " container folder id=" + container);
+								log.debug("top of stack folder id = "
+										+ containerStack.peek() + " "
+										+ " container folder id=" + container);
 								log.debug("*******");
+							} else {
+								log.info("Cannot find conflicting Box folder id for folder name "
+										+ title);
 							}
-							else
-							{
-								log.info("Cannot find conflicting Box folder id for folder name " + title);
-							}
-							
+
 						}
 					}
 				}
@@ -1176,15 +1192,17 @@ public class MigrationController {
 				}
 
 				if (boxFolderIdStack.empty()) {
-					String parentError = "Cannot find parent folder for file " + contentUrl;
+					String parentError = "Cannot find parent folder for file "
+							+ contentUrl;
 					log.info(parentError);
 					status.append(parentError + "\n");
 					break;
 				}
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
-				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
-						sessionId, api);
+				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(),
+						fileName, contentUrl, description, author,
+						copyrightAlert, sessionId, api);
 				status.append(uploadFileStatus + "\n");
 			}
 		} // for
@@ -1193,34 +1211,52 @@ public class MigrationController {
 		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 		return status.toString();
 	}
-	
+
 	/**
-	 * Based on the JSON returned inside BoxAPIException object, find out the id of conflicting box folder
-	 * @return id 
+	 * Checks first whether the JSONObject contains specified key value; If so,
+	 * return the String value associated with the key
+	 * 
+	 * @param object
+	 * @param key
+	 * @return
 	 */
-	private String getExistingBoxFolderIdFromBoxException(BoxAPIException e, String folderTitle)
-	{
+	private String getJSONString(JSONObject object, String key) {
+		String rv = null;
+		if (object.has(key) && object.get(key) != JSONObject.NULL) {
+			rv = object.getString(key);
+		}
+		return rv;
+	}
+
+	/**
+	 * Based on the JSON returned inside BoxAPIException object, find out the id
+	 * of conflicting box folder
+	 * 
+	 * @return id
+	 */
+	private String getExistingBoxFolderIdFromBoxException(BoxAPIException e,
+			String folderTitle) {
 		String existingFolderId = null;
 		// here is the example JSON returned
-		//{  
-		//   "type":"error",
-		//   "status":409,
-		//   "code":"item_name_in_use",
-		//   "context_info":{  
-		//      "conflicts":[  
-		//         {  
-		//            "type":"folder",
-		//            "id":"5443268429",
-		//            "sequence_id":"0",
-		//            "etag":"0",
-		//            "name":"folder1"
-		//         }
-		//      ]
-		//   },
-		//   "help_url":"http:\/\/developers.box.com\/docs\/#errors",
-		//   "message":"Item with the same name already exists",
-		//   "request_id":"153175908556537d483098d"
-		//}
+		// {
+		// "type":"error",
+		// "status":409,
+		// "code":"item_name_in_use",
+		// "context_info":{
+		// "conflicts":[
+		// {
+		// "type":"folder",
+		// "id":"5443268429",
+		// "sequence_id":"0",
+		// "etag":"0",
+		// "name":"folder1"
+		// }
+		// ]
+		// },
+		// "help_url":"http:\/\/developers.box.com\/docs\/#errors",
+		// "message":"Item with the same name already exists",
+		// "request_id":"153175908556537d483098d"
+		// }
 		if (e.getResponse() == null)
 			return null;
 		JSONObject boxException = new JSONObject(e.getResponse());
@@ -1236,12 +1272,10 @@ public class MigrationController {
 		for (int index = 0; index < conflicts.length(); index++) {
 			JSONObject conflict = conflicts.getJSONObject(index);
 			String conflictType = conflict.getString("type");
-			if (conflictType != null && conflictType.equals("folder"))
-			{
+			if (conflictType != null && conflictType.equals("folder")) {
 				String folderId = conflict.getString("id");
 				String folderName = conflict.getString("name");
-				if (folderName != null && folderName.equals(folderTitle))
-				{
+				if (folderName != null && folderName.equals(folderTitle)) {
 					// found the existing folder id, break
 					existingFolderId = folderId;
 					break;
@@ -1255,10 +1289,11 @@ public class MigrationController {
 	 * upload files to Box
 	 */
 	private String uploadFile(String boxFolderId, String fileName,
-			String fileUrl, String sessionId, BoxAPIConnection api) {
+			String fileUrl, String fileDescription, String fileAuthor,
+			String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
 		// status string
 		StringBuffer status = new StringBuffer();
-		
+
 		log.info("begin to upload file " + fileUrl + " to box folder "
 				+ boxFolderId);
 		String contentString = "";
@@ -1280,7 +1315,8 @@ public class MigrationController {
 					fileUrl });
 
 		} catch (Exception e) {
-			String exceptionString = "zipFiles " + fileUrl + " " + e.getMessage();
+			String exceptionString = "zipFiles " + fileUrl + " "
+					+ e.getMessage();
 			log.error(exceptionString);
 			status.append(exceptionString + "\n");
 		}
@@ -1298,8 +1334,8 @@ public class MigrationController {
 			bContent = new BufferedInputStream(content);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			final String uploadFileName = fileName;
-			folder.uploadFile(bContent, fileName, STREAM_BUFFER_CHAR_SIZE,
-					new ProgressListener() {
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, fileName,
+					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
 							double percentComplete = numBytes / totalBytes;
@@ -1307,17 +1343,35 @@ public class MigrationController {
 									+ percentComplete);
 						}
 					});
+
+			// get the BoxFile object, get BoxFile.Info object, set description,
+			// and commit change
+			BoxFile newFile = newFileInfo.getResource();
+			newFileInfo.setDescription(fileDescription);
+			newFile.updateInfo(newFileInfo);
+
+			// assign meta data
+			Metadata metaData = new Metadata();
+			metaData.add("/copyrightAlert",
+					fileCopyrightAlert == null ? "false" : "true");
+			metaData.add("/author", fileAuthor);
+			newFile.createMetadata(metaData);
+
 			log.info("upload success for file " + fileUrl);
 		} catch (BoxAPIException e) {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 				// 409 means name conflict - item already existed
-				String conflictString = "There is already a file with name " + fileName;
+				String conflictString = "There is already a file with name "
+						+ fileName;
 				log.info(conflictString);
 				status.append(conflictString + "\n");
 			}
 		} catch (IllegalArgumentException iException) {
-			String ilExceptionString = "problem creating BufferedInputStream for file " + fileName + " with content and length "
-					+ data.length + iException;
+			String ilExceptionString = "problem creating BufferedInputStream for file "
+					+ fileName
+					+ " with content and length "
+					+ data.length
+					+ iException;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + "\n");
 		} finally {
@@ -1326,7 +1380,8 @@ public class MigrationController {
 					bContent.close(); // The BufferedInputStream needs to be
 										// closed
 				} catch (IOException ioException) {
-					String ioExceptionString = "problem closing FileChannel for file " + fileName + " " + ioException;
+					String ioExceptionString = "problem closing FileChannel for file "
+							+ fileName + " " + ioException;
 					log.error(ioExceptionString);
 					status.append(ioExceptionString + "\n");
 				}
@@ -1336,15 +1391,15 @@ public class MigrationController {
 			try {
 				content.close(); // The input stream needs to be closed
 			} catch (IOException ioException) {
-				String ioExceptionString = "zipFiles: problem closing Inputstream content for file " + fileName + " " + ioException;
+				String ioExceptionString = "zipFiles: problem closing Inputstream content for file "
+						+ fileName + " " + ioException;
 				log.error(ioExceptionString);
 				status.append(ioExceptionString + "\n");
 			}
 		}
-		
+
 		// box upload success
-		if (status.length() == 0)
-		{
+		if (status.length() == 0) {
 			status.append("Box upload successful for file " + fileName + "\n");
 		}
 		return status.toString();
