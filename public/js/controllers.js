@@ -283,10 +283,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var migrationBoxUrl = $rootScope.urls.migrationBoxUrl;
       var migrationUrl='';
       // attach variables to it
-      if (destinationType =='box')
+      if (destinationType =='Box')
       {
     	  // migrate to Box
-    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'box&box_folder_id=' + $scope.selectBoxFolder.id;
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.selectBoxFolder.id;
          
 
           $log.info("box " + migrationUrl);
