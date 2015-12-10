@@ -17,7 +17,7 @@
   		<div ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''">
   			<div class="row">
 	  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-	  				<strong id="{{project.site_id}}">{{project.site_name}}</strong>
+	  				<strong id="{{project.site_id}}">{{project.site_name}}</strong> <small ng-show="project.last_migrated">(last migrated: {{project.last_migrated | date:'MM/dd h:mma'}})</small>
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>

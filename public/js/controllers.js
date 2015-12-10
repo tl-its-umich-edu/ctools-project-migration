@@ -220,7 +220,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       site_id: projectId
     }));
 
+    var targetProjChildPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
+      site_id: projectId, tool: true
+    }));
+
     $scope.sourceProjects[targetProjPos].migrating=true;
+    $scope.sourceProjects[targetProjChildPos].migrating=true;
     $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
     
     var targetSelections = _.where($scope.sourceProjects, {
@@ -266,36 +271,45 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     });
   };
 
-//poll('pollMigrated', migratedUrl, $rootScope.pollInterval, 'migrated');
 var poll = function (pollName, url, interval, targetPanel){
   PollingService.startPolling(pollName, url, $rootScope.pollInterval, function(result) {
     $log.info(moment().format('h:mm:ss') + ' polled: ' + pollName + ' for ' + url);
-    //update time stamp displayed in the panel
+
     if(targetPanel === 'migrations'){
       if(result.data.status ===200) {
+        //update time stamp displayed in /migrations panel
         $rootScope.status.migrations = moment().format('h:mm:ss');
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        // this poll has different data than the last one
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
           $log.info('migrations has changed - call a function to update projects panel')
+          // update project panel based on new data
           updateProjectsPanel($scope.migratingProjects, 'migrating');
         }
         $scope.migratingProjectsShadow = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        //clear error condition if any
         $scope.migratingProjectsError = false;
       }
       else {
+        //declare error and show error message in UI
         $scope.migratingProjectsError = true;
       }
     } else {
+      //update time stamp displayed in /migrated  panel
       $rootScope.status.migrated = moment().format('h:mm:ss');
       if(result.data.status ===200) {
         $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
+        // this poll has different data than the last one
         if(!angular.equals($scope.migratedProjects, $scope.migratedProjectsShadow)){
-          $log.info('migrated has changed - call a function to update projects panel')
+          $log.info('migrated has changed - call a function to update projects panel');
+          // update project panel based on new data
           updateProjectsPanel($scope.migratedProjects, 'migrated')
         }
-        $scope.migratedProjectsError = false; 
         $scope.migratedProjectsShadow = _.sortBy(result.data.entity, 'site_id');
+        //clear error condition if any
+        $scope.migratedProjectsError = false; 
       } else {
+        //declare error and show error message in UI
         $scope.migratedProjectsError = true; 
       }
 
@@ -304,20 +318,25 @@ var poll = function (pollName, url, interval, targetPanel){
 }
 
 var updateProjectsPanel = function(result, source){
-  $log.info('updating projects panel from ' + source);
+  $log.info('updating projects panel because of changes to /' + source);
   if(source==='migrating'){
     if(result.length) {
+      //there are /migrating items
+      // for each source project, if it is represented in /migrating, lock it, if not uunlock it
       _.each($scope.sourceProjects, function(sourceProject) {
         if(sourceProject !==null && sourceProject !==undefined){
           var projectMigrating = _.findWhere(result, {site_id: sourceProject.site_id});
           if (projectMigrating) {
+            // locking
             sourceProject.migrating = true;
           }
           else {
+            //unlocking and resetting all the states
             sourceProject.migrating = false;
             sourceProject.stateSelectionExists =false;
             sourceProject.selectDestinationType = {};
             sourceProject.stateHasTools = false;
+            //also remove the tool panel of the source project
             if (sourceProject.tool_id !=='') {
               var index = $scope.sourceProjects.indexOf(sourceProject);
               $scope.sourceProjects.splice(index, 1); 
@@ -327,6 +346,7 @@ var updateProjectsPanel = function(result, source){
       });
     }
     else {
+      // there are no /migrating items, so loop through all the source projects and reset their state
       _.each($scope.sourceProjects, function(sourceProject) {
         if(sourceProject) {          
           sourceProject.migrating = false;
@@ -342,22 +362,13 @@ var updateProjectsPanel = function(result, source){
     }
   }
   else {
-/*    _.each(result, function(migrated) {
-      //var tool_site_id =  migrated.site_id + migrated.tool_id;
-
-      console.log(migrated.site_id);
-      
-      var targetParent = _.findWhere($scope.sourceProjects, {site_id: migrated.site_id, tool_site_id: migrated.site_id});
-      var targetChild = _.findWhere($scope.sourceProjects, {site_id: migrated.site_id, tool_site_id: migrated.site_id + migrated.tool_id});
-
-      targetParent.migrating = false;
-      targetParent.stateSelectionExists =false;
-      targetParent.selectDestinationType = {};
-      targetParent.hasTools = false;
-      if (targetChild){
-        targetChild.migrating = false;
-      }
-    });*/
+    _.each(result, function(migrated) {
+    //use the end_time time stamp of the migrated item to add a "last migrated at TIME" to the corresponding source project
+    var targetParent = _.where($scope.sourceProjects, {site_id: migrated.site_id, tool_site_id: migrated.site_id});
+    if(targetParent){
+      targetParent.last_migrated = migrated.end_time;
+    }
+  });
   }
 }
 
