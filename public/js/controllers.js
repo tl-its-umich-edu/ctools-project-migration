@@ -33,15 +33,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   Migrations.getMigrations(migratingUrl).then(function(result) {
 
     if (result.status ===200) {
-      $scope.migratingProjects = _.sortBy(result.data.entity, 'site_id');
-
       $rootScope.status.migrations = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
       $log.info(' - - - - GET /migrating');
       
       if (result.data.entity.length && result.status ===200) {
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
- 
+        updateProjectsPanel($scope.migratingProjects, 'migrating');
       }
 
     } else {
@@ -60,6 +58,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $rootScope.status.migrated = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
       $log.info(' - - - - GET /migrated');
+      updateProjectsPanel($scope.migratedProjects, 'migrated')
     } else {
       $log.warn('Got error on /migrated');
       $scope.migratedProjectsError = true;
@@ -362,13 +361,17 @@ var updateProjectsPanel = function(result, source){
     }
   }
   else {
-    _.each(result, function(migrated) {
-    //use the end_time time stamp of the migrated item to add a "last migrated at TIME" to the corresponding source project
-    var targetParent = _.where($scope.sourceProjects, {site_id: migrated.site_id, tool_site_id: migrated.site_id});
-    if(targetParent){
-      targetParent.last_migrated = migrated.end_time;
-    }
-  });
+    // add the latest migrated date for each project by
+    // sorting /migrated and then finding for each project the first correlate /migrated
+    var sortedMigrated =  _.sortBy(result, 'end_time').reverse();
+    _.each($scope.sourceProjects, function(sourceProject) {
+      if(sourceProject !==null && sourceProject !==undefined){
+        var projectMigrated = _.findWhere(sortedMigrated, {site_id: sourceProject.site_id});
+        if (projectMigrated) {
+          sourceProject.last_migrated = projectMigrated.end_time;
+        }
+      }
+    });  
   }
 }
 
