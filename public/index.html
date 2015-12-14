@@ -12,8 +12,16 @@
 
 <body ng-app="projectMigrationApp" class="container-fluid">
   <div ng-controller="projectMigrationController">
-    <h3> Project Site Export</h3>
-    <p>Some brief explanatory text of what is going on here and a <a href="">Link to find out more.</a></p>
+    <div class="row">
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12">
+        <h3> Project Site Export</h3>
+        <p>Some brief explanatory text of what is going on here and a <a href="">Link to find out more.</a></p>
+      </div>
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
+          <a ng-show="!boxAuthorized" class="btn btn-primary" href="" data-toggle="modal" data-target="#boxAuthModal">Authorize App to Box</a>
+          <a ng-show="boxAuthorized" class="btn btn-primary" href="" data-toggle="modal" data-target="#boxLogoutModal">Unauthorize App from Box</a>
+      </div>
+    </div>  
     <div class="row">
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
