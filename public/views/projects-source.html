@@ -3,12 +3,6 @@
 <div ng-if="!sourceProjects.length && !loadingProjects">
 	There are no exports in progress at this time.
 </div>
-<div>
-	<small ng-show="!boxAuthorized"><strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxAuthModal">Authorize App to Box</a></strong>
-	</small>
-	<small ng-show="boxAuthorized"><strong><a class="btn btn-default btn-xs" href="" data-toggle="modal" data-target="#boxLogoutModal">Unauthorize App from Box</a></strong>
-	</small>
-</div>
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
   	<li ng-repeat="project in sourceProjects | orderBy:'site_name'" 
@@ -96,22 +90,22 @@
 </div>
 <!-- Button trigger modal -->
 <!-- Box Folder Selection Modal -->
-<div class="modal fade" id="boxFolderModal" tabindex="-1" role="dialog" aria-labelledby="boxFolderModalLabel">
+<div class="modal fade boxFolderModal" id="boxFolderModal" tabindex="-1" role="dialog" aria-labelledby="boxFolderModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
       <div class="modal-header">
         <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
-        <h4 class="modal-title" id="myModalLabel">Box Folder Selection. {{boxFolders.length}} folders found.</h4>
+        <h4 class="modal-title" id="myModalLabel">Box Folder Selection <small ng-show="boxFolders.length">({{boxFolders.length}} folders found)</small></h4>
       </div>
-      <div class="modal-body" style="max-height: 250px;overflow-y: auto;">
+      <div class="modal-body">
+      	<div ng-show="loadingFolders"><div class="spinner"></div>&nbsp;&nbsp;Loading folders...</div>
 	      <ul class="list-group">
 		    	<li class="list-group-item" ng-repeat="folder in boxFolders">
 		    		<div class="row"><!-- Button trigger modal -->
-			    		<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+			    		<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
 			    			<input type="radio" name="boxSelect" ng-model="folderSelected" 
 			    				value="folder{{folder.ID}}" id="folder{{folder.ID}}" ng-change="boxFolderSelect({{folder}})">
-			    		</div>
-			    		<div class="col-md-11 col-lg-11 col-sm-1 col-xs-11">
+			    				<span>&nbsp;&nbsp;</span>
 			    			<label for="folder{{folder.ID}}"> {{folder.name}}</label>
 			    		</div>	
 		    		</div>
@@ -132,7 +126,8 @@
     <div class="modal-content">
       <iframe src="/box/authorize" style="zoom:0.60" frameborder="0" height="600" width="99.6%"></iframe>
       <div class="modal-footer">
-        <button type="button" class="btn btn-link" data-dismiss="modal" ng-click="boxAuthorized=true;">Done</button>
+        <span class="alert alert-info alert-inline" ng-show="!boxAuthorized">Click "Done" after you see the "Authorized" message.</span>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="boxAuthorized=true;">Done</button>
         <button type="button" class="btn btn-link" data-dismiss="modal">Cancel</button>
       </div>
     </div>
@@ -142,9 +137,15 @@
 <div class="modal fade" id="boxLogoutModal" tabindex="-1" role="dialog" aria-labelledby="boxLogoutModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      Are you sure you want to unauthorize this app to access your Box account?
+      <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+        <h4 class="modal-title" id="myModalLabel">Unauthorize Box Access</h4>
+      </div>
+			<div class="modal-body">
+      	Are you sure you want to unauthorize this app to access your Box account?
+      </div>	
       <div class="modal-footer">
-        <button type="button" class="btn btn-link" data-dismiss="modal" ng-click="boxUnauthorize();boxAuthorized=false;">Unauthorize</button>
+        <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="boxUnauthorize()">Unauthorize</button>
         <button type="button" class="btn btn-link" data-dismiss="modal">Cancel</button>
       </div>
     </div>
