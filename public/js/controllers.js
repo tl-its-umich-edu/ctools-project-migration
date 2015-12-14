@@ -14,9 +14,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   // whether the current user authorized app to Box or not
   var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
   Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-    $scope.boxAuthorized = result.data == "true";
-    $log.info(' - - - - User authorized to Box ' + result.data);
-  });
+	  if(result.data === 'true'){
+      $scope.boxAuthorized = true;  
+    }
+    else {
+     $scope.boxAuthorized = false;   
+    }
+    //$scope.boxAuthorized === result.data;
+	  $log.info(' - - - - User authorized to Box: ' + result.data);
+	});
   
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
@@ -90,8 +96,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.getBoxFolders = function() {
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
+      $scope.loadingFolders = true;
       var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
+        $scope.loadingFolders = false;
         $scope.boxFolders = result.data;
         $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
         $log.info(' - - - - GET /box/folders');
@@ -107,7 +115,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $log.info(' - - - - GET /box/authorize');
       var boxUrl = '/box/authorize';
       Projects.boxAuthorize(boxUrl).then(function(result) {
-    	$scope.boxAuthorizeHtml = result.data;
+      $scope.boxAuthorizeHtml = result.data;
         $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
         $log.info(' - - - - GET /box/authorize');
       });
@@ -119,6 +127,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxUnauthorize = function() {
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
+        $log.warn(result)
+        $scope.boxAuthorized = false;
     	// current user un-authorize the app from accessing Box
         $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
         $log.info(' - - - - GET /box/unauthorize');
@@ -210,6 +220,30 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.showDetails = function(index){
     $scope.details = index;
   };
+
+  $scope.checkBoxAuth = function(){
+    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+      if(result.data ==='true'){
+        $scope.boxAuthorized = true;  
+      }
+      else {
+        $scope.boxAuthorized = false;  
+      }
+      $log.info(' - - - - User authorized to Box: ' + result.data);  
+    });
+  }
+
+  // on dismiss box auth modal, launch a function to check if box auth
+$(document).on('hidden.bs.modal', '#boxAuthModal', function(){
+  var appElement = $('#boxAuthModal');
+  var $scope = angular.element(appElement).scope();
+  $scope.$apply(function() {
+    appElement.scope().checkBoxAuth();
+  });
+});
+
+
 
   /*
   handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
