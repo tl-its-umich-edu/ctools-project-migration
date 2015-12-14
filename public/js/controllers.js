@@ -250,7 +250,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.postMigrationBox(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-            //pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       else
@@ -263,7 +262,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.getMigrationZip(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-            //pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
