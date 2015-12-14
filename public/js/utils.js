@@ -94,4 +94,3 @@ var transformMigrations = function (data){
   });
   return data;
 }
-

@@ -856,7 +856,7 @@ public class MigrationController {
 			rv = BoxUtils.getBoxAccessToken(userId);
 		}
 
-		return rv != null ? "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Authorized!</h1><p>You can now select Box folders and migrate project sites to them.</p><p><a target=\"top\" href=\"/\">Go back</a></p></div>" : "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You can need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
+		return rv != null ? "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Authorized!</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a target=\"top\" href=\"/\">Go back</a></p></div>" : "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
 	}
 
 	@RequestMapping("/box/checkAuthorized")
