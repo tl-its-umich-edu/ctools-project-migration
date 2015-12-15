@@ -8,6 +8,14 @@
     white-space: nowrap;
 }
 
+.boxIFrame {
+	width:100%;
+	height:450px;
+}
+
+#boxAuthModal .modal-body {
+	min-height:450px;
+}
 .topMenu {
 	padding-bottom: 15px;
   padding-top: 0;

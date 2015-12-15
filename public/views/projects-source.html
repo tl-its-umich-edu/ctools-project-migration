@@ -124,7 +124,9 @@
 <div class="modal fade" id="boxAuthModal" tabindex="-1" role="dialog" aria-labelledby="boxAuthModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-      <iframe src="/box/authorize" style="zoom:0.60" frameborder="0" height="600" width="99.6%"></iframe>
+    	<div class="modal-body">
+				<iframe class="boxIFrame" src="/box/authorize" frameborder="0"></iframe>
+      </div>
       <div class="modal-footer">
         <span class="alert alert-info alert-inline" ng-show="!boxAuthorized">Click "Done" after you see the "Authorized" message.</span>
         <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="boxAuthorized=true;">Done</button>
