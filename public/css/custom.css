@@ -9,8 +9,10 @@
 }
 
 .topMenu {
-	text-align:right;
-	padding-top:30px
+	padding-bottom: 15px;
+  padding-top: 0;
+  text-align: right;
+}
 }
 #boxFolderModal .modal-body {
 	max-height: 250px;
