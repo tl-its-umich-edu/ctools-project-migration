@@ -1,3 +1,12 @@
+a {
+	color:#005bb2;
+}
+.btn-primary {
+	background:#005bb2; 
+}
+.btn-primary:hover {
+	background:#0068cc
+}	
 .alert-inline {
     display:inline-block;font-size: 14px;font-weight: 400;
     line-height: 1.42857;
