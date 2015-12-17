@@ -1225,7 +1225,7 @@ public class MigrationController {
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
 				itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName,
-						contentUrl, sessionId, api));
+						contentUrl, description, author, copyrightAlert, sessionId, api));
 				// the status of file upload to Box
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						fileName, itemStatus.toString());
@@ -1427,7 +1427,7 @@ public class MigrationController {
 
 		// box upload success
 		if (status.length() == 0) {
-			status.append("Box upload successful for file " + fileName + "\n");
+			status.append("Box upload successful for file " + fileName + ".");
 		}
 		return status.toString();
 	}
