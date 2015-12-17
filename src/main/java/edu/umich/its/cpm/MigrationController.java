@@ -368,13 +368,10 @@ public class MigrationController {
 	@RequestMapping(value = "/migrationZip")
 	public void migrationZip(HttpServletRequest request,
 			HttpServletResponse response) {
-		// the status of migration
-		StringBuffer statusBuffer = new StringBuffer();
 		
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
-		statusBuffer.append(saveMigration.get("status"));
 		
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
@@ -392,14 +389,12 @@ public class MigrationController {
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
 		String downloadStatus = downloadZippedFile(request, response, siteId);
-		// get status
-		statusBuffer.append(downloadStatus + "\n");
 
 		// update the status and end_time of migration record
 		repository.setMigrationEndTime(
 				new java.sql.Timestamp(System.currentTimeMillis()),
 				newMigration.getMigration_id());
-		repository.setMigrationStatus(statusBuffer.toString(),
+		repository.setMigrationStatus(downloadStatus,
 				newMigration.getMigration_id());
 	}
 
@@ -411,6 +406,7 @@ public class MigrationController {
 			HttpServletResponse response, String site_id) {
 		// hold download status
 		StringBuffer downloadStatus = new StringBuffer();
+		List<MigrationFileItem> itemStatus = new ArrayList<MigrationFileItem>();
 		
 		// login to CTools and get sessionId
 		String sessionId = login_becomeuser(request);
@@ -438,9 +434,7 @@ public class MigrationController {
 					ZipOutputStream out = new ZipOutputStream(baos);
 
 					// prepare zip entry for site content objects
-					String zipStatus = zipSiteContent(siteResourceJson, sessionId, out);
-					log.info(zipStatus);
-					downloadStatus.append(zipStatus + "\n");
+					itemStatus = zipSiteContent(siteResourceJson, sessionId, out);
 
 					out.flush();
 					baos.flush();
@@ -504,14 +498,24 @@ public class MigrationController {
 			log.error(userError);
 			downloadStatus.append(userError + "\n");
 		}
-		return downloadStatus.toString();
+		
+		// the HashMap object holds itemized status information
+		HashMap<String, Object> statusMap = new HashMap<String, Object>();
+		statusMap.put("status", downloadStatus);
+		statusMap.put("data", itemStatus);
+		JSONObject obj = new JSONObject(statusMap);
+		
+		return obj.toString();
 	}
 
 	/**
 	 * create zip entry for folders and files
 	 */
-	private String zipSiteContent(String siteResourceJson, String sessionId,
+	private List<MigrationFileItem> zipSiteContent(String siteResourceJson, String sessionId,
 			ZipOutputStream out) {
+		// the return list of MigrationFileItem objects, with migration status recorded
+		List<MigrationFileItem> fileItems = new ArrayList<MigrationFileItem>();
+		
 		// zip status information
 		StringBuffer zipStatus = new StringBuffer();
 		
@@ -577,13 +581,17 @@ public class MigrationController {
 
 			} else {
 				// Call the zipFiles method for creating a zip stream.
-				//
 				String filePath = contentUrl.replace(rootFolderPath, "");
 				String zipFileStatus = zipFiles(filePath, contentUrl, sessionId, out);
+				MigrationFileItem fileItem = new MigrationFileItem(filePath, title, zipFileStatus);
+				
+				fileItems.add(fileItem);
 				zipStatus.append(zipFileStatus + "\n");
+				
+				
 			}
 		} // for
-		return zipStatus.toString();
+		return fileItems;
 	}
 
 	/**
@@ -598,7 +606,6 @@ public class MigrationController {
 		try {
 			Service service = new Service();
 			Call nc = (Call) service.createCall();
-
 			nc.setTargetEndpointAddress(env.getProperty("ctools.server.url")
 					+ "sakai-axis/ContentHosting.jws");
 
@@ -942,6 +949,8 @@ public class MigrationController {
 		String userId = request.getRemoteUser();
 		
 		StringBuffer boxMigrationStatus = new StringBuffer();
+		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
+		
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
@@ -1002,9 +1011,8 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				String downloadStatusString = boxUploadSiteContent(userId, sessionId, boxClientId, boxClientSecret,
+				itemMigrationStatus = boxUploadSiteContent(userId, sessionId, boxClientId, boxClientSecret,
 						siteResourceJson, boxFolderId);
-				boxMigrationStatus.append(downloadStatusString + "\n");
 
 			} catch (RestClientException e) {
 				String errorMessage = "Cannot find site by siteId: " + siteId
@@ -1025,21 +1033,29 @@ public class MigrationController {
 			log.error(errorBecomeUser);
 			boxMigrationStatus.append(errorBecomeUser + "\n");
 		}
+		
+		// the HashMap object holds itemized status information
+		HashMap<String, Object> statusMap = new HashMap<String, Object>();
+		statusMap.put("status", boxMigrationStatus.toString());
+		statusMap.put("data", itemMigrationStatus);
+		JSONObject obj = new JSONObject(statusMap);
+
 
 		// update the status and end_time of migration record
 		repository.setMigrationEndTime(
 				new java.sql.Timestamp(System.currentTimeMillis()),
 				newMigration.getMigration_id());
-		repository.setMigrationStatus(boxMigrationStatus.toString(),
+		repository.setMigrationStatus(statusMap.toString(),
 					newMigration.getMigration_id());
 	}
 
 	/**
 	 * iterating though content json and upload folders and files to Box
 	 */
-	private String boxUploadSiteContent(String userId, String sessionId, String boxClientId,
+	private List<MigrationFileItem> boxUploadSiteContent(String userId, String sessionId, String boxClientId,
 			String boxClientSecret, String siteResourceJson, String boxFolderId) {
-		StringBuffer status = new StringBuffer();
+		
+		List<MigrationFileItem> rv = new ArrayList<MigrationFileItem>();
 		
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 				boxClientSecret, BoxUtils.getBoxAccessToken(userId),
@@ -1063,6 +1079,9 @@ public class MigrationController {
 		java.util.Stack<String> boxFolderIdStack = new java.util.Stack<String>();
 
 		for (int i = 0; i < array.length(); i++) {
+			// status for each item
+			StringBuffer itemStatus = new StringBuffer();
+			
 			JSONObject contentItem = array.getJSONObject(i);
 
 			// get only the url after "/access/content" string
@@ -1088,17 +1107,18 @@ public class MigrationController {
 				// log error if the content url is missing
 				String urlError = "No url for content " + title; 
 				log.error(urlError);
-				status.append(urlError + "\n");
+				itemStatus.append(urlError + "\n");
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
 				String containerError = "No container folder url for content " + title;
 				log.error(containerError);
-				status.append(containerError + "\n");
+				itemStatus.append(containerError + "\n");
 				break;
 			}
 
 			if (COLLECTION_TYPE.equals(type)) {
+				
 				// folders
 				if (rootFolderPath == null) {
 					// root folder
@@ -1126,7 +1146,7 @@ public class MigrationController {
 					try {
 						BoxFolder.Info childFolderInfo = parentFolder
 								.createFolder(title);
-						log.info("folder " + title + " created.");
+						itemStatus.append("folder " + title + " created.");
 
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
@@ -1137,10 +1157,7 @@ public class MigrationController {
 					} catch (BoxAPIException e) {
 						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 							// 409 means name conflict - item already existed
-							String folderExistError = "There is already a folder with name "
-									+ title;
-							log.info(folderExistError);
-							status.append(folderExistError + "\n");
+							itemStatus.append("There is already a folder with name " + title);
 							
 							String exisingFolderId = getExistingBoxFolderIdFromBoxException(e, title);
 							if (exisingFolderId != null)
@@ -1160,6 +1177,10 @@ public class MigrationController {
 						}
 					}
 				}
+				
+				// the status of file upload to Box
+				MigrationFileItem folderItem = new MigrationFileItem(title, title, itemStatus.toString());
+				rv.add(folderItem);
 
 			} else {
 				// files
@@ -1177,21 +1198,23 @@ public class MigrationController {
 
 				if (boxFolderIdStack.empty()) {
 					String parentError = "Cannot find parent folder for file " + contentUrl;
-					log.info(parentError);
-					status.append(parentError + "\n");
+					log.error(parentError);
 					break;
 				}
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
-				String uploadFileStatus = uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
-						sessionId, api);
-				status.append(uploadFileStatus + "\n");
+				itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName, contentUrl,
+						sessionId, api));
+				// the status of file upload to Box
+				MigrationFileItem fileItem = new MigrationFileItem(contentUrl, fileName, itemStatus.toString());
+				rv.add(fileItem);
 			}
 		} // for
 
 		// refresh tokens
 		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
-		return status.toString();
+		
+		return rv;
 	}
 	
 	/**
