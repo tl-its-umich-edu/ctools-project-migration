@@ -6,6 +6,11 @@ import org.slf4j.LoggerFactory;
 import lombok.Getter;
 import lombok.Setter;
 
+/**
+ * record itemized migration status message
+ * @author zqian
+ *
+ */
 public class MigrationFileItem {
 
 	private static final Logger log = LoggerFactory.getLogger(Migration.class);
@@ -21,9 +26,6 @@ public class MigrationFileItem {
 	@Getter
 	@Setter
 	private String status;
-
-	protected MigrationFileItem() {
-	}
 
 	public MigrationFileItem(String path, String file_name, String status) {
 		this.path = path;

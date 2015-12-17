@@ -101,6 +101,14 @@ public class MigrationController {
 	// integer value of stream operation buffer size
 	private static final int STREAM_BUFFER_CHAR_SIZE = 1024;
 
+	private static final String MIGRATION_STATUS = "status";
+	private static final String MIGRATION_DATA = "data";
+
+	private static final String BOX_AUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Authorized!</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a target=\"top\" href=\"/\">Go back</a></p></div>";
+	private static final String BOX_UNAUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
+
+	private static final String LINE_BREAK = "\n";
+
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationController.class);
 
@@ -449,7 +457,7 @@ public class MigrationController {
 				} catch (IOException ee) {
 					String eeString = "downloadZippedFile: IOException of constructing zip file.";
 					log.warn(eeString);
-					downloadStatus.append(eeString + "\n");
+					downloadStatus.append(eeString + LINE_BREAK);
 				}
 
 				if (zipContent != null) {
@@ -472,11 +480,11 @@ public class MigrationController {
 					String downloadEndSuccess = "downloadZippedFile end: successfully download zip file for site "
 							+ site_id;
 					log.info(downloadEndSuccess);
-					downloadStatus.append(downloadEndSuccess + "\n");
+					downloadStatus.append(downloadEndSuccess + LINE_BREAK);
 				} else {
 					String noContent = site_id + " has no content to download.";
 					log.error(noContent);
-					downloadStatus.append(noContent + "\n");
+					downloadStatus.append(noContent + LINE_BREAK);
 				}
 
 			} catch (RestClientException e) {
@@ -485,7 +493,7 @@ public class MigrationController {
 				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
-				downloadStatus.append(errorMessage + "\n");
+				downloadStatus.append(errorMessage + LINE_BREAK);
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
@@ -493,19 +501,19 @@ public class MigrationController {
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
 				log.error(errorMessage);
-				downloadStatus.append(errorMessage + "\n");
+				downloadStatus.append(errorMessage + LINE_BREAK);
 
 			}
 		} else {
 			String userError = "Cannot become user " + request.getRemoteUser();
 			log.error(userError);
-			downloadStatus.append(userError + "\n");
+			downloadStatus.append(userError + LINE_BREAK);
 		}
 
 		// the HashMap object holds itemized status information
 		HashMap<String, Object> statusMap = new HashMap<String, Object>();
-		statusMap.put("status", downloadStatus);
-		statusMap.put("data", itemStatus);
+		statusMap.put(MIGRATION_STATUS, downloadStatus);
+		statusMap.put(MIGRATION_DATA, itemStatus);
 		JSONObject obj = new JSONObject(statusMap);
 
 		return obj.toString();
@@ -555,14 +563,14 @@ public class MigrationController {
 				// log error if the content url is missing
 				String noUrlError = "No url for content " + title;
 				log.error(noUrlError);
-				zipStatus.append(noUrlError + "\n");
+				zipStatus.append(noUrlError + LINE_BREAK);
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
 				String noContainerError = "No container folder url for content "
 						+ title;
 				log.error(noContainerError);
-				zipStatus.append(noContainerError + "\n");
+				zipStatus.append(noContainerError + LINE_BREAK);
 				break;
 			}
 
@@ -580,7 +588,7 @@ public class MigrationController {
 						String ioError = "zipSiteContent: problem closing zip entry "
 								+ folderName + " " + e;
 						log.error(ioError);
-						zipStatus.append(ioError + "\n");
+						zipStatus.append(ioError + LINE_BREAK);
 					}
 				}
 
@@ -593,7 +601,7 @@ public class MigrationController {
 						title, zipFileStatus);
 
 				fileItems.add(fileItem);
-				zipStatus.append(zipFileStatus + "\n");
+				zipStatus.append(zipFileStatus + LINE_BREAK);
 
 			}
 		} // for
@@ -629,7 +637,7 @@ public class MigrationController {
 			String exceptionString = "zipFiles " + fileUrl + " "
 					+ e.getMessage();
 			log.error(exceptionString);
-			zipFileStatus.append(exceptionString + "\n");
+			zipFileStatus.append(exceptionString + LINE_BREAK);
 		}
 
 		InputStream content = null;
@@ -659,13 +667,13 @@ public class MigrationController {
 					String ioExceptionString = "zipFiles: problem closing zip entry "
 							+ fileName + " " + ioException;
 					log.error(ioExceptionString);
-					zipFileStatus.append(ioExceptionString + "\n");
+					zipFileStatus.append(ioExceptionString + LINE_BREAK);
 				}
 			} catch (IllegalArgumentException iException) {
 				String IAExceptionString = "zipFiles: problem creating BufferedInputStream with content and length "
 						+ data.length + iException;
 				log.warn(IAExceptionString);
-				zipFileStatus.append(IAExceptionString + "\n");
+				zipFileStatus.append(IAExceptionString + LINE_BREAK);
 			} finally {
 				if (bContent != null) {
 					try {
@@ -675,7 +683,7 @@ public class MigrationController {
 						String ioExceptionString = "zipFiles: problem closing FileChannel "
 								+ ioException;
 						log.warn(ioExceptionString);
-						zipFileStatus.append(ioExceptionString + "\n");
+						zipFileStatus.append(ioExceptionString + LINE_BREAK);
 					}
 				}
 			}
@@ -683,7 +691,7 @@ public class MigrationController {
 			String ioExceptionString = " zipFiles--IOException: : fileName="
 					+ fileName;
 			log.warn(ioExceptionString);
-			zipFileStatus.append(ioExceptionString + "\n");
+			zipFileStatus.append(ioExceptionString + LINE_BREAK);
 		} finally {
 			if (content != null) {
 				try {
@@ -692,7 +700,7 @@ public class MigrationController {
 					String ioExceptionString = "zipFiles: problem closing Inputstream content for"
 							+ fileName + ioException;
 					log.warn(ioExceptionString);
-					zipFileStatus.append(ioExceptionString + "\n");
+					zipFileStatus.append(ioExceptionString + LINE_BREAK);
 				}
 			}
 		}
@@ -864,8 +872,7 @@ public class MigrationController {
 			rv = BoxUtils.getBoxAccessToken(userId);
 		}
 
-		return rv != null ? "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Authorized!</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a target=\"top\" href=\"/\">Go back</a></p></div>"
-				: "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
+		return rv != null ? BOX_AUTHORIZED_HTML : BOX_UNAUTHORIZED_HTML;
 	}
 
 	@RequestMapping("/box/checkAuthorized")
@@ -933,7 +940,7 @@ public class MigrationController {
 		if (status.length() == 0) {
 			status.append("Database Migration record successfully created.");
 		}
-		rv.put("status", status.toString());
+		rv.put(MIGRATION_STATUS, status.toString());
 
 		return rv;
 	}
@@ -956,7 +963,7 @@ public class MigrationController {
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
-		boxMigrationStatus.append(saveMigration.get("status"));
+		boxMigrationStatus.append(saveMigration.get(MIGRATION_STATUS));
 
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
@@ -974,7 +981,7 @@ public class MigrationController {
 		if (boxClientId == null || boxClientSecret == null) {
 			String boxClientIdError = "Missing Box integration parameters (Box client id, client secret)";
 			log.error(boxClientIdError);
-			boxMigrationStatus.append(boxClientIdError + "\n");
+			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
 		String remoteUserEmail = request.getRemoteUser();
 
@@ -993,7 +1000,7 @@ public class MigrationController {
 		if (siteId == null || boxFolderId == null) {
 			String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
 			log.error(boxFolderIdError);
-			boxMigrationStatus.append(boxFolderIdError + "\n");
+			boxMigrationStatus.append(boxFolderIdError + LINE_BREAK);
 		}
 
 		// login to CTools and get sessionId
@@ -1021,23 +1028,23 @@ public class MigrationController {
 				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
-				boxMigrationStatus.append(errorMessage + "\n");
+				boxMigrationStatus.append(errorMessage + LINE_BREAK);
 			}
 
 			String uploadFinished = "Finished upload site content for site "
 					+ siteId;
 			log.info(uploadFinished);
-			boxMigrationStatus.append(uploadFinished + "\n");
+			boxMigrationStatus.append(uploadFinished + LINE_BREAK);
 		} else {
 			String errorBecomeUser = "Problem become user to " + userId;
 			log.error(errorBecomeUser);
-			boxMigrationStatus.append(errorBecomeUser + "\n");
+			boxMigrationStatus.append(errorBecomeUser + LINE_BREAK);
 		}
 
 		// the HashMap object holds itemized status information
 		HashMap<String, Object> statusMap = new HashMap<String, Object>();
-		statusMap.put("status", boxMigrationStatus.toString());
-		statusMap.put("data", itemMigrationStatus);
+		statusMap.put(MIGRATION_STATUS, boxMigrationStatus.toString());
+		statusMap.put(MIGRATION_DATA, itemMigrationStatus);
 		JSONObject obj = new JSONObject(statusMap);
 
 		// update the status and end_time of migration record
@@ -1114,14 +1121,14 @@ public class MigrationController {
 				// log error if the content url is missing
 				String urlError = "No url for content " + title;
 				log.error(urlError);
-				itemStatus.append(urlError + "\n");
+				itemStatus.append(urlError + LINE_BREAK);
 				break;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
 				String containerError = "No container folder url for content "
 						+ title;
 				log.error(containerError);
-				itemStatus.append(containerError + "\n");
+				itemStatus.append(containerError + LINE_BREAK);
 				break;
 			}
 
@@ -1225,7 +1232,8 @@ public class MigrationController {
 
 				String fileName = contentUrl.replace(rootFolderPath, "");
 				itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName,
-						contentUrl, description, author, copyrightAlert, sessionId, api));
+						contentUrl, description, author, copyrightAlert,
+						sessionId, api));
 				// the status of file upload to Box
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						fileName, itemStatus.toString());
@@ -1345,7 +1353,7 @@ public class MigrationController {
 			String exceptionString = "zipFiles " + fileUrl + " "
 					+ e.getMessage();
 			log.error(exceptionString);
-			status.append(exceptionString + "\n");
+			status.append(exceptionString + LINE_BREAK);
 		}
 
 		InputStream content = null;
@@ -1391,7 +1399,7 @@ public class MigrationController {
 				String conflictString = "There is already a file with name "
 						+ fileName;
 				log.info(conflictString);
-				status.append(conflictString + "\n");
+				status.append(conflictString + LINE_BREAK);
 			}
 		} catch (IllegalArgumentException iException) {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
@@ -1400,7 +1408,7 @@ public class MigrationController {
 					+ data.length
 					+ iException;
 			log.warn(ilExceptionString);
-			status.append(ilExceptionString + "\n");
+			status.append(ilExceptionString + LINE_BREAK);
 		} finally {
 			if (bContent != null) {
 				try {
@@ -1410,7 +1418,7 @@ public class MigrationController {
 					String ioExceptionString = "problem closing FileChannel for file "
 							+ fileName + " " + ioException;
 					log.error(ioExceptionString);
-					status.append(ioExceptionString + "\n");
+					status.append(ioExceptionString + LINE_BREAK);
 				}
 			}
 		}
@@ -1421,7 +1429,7 @@ public class MigrationController {
 				String ioExceptionString = "zipFiles: problem closing Inputstream content for file "
 						+ fileName + " " + ioException;
 				log.error(ioExceptionString);
-				status.append(ioExceptionString + "\n");
+				status.append(ioExceptionString + LINE_BREAK);
 			}
 		}
 
