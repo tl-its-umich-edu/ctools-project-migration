@@ -8,18 +8,18 @@
 
 <div ng-if="migratedProjects.length && !migratedProjectsError">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects | orderBy:'site_id'">
+  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects | orderBy:['site_name', '-end_time']">
   		<!--//this is not very good, but leaves the model untouched for polling needs
   		and presents a categorized view -->
   		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratedProject.site_id !== migratedProjects[$index - 1].site_id">
   			<strong>{{migratedProject.site_name}}</strong>
   		</div>
   		<div class="row">
-	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
-	    			{{migratedProject.tool_name}}
+	  		<div class="col-md-7 col-lg-7 col-sm-7 col-xs-7">
+	    			{{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
 		  	</div>
 		  	<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
-		  		<small>Exported to <a href="migratedProject.destination_url">{{migratedProject.destination_type}}</a></small>
+		  		<small>Exported to {{migratedProject.destination_type}}</small>
 		  		<button ng-click="showDetails($index)" class="btn btn btn-xs btn-link"><span class="glyphicon glyphicon-info-sign" aria-hidden="true"></span><span class="sr-only">Information on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></button>		  			
 		  	</div>
 		  </div>

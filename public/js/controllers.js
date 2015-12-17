@@ -14,23 +14,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   // whether the current user authorized app to Box or not
   var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
   Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-	    $scope.boxAuthorized = result.data == "true";
-	    $log.info(' - - - - User authorized to Box ' + result.data);
-	  });
+	  if(result.data === 'true'){
+      $scope.boxAuthorized = true;  
+    }
+    else {
+     $scope.boxAuthorized = false;   
+    }
+    //$scope.boxAuthorized === result.data;
+	  $log.info(' - - - - User authorized to Box: ' + result.data);
+	});
   
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
   $scope.loadingProjects = false;
   Projects.getProjects(projectsUrl).then(function(result) {
     $scope.sourceProjects = result.data;
-    //compare projects list with migrations list, lock the project if it has 
-    //a current migration
-    _.each($scope.sourceProjects, function(project) {
-      if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-        project.migrating = true;
-      }
-    });
-        
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
   });
@@ -41,63 +39,20 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   Migrations.getMigrations(migratingUrl).then(function(result) {
 
     if (result.status ===200) {
-      $scope.migratingProjects = _.sortBy(result.data.entity, 'site_id');
-
       $rootScope.status.migrations = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
       $log.info(' - - - - GET /migrating');
       
       if (result.data.entity.length && result.status ===200) {
-        $log.warn('page load got one or more current migrations - will have to poll it every ' + $rootScope.pollInterval/1000 + ' seconds');
-        
-        PollingService.startPolling('migrationsOnPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
-          
-          $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
-          _.each($scope.sourceProjects, function(project) {
-            if(project.migrating) {
-              if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-                project.migrating = true;
-              } else {
-                project.migrating = false;
-                project.stateSelectionExists = false;
-                project.stateExportConfirm = false;
-                project.selected = false;
-                project.stateHasTools = false;
-                project.hideTools = true;
-              }
-            }
-          });
-
-          if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)) {
-            Migrated.getMigrated(migratedUrl).then(function(result) {
-              if (result.status ===200) {
-                $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
-                $rootScope.status.migrated = moment().format('h:mm:ss');
-                $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
-                $log.info(' - - - - GET /migrated');
-              } else {
-                $log.warn('Got error on /migrated');
-                $scope.migratedProjectsError = true;
-              }
-            });
-          }
-          $scope.migratingProjectsShadow = $scope.migratingProjects;
-
-          if (result.data.entity.length === 0){
-            $log.info('No more migrations on PAGE LOAD - stopping ON PAGE LOAD polling');
-            PollingService.stopPolling('migrationsOnPageLoad');
-          } else {
-            $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled  ON PAGE LOAD');
-            $log.info(' - - - - GET /migrations/');
-          }
-          $rootScope.status.migrations = moment().format('h:mm:ss');
-        });      
+        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        updateProjectsPanel($scope.migratingProjects, 'migrating');
       }
 
     } else {
       $log.warn('Got error on /migrations');
       $scope.migratingProjectsError = true;
     }
+    poll('pollMigrations', migratingUrl, $rootScope.pollInterval, 'migrations');
   });
 
   // GET the migrations that have completed
@@ -109,10 +64,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $rootScope.status.migrated = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
       $log.info(' - - - - GET /migrated');
+      updateProjectsPanel($scope.migratedProjects, 'migrated')
     } else {
       $log.warn('Got error on /migrated');
       $scope.migratedProjectsError = true;
     }
+    poll('pollMigrated', migratedUrl, $rootScope.pollInterval, 'migrated');
   });
 
   //handler for a request for the tools of a given project site
@@ -139,8 +96,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.getBoxFolders = function() {
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
+      $scope.loadingFolders = true;
       var boxUrl = '/box/folders';
       Projects.getBoxFolders(boxUrl).then(function(result) {
+        $scope.loadingFolders = false;
         $scope.boxFolders = result.data;
         $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
         $log.info(' - - - - GET /box/folders');
@@ -156,7 +115,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $log.info(' - - - - GET /box/authorize');
       var boxUrl = '/box/authorize';
       Projects.boxAuthorize(boxUrl).then(function(result) {
-    	$scope.boxAuthorizeHtml = result.data;
+      $scope.boxAuthorizeHtml = result.data;
         $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
         $log.info(' - - - - GET /box/authorize');
       });
@@ -168,6 +127,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxUnauthorize = function() {
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
+        $log.warn(result)
+        $scope.boxAuthorized = false;
     	// current user un-authorize the app from accessing Box
         $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
         $log.info(' - - - - GET /box/unauthorize');
@@ -260,6 +221,30 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     $scope.details = index;
   };
 
+  $scope.checkBoxAuth = function(){
+    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+      if(result.data ==='true'){
+        $scope.boxAuthorized = true;  
+      }
+      else {
+        $scope.boxAuthorized = false;  
+      }
+      $log.info(' - - - - User authorized to Box: ' + result.data);  
+    });
+  }
+
+  // on dismiss box auth modal, launch a function to check if box auth
+$(document).on('hidden.bs.modal', '#boxAuthModal', function(){
+  var appElement = $('#boxAuthModal');
+  var $scope = angular.element(appElement).scope();
+  $scope.$apply(function() {
+    appElement.scope().checkBoxAuth();
+  });
+});
+
+
+
   /*
   handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
   */
@@ -268,7 +253,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       site_id: projectId
     }));
 
+    var targetProjChildPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
+      site_id: projectId, tool: true
+    }));
+
     $scope.sourceProjects[targetProjPos].migrating=true;
+    $scope.sourceProjects[targetProjChildPos].migrating=true;
     $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
     
     var targetSelections = _.where($scope.sourceProjects, {
@@ -283,10 +273,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var migrationBoxUrl = $rootScope.urls.migrationBoxUrl;
       var migrationUrl='';
       // attach variables to it
-      if (destinationType =='box')
+      if (destinationType =='Box')
       {
     	  // migrate to Box
-    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'box&box_folder_id=' + $scope.selectBoxFolder.id;
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.selectBoxFolder.id;
          
 
           $log.info("box " + migrationUrl);
@@ -294,7 +284,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.postMigrationBox(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-            pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       else
@@ -307,67 +296,115 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
           Migration.getMigrationZip(migrationUrl).then(function(result) {
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
-            pollMigrations(migratingUrl,$rootScope.pollInterval);
           });
       }
       $log.warn(moment().format('h:mm:ss') + ' - project migration started for ' + migrationUrl);
     });
   };
 
-  var pollMigrations = function (migratingUrl,interval){
-    // stop all existing polling of /migrations end point if any
-      $log.info(' - - - - stop all (if any) /migrations polls');
-      PollingService.stopPolling('migrationsAfterPageLoad');
-      PollingService.stopPolling('migrationsOnPageLoad');
-      // start a new polling of /migrations endpoint
-      PollingService.startPolling('migrationsAfterPageLoad', migratingUrl, $rootScope.pollInterval, function(result) {
-        if (result.data.entity.length === 0) {
-          $log.warn('Nothing being migrated: reloading /migrated and then stopping polling');
-          PollingService.stopPolling('migrationsAfterPageLoad');
-        }
-        else {
-          $log.info(moment().format('h:mm:ss') + ' - projects being migrated polled after  migration request');
-          $log.info(' - - - - GET /migrations/');
-        }  
-        //update time stamp displayed in the /migrations panel
+var poll = function (pollName, url, interval, targetPanel){
+  PollingService.startPolling(pollName, url, $rootScope.pollInterval, function(result) {
+    $log.info(moment().format('h:mm:ss') + ' polled: ' + pollName + ' for ' + url);
+
+    if(targetPanel === 'migrations'){
+      if(result.data.status ===200) {
+        //update time stamp displayed in /migrations panel
         $rootScope.status.migrations = moment().format('h:mm:ss');
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
-        
-        // if the data from last poll is different from this poll
+        // this poll has different data than the last one
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
-          $log.warn(moment().format('h:mm:ss') + ' - migrating panel changed - migrated projects reloaded');
-          $log.info(' - - - - GET /migrated');
-          // request the /migrated data and reload the panel
-          Migrated.getMigrated(migratedUrl).then(function(result) {
-            if (result.status ===200) {
-              $scope.migratedProjects = result.data.entity;
-              $rootScope.status.migrated = moment().format('h:mm:ss');
-            } else {
-              $log.warn('Got error on /migrated');
-              $scope.migratedProjectsError = true;
-            }
-          });
+          $log.info('migrations has changed - call a function to update projects panel')
+          // update project panel based on new data
+          updateProjectsPanel($scope.migratingProjects, 'migrating');
         }
-        //TODO: this only really makes sense by comparing /projects and /migrated
-        $.each($scope.sourceProjects, function(index, project ) {
-          if(_.findWhere($scope.migratingProjects, {tool_site_id:project.tool_site_id})) {
-            project.migrating = true;
-          } else {
-            project.migrating = false;
-            project.stateSelectionExists = false;
-            project.stateExportConfirm = false;
-            project.selected = false;
-            project.stateHasTools = false;
-            project.hideTools = true;
+        $scope.migratingProjectsShadow = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        //clear error condition if any
+        $scope.migratingProjectsError = false;
+      }
+      else {
+        //declare error and show error message in UI
+        $scope.migratingProjectsError = true;
+      }
+    } else {
+      //update time stamp displayed in /migrated  panel
+      $rootScope.status.migrated = moment().format('h:mm:ss');
+      if(result.data.status ===200) {
+        $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
+        // this poll has different data than the last one
+        if(!angular.equals($scope.migratedProjects, $scope.migratedProjectsShadow)){
+          $log.info('migrated has changed - call a function to update projects panel');
+          // update project panel based on new data
+          updateProjectsPanel($scope.migratedProjects, 'migrated')
+        }
+        $scope.migratedProjectsShadow = _.sortBy(result.data.entity, 'site_id');
+        //clear error condition if any
+        $scope.migratedProjectsError = false; 
+      } else {
+        //declare error and show error message in UI
+        $scope.migratedProjectsError = true; 
+      }
+
+    }
+  });
+}
+
+var updateProjectsPanel = function(result, source){
+  $log.info('updating projects panel because of changes to /' + source);
+  if(source==='migrating'){
+    if(result.length) {
+      //there are /migrating items
+      // for each source project, if it is represented in /migrating, lock it, if not uunlock it
+      _.each($scope.sourceProjects, function(sourceProject) {
+        if(sourceProject !==null && sourceProject !==undefined){
+          var projectMigrating = _.findWhere(result, {site_id: sourceProject.site_id});
+          if (projectMigrating) {
+            // locking
+            sourceProject.migrating = true;
           }
-          if(_.findWhere($scope.migratingProjects, {site_id:project.site_id})) {
-            project.migrating = true;
-          } else {
-            project.migrating = false;
-          }  
-        });
-        // copy the current data for /migrations to the shadow
-        $scope.migratingProjectsShadow = $scope.migratingProjects;
+          else {
+            //unlocking and resetting all the states
+            sourceProject.migrating = false;
+            sourceProject.stateSelectionExists =false;
+            sourceProject.selectDestinationType = {};
+            sourceProject.stateHasTools = false;
+            //also remove the tool panel of the source project
+            if (sourceProject.tool_id !=='') {
+              var index = $scope.sourceProjects.indexOf(sourceProject);
+              $scope.sourceProjects.splice(index, 1); 
+            }
+          }
+        }
       });
+    }
+    else {
+      // there are no /migrating items, so loop through all the source projects and reset their state
+      _.each($scope.sourceProjects, function(sourceProject) {
+        if(sourceProject) {          
+          sourceProject.migrating = false;
+          sourceProject.stateSelectionExists =false;
+          sourceProject.selectDestinationType = {};
+          sourceProject.stateHasTools = false;
+          if (sourceProject.tool_id !=='') {
+            var index = $scope.sourceProjects.indexOf(sourceProject);
+            $scope.sourceProjects.splice(index, 1); 
+          }
+        }
+     });   
+    }
   }
+  else {
+    // add the latest migrated date for each project by
+    // sorting /migrated and then finding for each project the first correlate /migrated
+    var sortedMigrated =  _.sortBy(result, 'end_time').reverse();
+    _.each($scope.sourceProjects, function(sourceProject) {
+      if(sourceProject !==null && sourceProject !==undefined){
+        var projectMigrated = _.findWhere(sortedMigrated, {site_id: sourceProject.site_id});
+        if (projectMigrated) {
+          sourceProject.last_migrated = projectMigrated.end_time;
+        }
+      }
+    });  
+  }
+}
+
 }]);
