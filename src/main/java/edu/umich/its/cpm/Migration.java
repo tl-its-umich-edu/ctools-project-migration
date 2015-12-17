@@ -3,11 +3,6 @@ package edu.umich.its.cpm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
-
 import java.sql.Timestamp;
 
 import java.util.UUID;
