@@ -74,7 +74,8 @@
                 "file_name": "sk-a-1857.z.zip",
                 "status": "backgrounds/sk-a-1857.z.jpeg was added into zip file successfully."
             }],
-            "status": "Problem getting content zip file for e9222585-bb4f-40ed-a411-c5e2f51d2baf java.net.SocketException: Broken pipe\\n"
+            "status": {"status_code":"Fail", "status_message":
+            "Problem getting content zip file for e9222585-bb4f-40ed-a411-c5e2f51d2baf java.net.SocketException: Broken pipe\\n"}
         }
 
     }],
