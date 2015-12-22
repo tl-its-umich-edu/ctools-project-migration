@@ -20,7 +20,7 @@
 		  	</div>
 		  	<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
 		  		<span ng-class="migratedProject.status.status.status_code ==='Fail' ? 'export-fail' : 'export-success'">{{migratedProject.status.status.status_code}}</span>
-		  		<small><a href="" ng-click="showDetails($index)">(info) <span class="sr-only">Information on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>	
+		  		<small><a href="" ng-click="showDetails($index, migratedProject.site_name )">(info) <span class="sr-only">Information on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>	
  
 		  	</div>
 		  </div>

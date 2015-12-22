@@ -217,13 +217,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   };
 
   //handler for showing the details of a migrated thing
-  $scope.showDetails = function(index){
+  $scope.showDetails = function(index, site_title){
     var reportDetails = $scope.migratedProjects[index].status;
+    $log.warn(site_title)
+    reportDetails.title = site_title;
     sessionStorage.setItem('proj_migr_report', JSON.stringify(reportDetails));
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
     reportWin.focus();
-
-    //window.open('/report.html','reportwindow').focus()
   };
 
   $scope.checkBoxAuth = function(){
