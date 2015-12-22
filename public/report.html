@@ -7,7 +7,9 @@
   <title>Report details</title>
   <link rel="stylesheet" href="vendors/bootstrap/bootstrap.min.css">
   <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/files.css">
 </head>
+
 
 <body ng-app="projectMigrationApp">
   <div ng-controller="reportController" class="container" style="padding:20px">
@@ -25,9 +27,15 @@
     <div class="alert alert-info">{{reportDetails.status}}</div>
     
 
-		<ul class="list-group">
-		  <li class="list-group-item" ng-repeat="item in reportDetails.data">
-		    <span class="badge"><span class="glyphicon glyphicon-ok" aria-hidden="true"></span></span> <span ng-show="showPaths">{{item.path}}</span><span ng-hide="showPaths">{{item.file_name}}</span>
+		<ul class="list-group container">
+		  <li class="row list-group-item" ng-repeat="item in reportDetails.data">
+		    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:0">
+          <span class="file-icon {{item.file_name | getExtension}}"  style="vertical-align: middle;"></span> <span  style="vertical-align: middle;" ng-show="showPaths">{{item.path}}</span><span ng-hide="showPaths"  style="vertical-align: middle;">{{item.file_name}}</span>
+        </div>
+        <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+          <span class="glyphicon glyphicon-ok" aria-hidden="true"   style="vertical-align: middle;"></span>
+        </div>
+         
 		    
 		  </li>
 		</ul>
@@ -41,6 +49,7 @@
   <script src="js/app.js" type="text/javascript" charset="utf-8"></script>
   <script src="js/controllers.js" type="text/javascript" charset="utf-8"></script>
   <script src="js/factories.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
   <script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
 </body>
 
