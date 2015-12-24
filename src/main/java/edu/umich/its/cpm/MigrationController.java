@@ -140,6 +140,10 @@ public class MigrationController {
 	private static final String CONTENT_JSON_ATTR_DESCRIPTION = "description";
 	private static final String CONTENT_JSON_ATTR_AUTHOR = "author";
 	private static final String CONTENT_JSON_ATTR_COPYRIGHT_ALERT = "copyrightAlert";
+	private static final String CONTENT_JSON_ATTR_SIZE = "size";
+	// Box has a hard limit of 5GB per any single file
+	// use the decimal version of GB here, smaller than the binary version
+	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L*1024*1024*1024; 
 
 	/**
 	 * get all CTools sites where user have site.upd permission
@@ -1115,7 +1119,7 @@ public class MigrationController {
 			String author = getJSONString(contentItem, CONTENT_JSON_ATTR_AUTHOR);
 			String copyrightAlert = getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
-
+			
 			// files
 			if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
@@ -1211,29 +1215,41 @@ public class MigrationController {
 
 			} else {
 				// files
-				// Call the uploadFile method to upload file to Box.
-				//
-				log.debug("file stack peek= " + containerStack.peek() + " "
-						+ " container=" + container);
-
-				while (!containerStack.empty()
-						&& !container.equals(containerStack.peek())) {
-					// sync pops
-					containerStack.pop();
-					boxFolderIdStack.pop();
-				}
-
-				if (boxFolderIdStack.empty()) {
-					String parentError = "Cannot find parent folder for file "
-							+ contentUrl;
-					log.error(parentError);
-					break;
-				}
-
 				String fileName = contentUrl.replace(rootFolderPath, "");
-				itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName,
-						contentUrl, description, author, copyrightAlert,
-						sessionId, api));
+				long size = getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
+				
+				// check whether the file size exceeds Box's limit
+				if (size >= MAX_CONTENT_SIZE_FOR_BOX)
+				{
+					// stop upload this file
+					itemStatus.append(title +" is of size " + size + ", too big to be uploaded to Box" + LINE_BREAK);
+				}
+				else
+				{
+					// Call the uploadFile method to upload file to Box.
+					//
+					log.debug("file stack peek= " + containerStack.peek() + " "
+							+ " container=" + container);
+	
+					while (!containerStack.empty()
+							&& !container.equals(containerStack.peek())) {
+						// sync pops
+						containerStack.pop();
+						boxFolderIdStack.pop();
+					}
+	
+					if (boxFolderIdStack.empty()) {
+						String parentError = "Cannot find parent folder for file "
+								+ contentUrl;
+						log.error(parentError);
+						break;
+					}
+	
+					itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName,
+							contentUrl, description, author, copyrightAlert,
+							sessionId, api));
+				}
+				
 				// the status of file upload to Box
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						fileName, itemStatus.toString());
@@ -1259,6 +1275,22 @@ public class MigrationController {
 		String rv = null;
 		if (object.has(key) && object.get(key) != JSONObject.NULL) {
 			rv = object.getString(key);
+		}
+		return rv;
+	}
+	
+	/**
+	 * Checks first whether the JSONObject contains specified key value; If so,
+	 * return the long value associated with the key
+	 * 
+	 * @param object
+	 * @param key
+	 * @return
+	 */
+	private long getJSONLong(JSONObject object, String key) {
+		long rv = 0L;
+		if (object.has(key) && object.get(key) != JSONObject.NULL) {
+			rv = object.getLong(key);
 		}
 		return rv;
 	}
