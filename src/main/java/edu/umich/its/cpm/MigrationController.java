@@ -394,8 +394,6 @@ public class MigrationController {
 			newMigration = (Migration) saveMigration.get("migration");
 		}
 
-		log.info("migration", newMigration);
-
 		// download zip file
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
@@ -455,9 +453,9 @@ public class MigrationController {
 					baos.close();
 					zipContent = baos.toByteArray();
 				} catch (IOException ee) {
-					String eeString = "downloadZippedFile: IOException of constructing zip file.";
+					String eeString = "IOException of constructing zip file.";
 					log.warn(eeString);
-					downloadStatus.append(eeString + LINE_BREAK);
+					downloadStatus.append(eeString);
 				}
 
 				if (zipContent != null) {
@@ -477,14 +475,14 @@ public class MigrationController {
 					sos.write(zipContent);
 					sos.flush();
 
-					String downloadEndSuccess = "downloadZippedFile end: successfully download zip file for site "
+					String downloadEndSuccess = "Successfully download zip file for site "
 							+ site_id;
 					log.info(downloadEndSuccess);
-					downloadStatus.append(downloadEndSuccess + LINE_BREAK);
+					downloadStatus.append(downloadEndSuccess);
 				} else {
 					String noContent = site_id + " has no content to download.";
 					log.error(noContent);
-					downloadStatus.append(noContent + LINE_BREAK);
+					downloadStatus.append(noContent);
 				}
 
 			} catch (RestClientException e) {
@@ -493,7 +491,7 @@ public class MigrationController {
 				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
-				downloadStatus.append(errorMessage + LINE_BREAK);
+				downloadStatus.append(errorMessage);
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
@@ -501,13 +499,13 @@ public class MigrationController {
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
 				log.error(errorMessage);
-				downloadStatus.append(errorMessage + LINE_BREAK);
+				downloadStatus.append(errorMessage);
 
 			}
 		} else {
 			String userError = "Cannot become user " + request.getRemoteUser();
 			log.error(userError);
-			downloadStatus.append(userError + LINE_BREAK);
+			downloadStatus.append(userError);
 		}
 
 		// the HashMap object holds itemized status information
