@@ -17,6 +17,8 @@ import javax.persistence.GenerationType;
 import lombok.Getter;
 import lombok.Setter;
 
+import com.fasterxml.jackson.annotation.JsonRawValue;
+
 @Entity
 public class Migration {
 
@@ -75,6 +77,7 @@ public class Migration {
 	@Column(name = "STATUS", columnDefinition = "LOB", table = "MIGRATION")
 	@Getter
 	@Setter
+	@JsonRawValue
 	private String status;
 
 	protected Migration() {

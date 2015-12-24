@@ -16,7 +16,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return 
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.migrated_by = ?#{[0]}")
+	@Query("SELECT m FROM Migration m WHERE m.migrated_by = ?#{[0]} order by m.start_time desc")
 	List<Migration> findMigrations(String userId);
 
 	/**
@@ -25,7 +25,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return 
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by = ?#{[0]}")
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by = ?#{[0]} order by m.end_time desc")
 	public List<Migration> findMigrated(String userId);
 	
 	/**
@@ -34,7 +34,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return 
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end_time IS NULL and m.migrated_by = ?#{[0]}")
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NULL and m.migrated_by = ?#{[0]} order by m.start_time desc")
 	public List<Migration> findMigrating(String userId);
 
 	/**
@@ -52,7 +52,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param site_id
 	 * @return A list of migration with site_id
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.site_id = ?#{[0]}")
+	@Query("SELECT m FROM Migration m WHERE m.site_id = ?#{[0]} order by m.start_time desc")
 	public List<Migration> findBySiteId(String site_id);
 	
 	/**
