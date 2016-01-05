@@ -1,0 +1,55 @@
+@media print {
+ .file-icon { display:none !important};
+}
+.file-icon {
+	display: inline-block;
+	width:30px;
+	height:30px;
+	background:#fff url(../images/file_icons/default.png) top left no-repeat;
+	-webkit-print-color-adjust: exact
+}
+.jpg, .jpeg {
+ background-image: url(../images/file_icons/jpg.png);
+}
+.doc, .docx {
+	background: url(../images/file_icons/doc.png);
+}
+.avi {
+	background:url(../images/file_icons/avi.png);
+}
+.css{
+	background:url(../images/file_icons/css.png);
+}
+.eps{
+	background:url(../images/file_icons/eps.png);
+}
+.html, .htm {
+	background:url(../images/file_icons/html.png);
+}
+.mov{
+	background:url(../images/file_icons/mov.png);
+}
+.mp3{
+	background:url(../images/file_icons/mp3.png);
+}
+.pdf{
+	background:url(../images/file_icons/pdf.png);
+}
+.png{
+	background:url(../images/file_icons/png.png);
+}
+.ppt{
+	background:url(../images/file_icons/ppt.png);
+}
+.psd{
+	background:url(../images/file_icons/psd.png);
+}
+.txt{
+	background:url(../images/file_icons/txt.png);
+}
+.xls{
+	background:url(../images/file_icons/xls.png);
+}
+.zip{
+	background:url(../images/file_icons/zip.png);
+}

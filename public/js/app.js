@@ -1,7 +1,7 @@
 'use strict';
 /* global angular */
 
-var projectMigrationApp = angular.module('projectMigrationApp', ['ngAnimate']);
+var projectMigrationApp = angular.module('projectMigrationApp', ['projectMigrationFilters','ngAnimate']);
 
 projectMigrationApp.run(function($rootScope) {
   //for any init values needed
@@ -34,7 +34,8 @@ projectMigrationApp.run(function($rootScope) {
       'migrationUrl': '/migration',
       'migrationZipUrl': '/migrationZip',
       'migrationBoxUrl': '/migrationBox',
-      'migratedUrl': '/migrated',
+      'migratedUrl': 'data/migrated.json',
+      //'migratedUrl': '/migrated',
       'migratingUrl': '/migrating',
       'projectUrl': '/projects/',
       'checkBoxAuthorizedUrl': '/box/checkAuthorized'
