@@ -34,8 +34,7 @@ projectMigrationApp.run(function($rootScope) {
       'migrationUrl': '/migration',
       'migrationZipUrl': '/migrationZip',
       'migrationBoxUrl': '/migrationBox',
-      'migratedUrl': 'data/migrated.json',
-      //'migratedUrl': '/migrated',
+      'migratedUrl': '/migrated',
       'migratingUrl': '/migrating',
       'projectUrl': '/projects/',
       'checkBoxAuthorizedUrl': '/box/checkAuthorized'
