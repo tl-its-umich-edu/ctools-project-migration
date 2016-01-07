@@ -58,9 +58,9 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 			// output the git version, CTools and Box url 
 			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
 			messages.add("CTools server: " + env.getProperty("ctools.server.url"));
-			messages.add("Box server:" + env.getProperty("box_api_url"));
+			messages.add("Box server: " + env.getProperty("box_api_url"));
 			// use the spring-boot's default "/health" endpoint for /status/ping purpose
-			messages.add("Link to status ping page :" + env.getProperty("server_url") + "/health");
+			messages.add("Link to status ping page: " + env.getProperty("server_url") + "/health");
 			
 		} catch (Throwable e) {
 			e.printStackTrace();
