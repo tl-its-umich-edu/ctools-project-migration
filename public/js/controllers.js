@@ -3,13 +3,10 @@
 
 /* MIGRATIONS CONTROLLER */
 projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
-
+  $scope.loadingProjects = true;
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
   $scope.migratedProjects = [];
-
-  $scope.loadingProjects = true;
-  
   $scope.boxAuthorized = false;
   // whether the current user authorized app to Box or not
   var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
@@ -26,9 +23,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   
   // GET the project list
   var projectsUrl = $rootScope.urls.projectsUrl;
-  $scope.loadingProjects = false;
+
   Projects.getProjects(projectsUrl).then(function(result) {
     $scope.sourceProjects = result.data;
+    $scope.loadingProjects = false;
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
   });
@@ -45,6 +43,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       
       if (result.data.entity.length && result.status ===200) {
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        $log.info('Updating projects panel based on CURRENT migrations');
         updateProjectsPanel($scope.migratingProjects, 'migrating');
       }
 
@@ -60,11 +59,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
   Migrated.getMigrated(migratedUrl).then(function(result) {
     if (result.status ===200) {
-      $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
+      $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
       $rootScope.status.migrated = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
       $log.info(' - - - - GET /migrated');
-      updateProjectsPanel($scope.migratedProjects, 'migrated')
+      updateProjectsPanel($scope.migratedProjects, 'migrated');
+      $log.info('Updating projects panel based on COMPLETED migrations');
     } else {
       $log.warn('Got error on /migrated');
       $scope.migratedProjectsError = true;
@@ -318,8 +318,7 @@ var poll = function (pollName, url, interval, targetPanel){
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
         // this poll has different data than the last one
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
-          $log.info('migrations has changed - call a function to update projects panel')
-          // update project panel based on new data
+          $log.info('Updating projects panel based on CURRENT migrations poll');
           updateProjectsPanel($scope.migratingProjects, 'migrating');
         }
         $scope.migratingProjectsShadow = _.sortBy(transformMigrations(result).data.entity, 'site_id');
@@ -334,14 +333,15 @@ var poll = function (pollName, url, interval, targetPanel){
       //update time stamp displayed in /migrated  panel
       $rootScope.status.migrated = moment().format('h:mm:ss');
       if(result.data.status ===200) {
-        $scope.migratedProjects = _.sortBy(result.data.entity, 'site_id');
+        $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
         // this poll has different data than the last one
         if(!angular.equals($scope.migratedProjects, $scope.migratedProjectsShadow)){
           $log.info('migrated has changed - call a function to update projects panel');
           // update project panel based on new data
+          $log.info('Updating projects panel based on COMPLETED migrations poll');
           updateProjectsPanel($scope.migratedProjects, 'migrated')
         }
-        $scope.migratedProjectsShadow = _.sortBy(result.data.entity, 'site_id');
+        $scope.migratedProjectsShadow = _.sortBy(result.data.entity, 'site_name');
         //clear error condition if any
         $scope.migratedProjectsError = false; 
       } else {
@@ -356,6 +356,7 @@ var poll = function (pollName, url, interval, targetPanel){
 var updateProjectsPanel = function(result, source){
   $log.info('updating projects panel because of changes to /' + source);
   if(source==='migrating'){
+    $log.warn('updateProjectsPanel for ' + source )
     if(result.length) {
       //there are /migrating items
       // for each source project, if it is represented in /migrating, lock it, if not uunlock it
@@ -363,11 +364,12 @@ var updateProjectsPanel = function(result, source){
         if(sourceProject !==null && sourceProject !==undefined){
           var projectMigrating = _.findWhere(result, {site_id: sourceProject.site_id});
           if (projectMigrating) {
-            // locking
+            $log.warn('locking ' + sourceProject.site_name)
             sourceProject.migrating = true;
           }
           else {
             //unlocking and resetting all the states
+            $log.warn('unlocking ' + sourceProject.site_name)
             sourceProject.migrating = false;
             sourceProject.stateSelectionExists =false;
             sourceProject.selectDestinationType = {};
@@ -383,8 +385,9 @@ var updateProjectsPanel = function(result, source){
     }
     else {
       // there are no /migrating items, so loop through all the source projects and reset their state
+      $log.warn('unlocking all')
       _.each($scope.sourceProjects, function(sourceProject) {
-        if(sourceProject) {          
+        if(sourceProject) {
           sourceProject.migrating = false;
           sourceProject.stateSelectionExists =false;
           sourceProject.selectDestinationType = {};
