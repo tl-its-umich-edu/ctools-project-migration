@@ -24,7 +24,7 @@ import org.springframework.web.context.ServletContextAware;
  *
  */
 @Component
-public class StatusEndpoint implements Endpoint<List<String>>， ServletContextAware {
+public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAware{
 
 	String version = "";
 	
@@ -43,15 +43,14 @@ public class StatusEndpoint implements Endpoint<List<String>>， ServletContextA
 	public List<String> invoke() {
 		// Custom logic to build the output
 		List<String> messages = new ArrayList<String>();
-		messages.add("This is message 1");
-		messages.add("This is message 2");
+		messages.add("The status page:");
 		
 		try {
 			String name = "/META-INF/MANIFEST.MF";
 			Properties props = new Properties();
 			props.load(servletContext.getResourceAsStream(name));
-			
-			messages.add("GIT version: " + (String) props.get("git-SHA-1");
+			// output the 
+			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
