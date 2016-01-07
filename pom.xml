@@ -191,6 +191,14 @@
 							<directory>public</directory>
 						</resource>
 					</webResources>
+					<archive>
+						<manifest>
+							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
+						</manifest>
+						<manifestEntries>
+							<git-SHA-1>${buildNumber}</git-SHA-1>
+						</manifestEntries>
+					</archive>
 				</configuration>
 			</plugin>
 			<!-- remote debugging
