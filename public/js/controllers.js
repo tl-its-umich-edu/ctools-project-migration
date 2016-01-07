@@ -2,7 +2,7 @@
 /* global projectMigrationApp, angular, _, moment, $ */
 
 /* MIGRATIONS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', 'focus', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
   $scope.loadingProjects = true;
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
@@ -83,7 +83,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       }));
       //add the tools after the project object
       $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
-
+      // get a handle on the first tool
+      var firstToolId = 'toolSel' + result.data[0].tool_id;
+      // use the handle to pass focus to the first tool
+      $scope.$evalAsync(function() { 
+        focus(firstToolId);
+      })
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
 
