@@ -13,6 +13,10 @@ import javax.servlet.ServletContext;
 
 import org.springframework.web.context.ServletContextAware;
 
+import org.springframework.core.env.Environment;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.PropertySource;
+
 /**
  * this is to add a new status end point Return a page with application version
  * information, a list of other available status URLs for this instance of the
@@ -23,10 +27,14 @@ import org.springframework.web.context.ServletContextAware;
  * @author zqian
  *
  */
+@PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @Component
 public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAware{
 
-	 private static ServletContext servletContext = null;
+	private static ServletContext servletContext = null;
+	
+	@Autowired
+	private Environment env;
 	
 	public String getId() {
 		return "status";
