@@ -57,8 +57,11 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 			String name = "/META-INF/MANIFEST.MF";
 			Properties props = new Properties();
 			props.load(servletContext.getResourceAsStream(name));
-			// output the 
+			// output the git version, CTools and Box url 
 			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
+			messages.add("CTools server: " + env.getProperty("ctools.direct.url"));
+			messages.add("Box server:" + env.getProperty("box_api_url"))
+			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
