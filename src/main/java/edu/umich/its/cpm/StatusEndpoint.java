@@ -18,11 +18,8 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 
 /**
- * this is to add a new status end point Return a page with application version
- * information, a list of other available status URLs for this instance of the
- * application, and a list of, or pointers to, specific external points of
- * integration for this installation and can potentially have information such
- * as how to diagnose connection issues
+ * this is to add a new status end point with application version
+ * information, and link to external dependencies
  * 
  * @author zqian
  *
@@ -54,6 +51,7 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 		messages.add("The status page:");
 		
 		try {
+			// maven build has put the git version information into MANIFEST.MF FILE
 			String name = "/META-INF/MANIFEST.MF";
 			Properties props = new Properties();
 			props.load(servletContext.getResourceAsStream(name));
@@ -61,6 +59,8 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
 			messages.add("CTools server: " + env.getProperty("ctools.server.url"));
 			messages.add("Box server:" + env.getProperty("box_api_url"));
+			// use the spring-boot's default "/health" endpoint for /status/ping purpose
+			messages.add("Link to status ping page :" + env.getProperty("server_url") + "/health");
 			
 		} catch (Throwable e) {
 			e.printStackTrace();
