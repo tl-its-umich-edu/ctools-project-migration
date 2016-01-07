@@ -60,7 +60,7 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 			// output the git version, CTools and Box url 
 			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
 			messages.add("CTools server: " + env.getProperty("ctools.direct.url"));
-			messages.add("Box server:" + env.getProperty("box_api_url"))
+			messages.add("Box server:" + env.getProperty("box_api_url"));
 			
 		} catch (Throwable e) {
 			e.printStackTrace();
