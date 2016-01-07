@@ -26,7 +26,7 @@ import org.springframework.web.context.ServletContextAware;
 @Component
 public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAware{
 
-	String version = "";
+	 private static ServletContext servletContext = null;
 	
 	public String getId() {
 		return "status";
@@ -61,4 +61,5 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 	public void setServletContext(ServletContext servletContext){
 		this.servletContext = servletContext;
 	}
+	
 }
