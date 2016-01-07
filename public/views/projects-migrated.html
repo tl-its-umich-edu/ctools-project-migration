@@ -1,4 +1,4 @@
-<div ng-if="!migratedProjects.length && !migratedProjectsError">
+<div ng-if="!migratedProjects.length && !migratedProjectsError" class="no-items">
 	There are no completed exports at this time.
 </div>
 
@@ -8,7 +8,7 @@
 
 <div ng-if="migratedProjects.length && !migratedProjectsError">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects | orderBy:['site_name', '-end_time']">
+  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects">
   		<!--//this is not very good, but leaves the model untouched for polling needs
   		and presents a categorized view -->
   		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratedProject.site_id !== migratedProjects[$index - 1].site_id">

@@ -64,6 +64,13 @@ label {
 }
 
 @media (max-width: 480px) {
+	.panel-heading {
+		background-color: #777 !important;
+		color:#fff !important;
+	}
+	.no-items {
+		padding:10px;
+	}
 	.panel-body {
 		padding:0;
 	}

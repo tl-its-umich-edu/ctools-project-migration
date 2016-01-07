@@ -1,7 +1,6 @@
-
-<div class="spinner" ng-show="loadingProjects"></div>
+<div class="no-items" ng-show="loadingProjects"><span class="spinner"></span> <span> Loading projects from CTools...</span></div>
 <div ng-if="!sourceProjects.length && !loadingProjects">
-	There are no exports in progress at this time.
+	No project sites available.
 </div>
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
