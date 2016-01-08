@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import java.util.Iterator;
 import java.util.Properties;
@@ -17,6 +18,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 
+import org.json.JSONObject;
+
 /**
  * this is to add a new status end point with application version
  * information, and link to external dependencies
@@ -26,7 +29,7 @@ import org.springframework.context.annotation.PropertySource;
  */
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @Component
-public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAware{
+public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 
 	private static ServletContext servletContext = null;
 	
