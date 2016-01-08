@@ -762,14 +762,7 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = userId;
-		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
-			// if the remote user value is not of email format
-			// then it is the uniqname of umich user
-			// we need to attach "@umich.edu" to it to make it a full email
-			// address
-			remoteUserEmail = remoteUserEmail + EMAIL_AT_UMICH;
-		}
+		String remoteUserEmail = getUserEmail(userId);
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
@@ -793,7 +786,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 		// get the current user id
 		String userId = request.getRemoteUser();
-		String remoteUserEmail = userId + "@umich.edu";
+		String remoteUserEmail = getUserEmail(userId);
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
@@ -1468,5 +1461,21 @@ public class MigrationController {
 			status.append("Box upload successful for file " + fileName + ".");
 		}
 		return status.toString();
+	}
+	
+	/**
+	 * construct the user email address
+	 */
+	private String getUserEmail(String userId)
+	{
+		String remoteUserEmail = userId;
+		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
+			// if the remote user value is not of email format
+			// then it is the uniqname of umich user
+			// we need to attach "@umich.edu" to it to make it a full email
+			// address
+			remoteUserEmail = remoteUserEmail + EMAIL_AT_UMICH;
+		}
+		return remoteUserEmail;
 	}
 }
