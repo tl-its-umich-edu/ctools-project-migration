@@ -52,9 +52,6 @@ public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 		String rv = "";
 		
 		// Custom logic to build the output
-		List<String> messages = new ArrayList<String>();
-		messages.add("The status page:");
-		
 		try {
 			// maven build has put the git version information into MANIFEST.MF FILE
 			Properties props = new Properties();
