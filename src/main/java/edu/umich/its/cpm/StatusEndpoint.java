@@ -68,7 +68,7 @@ public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 			statusMap.put("build", buildMap);
 			// all external links
 			HashMap<String, Object> urlMap = new HashMap<String, Object>();
-			urlMap.put("ping", env.getProperty("ctools.server.url")+"/status/ping.json")
+			urlMap.put("ping", env.getProperty("ctools.server.url")+"/status/ping.json");
 			urlMap.put("CTools server", env.getProperty("ctools.server.url"));
 			urlMap.put("Box server", env.getProperty("box_api_url"));
 			statusMap.put("urls", urlMap);
