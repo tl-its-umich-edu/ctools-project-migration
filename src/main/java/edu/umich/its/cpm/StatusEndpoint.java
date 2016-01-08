@@ -5,6 +5,7 @@ import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.ArrayList;
+import java.util.HashMap;
 
 import java.util.Iterator;
 import java.util.Properties;
@@ -17,6 +18,8 @@ import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
 
+import org.json.JSONObject;
+
 /**
  * this is to add a new status end point with application version
  * information, and link to external dependencies
@@ -26,7 +29,7 @@ import org.springframework.context.annotation.PropertySource;
  */
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @Component
-public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAware{
+public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 
 	private static ServletContext servletContext = null;
 	
@@ -45,28 +48,37 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 		return true;
 	}
 
-	public List<String> invoke() {
-		// Custom logic to build the output
-		List<String> messages = new ArrayList<String>();
-		messages.add("The status page:");
+	public String invoke() {
+		String rv = "";
 		
+		// Custom logic to build the output
 		try {
 			// maven build has put the git version information into MANIFEST.MF FILE
-			String name = "/META-INF/MANIFEST.MF";
 			Properties props = new Properties();
-			props.load(servletContext.getResourceAsStream(name));
+			props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
 			// output the git version, CTools and Box url 
-			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
-			messages.add("CTools server: " + env.getProperty("ctools.server.url"));
-			messages.add("Box server: " + env.getProperty("box_api_url"));
-			// use the spring-boot's default "/health" endpoint for /status/ping purpose
-			messages.add("Link to status ping page: " + env.getProperty("server_url") + "/health");
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			// all information related to GIT build
+			HashMap<String, Object> buildMap = new HashMap<String, Object>();
+			buildMap.put("project", "CTool Project Migration");
+			buildMap.put("repo", (String) props.get("git-repo"));
+			buildMap.put("last_commit", (String) props.get("git-SHA-1"));
+			buildMap.put("timestamp", (String) props.get("git-timestamp"));
+			buildMap.put("tag", (String) props.get("git-branch"));
+			statusMap.put("build", buildMap);
+			// all external links
+			HashMap<String, Object> urlMap = new HashMap<String, Object>();
+			urlMap.put("ping", env.getProperty("ctools.server.url")+"/status/ping.json");
+			urlMap.put("CTools server", env.getProperty("ctools.server.url"));
+			urlMap.put("Box server", env.getProperty("box_api_url"));
+			statusMap.put("urls", urlMap);
+			rv = (new JSONObject(statusMap)).toString();
 			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 		
-		return messages;
+		return 	rv;
 	}
 	
 	public void setServletContext(ServletContext servletContext){
