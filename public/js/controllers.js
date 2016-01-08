@@ -2,7 +2,7 @@
 /* global projectMigrationApp, angular, _, moment, $ */
 
 /* MIGRATIONS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
+projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migration', 'Migrations', 'Migrated', 'PollingService', 'focus', '$rootScope', '$scope', '$log', '$q', '$timeout', '$window', '$http', function(Projects, Migration, Migrations, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
   $scope.loadingProjects = true;
   $scope.sourceProjects = [];
   $scope.migratingProjects = [];
@@ -83,7 +83,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       }));
       //add the tools after the project object
       $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
-
+      // get a handle on the first tool
+      var firstToolId = 'toolSel' + result.data[0].tool_id;
+      // use the handle to pass focus to the first tool
+      $scope.$evalAsync(function() { 
+        focus(firstToolId);
+      })
       // state management
       $scope.sourceProjects[targetProjPos].stateHasTools = true;
 
@@ -127,7 +132,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxUnauthorize = function() {
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
-        $log.warn(result)
         $scope.boxAuthorized = false;
     	// current user un-authorize the app from accessing Box
         $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
@@ -145,18 +149,28 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   //handler for a user's selection of export destination type: local download or export to Box 
   //as a destination of a migration
   $scope.destinationTypeSelect = function(site_id, tool_id, name, id) {
+    if(name ==='Box'){
+      $scope.$evalAsync(function() { 
+        focus('toolSelDestBox' + tool_id);
+      })
+    }
     // decorate both the tool row and the parent site row
     var toolRow = _.findWhere($scope.sourceProjects, {tool_id: tool_id});
     toolRow.selectDestinationType = {'name':name,'id':id};
     var parentRow = _.findWhere($scope.sourceProjects, {site_id: site_id, tool_id:''});
     parentRow.selectDestinationType = {'name':name,'id':id};
+    if(parentRow.stateSelectionExists && (parentRow.selectDestinationType.name==='zip' || parentRow.selectDestinationType.name==='Box' && selectBoxFolder) && !parentRow.stateExportConfirm && !parentRow.migrating){
+      $scope.$evalAsync(function() { 
+        focus('export' + site_id);
+      })
+    }
   };
 
   /*
   change handler for tool checkboxes that determines if at least one is checked
   - if so, the export button is revealed, if not it is hidden
   */
-  $scope.checkIfSelectionExists = function(projectId) {
+  $scope.checkIfSelectionExists = function(projectId, toolId) {
     var allTargetProjs = _.where($scope.sourceProjects, {
       site_id: projectId
     });
@@ -166,6 +180,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     });
 
     if(targetSelections.length) {
+      $scope.$evalAsync(function() { 
+        focus('toolSelDest' + toolId);
+      });
       _.first(allTargetProjs).stateSelectionExists = true;
     }
     else {
@@ -189,6 +206,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     // pop confirmation panel
     if(targetSelections.length) {
       _.first(allTargetProjs).stateExportConfirm = true;
+      $scope.$evalAsync(function() { 
+        focus('confirm' + projectId);
+      });
+
+
     }
     else {
       _.first(allTargetProjs).stateExportConfirm = false;
@@ -199,6 +221,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.cancelStartMigrationConfirm = function(projectId) {
     var allTargetProjs = _.where($scope.sourceProjects, {
       site_id: projectId
+    });
+
+    $scope.$evalAsync(function() { 
+      focus('project' + projectId);
     });
     
     var targetSelections = _.where($scope.sourceProjects, {
@@ -219,7 +245,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   //handler for showing the details of a migrated thing
   $scope.showDetails = function(index, site_title){
     var reportDetails = $scope.migratedProjects[index].status;
-    $log.warn(site_title)
     reportDetails.title = site_title;
     sessionStorage.setItem('proj_migr_report', JSON.stringify(reportDetails));
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
@@ -265,6 +290,10 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
     $scope.sourceProjects[targetProjPos].migrating=true;
     $scope.sourceProjects[targetProjChildPos].migrating=true;
     $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
+
+    $scope.$evalAsync(function() { 
+      focus('project' + projectId);
+    });
     
     var targetSelections = _.where($scope.sourceProjects, {
       site_id: projectId,

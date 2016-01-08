@@ -1,3 +1,6 @@
+*:focus {
+	outline:1px solid red !important;
+}
 a {
 	color:#005bb2;
 }
@@ -14,6 +17,11 @@ a {
 .btn-primary:hover {
 	background:#0068cc
 }	
+.site-header {
+	font-size: 14px;
+  margin: 0;
+  padding: 3px 0 0;
+}
 .alert-inline {
     display:inline-block;font-size: 14px;font-weight: 400;
     line-height: 1.42857;
