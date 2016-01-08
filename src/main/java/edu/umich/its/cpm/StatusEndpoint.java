@@ -45,7 +45,9 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 		return true;
 	}
 
-	public List<String> invoke() {
+	public String invoke() {
+		String rv = "";
+		
 		// Custom logic to build the output
 		List<String> messages = new ArrayList<String>();
 		messages.add("The status page:");
@@ -55,18 +57,21 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 			Properties props = new Properties();
 			props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
 			// output the git version, CTools and Box url 
-			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
-			messages.add("SCM: " + (String) props.get("scm"));
-			messages.add("CTools server: " + env.getProperty("ctools.server.url"));
-			messages.add("Box server: " + env.getProperty("box_api_url"));
-			// use the spring-boot's default "/health" endpoint for /status/ping purpose
-			messages.add("Link to status ping page: " + env.getProperty("server_url") + "/health");
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			statusMap.put("project", "CTool Project Migration");
+			statusMap.put("GIT repo", (String) props.get("git-repo"));
+			statusMap.put("GIT version", (String) props.get("git-SHA-1"));
+			statusMap.put("GIT timestamp", (String) props.get("git-timestamp"));
+			statusMap.put("GIT branch name", (String) props.get("git-branch"));
+			statusMap.put("CTools server", env.getProperty("ctools.server.url"));
+			statusMap.put("Box server", env.getProperty("box_api_url"));
+			rv = (new JSONObject(statusMap)).toString();
 			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
 		
-		return messages;
+		return 	rv;
 	}
 	
 	public void setServletContext(ServletContext servletContext){

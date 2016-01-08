@@ -196,8 +196,10 @@
 							<addDefaultImplementationEntries>true</addDefaultImplementationEntries>
 						</manifest>
 						<manifestEntries>
+							<git-repo>https://github.com/tl-its-umich-edu/ctools-project-migration.git</git-repo>
 							<git-SHA-1>${buildNumber}</git-SHA-1>
-							<scm>${scmBranch}</scm>
+							<git-branch>${scmBranch}</git-branch>
+							<git-timestamp>${timestamp}</git-timestamp>
 						</manifestEntries>
 					</archive>
 				</configuration>
