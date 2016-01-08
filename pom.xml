@@ -197,6 +197,7 @@
 						</manifest>
 						<manifestEntries>
 							<git-SHA-1>${buildNumber}</git-SHA-1>
+							<scm>${scmBranch}</scm>
 						</manifestEntries>
 					</archive>
 				</configuration>
