@@ -1,35 +1,34 @@
-
-<div class="spinner" ng-show="loadingProjects"></div>
+<div class="no-items" ng-show="loadingProjects"><span class="spinner"></span> <span> Loading projects from CTools...</span></div>
 <div ng-if="!sourceProjects.length && !loadingProjects">
-	There are no exports in progress at this time.
+	No project sites available.
 </div>
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
   	<li ng-repeat="project in sourceProjects | orderBy:'site_name'" 
-		ng-class="project.tool_id !== '' ? 'list-group-item toolRow' : 'list-group-item projectRow'" ng-hide="project.hideTools && project.tool">
+		ng-class="project.tool_id !== '' ? 'list-group-item toolRow' : 'list-group-item projectRow'" ng-hide="project.hideTools && project.tool"  id="toolSel{{project.tool_id}}" tabindex="-1">
   		<!--// using same contorsions to match the data model of migrations and migrated -->
-  		<div ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''">
+  		<div ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''" id="project{{project.site_id}}" tabindex="-1">
   			<div class="row">
 	  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-	  				<strong id="{{project.site_id}}">{{project.site_name}}</strong> <small ng-show="project.last_migrated">(last migrated: {{project.last_migrated | date:'MM/dd h:mma'}})</small>
+	  				<h4 class="site-header" id="{{project.site_id}}">{{project.site_name}}  <small ng-show="project.last_migrated">(last migrated: {{project.last_migrated | date:'MM/dd h:mma'}})</small></h4>
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
 	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
-			  			Get tools
+			  			Get tools <span class="sr-only">for site {{project.site_name}}</span>
 						</a>
-						<button class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='zip' || project.selectDestinationType.name==='Box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export</button>
+						<button id="export{{project.site_id}}" class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='zip' || project.selectDestinationType.name==='Box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export<span class="sr-only"> selected tools of site {{project.site_name}}</span> </button>
 					</div>
 				</div>
-				<div class="row" ng-show="project.stateExportConfirm">
+				<div class="row" ng-show="project.stateExportConfirm" tabindex="-1" id="confirm{{project.site_id}}">
 		    	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
   					<small>Migration Process of selected tools is about to start. Are you sure?</small>
 	  			</div>
   				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
   					<div class="pull-right">
   					<br>
-							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name,project.selectDestinationType.name)">Proceed</button>
-							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)">Cancel</button>
+							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name,project.selectDestinationType.name)">Proceed<span class="sr-only"> with export of selected tools for site {{project.site_name}}</span></button>
+							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)">Cancel<span class="sr-only"> export of selected tools for site {{project.site_name}}</span></button>
 						</div>
 					</div>
 		  	</div>
@@ -38,11 +37,11 @@
 				<div ng-show="!project.migrating">
 					<div class="row">
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-							<input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}" ng-model="project.selected" ng-change="checkIfSelectionExists(project.site_id)"/ >
+							<input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}" ng-model="project.selected" ng-change="checkIfSelectionExists(project.site_id, project.tool_id)"/ >
 							<label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
 						</div>
 					</div>
-					<div class="row" ng-show="project.selected">
+					<div class="row" ng-show="project.selected" id="toolSelDest{{project.tool_id}}" tabindex="-1">
 						<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
 						</div>
 						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11">
@@ -50,12 +49,12 @@
 		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="Box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'Box','Box')">
 			    			<label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
 			    		</small>
-		    			<div ng-show="project.selectDestinationType.name ==='Box'" style="padding:0 0 5px 16px">
+		    			<div ng-show="project.selectDestinationType.name ==='Box'" style="padding:0 0 5px 16px" id="toolSelDestBox{{project.tool_id}}" tabindex="-1">
 			    			<small ng-show="selectBoxFolder">
 			    				Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
 				    		</small>
 					    	<small ng-show="!selectBoxFolder">
-					    		You will need to <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">select</a> a Box folder.
+					    		You will need to <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">select a Box folder</a>.
 					    	</small>
 				    	</div>
 				    	<small>

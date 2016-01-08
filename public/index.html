@@ -49,8 +49,8 @@
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Available Project Sites</h3></div>
-          <div class="panel-body">
+            <h3 class="panel-title" id="projectPanelHeader">Available Project Sites</h3></div>
+          <div class="panel-body" aria-labelledby="projectPanelHeader">
             <div ng-include="'views/projects-source.html'">
             </div>
           </div>
@@ -59,12 +59,12 @@
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default"> 
           <div class="panel-heading">
-            <h3 class="panel-title">Exports in Progress
+            <h3 class="panel-title" id="migratingPanelHeader">Exports in Progress
               <small ng-if="status.migrations">Updated: {{status.migrations}}</small>
               <span class="badge pull-right" ng-if="!migratingProjectsError">{{migratingProjects.length}}</span>
             </h3>
           </div>
-          <div class="panel-body">
+          <div class="panel-body" aria-labelledby="migratingPanelHeader" aria-live="polite" aria-relevant="additions removals">
             <div ng-include="'views/projects-migrating.html'">
             </div>
           </div>
@@ -73,9 +73,9 @@
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
           <div class="panel-heading">
-            <h3 class="panel-title">Exports completed  <small ng-if="status.migrated">Updated: {{status.migrated}}</small> <span class="badge pull-right"  ng-if="!migratedProjectsError">{{migratedProjects.length}}</span></h3>
+            <h3 class="panel-title" id="migratedPanelHeader">Exports completed  <small ng-if="status.migrated">Updated: {{status.migrated}}</small> <span class="badge pull-right"  ng-if="!migratedProjectsError">{{migratedProjects.length}}</span></h3>
           </div>
-          <div class="panel-body">
+          <div class="panel-body" aria-labelledby="migratedPanelHeader" aria-live="polite" aria-relevant="additions">
             <div ng-include="'views/projects-migrated.html'">
             </div>
           </div>
