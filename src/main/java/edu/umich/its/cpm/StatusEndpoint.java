@@ -52,7 +52,8 @@ public class StatusEndpoint implements Endpoint<List<String>>, ServletContextAwa
 		
 		try {
 			// maven build has put the git version information into MANIFEST.MF FILE
-			Properties props = new Properties(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
+			Properties props = new Properties();
+			props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
 			// output the git version, CTools and Box url 
 			messages.add("GIT version: " + (String) props.get("git-SHA-1"));
 			messages.add("CTools server: " + env.getProperty("ctools.server.url"));
