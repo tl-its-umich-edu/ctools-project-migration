@@ -58,13 +58,20 @@ public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 			props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
 			// output the git version, CTools and Box url 
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put("project", "CTool Project Migration");
-			statusMap.put("GIT repo", (String) props.get("git-repo"));
-			statusMap.put("GIT version", (String) props.get("git-SHA-1"));
-			statusMap.put("GIT timestamp", (String) props.get("git-timestamp"));
-			statusMap.put("GIT branch name", (String) props.get("git-branch"));
-			statusMap.put("CTools server", env.getProperty("ctools.server.url"));
-			statusMap.put("Box server", env.getProperty("box_api_url"));
+			// all information related to GIT build
+			HashMap<String, Object> buildMap = new HashMap<String, Object>();
+			buildMap.put("project", "CTool Project Migration");
+			buildMap.put("repo", (String) props.get("git-repo"));
+			buildMap.put("last_commit", (String) props.get("git-SHA-1"));
+			buildMap.put("timestamp", (String) props.get("git-timestamp"));
+			buildMap.put("tag", (String) props.get("git-branch"));
+			statusMap.put("build", buildMap);
+			// all external links
+			HashMap<String, Object> urlMap = new HashMap<String, Object>();
+			urlMap.put("ping", env.getProperty("ctools.server.url")+"/status/ping.json")
+			urlMap.put("CTools server", env.getProperty("ctools.server.url"));
+			urlMap.put("Box server", env.getProperty("box_api_url"));
+			statusMap.put("urls", urlMap);
 			rv = (new JSONObject(statusMap)).toString();
 			
 		} catch (Throwable e) {
