@@ -21,12 +21,9 @@ import org.json.JSONObject;
  *
  */
 @Component
-public class StatusEndpoint implements Endpoint<String>{
+public class StatusPingEndpoint implements Endpoint<String>{
 
 	private static ServletContext servletContext = null;
-	
-	@Autowired
-	private Environment env;
 	
 	public String getId() {
 		return "status/ping";
