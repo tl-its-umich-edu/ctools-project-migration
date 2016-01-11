@@ -61,10 +61,14 @@ public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 			// all information related to GIT build
 			HashMap<String, Object> buildMap = new HashMap<String, Object>();
 			buildMap.put("project", "CTool Project Migration");
-			buildMap.put("repo", (String) props.get("git-repo"));
-			buildMap.put("last_commit", (String) props.get("git-SHA-1"));
-			buildMap.put("timestamp", (String) props.get("git-timestamp"));
-			buildMap.put("tag", (String) props.get("git-branch"));
+			buildMap.put("GIT URL", (String) props.get("git_url"));
+			buildMap.put("GIT branch", (String) props.get("git_branch"));
+			buildMap.put("GIT commit", (String) props.get("git_commit"));
+			buildMap.put("Jenkins Build ID", (String) props.get("build_id"));
+			buildMap.put("Jenkins Build Number", (String) props.get("build_number"));
+			buildMap.put("Jenkins Build URL", (String) props.get("build_url"));
+			buildMap.put("Jenkins Build Tag", (String) props.get("build_tag"));
+			
 			statusMap.put("build", buildMap);
 			// all external links
 			HashMap<String, Object> urlMap = new HashMap<String, Object>();
