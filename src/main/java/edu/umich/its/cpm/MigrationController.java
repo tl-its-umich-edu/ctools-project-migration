@@ -223,7 +223,7 @@ public class MigrationController {
 		// return the session id after login
 		String sessionId = "";
 
-		String remoteUser = "gsilver";
+		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
@@ -283,7 +283,7 @@ public class MigrationController {
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrations(HttpServletRequest request) {
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrations(userId)).build();
@@ -314,7 +314,7 @@ public class MigrationController {
 			throw new MigrationNotFoundException(
 					"no matching record for /migrations/" + migration_id);
 		} else {
-			String userId = "gsilver";
+			String userId = request.getRemoteUser();
 			String migratedBy = ((Migration) o).getMigrated_by();
 			if (!migratedBy.equals(userId)) {
 				// different user started the migration
@@ -340,7 +340,7 @@ public class MigrationController {
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrated(HttpServletRequest request) {
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrated(userId)).build();
@@ -362,7 +362,7 @@ public class MigrationController {
 	@RequestMapping("/migrating")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrating(HttpServletRequest request) {
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrating(userId)).build();
@@ -507,7 +507,7 @@ public class MigrationController {
 
 			}
 		} else {
-			String userError = "Cannot become user " + "gsilver";
+			String userError = "Cannot become user " + request.getRemoteUser();
 			log.error(userError);
 			downloadStatus.append(userError);
 		}
@@ -748,7 +748,7 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 
 		// get the current user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(BOX_CLIENT_SECRET);
@@ -785,7 +785,7 @@ public class MigrationController {
 	public String boxAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
 		// get the current user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		String remoteUserEmail = getUserEmail(userId);
 
 		String boxClientId = env.getProperty(BOX_CLIENT_ID);
@@ -819,7 +819,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get the current user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 
 		// the return string
 		String rv = "";
@@ -854,7 +854,7 @@ public class MigrationController {
 		log.info("token url=" + boxTokenUrl);
 
 		// get the current user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		String rv = BoxUtils.getBoxAccessToken(userId);
 
 		if (rv == null) {
@@ -875,7 +875,7 @@ public class MigrationController {
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
 
 		// get the current user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 
@@ -901,7 +901,7 @@ public class MigrationController {
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = parameterMap.get("destination_type")[0];
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 
 		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
@@ -950,7 +950,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get user id
-		String userId = "gsilver";
+		String userId = request.getRemoteUser();
 
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
@@ -978,7 +978,7 @@ public class MigrationController {
 			log.error(boxClientIdError);
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
-		String remoteUserEmail = "gsilver";
+		String remoteUserEmail = request.getRemoteUser();
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
