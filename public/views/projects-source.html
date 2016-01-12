@@ -54,6 +54,13 @@
                   <span ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong></span>
 			    				<a href="" data-toggle="modal" data-target="#boxFolderModal" id="boxSelLink{{project.site_id}}{{project.tool_id}}" ng-click="getBoxFolders()"><span ng-show="selectBoxFolder">Change?</span><span ng-show="!selectBoxFolder">You will need to select a Box folder</span></a></small>
 				    		</small>
+					    	<small ng-show="!boxAuthorized">
+					    		You will need to <a data-target="#boxAuthModal" data-toggle="modal" href="">authorize this app to Box</a> and then select a folder.
+					    	</small>
+
+					    	<small ng-show="!selectBoxFolder && boxAuthorized">
+					    		You will need to <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">select a Box folder</a>.
+					    	</small>
 				    	</div>
 				    	<small>
 			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="zip" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'zip','zip')">
