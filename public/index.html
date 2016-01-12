@@ -34,7 +34,6 @@
         <!-- /.navbar-collapse -->
       </div>
     </nav>
-
   <div ng-controller="projectMigrationController" class="container-fluid" style="padding:0 20px">
     <div class="row">
       <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12">
@@ -83,6 +82,92 @@
       </div>
     </div>
   </div>
+
+  <div ng-controller="projectMigrationControllerStatus">
+    <a  aria-hidden="true" data-target="#statusModal" data-toggle="modal" href="" class="statusButton" ng-click="getStatus()"> <span class="sr-only">Status of application</span></a>
+    <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span aria-hidden="true">&times;</span></button>
+            <h4 class="modal-title" id="statusModalLabel">Status</h4>
+          </div>
+          <div class="modal-body">
+            <div class="container">
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  ping    
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.urls.ping}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Box Server
+                </div>
+                <div class="col-md-10 col-lg-10">
+                 {{server_status.urls['Box server']}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  CTools Server
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.urls['CTools server']}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Last commit
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.build.last_commit}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Repo
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.build.repo}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Project
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.build.project}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Tag
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.build.tag}}
+                </div>
+              </div>
+              <div class="row">
+                <div class="col-md-2 col-lg-2">
+                  Time stamp
+                </div>
+                <div class="col-md-10 col-lg-10">
+                  {{server_status.build.timestamp | date:'MM/dd h:mma'}}
+                </div>
+              </div>
+            </div>
+          </div>  
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
 
 
   <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>

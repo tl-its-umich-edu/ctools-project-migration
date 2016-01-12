@@ -449,3 +449,12 @@ var updateProjectsPanel = function(result, source){
 projectMigrationApp.controller('reportController', ['$rootScope', '$scope', '$log', '$q', '$window', function($rootScope, $scope, $log, $q, $window) {
   $scope.reportDetails = JSON.parse(sessionStorage.getItem('proj_migr_report'));
 }]);
+
+projectMigrationApp.controller('projectMigrationControllerStatus', ['Status', '$rootScope', '$scope', '$log', '$q', '$window', function(Status, $rootScope, $scope, $log, $q, $window) {
+
+  $scope.getStatus = function(){
+    Status.getStatus('/status').then(function(result) {
+      $rootScope.server_status = result.data;
+    });  
+  }
+}]);
