@@ -53,7 +53,11 @@
 			    			<small ng-show="selectBoxFolder">
 			    				Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong> - <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">Change?</a></small>
 				    		</small>
-					    	<small ng-show="!selectBoxFolder">
+					    	<small ng-show="!boxAuthorized">
+					    		You will need to <a data-target="#boxAuthModal" data-toggle="modal" href="">authorize this app to Box</a> and then select a folder.
+					    	</small>
+
+					    	<small ng-show="!selectBoxFolder && boxAuthorized">
 					    		You will need to <a href="" data-toggle="modal" data-target="#boxFolderModal" ng-click="getBoxFolders()">select a Box folder</a>.
 					    	</small>
 				    	</div>
