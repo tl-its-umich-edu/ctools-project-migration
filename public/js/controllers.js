@@ -453,7 +453,6 @@ projectMigrationApp.controller('reportController', ['$rootScope', '$scope', '$lo
 projectMigrationApp.controller('projectMigrationControllerStatus', ['Status', '$rootScope', '$scope', '$log', '$q', '$window', function(Status, $rootScope, $scope, $log, $q, $window) {
 
   $scope.getStatus = function(){
-    $log.warn('st')
     Status.getStatus('/status').then(function(result) {
       $rootScope.server_status = result.data;
     });  

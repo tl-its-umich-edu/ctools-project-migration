@@ -84,7 +84,7 @@
   </div>
 
   <div ng-controller="projectMigrationControllerStatus">
-    <a data-target="#statusModal" data-toggle="modal" href="" class="statusButton" ng-click="getStatus()"> </a>
+    <a  aria-hidden="true" data-target="#statusModal" data-toggle="modal" href="" class="statusButton" ng-click="getStatus()"> <span class="sr-only">Status of application</span></a>
     <div class="modal fade" id="statusModal" tabindex="-1" role="dialog" aria-labelledby="statusModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">

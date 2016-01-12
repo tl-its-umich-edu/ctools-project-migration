@@ -31,6 +31,10 @@ a {
     vertical-align: middle;
     white-space: nowrap;
 }
+
+#statusModal .modal-dialog {
+	width:700px
+}
 .muted {
 	color:#666;
 }
@@ -126,6 +130,9 @@ label {
 	padding-bottom:10px;
 }
 
+#statusModal .modal-dialog {
+	width:auto
+}
 
 	#boxFolderModal .modal-body {
 		max-height:none;
