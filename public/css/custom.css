@@ -1,6 +1,3 @@
-*:focus {
-	outline:1px solid red !important;
-}
 a {
 	color:#005bb2;
 }
@@ -31,7 +28,9 @@ a {
     vertical-align: middle;
     white-space: nowrap;
 }
-
+.noFocus:focus {
+	outline:none;
+}
 #statusModal .modal-dialog {
 	width:700px
 }
