@@ -35,6 +35,8 @@
       </div>
     </nav>
   <div ng-controller="projectMigrationController" class="container-fluid" style="padding:0 20px">
+    <div role="alert" class="sr-only alert alert-info" ng-show="migratingProjects.length !== 0 && activeMigrations" >Current migrations: {{migratingProjects.length}}</div>
+    <div role="alert" class="sr-only alert alert-success" ng-show="migratingProjects.length === 0 && activeMigrations">All migrations are finished.</div>
     <div class="row">
       <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12">
         <p>Some brief explanatory text of what is going on here and a <a href="help.html" target="_blank">link to find out more.</a></p>
@@ -63,7 +65,7 @@
               <span class="badge pull-right" ng-if="!migratingProjectsError">{{migratingProjects.length}}</span>
             </h3>
           </div>
-          <div class="panel-body" aria-labelledby="migratingPanelHeader" aria-live="polite" aria-relevant="additions removals">
+          <div class="panel-body" aria-labelledby="migratingPanelHeader">
             <div ng-include="'views/projects-migrating.html'">
             </div>
           </div>
@@ -74,7 +76,7 @@
           <div class="panel-heading">
             <h3 class="panel-title" id="migratedPanelHeader">Exports completed  <small ng-if="status.migrated">Updated: {{status.migrated}}</small> <span class="badge pull-right"  ng-if="!migratedProjectsError">{{migratedProjects.length}}</span></h3>
           </div>
-          <div class="panel-body" aria-labelledby="migratedPanelHeader" aria-live="polite" aria-relevant="additions">
+          <div class="panel-body" aria-labelledby="migratedPanelHeader">
             <div ng-include="'views/projects-migrated.html'">
             </div>
           </div>

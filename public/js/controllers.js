@@ -342,6 +342,9 @@ var poll = function (pollName, url, interval, targetPanel){
 
     if(targetPanel === 'migrations'){
       if(result.data.status ===200) {
+        if($scope.migratingProjects.length > 0){
+          $rootScope.activeMigrations = true;
+        }
         //update time stamp displayed in /migrations panel
         $rootScope.status.migrations = moment().format('h:mm:ss');
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
