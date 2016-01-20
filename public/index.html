@@ -96,70 +96,19 @@
           </div>
           <div class="modal-body">
             <div class="container">
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  ping    
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.urls.ping}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Box Server
-                </div>
-                <div class="col-md-10 col-lg-10">
-                 {{server_status.urls['Box server']}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  CTools Server
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.urls['CTools server']}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Last commit
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.build.last_commit}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Repo
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.build.repo}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Project
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.build.project}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Tag
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.build.tag}}
-                </div>
-              </div>
-              <div class="row">
-                <div class="col-md-2 col-lg-2">
-                  Time stamp
-                </div>
-                <div class="col-md-10 col-lg-10">
-                  {{server_status.build.timestamp | date:'MM/dd h:mma'}}
-                </div>
-              </div>
+              <table class="table table-striped table-condensed table-hover" style="width:auto">
+                <thead>
+                  <tr> <th scope="col">Key</th><th scope="col">Value</th></tr>
+                </thead>
+                <tbody>
+                  <tr ng-repeat="(key, value) in server_status.urls">
+                    <td> {{key}} </td> <td> {{ value }} </td>
+                  </tr>
+                  <tr ng-repeat="(key, value) in server_status.build">
+                    <td> {{key}} </td> <td> {{ value }} </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>  
           <div class="modal-footer">
