@@ -7,7 +7,10 @@ a {
 .export-success {
 	color:#390;
 }
-
+ 
+small, h1 small, h2 small, h3 small, h4 small, h5 small, h6 small, .h1 small, .h2 small, .h3 small, .h4 small, .h5 small, .h6 small, h1 .small, h2 .small, h3 .small, h4 .small, h5 .small, h6 .small, .h1 .small, .h2 .small, .h3 .small, .h4 .small, .h5 .small, .h6 .small {
+	color:#000 !important;
+}
 .btn-primary {
 	background:#005bb2; 
 }
@@ -35,7 +38,7 @@ a {
 	width:700px
 }
 .muted {
-	color:#666;
+	
 }
 .boxIFrame {
 	width:100%;

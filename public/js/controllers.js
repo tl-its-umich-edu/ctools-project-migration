@@ -159,7 +159,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     toolRow.selectDestinationType = {'name':name,'id':id};
     var parentRow = _.findWhere($scope.sourceProjects, {site_id: site_id, tool_id:''});
     parentRow.selectDestinationType = {'name':name,'id':id};
-    if(parentRow.stateSelectionExists && (parentRow.selectDestinationType.name==='zip' || parentRow.selectDestinationType.name==='Box' && selectBoxFolder) && !parentRow.stateExportConfirm && !parentRow.migrating){
+    if(parentRow.stateSelectionExists && (parentRow.selectDestinationType.name==='zip' || parentRow.selectDestinationType.name==='Box' && $scope.selectBoxFolder) && !parentRow.stateExportConfirm && !parentRow.migrating){
       $scope.$evalAsync(function() { 
         focus('export' + site_id);
       })
