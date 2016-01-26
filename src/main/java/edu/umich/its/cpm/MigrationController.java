@@ -3,6 +3,20 @@ package edu.umich.its.cpm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import org.apache.http.client.*;
+import org.apache.http.protocol.HttpCoreContext;
+import org.apache.http.protocol.BasicHttpContext;
+import org.apache.http.NameValuePair;
+import org.apache.http.HttpResponse;
+import org.apache.http.message.BasicNameValuePair;
+import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.HttpContext;
+import org.apache.http.client.methods.*;
+import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.util.EntityUtils;
+
 import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
@@ -158,8 +172,10 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		String sessionId = login_becomeuser(request);
-		if (sessionId != null) {
+		HashMap<String, Object> sessionAttributes = login_becomeuser(request);
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+			
 			// get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -193,8 +209,10 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		String sessionId = login_becomeuser(request);
-		if (sessionId != null) {
+		HashMap<String, Object> sessionAttributes = login_becomeuser(request);
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+			
 			// 3. get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -219,59 +237,91 @@ public class MigrationController {
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	private String login_becomeuser(HttpServletRequest request) {
-		// return the session id after login
+	private HashMap<String, Object> login_becomeuser(HttpServletRequest request) {
+		// return the session related attributes after successful login call
+		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
+		
+		// session id after login
 		String sessionId = "";
+		
+		//create httpclient
+		HttpClient httpClient = HttpClientBuilder.create().build();
+
+		//store cookies in context, retain the session information
+		CookieStore cookieStore = new BasicCookieStore();
+		HttpContext httpContext = new BasicHttpContext();
+		httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
 		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
+		
 		// here is the CTools integration prior to CoSign integration ( read
 		// session user information from configuration file)
 		// 1. create a session based on user id and password
-		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
 		String requestUrl = env.getProperty("ctools.server.url")
 				+ "direct/session?_username=" + env.getProperty("username")
 				+ "&_password=" + env.getProperty("password");
-		log.info(requestUrl);
-		ResponseEntity<String> response = restTemplate.postForEntity(
-				requestUrl, null, String.class);
-		HttpStatus status = response.getStatusCode();
-		if (!status.equals(HttpStatus.CREATED)) {
-			// return error if a new CTools session could not be created using
-			// username and password provided
-			log.info("Wrong user id or password. Cannot login to CTools "
-					+ env.getProperty("ctools.server.url"));
-		} else {
-			// get the session id
-			sessionId = response.getBody();
-			log.info("successfully logged in as user "
-					+ env.getProperty("username") + " with sessionId = "
-					+ sessionId);
-
-			// 2. become the user based on REMOTE_USER setting after CoSign
-			// integration
-			restTemplate = new RestTemplate();
-			// the url should be in the format of
-			// "https://server/direct/session/SESSION_ID.json"
-			requestUrl = env.getProperty("ctools.server.url")
-					+ "direct/session/becomeuser/" + remoteUser
-					+ ".json?_sessionId=" + sessionId;
-			log.info(requestUrl);
-
-			try {
-				String resultString = restTemplate.getForObject(requestUrl,
-						String.class, sessionId);
-				log.info(resultString);
-			} catch (RestClientException e) {
-				log.error(requestUrl + e.getMessage());
-
-				// nullify sessionId if become user call is not successful
-				sessionId = null;
+		try
+		{
+			HttpPost postRequest = new HttpPost(requestUrl);
+			postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
+			HttpResponse response = httpClient.execute(postRequest, httpContext);
+			
+			//get the status code
+			int status = response.getStatusLine().getStatusCode();
+			log.info("---------------session creation call" + status);
+			
+			if (status != 201) {
+				//if status code is not 201, there is a problem with the request.
+				// return error if a new CTools session could not be created using
+				// username and password provided
+				log.info("Wrong user id or password. Cannot login to CTools "
+						+ env.getProperty("ctools.server.url"));
+			} else {
+				
+				//if status code is 201 login is successful. So reuse the httpContext for next requests.
+				// get the session id
+				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
+				log.info("successfully logged in as user "
+						+ env.getProperty("username") + " with sessionId = "
+						+ sessionId);
+	
+				// 2. become the user based on REMOTE_USER setting after CoSign
+				// integration
+				try {
+					// the url should be in the format of
+					// "https://server/direct/session/SESSION_ID.json"
+					requestUrl = env.getProperty("ctools.server.url")
+							+ "direct/session/becomeuser/" + remoteUser
+							+ ".json?_sessionId=" + sessionId;
+					log.info(requestUrl);
+					
+					HttpGet getRequest = new HttpGet(requestUrl);
+					getRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
+					HttpResponse r = httpClient.execute(getRequest, httpContext);
+					
+					String resultString = EntityUtils.toString(r.getEntity(), "UTF-8");
+					log.info(resultString);
+				} catch (java.io.IOException e) {
+					log.error(requestUrl + e.getMessage());
+	
+					// nullify sessionId if become user call is not successful
+					sessionId = null;
+				}
+				
+				// populate the session related attributes
+				sessionAttributes.put("sessionId", sessionId);
+				sessionAttributes.put("httpContext", httpContext);
 			}
 		}
-		return sessionId;
+		catch (java.io.IOException e)
+		{
+			log.error(requestUrl + e.getMessage());
+		}
+		
+		return sessionAttributes;
 	}
 
 	/**
@@ -423,9 +473,11 @@ public class MigrationController {
 		List<MigrationFileItem> itemStatus = new ArrayList<MigrationFileItem>();
 
 		// login to CTools and get sessionId
-		String sessionId = login_becomeuser(request);
-		log.info(sessionId);
-		if (sessionId != null) {
+		HashMap<String, Object> sessionAttributes = login_becomeuser(request);
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
+			
 			// 3. get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -443,51 +495,28 @@ public class MigrationController {
 
 				log.info(":downloadZippedFile begin: start downloading content zip file for site "
 						+ site_id);
-				try {
-					ByteArrayOutputStream baos = new ByteArrayOutputStream();
-					ZipOutputStream out = new ZipOutputStream(baos);
+				//
+				// Sends the response back to the user / browser. The
+				// content for zip file type is "application/zip". We
+				// also set the content disposition as attachment for
+				// the browser to show a dialog that will let user
+				// choose what action will he do to the sent content.
+				//
+				response.setContentType("application/zip");
+				String zipFileName = site_id + "_content.zip";
+				response.setHeader("Content-Disposition",
+						"attachment;filename=\"" + zipFileName + "\"");
+				
+				ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
+				out.setLevel(9);
 
-					// prepare zip entry for site content objects
-					itemStatus = zipSiteContent(siteResourceJson, sessionId,
-							out);
+				// prepare zip entry for site content objects
+				itemStatus = zipSiteContent(httpContext, siteResourceJson, sessionId,
+						out);
 
-					out.flush();
-					baos.flush();
-					out.close();
-					baos.close();
-					zipContent = baos.toByteArray();
-				} catch (IOException ee) {
-					String eeString = "IOException of constructing zip file.";
-					log.warn(eeString);
-					downloadStatus.append(eeString);
-				}
-
-				if (zipContent != null) {
-					//
-					// Sends the response back to the user / browser. The
-					// content for zip file type is "application/zip". We
-					// also set the content disposition as attachment for
-					// the browser to show a dialog that will let user
-					// choose what action will he do to the sent content.
-					//
-					ServletOutputStream sos = response.getOutputStream();
-					response.setContentType("application/zip");
-					String zipFileName = site_id + "_content.zip";
-					response.setHeader("Content-Disposition",
-							"attachment;filename=\"" + zipFileName + "\"");
-
-					sos.write(zipContent);
-					sos.flush();
-
-					String downloadEndSuccess = "Successfully download zip file for site "
-							+ site_id;
-					log.info(downloadEndSuccess);
-					downloadStatus.append(downloadEndSuccess);
-				} else {
-					String noContent = site_id + " has no content to download.";
-					log.error(noContent);
-					downloadStatus.append(noContent);
-				}
+				out.flush();
+				out.close();
+				log.info("Finished zip file download for site " + site_id);				
 
 			} catch (RestClientException e) {
 				String errorMessage = "Cannot find site by siteId: " + site_id
@@ -524,7 +553,7 @@ public class MigrationController {
 	/**
 	 * create zip entry for folders and files
 	 */
-	private List<MigrationFileItem> zipSiteContent(String siteResourceJson,
+	private List<MigrationFileItem> zipSiteContent(HttpContext httpContext, String siteResourceJson,
 			String sessionId, ZipOutputStream out) {
 		// the return list of MigrationFileItem objects, with migration status
 		// recorded
@@ -544,9 +573,10 @@ public class MigrationController {
 		for (int i = 0; i < array.length(); i++) {
 			JSONObject contentItem = array.getJSONObject(i);
 
+			String contentAccessUrl = contentItem
+					.getString(CONTENT_JSON_ATTR_URL);
 			// get only the url after "/access/" string
-			String contentUrl = URLDecoder.decode(contentItem
-					.getString(CONTENT_JSON_ATTR_URL));
+			String contentUrl = URLDecoder.decode(contentAccessUrl);
 			contentUrl = contentUrl.substring(contentUrl
 					.indexOf(CTOOLS_ACCESS_STRING)
 					+ CTOOLS_ACCESS_STRING.length());
@@ -597,7 +627,7 @@ public class MigrationController {
 			} else {
 				// Call the zipFiles method for creating a zip stream.
 				String filePath = contentUrl.replace(rootFolderPath, "");
-				String zipFileStatus = zipFiles(filePath, contentUrl,
+				String zipFileStatus = zipFiles(httpContext, filePath, contentUrl, contentAccessUrl,
 						sessionId, out);
 				MigrationFileItem fileItem = new MigrationFileItem(filePath,
 						title, zipFileStatus);
@@ -613,44 +643,38 @@ public class MigrationController {
 	/**
 	 * create zip entry for files
 	 */
-	private String zipFiles(String fileName, String fileUrl, String sessionId,
+	private String zipFiles(HttpContext httpContext, String fileName, String fileUrl, String fileAccessUrl, String sessionId,
 			ZipOutputStream out) {
+		log.info("*** " + fileAccessUrl);
+		
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
 
-		String contentString = "";
-		try {
-			Service service = new Service();
-			Call nc = (Call) service.createCall();
-			nc.setTargetEndpointAddress(env.getProperty("ctools.server.url")
-					+ "sakai-axis/ContentHosting.jws");
-
-			nc.removeAllParameters();
-			nc.setOperationName(OPERATION_GET_CONTENT_DATA);
-			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_SESSIONID,
-					XMLType.XSD_STRING, ParameterMode.IN);
-			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_RESOURCEID,
-					XMLType.XSD_STRING, ParameterMode.IN);
-			nc.setReturnType(XMLType.XSD_STRING);
-			contentString = (String) nc.invoke(new Object[] { sessionId,
-					fileUrl });
-
-		} catch (Exception e) {
-			String exceptionString = "zipFiles " + fileUrl + " "
-					+ e.getMessage();
-			log.error(exceptionString);
-			zipFileStatus.append(exceptionString + LINE_BREAK);
+		//create httpclient
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		InputStream content = null;
+		try
+		{
+			//get file content from /access url
+			HttpGet getRequest = new HttpGet(fileAccessUrl);
+			getRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
+			HttpResponse r = httpClient.execute(getRequest, httpContext);
+			content = r.getEntity().getContent();
+		}
+		catch (Exception e)
+		{
+			log.info(e.getMessage());
 		}
 
-		InputStream content = null;
+		// exit if content stream is null
+		if (content == null)
+			return null;
+		
 		try {
-
-			Base64.Decoder decoder = Base64.getDecoder();
-			content = new ByteArrayInputStream(decoder.decode(contentString));
-
 			int length = 0;
-			byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE * 10];
+			byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE];
 			BufferedInputStream bContent = null;
+            
 			try {
 
 				log.info("download file " + fileName);
@@ -662,6 +686,7 @@ public class MigrationController {
 					out.write(data, 0, bCount);
 					length = length + bCount;
 				}
+				out.flush();
 
 				try {
 					out.closeEntry(); // The zip entry need to be closed
@@ -704,6 +729,14 @@ public class MigrationController {
 					log.warn(ioExceptionString);
 					zipFileStatus.append(ioExceptionString + LINE_BREAK);
 				}
+			}
+			try
+			{
+			out.flush();
+			}
+			catch(Exception e)
+			{
+				
 			}
 		}
 
@@ -999,9 +1032,11 @@ public class MigrationController {
 		}
 
 		// login to CTools and get sessionId
-		String sessionId = login_becomeuser(request);
-		log.info(sessionId);
-		if (sessionId != null) {
+		HashMap<String, Object> sessionAttributes = login_becomeuser(request);
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
+			
 			// 3. get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -1013,7 +1048,7 @@ public class MigrationController {
 			try {
 				siteResourceJson = restTemplate.getForObject(requestUrl,
 						String.class);
-				itemMigrationStatus = boxUploadSiteContent(userId, sessionId,
+				itemMigrationStatus = boxUploadSiteContent(httpContext, userId, sessionId,
 						boxClientId, boxClientSecret, siteResourceJson,
 						boxFolderId);
 
@@ -1053,7 +1088,7 @@ public class MigrationController {
 	/**
 	 * iterating though content json and upload folders and files to Box
 	 */
-	private List<MigrationFileItem> boxUploadSiteContent(String userId,
+	private List<MigrationFileItem> boxUploadSiteContent(HttpContext httpContext, String userId,
 			String sessionId, String boxClientId, String boxClientSecret,
 			String siteResourceJson, String boxFolderId) {
 
@@ -1087,8 +1122,9 @@ public class MigrationController {
 			JSONObject contentItem = array.getJSONObject(i);
 
 			// get only the url after "/access/content" string
-			String contentUrl = URLDecoder.decode(getJSONString(contentItem,
-					CONTENT_JSON_ATTR_URL));
+			String contentAccessUrl = contentItem
+					.getString(CONTENT_JSON_ATTR_URL);
+			String contentUrl = URLDecoder.decode(contentAccessUrl);
 			contentUrl = contentUrl.substring(contentUrl
 					.indexOf(CTOOLS_ACCESS_STRING)
 					+ CTOOLS_ACCESS_STRING.length());
@@ -1236,8 +1272,8 @@ public class MigrationController {
 						break;
 					}
 	
-					itemStatus.append(uploadFile(boxFolderIdStack.peek(), fileName,
-							contentUrl, description, author, copyrightAlert,
+					itemStatus.append(uploadFile(httpContext, boxFolderIdStack.peek(), fileName,
+							contentUrl, contentAccessUrl, description, author, copyrightAlert,
 							sessionId, api));
 				}
 				
@@ -1346,46 +1382,43 @@ public class MigrationController {
 	/**
 	 * upload files to Box
 	 */
-	private String uploadFile(String boxFolderId, String fileName,
-			String fileUrl, String fileDescription, String fileAuthor,
+	private String uploadFile(HttpContext httpContext, String boxFolderId, String fileName,
+			String fileUrl, String fileAccessUrl, String fileDescription, String fileAuthor,
 			String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
 		// status string
 		StringBuffer status = new StringBuffer();
 
 		log.info("begin to upload file " + fileUrl + " to box folder "
 				+ boxFolderId);
-		String contentString = "";
-		try {
-			Service service = new Service();
-			Call nc = (Call) service.createCall();
+		
+		
+		log.info("*** " + fileAccessUrl);
+		
+		// record zip status
+		StringBuffer zipFileStatus = new StringBuffer();
 
-			nc.setTargetEndpointAddress(env.getProperty("ctools.server.url")
-					+ "sakai-axis/ContentHosting.jws");
-
-			nc.removeAllParameters();
-			nc.setOperationName(OPERATION_GET_CONTENT_DATA);
-			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_SESSIONID,
-					XMLType.XSD_STRING, ParameterMode.IN);
-			nc.addParameter(OPERTAION_GET_CONTENT_DATA_PARAM_RESOURCEID,
-					XMLType.XSD_STRING, ParameterMode.IN);
-			nc.setReturnType(XMLType.XSD_STRING);
-			contentString = (String) nc.invoke(new Object[] { sessionId,
-					fileUrl });
-
-		} catch (Exception e) {
-			String exceptionString = "zipFiles " + fileUrl + " "
-					+ e.getMessage();
-			log.error(exceptionString);
-			status.append(exceptionString + LINE_BREAK);
+		//create httpclient
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		InputStream content = null;
+		try
+		{
+			//get file content from /access url
+			HttpGet getRequest = new HttpGet(fileAccessUrl);
+			getRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
+			HttpResponse r = httpClient.execute(getRequest, httpContext);
+			content = r.getEntity().getContent();
+		}
+		catch (Exception e)
+		{
+			log.info(e.getMessage());
 		}
 
-		InputStream content = null;
-
-		Base64.Decoder decoder = Base64.getDecoder();
-		content = new ByteArrayInputStream(decoder.decode(contentString));
+		// exit if content stream is null
+		if (content == null)
+			return null;
 
 		int length = 0;
-		byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE * 10];
+		byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE];
 		BufferedInputStream bContent = null;
 		try {
 
