@@ -167,7 +167,7 @@ public class MigrationService {
 
 			}
 		} else {
-			String userError = "Cannot become user " + "zqian";
+			String userError = "Cannot become user " + request.getRemoteUser();
 			log.error(userError);
 			downloadStatus.append(userError);
 		}
@@ -398,7 +398,7 @@ public class MigrationService {
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
 		
-		String userId = "zqian";
+		String userId = request.getRemoteUser();
 		String remoteUserEmail = Utils.getUserEmail(userId);
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {

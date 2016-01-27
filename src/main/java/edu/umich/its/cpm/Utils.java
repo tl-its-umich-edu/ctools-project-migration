@@ -74,7 +74,7 @@ public class Utils {
 		HttpContext httpContext = new BasicHttpContext();
 		httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
 
-		String remoteUser = "zqian";
+		String remoteUser = request.getRemoteUser();
 		log.info("remote user is " + remoteUser);
 		
 		// here is the CTools integration prior to CoSign integration ( read
