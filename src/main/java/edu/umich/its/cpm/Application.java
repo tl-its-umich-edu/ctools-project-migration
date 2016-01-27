@@ -12,8 +12,19 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.sql.Timestamp;
 
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
+
+
+import java.util.concurrent.Executor;
+
 @SpringBootApplication
-public class Application extends SpringBootServletInitializer {
+public class Application extends SpringBootServletInitializer implements AsyncConfigurer{
 
 	private static final Logger log = LoggerFactory
 			.getLogger(Application.class);
@@ -27,5 +38,19 @@ public class Application extends SpringBootServletInitializer {
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
+	
+	@Override
+    public Executor getAsyncExecutor() {
+        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
+        taskExecutor.setMaxPoolSize(10);
+        taskExecutor.setThreadNamePrefix("LULExecutor-");
+        taskExecutor.initialize();
+        return taskExecutor;
+    }
+    
+    @Override
+    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
+        return new SimpleAsyncUncaughtExceptionHandler();
+    }
 
 }
