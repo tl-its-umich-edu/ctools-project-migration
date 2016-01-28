@@ -1,6 +1,10 @@
 'use strict';
 /* global  $, _, console */
 
+var closeBoxAuthModal = function(){
+  $('#boxAuthModal').modal('hide');
+};
+
 /*
 /projects returns a Sakai like /direct feed
 utility below turns it into an array of objects with the same structure

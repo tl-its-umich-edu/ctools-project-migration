@@ -44,4 +44,8 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 * rename the war file as ctools-project-migration.war and copy into tomcat/webapps folder
 * access the tool via https://SERVER:PORT/ctools-project-migration/ 
 
+## Testing with JMeter
+* JMeter scripts are included, which can be run from either JMeter UI or from maven
+* "mvn clean verify" will run the JMeter script for default profile, according to settings in pom.xml
+
 
