@@ -213,12 +213,6 @@
 		</dependency>
 	</dependencies>
 	
-	<properties>
-		<maven.httpRequest.serverName>localhost</maven.httpRequest.serverName>
-		<maven.httpRequest.serverPort>8080</maven.httpRequest.serverPort>
-	</properties>
-	
-	
 	<build>
 		<plugins>
 			<plugin>
