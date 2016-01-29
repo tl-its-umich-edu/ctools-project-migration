@@ -12,7 +12,19 @@ import org.springframework.boot.builder.SpringApplicationBuilder;
 
 import java.sql.Timestamp;
 
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.context.annotation.Bean;
+import org.springframework.scheduling.concurrent.ThreadPoolTaskExecutor;
+import org.springframework.scheduling.annotation.AsyncConfigurer;
+import org.springframework.aop.interceptor.AsyncUncaughtExceptionHandler;
+import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
+
+
+import java.util.concurrent.Executor;
+
 @SpringBootApplication
+@EnableAsync
 public class Application extends SpringBootServletInitializer {
 
 	private static final Logger log = LoggerFactory
@@ -27,5 +39,4 @@ public class Application extends SpringBootServletInitializer {
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
-
 }
