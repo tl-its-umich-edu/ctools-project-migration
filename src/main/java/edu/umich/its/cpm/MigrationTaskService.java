@@ -24,6 +24,7 @@ import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
+import java.util.concurrent.Callable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -33,9 +34,9 @@ import javax.ws.rs.core.Response;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
+import org.springframework.util.concurrent.ListenableFuture;
 
 import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIException;
@@ -44,8 +45,9 @@ import com.box.sdk.BoxFolder;
 import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
+@Service
 @Component
-public class MigrationService {
+public class MigrationTaskService{
 	// String values used in content json feed
 	private static final String COLLECTION_TYPE = "collection";
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
@@ -70,41 +72,21 @@ public class MigrationService {
 	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L*1024*1024*1024; 
 
 	private static final Logger log = LoggerFactory
-			.getLogger(MigrationController.class);
-	
-	@Autowired
-	private Environment env;
-	
-	@Async("threadPoolTaskExecutor")
-    public Future<String> asyncDownloadZip(HttpServletRequest request,
-			HttpServletResponse response, String siteId, String migrationId) throws InterruptedException {
-        StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-
-        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " starting " + stopWatch.prettyPrint());
-
-		// download zip file
-		String downloadStatus = downloadZippedFile(request, response, siteId);
-
-		stopWatch.stop();
-		log.info("Migration task stopped: siteId=" + siteId + " migation id=" + migrationId + " starting " + stopWatch.prettyPrint());
-		
-        return new AsyncResult<String>(downloadStatus);
-    }
+			.getLogger(MigrationTaskService.class);
 	
 	/**
 	 * Download CTools site resource in zip file
 	 * 
 	 * @return status of download
 	 */
-	private String downloadZippedFile(HttpServletRequest request,
-			HttpServletResponse response, String site_id) {
+	public void downloadZippedFile(Environment env, HttpServletRequest request,
+			HttpServletResponse response, String site_id, String migrationId, MigrationRepository repository) {
 		// hold download status
 		StringBuffer downloadStatus = new StringBuffer();
 		List<MigrationFileItem> itemStatus = new ArrayList<MigrationFileItem>();
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
@@ -177,8 +159,16 @@ public class MigrationService {
 		statusMap.put(Utils.MIGRATION_STATUS, downloadStatus);
 		statusMap.put(Utils.MIGRATION_DATA, itemStatus);
 		JSONObject obj = new JSONObject(statusMap);
-
-		return obj.toString();
+		
+		// update the status and end_time of migration record
+		repository.setMigrationEndTime(
+				new java.sql.Timestamp(System.currentTimeMillis()),
+				migrationId);
+		repository.setMigrationStatus(obj.toString(),
+				migrationId);
+		
+		return;
+		
 	}
 
 	/**
@@ -381,9 +371,8 @@ public class MigrationService {
 	}
 
 	/*************** Box Migration ********************/
-	@Async("threadPoolTaskExecutor")
-    public Future<String> asyncUploadBox(HttpServletRequest request, HttpServletResponse response, String migrationId) throws InterruptedException {
-
+	@Async
+	public Future<String> uploadToBox(Environment env, HttpServletRequest request, HttpServletResponse response, String siteId, String boxFolderId, String migrationId, MigrationRepository repository) throws InterruptedException {
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
 		
@@ -406,13 +395,9 @@ public class MigrationService {
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
-			return new AsyncResult<String>("");
+			return new AsyncResult<String>("fail");
 		}
-
-		// get the CTools site id and target box folder id
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		String siteId = parameterMap.get("site_id")[0];
-		String boxFolderId = parameterMap.get("box_folder_id")[0];
+		
 		if (siteId == null || boxFolderId == null) {
 			String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
 			log.error(boxFolderIdError);
@@ -420,7 +405,7 @@ public class MigrationService {
 		}
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
@@ -465,7 +450,14 @@ public class MigrationService {
 		statusMap.put(Utils.MIGRATION_DATA, itemMigrationStatus);
 		JSONObject obj = new JSONObject(statusMap);
 		
-		return new AsyncResult<String>(obj.toString());
+		// update the status and end_time of migration record
+		repository.setMigrationEndTime(
+				new java.sql.Timestamp(System.currentTimeMillis()),
+				migrationId);
+		repository.setMigrationStatus(obj.toString(),
+				migrationId);
+
+		return new AsyncResult<String>("success");
 	}
 
 	/**

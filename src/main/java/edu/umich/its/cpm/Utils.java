@@ -27,9 +27,6 @@ import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-
-
-@PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @Configuration
 public class Utils {
 
@@ -42,6 +39,8 @@ public class Utils {
 	public static final String BOX_TOKEN_URL = "box_token_url";
 	public static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
 	
+	public static final String SERVER_URL = "server_url";
+	
 	// the at sign used in email address
 	private static final String EMAIL_AT = "@";
 	private static final String EMAIL_AT_UMICH = "@umich.edu";
@@ -49,17 +48,10 @@ public class Utils {
 	private static final Logger log = LoggerFactory
 			.getLogger(Utils.class);
 	
-	
-	private static Environment env;
-
-    public void setEnvironment(final Environment env) {
-        this.env = env;
-    }
-	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(HttpServletRequest request) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 		
@@ -93,7 +85,6 @@ public class Utils {
 			
 			//get the status code
 			int status = response.getStatusLine().getStatusCode();
-			log.info("---------------session creation call" + status);
 			
 			if (status != 201) {
 				//if status code is not 201, there is a problem with the request.

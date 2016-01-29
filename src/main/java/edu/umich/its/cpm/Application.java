@@ -24,7 +24,8 @@ import org.springframework.aop.interceptor.SimpleAsyncUncaughtExceptionHandler;
 import java.util.concurrent.Executor;
 
 @SpringBootApplication
-public class Application extends SpringBootServletInitializer implements AsyncConfigurer{
+@EnableAsync
+public class Application extends SpringBootServletInitializer {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(Application.class);
@@ -38,19 +39,4 @@ public class Application extends SpringBootServletInitializer implements AsyncCo
 	public static void main(String[] args) {
 		SpringApplication.run(Application.class, args);
 	}
-	
-	@Override
-    public Executor getAsyncExecutor() {
-        ThreadPoolTaskExecutor taskExecutor = new ThreadPoolTaskExecutor();
-        taskExecutor.setMaxPoolSize(10);
-        taskExecutor.setThreadNamePrefix("LULExecutor-");
-        taskExecutor.initialize();
-        return taskExecutor;
-    }
-    
-    @Override
-    public AsyncUncaughtExceptionHandler getAsyncUncaughtExceptionHandler() {
-        return new SimpleAsyncUncaughtExceptionHandler();
-    }
-
 }

@@ -20,6 +20,7 @@ import org.apache.commons.io.FileUtils;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.util.concurrent.Callable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -57,12 +58,19 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
+import org.springframework.web.bind.annotation.ResponseBody;
 import org.springframework.http.ResponseEntity;
 import org.springframework.http.HttpStatus;
+import org.springframework.http.HttpHeaders;
 import org.springframework.core.env.Environment;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.context.annotation.PropertySource;
+import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.util.concurrent.ListenableFuture;
+import org.springframework.util.concurrent.ListenableFutureCallback;
+import org.springframework.web.util.UriComponentsBuilder;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -87,11 +95,9 @@ import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
-//import org.apache.axis.encoding.XMLType;
-//import javax.xml.rpc.ParameterMode;
-//import org.apache.axis.client.Call;
-//import org.apache.axis.client.Service;
+import org.springframework.scheduling.annotation.EnableAsync;
 
+@EnableAsync
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
 public class MigrationController {
@@ -117,7 +123,8 @@ public class MigrationController {
 	// injected request proxy supporting multiple threads
 	private HttpServletRequest request;
 
-	@Autowired private MigrationService migrationService;
+	@Autowired 
+	private MigrationInstanceService migrationInstanceService;
 	
 	// WSDL operation
 	private static final String OPERATION_GET_CONTENT_DATA = "getContentData";
@@ -137,7 +144,7 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -174,7 +181,7 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -268,7 +275,6 @@ public class MigrationController {
 		String userId = request.getRemoteUser();
 		try {
 			List<Migration> l = repository.findMigrated(userId);
-			log.info("===== l size=" + l.size());
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrated(userId)).build();
 		} catch (Exception e) {
@@ -310,18 +316,19 @@ public class MigrationController {
 	@GET
 	@Produces("application/zip")
 	@RequestMapping(value = "/migrationZip")
-	public Response migrationZip(HttpServletRequest request,
+	@ResponseBody
+	public void migrationZip(HttpServletRequest request,
 			HttpServletResponse response) {
 
 		// zip download
-		return migration_call(request, response, "zip");
+		migration_call(request, response, "zip");	
 	}
 	
 	/**
 	 * handle migration request
 	 * @param target migration target
 	 */
-	private Response migration_call(HttpServletRequest request, HttpServletResponse response, String target)
+	private String migration_call(HttpServletRequest request, HttpServletResponse response, String target)
 	{
 		String currentUserId = request.getRemoteUser();
 		
@@ -332,48 +339,40 @@ public class MigrationController {
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
 		
+		log.info("after save migration");
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
-			
+			log.info("after save migration 1");
 			// no new Migration record created
-			return Response
-					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot create migration records for user " + currentUserId + " and site=" + siteId).build();
+			log.info("Cannot create migration records for user " + currentUserId + " and site=" + siteId);
+			ResponseEntity<Void> responseEntity = 
+                    new ResponseEntity<Void>(HttpStatus.SERVICE_UNAVAILABLE);
+            return "";
 		} else {
+			log.info("after save migration 2");
+			
 			Migration migration = (Migration) saveMigration.get("migration");
 			String migrationId = migration.getMigration_id();
 			try
-			{
-				Future<String> migrationStatus = null;
-				
-				if ("zip".equals(target))
+			{	
+				// call asynchronous method for zip file download
+				String migrationStatus = null;
+		        if ("zip".equals(target))
 				{
 					// call asynchronous method for zip file download
-					migrationStatus = migrationService.asyncDownloadZip(request, response, siteId, migrationId);
+					migrationInstanceService.createDownloadZipInstance(env, request, response, siteId, migrationId, repository);
 				}
 				else if ("box".equals(target))
 				{
 					// call asynchronous method for Box file upload
-					migrationStatus =migrationService.asyncUploadBox(request, response, migration.getMigration_id());
-				}
-				// update the status and end_time of migration record
-				repository.setMigrationEndTime(
-						new java.sql.Timestamp(System.currentTimeMillis()),
-						migrationId);
-				repository.setMigrationStatus(migrationStatus.get(),
-						migrationId);
-			}
-			catch (java.util.concurrent.ExecutionException e)
-			{
-				log.error(e.getMessage() + " migration error for user " + currentUserId + " and site=" + siteId  + " target=" + target);
+					migrationInstanceService.createUploadBoxInstance(env, request, response, siteId, parameterMap.get("box_folder_id")[0], migrationId, repository);
+				}	
 			}
 			catch (java.lang.InterruptedException e)
 			{
 				log.error(e.getMessage() + " migration error for user " + currentUserId + " and site=" + siteId  + " target=" + target);
 			}
-			
-			return Response.status(Response.Status.OK)
-					.entity(saveMigration).build();
+			return migrationId;
 		}
 	}
 	
@@ -606,11 +605,21 @@ public class MigrationController {
 	 * 
 	 * @return
 	 */
+	@POST
+	@Produces("application/json")
 	@RequestMapping("/migrationBox")
-	public Response migrationBox(HttpServletRequest request,
-			HttpServletResponse response) {
+	@ResponseBody
+	public ResponseEntity<Void> migrationBox(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
-		return migration_call(request, response, "box");
+		String migrationId = migration_call(request, response, "box");
+		
+		HttpHeaders headers = new HttpHeaders();
+	    //http://serverUrl/migration/id
+	    headers.setLocation(ucb.path("/migration/{id}").buildAndExpand(migrationId).toUri());
+	    
+	    return new ResponseEntity<Void>(headers, HttpStatus.ACCEPTED);
+	    
 	}
 }
