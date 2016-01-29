@@ -7,6 +7,7 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Future;
@@ -30,14 +31,13 @@ public class MigrationInstanceService{
 	MigrationTaskService migrationTaskService;
 	
 	public void createDownloadZipInstance(Environment env, HttpServletRequest request,
-			HttpServletResponse response, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
+			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
 		StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
 		
         // async call
-		migrationTaskService.downloadZippedFile(env, request, response, siteId, migrationId, repository);
-		
+		migrationTaskService.downloadZippedFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
 		stopWatch.stop();
         log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
 		
@@ -46,7 +46,7 @@ public class MigrationInstanceService{
 	/*************** Box Migration ********************/
 	@Async
 	public Future<String> createUploadBoxInstance(Environment env, HttpServletRequest request,
-			HttpServletResponse response, String siteId, String boxFolderId, String migrationId, MigrationRepository repository) throws InterruptedException {
+			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String boxFolderId, String migrationId, MigrationRepository repository) throws InterruptedException {
 		
 		StopWatch stopWatch = new StopWatch();
         stopWatch.start();
@@ -54,7 +54,7 @@ public class MigrationInstanceService{
 		
 		String rv = "";
 		List<Future<String>> futureList = new ArrayList<Future<String>>();
-		futureList.add( migrationTaskService.uploadToBox(env, request, response, siteId, boxFolderId, migrationId, repository));
+		futureList.add( migrationTaskService.uploadToBox(env, request, response, userId, sessionAttributes, siteId, boxFolderId, migrationId, repository));
  
         for (Future<String> future : futureList) {
             try {
