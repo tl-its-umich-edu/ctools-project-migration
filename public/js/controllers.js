@@ -103,12 +103,18 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     if (!$scope.boxFolders) {
       $scope.loadingFolders = true;
       var boxUrl = '/box/folders';
-      Projects.getBoxFolders(boxUrl).then(function(result) {
+      if(sessionStorage.getItem('boxFolders')){
         $scope.loadingFolders = false;
-        $scope.boxFolders = result.data;
-        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
-        $log.info(' - - - - GET /box/folders');
-      });
+        $scope.boxFolders = JSON.parse(sessionStorage.getItem('boxFolders')).data;
+      } else {
+        Projects.getBoxFolders(boxUrl).then(function(result) {
+          sessionStorage.setItem('boxFolders', JSON.stringify(result));
+          $scope.loadingFolders = false;
+          $scope.boxFolders = result.data;
+          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+          $log.info(' - - - - GET /box/folders');
+        });
+      }
     }  
   };
   
@@ -312,10 +318,12 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
     	  // migrate to Box
     	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.selectBoxFolder.id;
          
-
           $log.info("box " + migrationUrl);
     	  // use promise factory to execute the post
           Migration.postMigrationBox(migrationUrl).then(function(result) {
+            var thisMigration = (_.last(result.headers('location').split('/')));
+            $scope.sourceProjects[targetProjPos].migration_id=thisMigration;
+            $scope.sourceProjects[targetProjChildPos].migration_id=thisMigration;
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
           });
@@ -441,6 +449,22 @@ var updateProjectsPanel = function(result, source){
         var projectMigrated = _.findWhere(sortedMigrated, {site_id: sourceProject.site_id});
         if (projectMigrated) {
           sourceProject.last_migrated = projectMigrated.end_time;
+        }
+      }
+      // if the project has a migration_id, see if there is a /migrated item
+      // with the same id, if so, unlock it
+      if(sourceProject.migration_id){
+        var migrationDone = _.findWhere(sortedMigrated, {migration_id: sourceProject.migration_id});
+        if(migrationDone) {
+          sourceProject.migrating = false;
+          sourceProject.stateSelectionExists =false;
+          sourceProject.selectDestinationType = {};
+          sourceProject.stateHasTools = false;
+          if (sourceProject.tool_id !=='') {
+            var index = $scope.sourceProjects.indexOf(sourceProject);
+            $scope.sourceProjects.splice(index, 1); 
+          }
+
         }
       }
     });  
