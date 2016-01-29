@@ -51,7 +51,7 @@ public class Utils {
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request, String remoteUser) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 		
@@ -65,8 +65,7 @@ public class Utils {
 		CookieStore cookieStore = new BasicCookieStore();
 		HttpContext httpContext = new BasicHttpContext();
 		httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-
-		String remoteUser = request.getRemoteUser();
+		
 		log.info("remote user is " + remoteUser);
 		
 		// here is the CTools integration prior to CoSign integration ( read

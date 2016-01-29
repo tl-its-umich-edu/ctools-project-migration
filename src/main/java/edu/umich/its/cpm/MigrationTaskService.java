@@ -80,13 +80,12 @@ public class MigrationTaskService{
 	 * @return status of download
 	 */
 	public void downloadZippedFile(Environment env, HttpServletRequest request,
-			HttpServletResponse response, String site_id, String migrationId, MigrationRepository repository) {
+			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String site_id, String migrationId, MigrationRepository repository) {
 		// hold download status
 		StringBuffer downloadStatus = new StringBuffer();
 		List<MigrationFileItem> itemStatus = new ArrayList<MigrationFileItem>();
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
@@ -149,7 +148,7 @@ public class MigrationTaskService{
 
 			}
 		} else {
-			String userError = "Cannot become user " + request.getRemoteUser();
+			String userError = "Cannot become user " + userId;
 			log.error(userError);
 			downloadStatus.append(userError);
 		}
@@ -372,7 +371,7 @@ public class MigrationTaskService{
 
 	/*************** Box Migration ********************/
 	@Async
-	public Future<String> uploadToBox(Environment env, HttpServletRequest request, HttpServletResponse response, String siteId, String boxFolderId, String migrationId, MigrationRepository repository) throws InterruptedException {
+	public Future<String> uploadToBox(Environment env, HttpServletRequest request, HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String boxFolderId, String migrationId, MigrationRepository repository) throws InterruptedException {
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
 		
@@ -387,7 +386,6 @@ public class MigrationTaskService{
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
 		
-		String userId = request.getRemoteUser();
 		String remoteUserEmail = Utils.getUserEmail(userId);
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
@@ -404,8 +402,7 @@ public class MigrationTaskService{
 			boxMigrationStatus.append(boxFolderIdError + LINE_BREAK);
 		}
 
-		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
+		// get sessionId
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");

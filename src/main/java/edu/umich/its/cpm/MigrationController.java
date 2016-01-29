@@ -70,7 +70,6 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.util.UriComponentsBuilder;
-
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -144,7 +143,7 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -181,7 +180,7 @@ public class MigrationController {
 		String errorMessage = null;
 
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -321,14 +320,14 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// zip download
-		migration_call(request, response, "zip");	
+		migration_call(request, response, "zip", request.getRemoteUser());	
 	}
 	
 	/**
 	 * handle migration request
 	 * @param target migration target
 	 */
-	private String migration_call(HttpServletRequest request, HttpServletResponse response, String target)
+	private String migration_call(HttpServletRequest request, HttpServletResponse response, String target, String remoteUser)
 	{
 		String currentUserId = request.getRemoteUser();
 		
@@ -355,17 +354,19 @@ public class MigrationController {
 			String migrationId = migration.getMigration_id();
 			try
 			{	
+				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, remoteUser);
+				
 				// call asynchronous method for zip file download
 				String migrationStatus = null;
 		        if ("zip".equals(target))
 				{
 					// call asynchronous method for zip file download
-					migrationInstanceService.createDownloadZipInstance(env, request, response, siteId, migrationId, repository);
+					migrationInstanceService.createDownloadZipInstance(env, request, response, currentUserId, sessionAttributes, siteId, migrationId, repository);
 				}
 				else if ("box".equals(target))
 				{
 					// call asynchronous method for Box file upload
-					migrationInstanceService.createUploadBoxInstance(env, request, response, siteId, parameterMap.get("box_folder_id")[0], migrationId, repository);
+					migrationInstanceService.createUploadBoxInstance(env, request, response, currentUserId, sessionAttributes, siteId, parameterMap.get("box_folder_id")[0], migrationId, repository);
 				}	
 			}
 			catch (java.lang.InterruptedException e)
@@ -613,7 +614,7 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
-		String migrationId = migration_call(request, response, "box");
+		String migrationId = migration_call(request, response, "box", request.getRemoteUser());
 		
 		HttpHeaders headers = new HttpHeaders();
 	    //http://serverUrl/migration/id
