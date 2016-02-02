@@ -324,6 +324,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
             var thisMigration = (_.last(result.headers('location').split('/')));
             $scope.sourceProjects[targetProjPos].migration_id=thisMigration;
             $scope.sourceProjects[targetProjChildPos].migration_id=thisMigration;
+            $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos])
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
           });
@@ -336,6 +337,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
           $log.info("zip " + migrationUrl);
     	  // use promise factory to execute the post
           Migration.getMigrationZip(migrationUrl).then(function(result) {
+            $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos])
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval/1000 + ' seconds');
           });
@@ -453,18 +455,20 @@ var updateProjectsPanel = function(result, source){
       }
       // if the project has a migration_id, see if there is a /migrated item
       // with the same id, if so, unlock it
-      if(sourceProject.migration_id){
-        var migrationDone = _.findWhere(sortedMigrated, {migration_id: sourceProject.migration_id});
-        if(migrationDone) {
-          sourceProject.migrating = false;
-          sourceProject.stateSelectionExists =false;
-          sourceProject.selectDestinationType = {};
-          sourceProject.stateHasTools = false;
-          if (sourceProject.tool_id !=='') {
-            var index = $scope.sourceProjects.indexOf(sourceProject);
-            $scope.sourceProjects.splice(index, 1); 
-          }
+      if(sourceProject){
+        if(sourceProject.migration_id){
+          var migrationDone = _.findWhere(sortedMigrated, {migration_id: sourceProject.migration_id});
+          if(migrationDone) {
+            sourceProject.migrating = false;
+            sourceProject.stateSelectionExists =false;
+            sourceProject.selectDestinationType = {};
+            sourceProject.stateHasTools = false;
+            if (sourceProject.tool_id !=='') {
+              var index = $scope.sourceProjects.indexOf(sourceProject);
+              $scope.sourceProjects.splice(index, 1); 
+            }
 
+          }
         }
       }
     });  
