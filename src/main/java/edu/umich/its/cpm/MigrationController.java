@@ -140,8 +140,20 @@ public class MigrationController {
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
 		String rv = null;
-		String errorMessage = null;
 
+		HashMap<String, String> projectsMap = get_user_project_sites(request);
+		// JSON response
+		JSON_response(response, projectsMap.get("projectsString"), projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
+	}
+
+	private HashMap<String, String> get_user_project_sites(HttpServletRequest req)
+	{
+		HashMap<String, String> rv = new HashMap<String, String>();
+		
+		String projectsString = "";
+		String errorMessage = "";
+		String requestUrl = "";
+		
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
 		if (sessionAttributes.containsKey("sessionId")) {
@@ -151,21 +163,24 @@ public class MigrationController {
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/withPerm/.json?permission=site.upd"
-			String requestUrl = env.getProperty("ctools.server.url")
+			requestUrl = env.getProperty("ctools.server.url")
 					+ "direct/site/withPerm/.json?permission=site.upd&_sessionId="
 					+ sessionId;
 			try {
-				rv = restTemplate.getForObject(requestUrl, String.class);
+				projectsString = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
-				errorMessage = requestUrl + e.getMessage();
-				log.error(errorMessage);
+				errorMessage =  e.getMessage();
+				log.error(requestUrl + errorMessage);
 			}
 
-			// JSON response
-			JSON_response(response, rv, errorMessage, requestUrl);
 		}
+		
+		rv.put("projectsString", projectsString);
+		rv.put("errorMessage", errorMessage);
+		rv.put("requestUrl", requestUrl);
+		return rv;
+		
 	}
-
 	/**
 	 * get page information
 	 * 
@@ -329,14 +344,48 @@ public class MigrationController {
 	 */
 	private String migration_call(HttpServletRequest request, HttpServletResponse response, String target, String remoteUser)
 	{
-		String currentUserId = request.getRemoteUser();
+		// we need to do series checks to make sure the migration request is valid
+		// 1. check if missing site_id or tool_id attribute
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String siteId = parameterMap.get("site_id")[0];
+		String toolId = parameterMap.get("tool_id")[0];
+		if (siteId == null || siteId.isEmpty() || toolId == null || toolId.isEmpty())
+		{
+			return  "Migration request missing required parameter: site_id, or tool_id";
+		}
 		
+		// 2. check to see whether the site_id and tool_id is valid and associated with current user
+		HashMap<String, String> projectsMap = get_user_project_sites(request);
+		String projectsString = projectsMap.get("projectsString");
+		if (projectsString.indexOf(siteId) == -1 || projectsString.indexOf(toolId) == -1)
+		{
+			return "Invalid site id = " + siteId + " or invalid tool id = " + toolId + " for user " + remoteUser;
+		}
+		
+		// 3. check if there is an ongoing migration for the same site and tool
+		boolean valid_migration_request = true;
+		String currentUserId = request.getRemoteUser();
+		List<Migration> migratingSiteTools = repository.findMigrating(currentUserId);
+		for (Migration m : migratingSiteTools)
+		{
+			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id()))
+			{
+				// still on-going migration
+				valid_migration_request = false;
+				break;
+			}
+
+		}
+		// exit if it is duplicate request
+		if (!valid_migration_request)
+		{
+			return "Duplicate migration request for site " + siteId + " tool=" + toolId;
+		}
+		
+		// now after all checks passed, we are ready for migration
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
-
-		Map<String, String[]> parameterMap = request.getParameterMap();
-		String siteId = parameterMap.get("site_id")[0];
 		
 		log.info("after save migration");
 		// exit if there is no new Migration record saved into DB
