@@ -139,13 +139,16 @@ public class MigrationController {
 	@RequestMapping("/projects")
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
-		String rv = null;
-
 		HashMap<String, String> projectsMap = get_user_project_sites(request);
 		// JSON response
 		JSON_response(response, projectsMap.get("projectsString"), projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
 	}
 
+	/**
+	 * REST API call to get all sites for user
+	 * @param req
+	 * @return
+	 */
 	private HashMap<String, String> get_user_project_sites(HttpServletRequest req)
 	{
 		HashMap<String, String> rv = new HashMap<String, String>();
@@ -178,9 +181,9 @@ public class MigrationController {
 		rv.put("projectsString", projectsString);
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
-		return rv;
-		
+		return rv;	
 	}
+	
 	/**
 	 * get page information
 	 * 
@@ -191,34 +194,52 @@ public class MigrationController {
 	@RequestMapping("/projects/{site_id}")
 	public void getProjectSitePages(@PathVariable String site_id,
 			HttpServletRequest request, HttpServletResponse response) {
-		String rv = null;
-		String errorMessage = null;
+		HashMap<String, String> pagesMap = get_user_project_site_tools(site_id);
+		JSON_response(response, pagesMap.get("pagesString"), pagesMap.get("errorMessage"), pagesMap.get("requestUrl"));
+	}
 
+	/**
+	 * REST API call to get CTools site pages and tools
+	 * @param site_id
+	 * @return
+	 */
+	private HashMap<String, String> get_user_project_site_tools(String site_id)
+	{
+		HashMap<String, String> rv = new HashMap<String, String>();
+		
+		String pagesString = "";
+		String errorMessage = "";
+		String requestUrl = "";
+		
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
-			// 3. get all sites that user have permission site.upd
-			RestTemplate restTemplate = new RestTemplate();
+			// get all pages inside site
 			// the url should be in the format of
-			// "https://server/direct/site/SITE_ID.json"
-			String requestUrl = env.getProperty("ctools.server.url")
+			// "https://server/direct/site/SITE_ID/pages.json"
+			RestTemplate restTemplate = new RestTemplate();
+			requestUrl = env.getProperty("ctools.server.url")
 					+ "direct/site/" + site_id + "/pages.json?_sessionId="
 					+ sessionId;
 
 			try {
-				rv = restTemplate.getForObject(requestUrl, String.class);
+				pagesString = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
-				errorMessage = "Cannot find site by siteId: " + site_id + " "
+				errorMessage = "Cannot find site pages by siteId: " + site_id + " "
 						+ e.getMessage();
 				log.error(errorMessage);
 			}
-
-			// JSON response
-			JSON_response(response, rv, errorMessage, requestUrl);
 		}
+		
+		rv.put("pagesString", pagesString);
+		rv.put("errorMessage", errorMessage);
+		rv.put("requestUrl", requestUrl);
+		return rv;	
 	}
+
+
 
 	/**
 	 * get all migration records
@@ -335,15 +356,25 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// zip download
-		migration_call(request, response, "zip", request.getRemoteUser());	
+		HashMap<String, String> callStatus = migration_call(request, response, "zip", request.getRemoteUser());	
+		if (callStatus.containsKey("errorMessage"))
+		{
+			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
+		}
+		else if (callStatus.containsKey("migrationId"))
+		{
+			log.info(this + " MigrationZip call migration started id=" + callStatus.get("migrationId"));
+		}
 	}
 	
 	/**
 	 * handle migration request
-	 * @param target migration target
+	 * @param
 	 */
-	private String migration_call(HttpServletRequest request, HttpServletResponse response, String target, String remoteUser)
+	private HashMap<String, String> migration_call(HttpServletRequest request, HttpServletResponse response, String target, String remoteUser)
 	{
+		HashMap<String, String> rv = new HashMap<String, String>();
+		
 		// we need to do series checks to make sure the migration request is valid
 		// 1. check if missing site_id or tool_id attribute
 		Map<String, String[]> parameterMap = request.getParameterMap();
@@ -351,15 +382,29 @@ public class MigrationController {
 		String toolId = parameterMap.get("tool_id")[0];
 		if (siteId == null || siteId.isEmpty() || toolId == null || toolId.isEmpty())
 		{
-			return  "Migration request missing required parameter: site_id, or tool_id";
+			rv.put("errorMessage", "Migration request missing required parameter: site_id, or tool_id");
+			return rv;
 		}
+		
+		log.info("request migration for site " + siteId  + " and tool " + toolId);
 		
 		// 2. check to see whether the site_id and tool_id is valid and associated with current user
 		HashMap<String, String> projectsMap = get_user_project_sites(request);
 		String projectsString = projectsMap.get("projectsString");
-		if (projectsString.indexOf(siteId) == -1 || projectsString.indexOf(toolId) == -1)
+		if (projectsString.indexOf(siteId) == -1)
 		{
-			return "Invalid site id = " + siteId + " or invalid tool id = " + toolId + " for user " + remoteUser;
+			rv.put("errorMessage", "Invalid site id = " + siteId + " for user " + remoteUser);
+			return rv;
+		}
+		else
+		{
+			HashMap<String, String> pagesMap = get_user_project_site_tools(siteId);
+			String pagesString = pagesMap.get("pagesString");
+			if (pagesString.indexOf(toolId) == -1)
+			{
+				rv.put("errorMessage", "Invalid tool id = " + toolId + " for site id= " + siteId + " for user " + remoteUser);
+				return rv;
+			}
 		}
 		
 		// 3. check if there is an ongoing migration for the same site and tool
@@ -379,7 +424,8 @@ public class MigrationController {
 		// exit if it is duplicate request
 		if (!valid_migration_request)
 		{
-			return "Duplicate migration request for site " + siteId + " tool=" + toolId;
+			rv.put("errorMessage", "Duplicate migration request for site " + siteId + " tool=" + toolId);
+			return rv;
 		}
 		
 		// now after all checks passed, we are ready for migration
@@ -390,14 +436,10 @@ public class MigrationController {
 		log.info("after save migration");
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
-			log.info("after save migration 1");
 			// no new Migration record created
-			log.info("Cannot create migration records for user " + currentUserId + " and site=" + siteId);
-			ResponseEntity<Void> responseEntity = 
-                    new ResponseEntity<Void>(HttpStatus.SERVICE_UNAVAILABLE);
-            return "";
+			rv.put("errorMessage", "Cannot create migration records for user " + currentUserId + " and site=" + siteId);
+			return rv;
 		} else {
-			log.info("after save migration 2");
 			
 			Migration migration = (Migration) saveMigration.get("migration");
 			String migrationId = migration.getMigration_id();
@@ -409,12 +451,14 @@ public class MigrationController {
 				String migrationStatus = null;
 		        if ("zip".equals(target))
 				{
-					// call asynchronous method for zip file download
+		        	// call asynchronous method for zip file download
+		        	log.info("start to call zip migration asynch for siteId=" + siteId + " tooId=" + toolId);
 					migrationInstanceService.createDownloadZipInstance(env, request, response, currentUserId, sessionAttributes, siteId, migrationId, repository);
 				}
 				else if ("box".equals(target))
 				{
-					// call asynchronous method for Box file upload
+		        	// call asynchronous method for Box file upload
+		        	log.info("start to call Box migration asynch for siteId=" + siteId + " tooId=" + toolId);
 					migrationInstanceService.createUploadBoxInstance(env, request, response, currentUserId, sessionAttributes, siteId, parameterMap.get("box_folder_id")[0], migrationId, repository);
 				}	
 			}
@@ -422,7 +466,8 @@ public class MigrationController {
 			{
 				log.error(e.getMessage() + " migration error for user " + currentUserId + " and site=" + siteId  + " target=" + target);
 			}
-			return migrationId;
+			rv.put("migrationId", "migrationId");
+			return rv;
 		}
 	}
 	
@@ -659,17 +704,27 @@ public class MigrationController {
 	@Produces("application/json")
 	@RequestMapping("/migrationBox")
 	@ResponseBody
-	public ResponseEntity<Void> migrationBox(HttpServletRequest request,
+	public ResponseEntity<String> migrationBox(HttpServletRequest request,
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
-		String migrationId = migration_call(request, response, "box", request.getRemoteUser());
-		
+ 		HashMap<String, String> callStatus = migration_call(request, response, "box", request.getRemoteUser());	
 		HttpHeaders headers = new HttpHeaders();
-	    //http://serverUrl/migration/id
-	    headers.setLocation(ucb.path("/migration/{id}").buildAndExpand(migrationId).toUri());
-	    
-	    return new ResponseEntity<Void>(headers, HttpStatus.ACCEPTED);
+ 		if (callStatus.containsKey("errorMessage"))
+ 		{
+ 			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
+ 			return new ResponseEntity<String>(callStatus.get("errorMessage"),headers, HttpStatus.CONFLICT);
+ 		}
+ 		else
+ 		{
+ 			log.info(this + " MigrationZip call migration started id=" + callStatus.get("migrationId"));
+ 		    if (callStatus.containsKey("migrationId"))
+ 		    {
+	 			//http://serverUrl/migration/id
+	 		    headers.setLocation(ucb.path("/migration/{id}").buildAndExpand(callStatus.get("migrationId")).toUri());
+ 		    }
+ 		    return new ResponseEntity<String>("Migration started.", headers, HttpStatus.ACCEPTED);
+ 		}
 	    
 	}
 }
