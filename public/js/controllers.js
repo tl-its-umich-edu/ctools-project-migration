@@ -103,18 +103,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     if (!$scope.boxFolders) {
       $scope.loadingFolders = true;
       var boxUrl = '/box/folders';
-      if(sessionStorage.getItem('boxFolders')){
+      Projects.getBoxFolders(boxUrl).then(function(result) {
+        sessionStorage.setItem('boxFolders', JSON.stringify(result));
         $scope.loadingFolders = false;
-        $scope.boxFolders = JSON.parse(sessionStorage.getItem('boxFolders')).data;
-      } else {
-        Projects.getBoxFolders(boxUrl).then(function(result) {
-          sessionStorage.setItem('boxFolders', JSON.stringify(result));
-          $scope.loadingFolders = false;
-          $scope.boxFolders = result.data;
-          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
-          $log.info(' - - - - GET /box/folders');
-        });
-      }
+        $scope.boxFolders = result.data;
+        $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+        $log.info(' - - - - GET /box/folders');
+      });
     }  
   };
   
