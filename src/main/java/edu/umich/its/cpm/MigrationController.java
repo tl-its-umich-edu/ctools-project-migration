@@ -114,14 +114,6 @@ public class MigrationController {
 	@Autowired
 	private Environment env;
 
-	@Context
-	// injected response proxy supporting multiple threads
-	private HttpServletResponse response;
-
-	@Context
-	// injected request proxy supporting multiple threads
-	private HttpServletRequest request;
-
 	@Autowired 
 	private MigrationInstanceService migrationInstanceService;
 	
@@ -149,7 +141,7 @@ public class MigrationController {
 	 * @param req
 	 * @return
 	 */
-	private HashMap<String, String> get_user_project_sites(HttpServletRequest req)
+	private HashMap<String, String> get_user_project_sites(HttpServletRequest request)
 	{
 		HashMap<String, String> rv = new HashMap<String, String>();
 		
@@ -194,7 +186,7 @@ public class MigrationController {
 	@RequestMapping("/projects/{site_id}")
 	public void getProjectSitePages(@PathVariable String site_id,
 			HttpServletRequest request, HttpServletResponse response) {
-		HashMap<String, String> pagesMap = get_user_project_site_tools(site_id);
+		HashMap<String, String> pagesMap = get_user_project_site_tools(request, site_id);
 		JSON_response(response, pagesMap.get("pagesString"), pagesMap.get("errorMessage"), pagesMap.get("requestUrl"));
 	}
 
@@ -203,7 +195,7 @@ public class MigrationController {
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_user_project_site_tools(String site_id)
+	private HashMap<String, String> get_user_project_site_tools(HttpServletRequest request, String site_id)
 	{
 		HashMap<String, String> rv = new HashMap<String, String>();
 		
@@ -398,7 +390,7 @@ public class MigrationController {
 		}
 		else
 		{
-			HashMap<String, String> pagesMap = get_user_project_site_tools(siteId);
+			HashMap<String, String> pagesMap = get_user_project_site_tools(request, siteId);
 			String pagesString = pagesMap.get("pagesString");
 			if (pagesString.indexOf(toolId) == -1)
 			{
