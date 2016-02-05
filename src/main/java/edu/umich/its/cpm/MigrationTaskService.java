@@ -62,6 +62,9 @@ public class MigrationTaskService{
 	private static final String CONTENT_JSON_ATTR_COPYRIGHT_ALERT = "copyrightAlert";
 	private static final String CONTENT_JSON_ATTR_SIZE = "size";
 	
+	// true value used in entity feed
+	private static final String BOOLEAN_TRUE = "true";
+	
 	// integer value of stream operation buffer size
 	private static final int STREAM_BUFFER_CHAR_SIZE = 1024;
 	
@@ -191,6 +194,8 @@ public class MigrationTaskService{
 				.getJSONArray(CONTENT_JSON_ATTR_CONTENT_COLLECTION);
 
 		for (int i = 0; i < array.length(); i++) {
+			boolean error_flag = false;
+			
 			JSONObject contentItem = array.getJSONObject(i);
 
 			String contentAccessUrl = contentItem
@@ -209,53 +214,61 @@ public class MigrationTaskService{
 
 			String type = Utils.getJSONString(contentItem, CONTENT_JSON_ATTR_TYPE);
 			String title = Utils.getJSONString(contentItem, CONTENT_JSON_ATTR_TITLE);
-
-			// files
-			if (contentUrl == null && contentUrl.length() == 0) {
+			String copyrightAlert = Utils.getJSONString(contentItem,
+					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
+			if (BOOLEAN_TRUE.equals(copyrightAlert))
+			{
+				// do not migrate if the item is with copyright
+				zipStatus.append(title + " is not downloaded because of copyright alert. " + LINE_BREAK);
+				error_flag = true;
+			}
+			else if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
 				String noUrlError = "No url for content " + title;
 				log.error(noUrlError);
 				zipStatus.append(noUrlError + LINE_BREAK);
-				break;
+				error_flag = true;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
 				String noContainerError = "No container folder url for content "
 						+ title;
 				log.error(noContainerError);
 				zipStatus.append(noContainerError + LINE_BREAK);
-				break;
+				error_flag = true;
 			}
 
-			if (COLLECTION_TYPE.equals(type)) {
-				// folders
-				if (rootFolderPath == null) {
-					rootFolderPath = contentUrl;
-				} else {
-					// create the zipentry for the sub-folder first
-					String folderName = contentUrl.replace(rootFolderPath, "");
-					ZipEntry folderEntry = new ZipEntry(folderName);
-					try {
-						out.putNextEntry(folderEntry);
-					} catch (IOException e) {
-						String ioError = "zipSiteContent: problem closing zip entry "
-								+ folderName + " " + e;
-						log.error(ioError);
-						zipStatus.append(ioError + LINE_BREAK);
+			if (!error_flag)
+			{
+				if (COLLECTION_TYPE.equals(type)) {
+					// folders
+					if (rootFolderPath == null) {
+						rootFolderPath = contentUrl;
+					} else {
+						// create the zipentry for the sub-folder first
+						String folderName = contentUrl.replace(rootFolderPath, "");
+						ZipEntry folderEntry = new ZipEntry(folderName);
+						try {
+							out.putNextEntry(folderEntry);
+						} catch (IOException e) {
+							String ioError = "zipSiteContent: problem closing zip entry "
+									+ folderName + " " + e;
+							log.error(ioError);
+							zipStatus.append(ioError + LINE_BREAK);
+						}
 					}
+	
+				} else {
+					// Call the zipFiles method for creating a zip stream.
+					String filePath = contentUrl.replace(rootFolderPath, "");
+					String zipFileStatus = zipFiles(httpContext, filePath, contentUrl, contentAccessUrl,
+							sessionId, out);
+					zipStatus.append(zipFileStatus + LINE_BREAK);
 				}
-
-			} else {
-				// Call the zipFiles method for creating a zip stream.
-				String filePath = contentUrl.replace(rootFolderPath, "");
-				String zipFileStatus = zipFiles(httpContext, filePath, contentUrl, contentAccessUrl,
-						sessionId, out);
-				MigrationFileItem fileItem = new MigrationFileItem(filePath,
-						title, zipFileStatus);
-
-				fileItems.add(fileItem);
-				zipStatus.append(zipFileStatus + LINE_BREAK);
-
 			}
+			MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
+					title, zipStatus.toString());
+
+			fileItems.add(fileItem);
 		} // for
 		return fileItems;
 	}
@@ -488,6 +501,9 @@ public class MigrationTaskService{
 		java.util.Stack<String> boxFolderIdStack = new java.util.Stack<String>();
 
 		for (int i = 0; i < array.length(); i++) {
+			// error flag
+			boolean error_flag = false;
+			
 			// status for each item
 			StringBuffer itemStatus = new StringBuffer();
 
@@ -518,142 +534,141 @@ public class MigrationTaskService{
 			String author = Utils.getJSONString(contentItem, CONTENT_JSON_ATTR_AUTHOR);
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
-			
-			// files
-			if (contentUrl == null && contentUrl.length() == 0) {
+			if (BOOLEAN_TRUE.equals(copyrightAlert))
+			{
+				// do not migrate if the item is with copyright
+				itemStatus.append(title + " is not migrated because of copyright alert. " + LINE_BREAK);
+				error_flag = true;
+			} else if (contentUrl == null && contentUrl.length() == 0) {
 				// log error if the content url is missing
 				String urlError = "No url for content " + title;
 				log.error(urlError);
 				itemStatus.append(urlError + LINE_BREAK);
-				break;
+				error_flag = true;
 			} else if (container == null && container.length() == 0) {
 				// log error if the content url is missing
 				String containerError = "No container folder url for content "
 						+ title;
 				log.error(containerError);
 				itemStatus.append(containerError + LINE_BREAK);
-				break;
+				error_flag = true;
 			}
-
-			if (COLLECTION_TYPE.equals(type)) {
-
-				// folders
-				if (rootFolderPath == null) {
-					// root folder
-					rootFolderPath = contentUrl;
-
-					// insert into stack
-					containerStack.push(contentUrl);
-					boxFolderIdStack.push(boxFolderId);
-				} else {
-					log.info("Begin to create folder " + title);
-
-					log.debug("top of stack folder id ="
-							+ containerStack.peek() + " "
-							+ " container folder id =" + container);
-					// pop the stack till the container equals to stack top
-					while (!containerStack.empty()
-							&& !container.equals(containerStack.peek())) {
-						// sync pops
-						containerStack.pop();
-						boxFolderIdStack.pop();
-					}
-
-					// create box folder
-					BoxFolder parentFolder = new BoxFolder(api,
-							boxFolderIdStack.peek());
-					try {
-						BoxFolder.Info childFolderInfo = parentFolder
-								.createFolder(title);
-						itemStatus.append("folder " + title + " created.");
-
-						// push the current folder id into the stack
+			log.info("type=" + type + " error=" + error_flag);
+			if (!error_flag)
+			{
+				if (COLLECTION_TYPE.equals(type))
+				{
+					// folders
+					if (rootFolderPath == null) {
+						// root folder
+						rootFolderPath = contentUrl;
+	
+						// insert into stack
 						containerStack.push(contentUrl);
-						boxFolderIdStack.push(childFolderInfo.getID());
-						log.debug("top of stack folder id = "
+						boxFolderIdStack.push(boxFolderId);
+					} else {
+						log.info("Begin to create folder " + title);
+	
+						log.debug("top of stack folder id ="
 								+ containerStack.peek() + " "
-								+ " container folder id=" + container);
-						log.debug("*******");
-
-						// get the BoxFolder object, get BoxFolder.Info object,
-						// set description, and commit change
-						BoxFolder childFolder = childFolderInfo.getResource();
-						childFolderInfo.setDescription(description);
-						childFolder.updateInfo(childFolderInfo);
-
-					} catch (BoxAPIException e) {
-						if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
-							// 409 means name conflict - item already existed
-							itemStatus
-									.append("There is already a folder with name "
+								+ " container folder id =" + container);
+						// pop the stack till the container equals to stack top
+						while (!containerStack.empty()
+								&& !container.equals(containerStack.peek())) {
+							// sync pops
+							containerStack.pop();
+							boxFolderIdStack.pop();
+						}
+	
+						// create box folder
+						BoxFolder parentFolder = new BoxFolder(api,
+								boxFolderIdStack.peek());
+						try {
+							BoxFolder.Info childFolderInfo = parentFolder
+									.createFolder(title);
+							itemStatus.append("folder " + title + " created.");
+	
+							// push the current folder id into the stack
+							containerStack.push(contentUrl);
+							boxFolderIdStack.push(childFolderInfo.getID());
+							log.debug("top of stack folder id = "
+									+ containerStack.peek() + " "
+									+ " container folder id=" + container);
+							log.debug("*******");
+	
+							// get the BoxFolder object, get BoxFolder.Info object,
+							// set description, and commit change
+							BoxFolder childFolder = childFolderInfo.getResource();
+							childFolderInfo.setDescription(description);
+							childFolder.updateInfo(childFolderInfo);
+	
+						} catch (BoxAPIException e) {
+							if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+								// 409 means name conflict - item already existed
+								itemStatus
+										.append("There is already a folder with name "
+												+ title);
+	
+								String exisingFolderId = getExistingBoxFolderIdFromBoxException(
+										e, title);
+								if (exisingFolderId != null) {
+									// push the current folder id into the stack
+									containerStack.push(contentUrl);
+									boxFolderIdStack.push(exisingFolderId);
+									log.debug("top of stack folder id = "
+											+ containerStack.peek() + " "
+											+ " container folder id=" + container);
+									log.debug("*******");
+								} else {
+									log.info("Cannot find conflicting Box folder id for folder name "
 											+ title);
-
-							String exisingFolderId = getExistingBoxFolderIdFromBoxException(
-									e, title);
-							if (exisingFolderId != null) {
-								// push the current folder id into the stack
-								containerStack.push(contentUrl);
-								boxFolderIdStack.push(exisingFolderId);
-								log.debug("top of stack folder id = "
-										+ containerStack.peek() + " "
-										+ " container folder id=" + container);
-								log.debug("*******");
-							} else {
-								log.info("Cannot find conflicting Box folder id for folder name "
-										+ title);
+								}
+	
 							}
-
 						}
 					}
-				}
-
-				// the status of file upload to Box
-				MigrationFileItem folderItem = new MigrationFileItem(title,
-						title, itemStatus.toString());
-				rv.add(folderItem);
-
-			} else {
-				// files
-				String fileName = contentUrl.replace(rootFolderPath, "");
-				long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
-				
-				// check whether the file size exceeds Box's limit
-				if (size >= MAX_CONTENT_SIZE_FOR_BOX)
-				{
-					// stop upload this file
-					itemStatus.append(title +" is of size " + size + ", too big to be uploaded to Box" + LINE_BREAK);
-				}
-				else
-				{
-					// Call the uploadFile method to upload file to Box.
-					//
-					log.debug("file stack peek= " + containerStack.peek() + " "
-							+ " container=" + container);
-	
-					while (!containerStack.empty()
-							&& !container.equals(containerStack.peek())) {
-						// sync pops
-						containerStack.pop();
-						boxFolderIdStack.pop();
+				} else {
+					// files
+					String fileName = contentUrl.replace(rootFolderPath, "");
+					long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
+					
+					// check whether the file size exceeds Box's limit
+					if (size >= MAX_CONTENT_SIZE_FOR_BOX)
+					{
+						// stop upload this file
+						itemStatus.append(title +" is of size " + size + ", too big to be uploaded to Box" + LINE_BREAK);
 					}
-	
-					if (boxFolderIdStack.empty()) {
-						String parentError = "Cannot find parent folder for file "
-								+ contentUrl;
-						log.error(parentError);
-						break;
+					else
+					{
+						// Call the uploadFile method to upload file to Box.
+						//
+						log.debug("file stack peek= " + containerStack.peek() + " "
+								+ " container=" + container);
+		
+						while (!containerStack.empty()
+								&& !container.equals(containerStack.peek())) {
+							// sync pops
+							containerStack.pop();
+							boxFolderIdStack.pop();
+						}
+		
+						if (boxFolderIdStack.empty()) {
+							String parentError = "Cannot find parent folder for file "
+									+ contentUrl;
+							log.error(parentError);
+							continue;
+						}
+		
+						itemStatus.append(uploadFile(httpContext, boxFolderIdStack.peek(), fileName,
+								contentUrl, contentAccessUrl, description, author, copyrightAlert,
+								sessionId, api));
 					}
-	
-					itemStatus.append(uploadFile(httpContext, boxFolderIdStack.peek(), fileName,
-							contentUrl, contentAccessUrl, description, author, copyrightAlert,
-							sessionId, api));
 				}
-				
-				// the status of file upload to Box
-				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
-						fileName, itemStatus.toString());
-				rv.add(fileItem);
 			}
+			// the status of file upload to Box
+			MigrationFileItem item = new MigrationFileItem(contentUrl,
+					title, itemStatus.toString());
+			rv.add(item);
 		} // for
 
 		// refresh tokens
