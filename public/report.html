@@ -11,40 +11,45 @@
   <link rel="stylesheet" href="css/files.css">
 </head>
 
-
 <body ng-app="projectMigrationApp">
   <div ng-controller="reportController" class="container" style="padding:20px">
-  	<div class="row">
-  		<div class="col-md-6 col-lg-6 col-sm-6 col-xs-16">
-  			<h3>{{reportDetails.title}}. <small>Items exported: {{reportDetails.data.length}}</small></h3> 
-  		</div>
-			<div class="col-md-6 col-lg-6 col-sm-6 col-xs-16" style="text-align:right">
-  			<button ng-show="!showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Show paths</button>
-  			<button ng-show="showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Hide paths</button>
-  		</div>
-  	</div>	
-  	<br>
+    <div class="row">
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16">
+        <h3>{{reportDetails.title}}. <small>Items exported: {{reportDetails.data.length}}</small></h3>
+      </div>
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16" style="text-align:right">
+        <button ng-show="!showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Show paths</button>
+        <button ng-show="showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Hide paths</button>
+      </div>
+    </div>
+    <br>
     <div ng-class="reportDetails.status.status_code ==='Fail' ? 'alert alert-danger' : 'alert alert-info'">{{reportDetails.status}}</div>
-    
+    <ul class="list-group container">
+      <li class="list-group-item" ng-repeat="item in reportDetails.data">
+        <div class="row">
+          <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle">
+            <span class="file-icon {{item.file_name | getExtension}}" style="vertical-align: middle;"></span>
+            <span class="visible-xs-inline">
+            <span style="vertical-align: middle;" ng-show="showPaths">{{item.path  | limitTo : 15}}</span><span class="fileName" ng-hide="showPaths" style="vertical-align: middle;">{{item.file_name | limitTo : 15}}</span><span style="vertical-align: middle;" ng-show="item.file_name.length > 15"> <em class="muted">... </em>.{{item.file_name | getExtension}}</span>
+            </span>
+            <span class="visible-sm-inline visible-md-inline visible-lg-inline">
+            <span style="vertical-align: middle;" ng-show="showPaths">{{item.path   | limitTo : 55}}</span><span class="fileName" ng-hide="showPaths" style="vertical-align: middle;">{{item.file_name | limitTo : 55}}</span><span style="vertical-align: middle;" ng-show="item.file_name.length > 55"> <em class="muted">... </em>.{{item.file_name | getExtension}}</span>
+            </span>
+          </div>
+          <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+            <span ng-if="item.status.indexOf('success') !== -1 || item.status.indexOf('created') !== -1" class="glyphicon glyphicon-ok" aria-hidden="true" style="vertical-align: middle;"></span>
+            <span ng-if="item.status.indexOf('success') === -1 || item.status.indexOf('created') === -1" class="glyphicon glyphicon-info-sign
+" aria-hidden="true" style="vertical-align: middle;"></span>
 
-		<ul class="list-group container">
-		  <li class="row list-group-item" ng-repeat="item in reportDetails.data">
-		    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:0">
-          <span class="file-icon {{item.file_name | getExtension}}"  style="vertical-align: middle;"></span> 
-          <span class="visible-xs-inline">
-            <span style="vertical-align: middle;" ng-show="showPaths">{{item.path  | limitTo : 15}}</span><span class="fileName" ng-hide="showPaths"  style="vertical-align: middle;">{{item.file_name | limitTo : 15}}</span><span style="vertical-align: middle;" ng-show="item.file_name.length > 15"> <em class="muted">... </em>.{{item.file_name | getExtension}}</span>
-          </span>
-          <span class="visible-sm-inline visible-md-inline visible-lg-inline">
-            <span style="vertical-align: middle;" ng-show="showPaths">{{item.path   | limitTo : 55}}</span><span class="fileName" ng-hide="showPaths"  style="vertical-align: middle;">{{item.file_name | limitTo : 55}}</span><span style="vertical-align: middle;" ng-show="item.file_name.length > 55"> <em class="muted">... </em>.{{item.file_name | getExtension}}</span>
-          </span>
+          </div>
         </div>
-        <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
-          <span class="glyphicon glyphicon-ok" aria-hidden="true"   style="vertical-align: middle;"></span>
+        <div class="row">
+          <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:50px">
+          <small>{{item.status}}</small>
+          </div>
         </div>
-         
-		    
-		  </li>
-		</ul>
+      </li>
+    </ul>
   </div>
   <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
   <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
