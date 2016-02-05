@@ -13,9 +13,11 @@ projectMigrationApp.factory('Projects', function($http) {
 			return $http.get(url, {
 				cache : false
 			}).then(function success(result) {
-				// filter out everything except project sites
-				var sourceProjects = _.where(result.data.site_collection, {
-					type : 'project'
+				// filter everything course sites
+				
+				var sourceProjects = _.filter(result.data.site_collection, 
+						function(type){ 
+					return type != 'course' && type != 'specialized_courses'; 
 				});
 				result.data.site_collection = sourceProjects
 				// use a transform to make project data mirror data in
