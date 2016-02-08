@@ -6,6 +6,10 @@
 angular.module('projectMigrationFilters', []).filter('getExtension', function() {
    return function( filename) {
     var extension = '';
-    return _.last(filename.split('.'));
+    if(filename.indexOf('.') !== -1){
+      return _.last(filename.split('.'));
+    } else {
+      return '';
+    }
   };
 });
