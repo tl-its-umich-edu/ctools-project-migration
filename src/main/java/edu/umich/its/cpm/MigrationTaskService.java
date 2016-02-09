@@ -159,7 +159,7 @@ public class MigrationTaskService {
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
-				e.printStackTrace();
+				log.error("downloadZippedFile ", e);
 				downloadStatus.append(errorMessage + LINE_BREAK);
 			}
 		} else {
@@ -448,7 +448,8 @@ public class MigrationTaskService {
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
-				e.printStackTrace();
+
+				log.error("uploadToBox ", e);
 				boxMigrationStatus.append(errorMessage + LINE_BREAK);
 			}
 
@@ -554,24 +555,14 @@ public class MigrationTaskService {
 			log.info("type=" + type + " error=" + itemStatus.toString());
 
 			if (itemStatus.length() == 0) {
-				log.info("contentUrl=" + contentUrl);
-				log.info("type=" + type);
-				log.info("rootFolderPath=" + rootFolderPath);
 				// now alerts, do Box uploads next
 				if (rootFolderPath == null && COLLECTION_TYPE.equals(type)) {
-
-					log.info("pushed for stack");
 					// root folder
 					rootFolderPath = contentUrl;
 
 					// insert into stack
 					containerStack.push(contentUrl);
 					boxFolderIdStack.push(boxFolderId);
-
-					log.info("containerStack now length="
-							+ containerStack.size());
-					log.info("boxFolderStack now length="
-							+ boxFolderIdStack.size());
 				}
 				else
 				{

@@ -70,8 +70,10 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.util.UriComponentsBuilder;
+
 import org.json.JSONObject;
 import org.json.JSONArray;
+import org.json.JSONException;
 
 import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIException;
@@ -131,17 +133,106 @@ public class MigrationController {
 	@RequestMapping("/projects")
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
-		HashMap<String, String> projectsMap = get_user_project_sites(request);
+		HashMap<String, String> projectsMap = get_user_sites(request);
+		
+		// this is a json value contains non-MyWorkspace sites
+		String sitesJson = projectsMap.get("projectsString");
+		// get the json value for user MyWorkspace site
+		String myworkspaceJson = get_user_myworkspace_site_json(request);
+		if (myworkspaceJson != null)
+		{
+			// insert the MyWorkspace json into the other-sites json
+			try
+			{
+				JSONObject sitesJSONObject = new JSONObject(sitesJson);
+				sitesJSONObject.append("site_collection", new JSONObject(myworkspaceJson));
+				// get the updated sites json string with MyWorkspace info inserted
+				sitesJson = sitesJSONObject.toString();
+			}
+			catch (JSONException e)
+			{
+				log.error(this + " error parsing sites JSON value " + sitesJson );
+			}
+			
+			
+		}
+		
 		// JSON response
-		JSON_response(response, projectsMap.get("projectsString"), projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
+		JSON_response(response, sitesJson, projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
 	}
+	
+	/**
+	 * REST API call to get user MyWorkspace site
+	 * @param req
+	 * @return
+	 */
+	private String get_user_myworkspace_site_json(HttpServletRequest request)
+	{
+		String siteJson = null;
+		
+		String requestUrl = "";
+		
+		// login to CTools and get sessionId
+		String userEid = request.getRemoteUser();
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, userEid);
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+			
+			RestTemplate restTemplate = new RestTemplate();
+			// the url should be in the format of
+			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
+			// Response Code Details: 200 plus data; 404 if not found, 406 if format unavailable
+			// user MyWorkspace site ID could be two forms 
+			// 1. try "~<user_id>" first
+			requestUrl = env.getProperty("ctools.server.url") + "direct/site/~" + userEid + ".json?_sessionId=" + sessionId;
+			log.info(this + " get_user_myworkspace_site_json " + requestUrl);
+			try 
+			{
+				ResponseEntity<String> siteEntity = restTemplate.getForEntity(requestUrl, String.class);
+				if (siteEntity.getStatusCode().is2xxSuccessful())
+				{
+					// find user MyWorkspace site
+					siteJson = siteEntity.getBody();
+				}
+				else
+				{
+					// 2. site not found, try "~<eid>" next
+					// get the user id first
+					// "https://server/direct/user/<eid>.json?_sessionId=<sessionId>"
+					// Response Code Details: 200 plus data; 404 if not found, 406 if format unavailable
+					requestUrl = env.getProperty("ctools.server.url") + "direct/user/" + userEid + ".json?_sessionId=" + sessionId;
+					log.info(this + " get_user_myworkspace_site_json " + requestUrl);
+					ResponseEntity<String> userEntity = restTemplate.getForEntity(requestUrl, String.class);
+					if (userEntity.getStatusCode().is2xxSuccessful())
+					{
+						String userId = userEntity.getBody();
+						// use this userId to form user myworkspace id
+						requestUrl = env.getProperty("ctools.server.url") + "direct/site/~" + userId + ".json?_sessionId=" + sessionId;
+						log.info(this + " get_user_myworkspace_site_json " + requestUrl);
+						siteEntity = restTemplate.getForEntity(requestUrl, String.class);
+						if (siteEntity.getStatusCode().is2xxSuccessful())
+						{
+							// now we find the user MyWorkspace site
+							siteJson = siteEntity.getBody();
+						}
+					}
+				}
+			} catch (RestClientException e) {
+				log.error(this + requestUrl + e.getMessage());
+			}
+
+		}
+		
+		return siteJson;	
+	}
+	
 
 	/**
 	 * REST API call to get all sites for user
 	 * @param req
 	 * @return
 	 */
-	private HashMap<String, String> get_user_project_sites(HttpServletRequest request)
+	private HashMap<String, String> get_user_sites(HttpServletRequest request)
 	{
 		HashMap<String, String> rv = new HashMap<String, String>();
 		
@@ -161,6 +252,7 @@ public class MigrationController {
 			requestUrl = env.getProperty("ctools.server.url")
 					+ "direct/site/withPerm/.json?permission=site.upd&_sessionId="
 					+ sessionId;
+			log.info(this + " get_user_sites " + requestUrl);
 			try {
 				projectsString = restTemplate.getForObject(requestUrl, String.class);
 			} catch (RestClientException e) {
@@ -381,7 +473,7 @@ public class MigrationController {
 		log.info("request migration for site " + siteId  + " and tool " + toolId);
 		
 		// 2. check to see whether the site_id and tool_id is valid and associated with current user
-		HashMap<String, String> projectsMap = get_user_project_sites(request);
+		HashMap<String, String> projectsMap = get_user_sites(request);
 		String projectsString = projectsMap.get("projectsString");
 		if (projectsString.indexOf(siteId) == -1)
 		{
@@ -458,7 +550,7 @@ public class MigrationController {
 			{
 				log.error(e.getMessage() + " migration error for user " + currentUserId + " and site=" + siteId  + " target=" + target);
 			}
-			rv.put("migrationId", "migrationId");
+			rv.put("migrationId", migrationId);
 			return rv;
 		}
 	}
