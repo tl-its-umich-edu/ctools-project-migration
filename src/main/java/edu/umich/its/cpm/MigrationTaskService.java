@@ -554,24 +554,14 @@ public class MigrationTaskService {
 			log.info("type=" + type + " error=" + itemStatus.toString());
 
 			if (itemStatus.length() == 0) {
-				log.info("contentUrl=" + contentUrl);
-				log.info("type=" + type);
-				log.info("rootFolderPath=" + rootFolderPath);
 				// now alerts, do Box uploads next
 				if (rootFolderPath == null && COLLECTION_TYPE.equals(type)) {
-
-					log.info("pushed for stack");
 					// root folder
 					rootFolderPath = contentUrl;
 
 					// insert into stack
 					containerStack.push(contentUrl);
 					boxFolderIdStack.push(boxFolderId);
-
-					log.info("containerStack now length="
-							+ containerStack.size());
-					log.info("boxFolderStack now length="
-							+ boxFolderIdStack.size());
 				}
 
 				// do uploads
@@ -580,8 +570,6 @@ public class MigrationTaskService {
 						container, boxFolderId, api, itemStatus, description,
 						contentItem, httpContext, contentAccessUrl, author,
 						copyrightAlert, sessionId);
-				log.info("containerStack length=" + containerStack.size());
-				log.info("boxFolderStack length=" + boxFolderIdStack.size());
 
 			}
 
