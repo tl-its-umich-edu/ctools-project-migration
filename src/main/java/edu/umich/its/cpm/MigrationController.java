@@ -704,12 +704,12 @@ public class MigrationController {
 		HttpHeaders headers = new HttpHeaders();
  		if (callStatus.containsKey("errorMessage"))
  		{
- 			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
+ 			log.info(this + " MigrationBox call error message=" + callStatus.get("errorMessage"));
  			return new ResponseEntity<String>(callStatus.get("errorMessage"),headers, HttpStatus.CONFLICT);
  		}
  		else
  		{
- 			log.info(this + " MigrationZip call migration started id=" + callStatus.get("migrationId"));
+ 			log.info(this + " MigrationBox call migration started id=" + callStatus.get("migrationId"));
  		    if (callStatus.containsKey("migrationId"))
  		    {
 	 			//http://serverUrl/migration/id
