@@ -153,6 +153,14 @@ public class MigrationTaskService {
 				log.error(errorMessage);
 				downloadStatus.append(errorMessage);
 
+			} catch (Exception e) {
+				String errorMessage = "Migration status for " + site_id + " "
+						+ e.getClass().getName();
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
+						.build();
+				log.error("downloadZippedFile ", e);
+				downloadStatus.append(errorMessage + LINE_BREAK);
 			}
 		} else {
 			String userError = "Cannot become user " + userId;
@@ -198,7 +206,7 @@ public class MigrationTaskService {
 
 			// item status information
 			StringBuffer itemStatus = new StringBuffer();
-			
+
 			JSONObject contentItem = array.getJSONObject(i);
 
 			String contentAccessUrl = contentItem
@@ -221,7 +229,7 @@ public class MigrationTaskService {
 					CONTENT_JSON_ATTR_TITLE);
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
-			
+
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
 					title, copyrightAlert);
@@ -434,6 +442,15 @@ public class MigrationTaskService {
 						.type(MediaType.TEXT_PLAIN).build();
 				log.error(errorMessage);
 				boxMigrationStatus.append(errorMessage + LINE_BREAK);
+			} catch (Exception e) {
+				String errorMessage = "Migration status for " + siteId + " "
+						+ e.getClass().getName();
+				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
+						.build();
+
+				log.error("uploadToBox ", e);
+				boxMigrationStatus.append(errorMessage + LINE_BREAK);
 			}
 
 			String uploadFinished = "Finished upload site content for site "
@@ -540,12 +557,12 @@ public class MigrationTaskService {
 			if (itemStatus.length() == 0) {
 				// now alerts, do Box uploads next
 				if (rootFolderPath == null && COLLECTION_TYPE.equals(type)) {
-						// root folder
-						rootFolderPath = contentUrl;
+					// root folder
+					rootFolderPath = contentUrl;
 
-						// insert into stack
-						containerStack.push(contentUrl);
-						boxFolderIdStack.push(boxFolderId);
+					// insert into stack
+					containerStack.push(contentUrl);
+					boxFolderIdStack.push(boxFolderId);
 				}
 				else
 				{
@@ -556,6 +573,7 @@ public class MigrationTaskService {
 							contentItem, httpContext, contentAccessUrl, author,
 							copyrightAlert, sessionId);
 				}
+
 			}
 
 			// the status of file upload to Box
@@ -604,6 +622,7 @@ public class MigrationTaskService {
 
 	/**
 	 * process Box upload request
+	 * 
 	 * @param type
 	 * @param rootFolderPath
 	 * @param contentUrl
@@ -635,7 +654,7 @@ public class MigrationTaskService {
 
 		if (COLLECTION_TYPE.equals(type)) {
 			// folders
-			
+
 			log.info("Begin to create folder " + title);
 
 			// pop the stack till the container equals to stack top
@@ -647,8 +666,7 @@ public class MigrationTaskService {
 			}
 
 			// create box folder
-			BoxFolder parentFolder = new BoxFolder(api,
-					boxFolderIdStack.peek());
+			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
 						.createFolder(title);
@@ -657,9 +675,8 @@ public class MigrationTaskService {
 				// push the current folder id into the stack
 				containerStack.push(contentUrl);
 				boxFolderIdStack.push(childFolderInfo.getID());
-				log.debug("top of stack folder id = "
-						+ containerStack.peek() + " "
-						+ " container folder id=" + container);
+				log.debug("top of stack folder id = " + containerStack.peek()
+						+ " " + " container folder id=" + container);
 
 				// get the BoxFolder object, get BoxFolder.Info object,
 				// set description, and commit change
@@ -670,9 +687,8 @@ public class MigrationTaskService {
 			} catch (BoxAPIException e) {
 				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
-					itemStatus
-							.append("There is already a folder with name "
-									+ title);
+					itemStatus.append("There is already a folder with name "
+							+ title);
 
 					String exisingFolderId = getExistingBoxFolderIdFromBoxException(
 							e, title);
