@@ -563,13 +563,15 @@ public class MigrationTaskService {
 					containerStack.push(contentUrl);
 					boxFolderIdStack.push(boxFolderId);
 				}
-
-				// do uploads
-				itemStatus = processBoxUploadSiteContent(type, rootFolderPath,
-						contentUrl, containerStack, boxFolderIdStack, title,
-						container, boxFolderId, api, itemStatus, description,
-						contentItem, httpContext, contentAccessUrl, author,
-						copyrightAlert, sessionId);
+				else
+				{
+					// do uploads
+					itemStatus = processBoxUploadSiteContent(type, rootFolderPath,
+							contentUrl, containerStack, boxFolderIdStack, title,
+							container, boxFolderId, api, itemStatus, description,
+							contentItem, httpContext, contentAccessUrl, author,
+							copyrightAlert, sessionId);
+				}
 
 			}
 
