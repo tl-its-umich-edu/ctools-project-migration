@@ -159,7 +159,7 @@ public class MigrationTaskService {
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
-				e.printStackTrace();
+				log.error("downloadZippedFile ", e);
 				downloadStatus.append(errorMessage + LINE_BREAK);
 			}
 		} else {
@@ -448,7 +448,8 @@ public class MigrationTaskService {
 				Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 						.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 						.build();
-				e.printStackTrace();
+
+				log.error("uploadToBox ", e);
 				boxMigrationStatus.append(errorMessage + LINE_BREAK);
 			}
 
