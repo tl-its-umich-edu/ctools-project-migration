@@ -5,6 +5,7 @@ var projectMigrationApp = angular.module('projectMigrationApp', ['projectMigrati
 
 projectMigrationApp.run(function($rootScope) {
   //for any init values needed
+  $rootScope.lockPanels = false;
   $rootScope.server = '';
   $rootScope.user = {};
   $rootScope.pollInterval = 15000;
