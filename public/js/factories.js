@@ -17,14 +17,13 @@ projectMigrationApp.factory('Projects', function($http) {
 
 				var sourceProjects = _.filter(result.data.site_collection, 
 					function(site){ 
-					return (site.type === 'project' || site.type==='myworkspace');
+					return site.type !== 'course';
 				});
-				
-				result.data.site_collection = _.chain(sourceProjects).sortBy('title').sortBy('type').value();
 				// use a transform to make project data mirror data in
 				// migrations and migrated
-
-				return transformProjects(result);
+				var siteList = transformProjects(sourceProjects);
+				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+				return _.chain(siteList).sortBy('title').sortBy('type_code').value();
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get projects');
 				result.errors.failure = true;

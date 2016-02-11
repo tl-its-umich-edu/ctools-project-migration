@@ -25,7 +25,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   var projectsUrl = $rootScope.urls.projectsUrl;
 
   Projects.getProjects(projectsUrl).then(function(result) {
-    $scope.sourceProjects = result.data;
+    $scope.sourceProjects = result;
     $scope.loadingProjects = false;
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');
@@ -81,7 +81,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
         site_id: projectId
       }));
-      $log.warn(targetProjPos);
       //add the tools after the project object
       $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
       // get a handle on the first tool
