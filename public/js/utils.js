@@ -10,10 +10,9 @@ var closeBoxAuthModal = function(){
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
 */ 
-var transformProjects = function (data){
+var transformProjects = function (siteList){
   var projectsColl = [];
-
-  $.each(data.data.site_collection, function(i, item){
+  $.each(siteList, function(i, item){
     var projObj = {};
     projObj.migration_id= '',
     projObj.site_id= item.entityId,
@@ -26,11 +25,24 @@ var transformProjects = function (data){
     projObj.destination_type= '',
     projObj.destination_url= '',
     projObj.tool_site_id= item.entityId;
+    projObj.type= item.type;
+    projObj.type_code = getTypeCode(item.type);
     projectsColl.push(projObj);
   });
-  data.data = projectsColl;
-  return data;
+    return projectsColl;
 }
+
+var getTypeCode = function(type){
+  if (type==='myworkspace'){
+    return 1;
+  }
+  else if (type==='GradToolsRackham' || 'GradToolsDepartment'){
+    return 2;
+  } else {
+    return 3;
+  }  
+}
+
 /*
 user has requested the tools of a given project. Returned json is a Sakai like /direct feed
 utility below turns it into an array of objects with the same structure
@@ -39,8 +51,8 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
 */var transformProject = function (data){
   var toolColl = [];
     var siteId = data.data[0].tools[0].siteId;
-    var siteName = $('#' + siteId).text();
-
+    var siteName = $('#' + siteId.replace('~','')).text();
+    //console.log(siteName)
 
   $.each(data.data, function(i, item){
     /*need to make this tool filtering more visible & maintainable

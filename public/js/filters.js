@@ -12,4 +12,8 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       return '';
     }
   };
+}).filter('fixMyWspId', function() {
+  return function( id) {
+    return id.replace('~','');
+  }
 });

@@ -25,7 +25,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   var projectsUrl = $rootScope.urls.projectsUrl;
 
   Projects.getProjects(projectsUrl).then(function(result) {
-    $scope.sourceProjects = result.data;
+    $scope.sourceProjects = result;
     $scope.loadingProjects = false;
     $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
     $log.info(' - - - - GET /projects');

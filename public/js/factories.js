@@ -14,15 +14,16 @@ projectMigrationApp.factory('Projects', function($http) {
 				cache : false
 			}).then(function success(result) {
 				// filter everything course sites
-				
+
 				var sourceProjects = _.filter(result.data.site_collection, 
-						function(type){ 
-					return type != 'course' && type != 'specialized_courses'; 
+					function(site){ 
+					return (site.type !== 'course' && site.type !== 'specialized_courses' && site.type !== 'GradToolsStudent');
 				});
-				result.data.site_collection = sourceProjects
 				// use a transform to make project data mirror data in
 				// migrations and migrated
-				return transformProjects(result);
+				var siteList = transformProjects(sourceProjects);
+				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+				return _.chain(siteList).sortBy('title').sortBy('type_code').value();
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get projects');
 				result.errors.failure = true;
