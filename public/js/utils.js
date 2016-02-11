@@ -30,14 +30,13 @@ var transformProjects = function (siteList){
     projectsColl.push(projObj);
   });
     return projectsColl;
-  //return data;
 }
 
 var getTypeCode = function(type){
   if (type==='myworkspace'){
     return 1;
   }
-  else if (type==='GradToolsStudent'){
+  else if (type==='GradToolsRackham' || 'GradToolsDepartment'){
     return 2;
   } else {
     return 3;
