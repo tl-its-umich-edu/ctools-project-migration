@@ -81,6 +81,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
         site_id: projectId
       }));
+      $log.warn(targetProjPos);
       //add the tools after the project object
       $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1, 0].concat(result.data));
       // get a handle on the first tool

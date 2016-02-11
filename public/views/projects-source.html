@@ -4,13 +4,13 @@
 </div>
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li ng-repeat="project in sourceProjects | orderBy:'site_name'" 
+  	<li ng-repeat="project in sourceProjects" class="{{project.type}}"
 		ng-class="project.tool_id !== '' ? 'list-group-item toolRow noFocus' : 'list-group-item projectRow noFocus'" ng-hide="project.hideTools && project.tool"  id="toolSel{{project.tool_id}}" tabindex="-1">
   		<!--// using same contorsions to match the data model of migrations and migrated -->
   		<div class="noFocus" ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''" id="project{{project.site_id}}" tabindex="-1">
   			<div class="row">
 	  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-	  				<h4 class="site-header" id="{{project.site_id}}">{{project.site_name}}  <br><small class="bigSmall" ng-show="project.last_migrated">last migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small></h4>
+	  				<h4 class="site-header" id="{{project.site_id | fixMyWspId}}">{{project.site_name}}  <br><small class="bigSmall" ng-show="project.last_migrated">last migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small></h4>
 	  			</div>
 	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
