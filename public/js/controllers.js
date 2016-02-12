@@ -280,6 +280,13 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
   handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
   */
   $scope.startMigration = function(projectId, siteName, destinationType) {
+    if($rootScope.lockPanels){
+      $('#blockerModal').modal({
+        backdrop: 'static',
+        keyboard: false
+      })
+    }
+
     var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {
       site_id: projectId
     }));
@@ -350,6 +357,13 @@ var poll = function (pollName, url, interval, targetPanel){
         if($scope.migratingProjects.length > 0){
           $rootScope.activeMigrations = true;
         }
+        else {
+          if($rootScope.lockPanels){
+            $log.warn('hiding the modal')
+            $('#blockerModal').modal('hide')
+          }
+        }
+        $log.warn($scope.migratingProjects.length);
         //update time stamp displayed in /migrations panel
         $rootScope.status.migrations = moment().format('h:mm:ss');
         $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'site_id');
@@ -422,6 +436,11 @@ var updateProjectsPanel = function(result, source){
     }
     else {
       // there are no /migrating items, so loop through all the source projects and reset their state
+      if($rootScope.lockPanels){
+        $log.warn('hiding the modal');
+        $('#blockerModal').modal('hide');
+      }
+
       $log.warn('unlocking all')
       _.each($scope.sourceProjects, function(sourceProject) {
         if(sourceProject) {
