@@ -37,7 +37,6 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.inject.Inject;
 
-import java.util.Base64;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -133,6 +132,21 @@ public class MigrationController {
 	@RequestMapping("/projects")
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
+		
+		// get non-course sites that user have site.upd permission
+		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
+		
+		// JSON response
+		JSON_response(response, projectsMap.get("projectsString"), projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
+	}
+
+	/**
+	 * return HashMap object with non-course sites that user have site.upd permission
+	 * @param request
+	 * @return
+	 */
+	private HashMap<String, String> getUserAllSitesMap(
+			HttpServletRequest request) {
 		HashMap<String, String> projectsMap = get_user_sites(request);
 		
 		// this is a json value contains non-MyWorkspace sites
@@ -147,18 +161,14 @@ public class MigrationController {
 				JSONObject sitesJSONObject = new JSONObject(sitesJson);
 				sitesJSONObject.append("site_collection", new JSONObject(myworkspaceJson));
 				// get the updated sites json string with MyWorkspace info inserted
-				sitesJson = sitesJSONObject.toString();
+				projectsMap.put("projectsString", sitesJSONObject.toString());
 			}
 			catch (JSONException e)
 			{
 				log.error(this + " error parsing sites JSON value " + sitesJson );
 			}
-			
-			
 		}
-		
-		// JSON response
-		JSON_response(response, sitesJson, projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
+		return projectsMap;
 	}
 	
 	/**
@@ -473,7 +483,7 @@ public class MigrationController {
 		log.info("request migration for site " + siteId  + " and tool " + toolId);
 		
 		// 2. check to see whether the site_id and tool_id is valid and associated with current user
-		HashMap<String, String> projectsMap = get_user_sites(request);
+		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
 		String projectsString = projectsMap.get("projectsString");
 		if (projectsString.indexOf(siteId) == -1)
 		{
