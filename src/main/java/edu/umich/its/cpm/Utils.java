@@ -196,7 +196,7 @@ public class Utils {
 	
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=groups";
-	private static final String USE_TESTUSER_URL = "use.testUser.url";
+	private static final String ALLOW_TESTUSER_URLOVERRIDE = "allow.testUser.urlOverride";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
@@ -214,8 +214,9 @@ public class Utils {
 
 		String rvUser = remoteUser;
 		
-		String useTestUserUrl = env.getProperty(USE_TESTUSER_URL);
-		if (hasValue(useTestUserUrl) && Boolean.valueOf(useTestUserUrl))
+		// get the environment setting, default to "false"
+		String allowTestUserUrlOverride = env.getProperty(ALLOW_TESTUSER_URLOVERRIDE, "false");
+		if (hasValue(allowTestUserUrlOverride) && Boolean.valueOf(allowTestUserUrlOverride))
 		{
 			// non-prod environment
 			// check for the "testUser" param in url
