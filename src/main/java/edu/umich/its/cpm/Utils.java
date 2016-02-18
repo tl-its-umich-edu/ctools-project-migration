@@ -1,6 +1,7 @@
 package edu.umich.its.cpm;
 
 import java.util.HashMap;
+import java.util.Hashtable;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -26,6 +27,15 @@ import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import javax.naming.Context;
+import javax.naming.NamingEnumeration;
+import javax.naming.NamingException;
+import javax.naming.directory.Attribute;
+import javax.naming.directory.DirContext;
+import javax.naming.directory.InitialDirContext;
+import javax.naming.directory.SearchControls;
+import javax.naming.directory.SearchResult;
 
 @Configuration
 public class Utils {
@@ -183,4 +193,149 @@ public class Utils {
 		}
 		return remoteUserEmail;
 	}
+	
+	/************* LDAP lookup ****************/
+	private static final String OU_GROUPS = "ou=groups";
+	private static final String USE_TESTUSER_URL = "use.testUser.url";
+	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
+	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
+	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
+	private static final String TEST_USER = "testUser";
+	
+	/*
+	 * User is authenticated using CoSign and authorized using Ldap. 
+	 * For local development, we have use.testUser.url = true to enable "testUser" parameter. 
+	 * and only CoSigned user from certain LDAP group can use the "testUser" param in URL. 
+	 * For production server, set use.testUser.url=false
+	 */
+	public static String getCurrentUserId(HttpServletRequest request, Environment env) {
+		// get CoSign user first
+		String remoteUser = request.getRemoteUser();
+
+		String rvUser = remoteUser;
+		
+		String useTestUserUrl = env.getProperty(USE_TESTUSER_URL);
+		if (hasValue(useTestUserUrl) && Boolean.valueOf(useTestUserUrl))
+		{
+			// non-prod environment
+			// check for the "testUser" param in url
+			String testUser = request.getParameter(TEST_USER);
+			
+			String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
+			String propMCommGroup = env.getProperty(PROPERTY_AUTH_GROUP);
+			if (hasValue(testUser))
+			{ 
+				if (hasValue(propLdapServerUrl) && hasValue(propMCommGroup))
+				{
+					// check whether the current user is authorized to set "testUser" param in URL
+					if (ldapAuthorizationVerification(propLdapServerUrl, propMCommGroup, remoteUser))
+					{
+						rvUser = testUser;
+					}
+				}
+			}
+
+			log.info("CoSign user=" + remoteUser + " test user=" + testUser + " returned user=" + rvUser);
+		}
+		return rvUser;
+
+	}
+	
+	/*
+	 * The Mcommunity group we have is a members-only group is one that only the members of the group can send mail to. 
+	 * The group owner can turn this on or off.
+	 * More info on Ldap configuration  http://www.itcs.umich.edu/itcsdocs/r1463/attributes-for-ldap.html#group.
+	 */
+	private static boolean ldapAuthorizationVerification(String ldapUrl, String mcommunityGroup, String user)  {
+		log.info("ldapAuthorizationVerification(): called");
+		boolean isAuthorized = false;
+		
+		DirContext dirContext=null;
+		NamingEnumeration listOfPeopleInAuthGroup=null;
+		NamingEnumeration allSearchResultAttributes=null;
+		NamingEnumeration simpleListOfPeople=null;
+		Hashtable<String,String> env = new Hashtable<String, String>();
+		if(hasValue(ldapUrl) && hasValue(mcommunityGroup)) {
+			env.put(Context.INITIAL_CONTEXT_FACTORY, LDAP_CTX_FACTORY);
+			env.put(Context.PROVIDER_URL, ldapUrl);
+			log.info(ldapUrl + " " + mcommunityGroup + " " + user);
+		}else {
+			log.error(" [ldap.server.url] or [mcomm.group] properties are not set");
+			return isAuthorized;
+		}
+		try {
+			dirContext = new InitialDirContext(env);
+			String[] attrIDs = {"member"};
+			SearchControls searchControls = new SearchControls();
+			searchControls.setReturningAttributes(attrIDs);
+			searchControls.setReturningObjFlag(true);
+			searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+			String searchBase = OU_GROUPS;
+			String filter = "(&(cn=" + mcommunityGroup + "))";
+			listOfPeopleInAuthGroup = dirContext.search(searchBase, filter, searchControls);
+			String positiveMatch = "uid=" + user + ",";
+			outerloop:
+				while (listOfPeopleInAuthGroup.hasMore()) {
+					SearchResult searchResults = (SearchResult)listOfPeopleInAuthGroup.next();
+					allSearchResultAttributes = (searchResults.getAttributes()).getAll();
+					while (allSearchResultAttributes.hasMoreElements()){
+						Attribute attr = (Attribute) allSearchResultAttributes.nextElement();
+						simpleListOfPeople = attr.getAll();
+						while (simpleListOfPeople.hasMoreElements()){
+							String val = (String) simpleListOfPeople.nextElement();
+							if(val.indexOf(positiveMatch) != -1){
+								isAuthorized = true;
+								break outerloop;
+							}
+						}
+					}
+				}
+			return isAuthorized;
+		} catch (NamingException e) {
+			log.error("Problem getting attribute:" + e);
+			return isAuthorized;
+		}
+		finally {
+			try {
+				if(simpleListOfPeople!=null) {
+					simpleListOfPeople.close();
+				}
+			} catch (NamingException e) {
+				log.error("Problem occurred while closing the NamingEnumeration list \"simpleListOfPeople\" list ",e);
+			}
+			try {
+				if(allSearchResultAttributes!=null) {
+					allSearchResultAttributes.close();
+				}
+			} catch (NamingException e) {
+				log.error("Problem occurred while closing the NamingEnumeration \"allSearchResultAttributes\" list ",e);
+			}
+			try {
+				if(listOfPeopleInAuthGroup!=null) {
+					listOfPeopleInAuthGroup.close();
+				}
+			} catch (NamingException e) {
+				log.error("Problem occurred while closing the NamingEnumeration \"listOfPeopleInAuthGroup\" list ",e);
+			}
+			try {
+				if(dirContext!=null) {
+					dirContext.close();
+				}
+			} catch (NamingException e) {
+				log.error("Problem occurred while closing the  \"dirContext\"  object",e);
+			}
+		}
+
+	}
+	
+	/**
+	 * return true if the string value is not null or empty
+	 * @param value
+	 * @return
+	 */
+	private static boolean hasValue(String value) {
+		boolean rv= value != null && !value.trim().isEmpty();
+		return rv;
+	}
+	
 }

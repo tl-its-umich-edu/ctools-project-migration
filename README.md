@@ -47,5 +47,6 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 ## Testing with JMeter
 * JMeter scripts are included, which can be run from either JMeter UI or from maven
 * "mvn clean verify" will run the JMeter script for default profile, according to settings in pom.xml
+* Allow people from certain MCommunity Group specify end user id in the tool URL. Please refer to application_template.properties file for the configuration settings.
 
 
