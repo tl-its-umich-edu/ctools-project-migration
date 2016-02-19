@@ -183,7 +183,7 @@ public class MigrationController {
 		String requestUrl = "";
 		
 		// login to CTools and get sessionId
-		String userEid = request.getRemoteUser();
+		String userEid = Utils.getCurrentUserId(request, env);
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, userEid);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
@@ -251,7 +251,7 @@ public class MigrationController {
 		String requestUrl = "";
 		
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, Utils.getCurrentUserId(request, env));
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -306,7 +306,7 @@ public class MigrationController {
 		String requestUrl = "";
 		
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, request.getRemoteUser());
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, Utils.getCurrentUserId(request, env));
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 			
@@ -344,7 +344,7 @@ public class MigrationController {
 	@RequestMapping("/migrations")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrations(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrations(userId)).build();
@@ -375,7 +375,7 @@ public class MigrationController {
 			throw new MigrationNotFoundException(
 					"no matching record for /migrations/" + migration_id);
 		} else {
-			String userId = request.getRemoteUser();
+			String userId = Utils.getCurrentUserId(request, env);
 			String migratedBy = ((Migration) o).getMigrated_by();
 			if (!migratedBy.equals(userId)) {
 				// different user started the migration
@@ -401,7 +401,7 @@ public class MigrationController {
 	@RequestMapping("/migrated")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrated(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		try {
 			List<Migration> l = repository.findMigrated(userId);
 			return Response.status(Response.Status.OK)
@@ -424,7 +424,7 @@ public class MigrationController {
 	@RequestMapping("/migrating")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response migrating(HttpServletRequest request) {
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(repository.findMigrating(userId)).build();
@@ -450,7 +450,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// zip download
-		HashMap<String, String> callStatus = migration_call(request, response, "zip", request.getRemoteUser());	
+		HashMap<String, String> callStatus = migration_call(request, response, "zip", Utils.getCurrentUserId(request, env));	
 		if (callStatus.containsKey("errorMessage"))
 		{
 			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
@@ -503,7 +503,7 @@ public class MigrationController {
 		
 		// 3. check if there is an ongoing migration for the same site and tool
 		boolean valid_migration_request = true;
-		String currentUserId = request.getRemoteUser();
+		String currentUserId = Utils.getCurrentUserId(request, env);
 		List<Migration> migratingSiteTools = repository.findMigrating(currentUserId);
 		for (Migration m : migratingSiteTools)
 		{
@@ -597,7 +597,7 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
@@ -634,7 +634,7 @@ public class MigrationController {
 	public String boxAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		String remoteUserEmail = Utils.getUserEmail(userId);
 
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
@@ -668,7 +668,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 
 		// the return string
 		String rv = "";
@@ -703,7 +703,7 @@ public class MigrationController {
 		log.info("token url=" + boxTokenUrl);
 
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		String rv = BoxUtils.getBoxAccessToken(userId);
 
 		if (rv == null) {
@@ -724,7 +724,7 @@ public class MigrationController {
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
 
 		// get the current user id
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 
@@ -750,7 +750,7 @@ public class MigrationController {
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = parameterMap.get("destination_type")[0];
-		String userId = request.getRemoteUser();
+		String userId = Utils.getCurrentUserId(request, env);
 
 		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
@@ -802,7 +802,7 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
- 		HashMap<String, String> callStatus = migration_call(request, response, "box", request.getRemoteUser());	
+ 		HashMap<String, String> callStatus = migration_call(request, response, "box", Utils.getCurrentUserId(request, env));	
 		HttpHeaders headers = new HttpHeaders();
  		if (callStatus.containsKey("errorMessage"))
  		{
