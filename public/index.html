@@ -11,6 +11,9 @@
 </head>
 
 <body ng-app="projectMigrationApp">
+
+<a class="btn" data-toggle="modal" href="#blockerModal" >Launch Modal</a>
+
     <nav role="navigation" class="navbar navbar-default" style="background:#00274c">
       <div class="container-fluid">
         <!-- Brand and toggle get grouped for better mobile display -->
@@ -119,17 +122,18 @@
   </div>
 
 
-    
-  
+
     <div id="blockerModal" class="modal fade" data-backdrop="static" data-keyboard="false" role="dialog" aria-labelledby="blockerModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
           <div class="modal-header">
-            <h4 class="modal-title" id="blockerModalLabel">Working so hard...</h4>
+            <h4 class="modal-title" id="blockerModalLabel">Transfering your files, this may take a while!</h4>
           </div>
           <div class="modal-body">
-            <div class="container">
-              <div class="progress"  style="width: 540px">
+            <div class="container" style="width:100%;overflow:hidden">
+              <small>You may close your browser - but please do not start another migration till this one completes.</small>
+              <div id="folderAnim" style="font-size: 24px"><span class="glyphicon glyphicon-file"></span></div>
+              <div class="progress" style="width: 100%">
                 <div class="progress-bar progress-bar-info progress-bar-striped active" style="width: 100%">
                 </div>
               </div>

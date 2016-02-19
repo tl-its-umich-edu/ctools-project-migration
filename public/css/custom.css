@@ -95,6 +95,26 @@ h3.panel-title small {
 	font-size: 13px;
 	padding-left:20px;
 } 
+
+#folderAnim {
+	margin:5px 10px;
+	animation-duration: 10s;
+  animation-name: slidein;
+  animation-iteration-count: infinite;
+}
+
+@keyframes slidein {
+  from {
+    margin-left: 0%;
+    width: 200px; 
+  }
+
+  to {
+    margin-left: 97%;
+    width: 200px;
+  }
+}
+
 @media (max-width: 480px) {
 	.panel-heading {
 		background-color: #777 !important;
