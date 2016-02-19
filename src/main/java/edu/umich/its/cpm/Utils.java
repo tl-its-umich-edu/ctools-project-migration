@@ -215,7 +215,7 @@ public class Utils {
 		String rvUser = remoteUser;
 		
 		// get the environment setting, default to "false"
-		String allowTestUserUrlOverride = env.getProperty(ALLOW_TESTUSER_URLOVERRIDE, "false");
+		String allowTestUserUrlOverride = env.getProperty(ALLOW_TESTUSER_URLOVERRIDE, Boolean.FALSE.toString());
 		if (hasValue(allowTestUserUrlOverride) && Boolean.valueOf(allowTestUserUrlOverride))
 		{
 			// non-prod environment
