@@ -35,6 +35,7 @@ import org.json.JSONArray;
 import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIRequest;
 import com.box.sdk.BoxAPIResponse;
+import com.box.sdk.BoxAPIException;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
@@ -365,8 +366,20 @@ public class BoxUtils {
 	 */
 	public static void refreshAccessAndRefreshTokens (String userId, BoxAPIConnection api){
 		// refresh tokens
-		setBoxAccessToken(userId, api.getAccessToken());
-		setBoxRefreshToken(userId, api.getRefreshToken());
+		try
+		{
+			setBoxAccessToken(userId, api.getAccessToken());
+			setBoxRefreshToken(userId, api.getRefreshToken());
+		}
+		catch (BoxAPIException e)
+		{
+			log.error("refreshAccessAndRefreshTokens ", e);
+			// access token expired, refresh access token
+			api.refresh();
+			
+			setBoxAccessToken(userId, api.getAccessToken());
+			setBoxRefreshToken(userId, api.getRefreshToken());
+		}
 	}
 
 	/**

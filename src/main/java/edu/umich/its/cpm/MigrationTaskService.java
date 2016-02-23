@@ -576,11 +576,16 @@ public class MigrationTaskService {
 				else
 				{
 					// do uploads
-					itemStatus = processBoxUploadSiteContent(type, rootFolderPath,
+					HashMap<String, Object> rvValues= processBoxUploadSiteContent(type, rootFolderPath,
 							contentUrl, containerStack, boxFolderIdStack, title,
 							container, boxFolderId, api, itemStatus, description,
 							contentItem, httpContext, contentAccessUrl, author,
 							copyrightAlert, sessionId);
+					itemStatus = (StringBuffer) rvValues.get("itemStatus");
+					containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
+					boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
+					log.info("containerStack length=" + containerStack.size());
+					log.info("boxFolderStack length=" + boxFolderIdStack.size());
 				}
 
 			}
@@ -590,9 +595,6 @@ public class MigrationTaskService {
 					itemStatus.toString());
 			rv.add(item);
 		} // for
-
-		// refresh tokens
-		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 
 		return rv;
 	}
@@ -651,7 +653,7 @@ public class MigrationTaskService {
 	 * @param sessionId
 	 * @return
 	 */
-	private StringBuffer processBoxUploadSiteContent(String type,
+	private HashMap<String, Object> processBoxUploadSiteContent(String type,
 			String rootFolderPath, String contentUrl,
 			java.util.Stack<String> containerStack,
 			java.util.Stack<String> boxFolderIdStack, String title,
@@ -750,7 +752,13 @@ public class MigrationTaskService {
 				}
 			}
 		}
-		return itemStatus;
+		
+		// returning all changed variables
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+		rv.put("itemStatus", itemStatus);
+		rv.put("containerStack", containerStack);
+		rv.put("boxFolderIdStack", boxFolderIdStack);
+		return rv;
 	}
 
 	/**
