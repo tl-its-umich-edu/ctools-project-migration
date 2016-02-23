@@ -378,11 +378,17 @@ public class MigrationTaskService {
 
 	/*************** Box Migration ********************/
 	@Async
-	public Future<String> uploadToBox(Environment env,
+	public Future<HashMap<String, String>> uploadToBox(Environment env,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, HashMap<String, Object> sessionAttributes,
 			String siteId, String boxFolderId, String migrationId,
 			MigrationRepository repository) throws InterruptedException {
+		// the HashMap object to be returned
+		HashMap<String, String> rvMap = new HashMap<String, String>();
+		rvMap.put("userId", userId);
+		rvMap.put("siteId", siteId);
+		rvMap.put("migrationId", migrationId);
+		
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
 
@@ -405,7 +411,9 @@ public class MigrationTaskService {
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
-			return new AsyncResult<String>("fail");
+
+			rvMap.put("status", "fail");
+			return new AsyncResult<HashMap<String, String>>(rvMap);
 		}
 
 		if (siteId == null || boxFolderId == null) {
@@ -476,7 +484,8 @@ public class MigrationTaskService {
 						migrationId);
 		repository.setMigrationStatus(obj.toString(), migrationId);
 
-		return new AsyncResult<String>("success");
+		rvMap.put("status", "success");
+		return new AsyncResult<HashMap<String, String>>(rvMap);
 	}
 
 	/**
@@ -826,6 +835,14 @@ public class MigrationTaskService {
 					+ " with content and length "
 					+ data.length
 					+ iException;
+			log.warn(ilExceptionString);
+			status.append(ilExceptionString + LINE_BREAK);
+		} catch (Exception e) {
+			String ilExceptionString = "problem creating BufferedInputStream for file "
+					+ fileName
+					+ " with content and length "
+					+ data.length
+					+ e;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + LINE_BREAK);
 		} finally {

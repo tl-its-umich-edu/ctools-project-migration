@@ -235,7 +235,7 @@ public class Utils {
 				}
 			}
 
-			log.info("CoSign user=" + remoteUser + " test user=" + testUser + " returned user=" + rvUser);
+			log.debug("CoSign user=" + remoteUser + " test user=" + testUser + " returned user=" + rvUser);
 		}
 		return rvUser;
 

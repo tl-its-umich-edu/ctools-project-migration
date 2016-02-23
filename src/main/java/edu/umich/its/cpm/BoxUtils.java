@@ -8,6 +8,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import java.util.LinkedList;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -28,7 +29,6 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
-
 import org.json.JSONObject;
 import org.json.JSONArray;
 
@@ -40,6 +40,8 @@ import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
 import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
+
+import edu.umich.its.cpm.MigrationInstanceService.MigrationFields;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.HttpClients;
@@ -71,8 +73,52 @@ public class BoxUtils {
 
 	private static HashMap<String, String> boxRefreshTokens = new HashMap<String, String>();
 	
+	// HashMap, indexed by user id, holds queue for Box migration tasks
+	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();		
+	
 	private static final String BOX_CLIENT_ID = "box_client_id";
 	private static final String BOX_CLIENT_SECRET = "box_client_secret";
+	
+	/**
+	 * get Box migration request for all users
+	 */
+	public static HashMap<String, LinkedList<MigrationFields>> getBoxMigrationRequests()
+	{
+		// return all
+		return userBoxMigrationRequests;
+	}
+	
+	/**
+	 * get Box migration request list for given user
+	 */
+	public static LinkedList<MigrationFields> getBoxMigrationRequestForUser(String userId)
+	{
+		LinkedList<MigrationFields> requests = null;
+		if (userBoxMigrationRequests.containsKey(userId))
+		{
+			// if the request exists for given user
+			requests = userBoxMigrationRequests.get(userId);
+		}
+		return requests;
+	}
+	
+	/**
+	 * set Box migration request list for given user
+	 */
+	public static void setBoxMigrationRequestForUser(String userId, LinkedList<MigrationFields> requests)
+	{
+		if (requests.size() == 0)
+		{
+			// if the request list is empty, remove the user entry altogether
+			userBoxMigrationRequests.remove(userId);
+		}
+		else
+		{
+			// set the new requests value
+			userBoxMigrationRequests.put(userId, requests);
+		}
+	}
+	
 	
 	/**
 	 * get Box access token for given user
