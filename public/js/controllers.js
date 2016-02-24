@@ -404,35 +404,15 @@ var updateProjectsPanel = function(result, source){
             $log.warn('locking ' + sourceProject.site_name)
             sourceProject.migrating = true;
           }
-          else {
-            //unlocking and resetting all the states
-            $log.warn('unlocking ' + sourceProject.site_name)
-            sourceProject.migrating = false;
-            sourceProject.stateSelectionExists =false;
-            sourceProject.selectDestinationType = {};
-            sourceProject.stateHasTools = false;
-            //also remove the tool panel of the source project
-            if (sourceProject.tool_id !=='') {
-              var index = $scope.sourceProjects.indexOf(sourceProject);
-              $scope.sourceProjects.splice(index, 1); 
-            }
-          }
         }
       });
     }
     else {
       // there are no /migrating items, so loop through all the source projects and reset their state
-      $log.warn('unlocking all')
+      $log.warn('unlocking all');
       _.each($scope.sourceProjects, function(sourceProject) {
         if(sourceProject) {
           sourceProject.migrating = false;
-          sourceProject.stateSelectionExists =false;
-          sourceProject.selectDestinationType = {};
-          sourceProject.stateHasTools = false;
-          if (sourceProject.tool_id !=='') {
-            var index = $scope.sourceProjects.indexOf(sourceProject);
-            $scope.sourceProjects.splice(index, 1); 
-          }
         }
      });   
     }
