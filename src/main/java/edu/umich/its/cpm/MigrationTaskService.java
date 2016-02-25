@@ -72,7 +72,7 @@ public class MigrationTaskService {
 
 	// Box has a hard limit of 5GB per any single file
 	// use the decimal version of GB here, smaller than the binary version
-	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L * 1024 * 1024 * 1024;
+	private static final int MAX_CONTENT_SIZE_FOR_BOX = 5 * 1024 * 1024 * 1024;
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
@@ -378,11 +378,17 @@ public class MigrationTaskService {
 
 	/*************** Box Migration ********************/
 	@Async
-	public Future<String> uploadToBox(Environment env,
+	public Future<HashMap<String, String>> uploadToBox(Environment env,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, HashMap<String, Object> sessionAttributes,
 			String siteId, String boxFolderId, String migrationId,
 			MigrationRepository repository) throws InterruptedException {
+		// the HashMap object to be returned
+		HashMap<String, String> rvMap = new HashMap<String, String>();
+		rvMap.put("userId", userId);
+		rvMap.put("siteId", siteId);
+		rvMap.put("migrationId", migrationId);
+		
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
 
@@ -405,7 +411,9 @@ public class MigrationTaskService {
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response);
-			return new AsyncResult<String>("fail");
+
+			rvMap.put("status", "fail");
+			return new AsyncResult<HashMap<String, String>>(rvMap);
 		}
 
 		if (siteId == null || boxFolderId == null) {
@@ -476,7 +484,8 @@ public class MigrationTaskService {
 						migrationId);
 		repository.setMigrationStatus(obj.toString(), migrationId);
 
-		return new AsyncResult<String>("success");
+		rvMap.put("status", "success");
+		return new AsyncResult<HashMap<String, String>>(rvMap);
 	}
 
 	/**
@@ -567,11 +576,16 @@ public class MigrationTaskService {
 				else
 				{
 					// do uploads
-					itemStatus = processBoxUploadSiteContent(type, rootFolderPath,
+					HashMap<String, Object> rvValues= processBoxUploadSiteContent(type, rootFolderPath,
 							contentUrl, containerStack, boxFolderIdStack, title,
 							container, boxFolderId, api, itemStatus, description,
 							contentItem, httpContext, contentAccessUrl, author,
 							copyrightAlert, sessionId);
+					itemStatus = (StringBuffer) rvValues.get("itemStatus");
+					containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
+					boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
+					log.info("containerStack length=" + containerStack.size());
+					log.info("boxFolderStack length=" + boxFolderIdStack.size());
 				}
 
 			}
@@ -581,9 +595,6 @@ public class MigrationTaskService {
 					itemStatus.toString());
 			rv.add(item);
 		} // for
-
-		// refresh tokens
-		BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 
 		return rv;
 	}
@@ -642,7 +653,7 @@ public class MigrationTaskService {
 	 * @param sessionId
 	 * @return
 	 */
-	private StringBuffer processBoxUploadSiteContent(String type,
+	private HashMap<String, Object> processBoxUploadSiteContent(String type,
 			String rootFolderPath, String contentUrl,
 			java.util.Stack<String> containerStack,
 			java.util.Stack<String> boxFolderIdStack, String title,
@@ -709,7 +720,7 @@ public class MigrationTaskService {
 		} else {
 			// files
 			String fileName = contentUrl.replace(rootFolderPath, "");
-			long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
+			int size = Utils.getJSONInt(contentItem, CONTENT_JSON_ATTR_SIZE);
 
 			// check whether the file size exceeds Box's limit
 			if (size >= MAX_CONTENT_SIZE_FOR_BOX) {
@@ -737,11 +748,17 @@ public class MigrationTaskService {
 					itemStatus.append(uploadFile(httpContext,
 							boxFolderIdStack.peek(), fileName, contentUrl,
 							contentAccessUrl, description, author,
-							copyrightAlert, sessionId, api));
+							copyrightAlert, sessionId, api, size));
 				}
 			}
 		}
-		return itemStatus;
+		
+		// returning all changed variables
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+		rv.put("itemStatus", itemStatus);
+		rv.put("containerStack", containerStack);
+		rv.put("boxFolderIdStack", boxFolderIdStack);
+		return rv;
 	}
 
 	/**
@@ -750,7 +767,7 @@ public class MigrationTaskService {
 	private String uploadFile(HttpContext httpContext, String boxFolderId,
 			String fileName, String fileUrl, String fileAccessUrl,
 			String fileDescription, String fileAuthor,
-			String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
+			String fileCopyrightAlert, String sessionId, BoxAPIConnection api, final long fileSize) {
 		// status string
 		StringBuffer status = new StringBuffer();
 
@@ -792,9 +809,7 @@ public class MigrationTaskService {
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
-							double percentComplete = numBytes / totalBytes;
-							log.debug(uploadFileName + " uploaded "
-									+ percentComplete);
+							log.debug(numBytes + " out of total bytes " + totalBytes + " and file size " + fileSize);
 						}
 					});
 
@@ -826,6 +841,14 @@ public class MigrationTaskService {
 					+ " with content and length "
 					+ data.length
 					+ iException;
+			log.warn(ilExceptionString);
+			status.append(ilExceptionString + LINE_BREAK);
+		} catch (Exception e) {
+			String ilExceptionString = "problem creating BufferedInputStream for file "
+					+ fileName
+					+ " with content and length "
+					+ data.length
+					+ e;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + LINE_BREAK);
 		} finally {
