@@ -51,6 +51,13 @@ public class Utils {
 	
 	public static final String SERVER_URL = "server_url";
 	
+	// CTools resource type strings
+	public static final String CTOOLS_RESOURCE_TYPE_URL = "text/url";
+	public static final String CTOOLS_RESOURCE_TYPE_URL_EXTENSION = ".URL";
+	public static final String CTOOLS_RESOURCE_TYPE_CITATION = "text/html";
+	public static final String CTOOLS_RESOURCE_TYPE_CITATION_URL = "/citation/";
+	public static final String HTML_FILE_EXTENSION=".html";
+	
 	// the at sign used in email address
 	private static final String EMAIL_AT = "@";
 	private static final String EMAIL_AT_UMICH = "@umich.edu";

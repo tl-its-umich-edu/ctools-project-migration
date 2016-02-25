@@ -16,6 +16,8 @@ import org.springframework.stereotype.Component;
 import java.io.BufferedInputStream;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.ByteArrayInputStream;
+import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -257,8 +259,7 @@ public class MigrationTaskService {
 
 				} else {
 					// Call the zipFiles method for creating a zip stream.
-					String filePath = contentUrl.replace(rootFolderPath, "");
-					String zipFileStatus = zipFiles(httpContext, filePath,
+					String zipFileStatus = zipFiles(type, httpContext, title,
 							contentUrl, contentAccessUrl, sessionId, out);
 					itemStatus.append(zipFileStatus + LINE_BREAK);
 				}
@@ -274,10 +275,13 @@ public class MigrationTaskService {
 	/**
 	 * create zip entry for files
 	 */
-	private String zipFiles(HttpContext httpContext, String fileName,
+	private String zipFiles(String type, HttpContext httpContext, String fileName,
 			String fileUrl, String fileAccessUrl, String sessionId,
 			ZipOutputStream out) {
 		log.info("*** " + fileAccessUrl);
+		
+		// update file name
+		fileName = modifyFileNameOnType(type, fileName);
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
@@ -312,9 +316,16 @@ public class MigrationTaskService {
 				ZipEntry fileEntry = new ZipEntry(fileName);
 				out.putNextEntry(fileEntry);
 				int bCount = -1;
-				while ((bCount = bContent.read(data)) != -1) {
-					out.write(data, 0, bCount);
-					length = length + bCount;
+				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
+				{
+					out.write(getWebLinkContent(fileName, fileUrl).getBytes());
+				}
+				else
+				{
+					while ((bCount = bContent.read(data)) != -1) {
+						out.write(data, 0, bCount);
+						length = length + bCount;
+					}
 				}
 				out.flush();
 
@@ -374,6 +385,45 @@ public class MigrationTaskService {
 		}
 
 		return zipFileStatus.toString();
+	}
+
+	/**
+	 * CTools Web Link content is exported as a html file, with the link inside
+	 * @param fileName
+	 * @param fileUrl
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	private String getWebLinkContent(String fileName, String fileUrl)
+	{
+		// special handling of CTools Web link resources
+		// will create a HTML file containing a link inside
+		// For example: original fileUrl of format "/group/<site id>/http:__google.com.URL"
+		// and the end result url will be "http://google.com"
+		String urlContent = "";
+		if (fileUrl.endsWith(Utils.CTOOLS_RESOURCE_TYPE_URL_EXTENSION))
+		{
+			// remote the 
+			urlContent = fileUrl.substring(0, fileUrl.length()-4);
+		}
+		// get the last 
+		urlContent = urlContent.substring(urlContent.lastIndexOf("/") + 1);
+		// decode first
+		try
+		{
+			urlContent = URLDecoder.decode(urlContent, "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			log.error(this + " getWebLinkContent: UnsupportedEncodingException " + e);
+		}
+		// then replace all "_" char with "/", was encoded by CTools
+		urlContent=urlContent.replace("_", "/");
+		StringBuffer b = new StringBuffer();
+		b.append("<a href=\"");
+		b.append(urlContent);
+		b.append("\">" + fileName + "</a>");
+		return b.toString();
 	}
 
 	/*************** Box Migration ********************/
@@ -719,7 +769,6 @@ public class MigrationTaskService {
 			}
 		} else {
 			// files
-			String fileName = contentUrl.replace(rootFolderPath, "");
 			long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
 
 			// check whether the file size exceeds Box's limit
@@ -745,8 +794,8 @@ public class MigrationTaskService {
 							+ contentUrl;
 					log.error(parentError);
 				} else {
-					itemStatus.append(uploadFile(httpContext,
-							boxFolderIdStack.peek(), fileName, contentUrl,
+					itemStatus.append(uploadFile(type, httpContext,
+							boxFolderIdStack.peek(), title, contentUrl,
 							contentAccessUrl, description, author,
 							copyrightAlert, sessionId, api));
 				}
@@ -764,7 +813,7 @@ public class MigrationTaskService {
 	/**
 	 * upload files to Box
 	 */
-	private String uploadFile(HttpContext httpContext, String boxFolderId,
+	private String uploadFile(String type, HttpContext httpContext, String boxFolderId,
 			String fileName, String fileUrl, String fileAccessUrl,
 			String fileDescription, String fileAuthor,
 			String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
@@ -782,15 +831,28 @@ public class MigrationTaskService {
 		// create httpclient
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		InputStream content = null;
-		try {
-			// get file content from /access url
-			HttpGet getRequest = new HttpGet(fileAccessUrl);
-			getRequest.setHeader("Content-Type",
-					"application/x-www-form-urlencoded");
-			HttpResponse r = httpClient.execute(getRequest, httpContext);
-			content = r.getEntity().getContent();
-		} catch (Exception e) {
-			log.info(e.getMessage());
+		
+		// update file name
+		fileName = modifyFileNameOnType(type, fileName);
+		
+		if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
+		{
+			// special handling of Web Links resources
+			String webLinkContent = getWebLinkContent(fileName, fileUrl);
+			content = new ByteArrayInputStream(webLinkContent.getBytes());
+		}
+		else
+		{
+			try {
+				// get file content from /access url
+				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				getRequest.setHeader("Content-Type",
+						"application/x-www-form-urlencoded");
+				HttpResponse r = httpClient.execute(getRequest, httpContext);
+				content = r.getEntity().getContent();
+			} catch (Exception e) {
+				log.info(e.getMessage());
+			}
 		}
 
 		// exit if content stream is null
@@ -882,6 +944,20 @@ public class MigrationTaskService {
 			status.append("Box upload successful for file " + fileName + ".");
 		}
 		return status.toString();
+	}
+
+	/**
+	 * for Web Link and citation type of resources, append ".html" to the file name String
+	 * @param type
+	 * @param fileName
+	 * @return
+	 */
+	private String modifyFileNameOnType(String type, String fileName) {
+		if (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
+		{
+			fileName = fileName + Utils.HTML_FILE_EXTENSION;
+		}
+		return fileName;
 	}
 
 	/**
