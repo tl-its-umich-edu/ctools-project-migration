@@ -170,17 +170,16 @@ public class Utils {
 	}
 	
 	/**
-	 * Checks first whether the JSONObject contains specified key value; If so,
-	 * return the long value associated with the key
+	 * return int value based on JSON string
 	 * 
 	 * @param object
 	 * @param key
 	 * @return
 	 */
-	public static long getJSONLong(JSONObject object, String key) {
-		long rv = 0L;
+	public static int getJSONInt(JSONObject object, String key) {
+		int rv = 0;
 		if (object.has(key) && object.get(key) != JSONObject.NULL) {
-			rv = object.getLong(key);
+			rv = object.getInt(key);
 		}
 		return rv;
 	}

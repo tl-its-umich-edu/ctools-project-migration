@@ -106,7 +106,7 @@ public class BoxUtils {
 	/**
 	 * set Box migration request list for given user
 	 */
-	public static void setBoxMigrationRequestForUser(String userId, LinkedList<MigrationFields> requests)
+	public static synchronized void setBoxMigrationRequestForUser(String userId, LinkedList<MigrationFields> requests)
 	{
 		if (requests.size() == 0)
 		{

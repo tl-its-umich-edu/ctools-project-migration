@@ -33,8 +33,9 @@ public class Application extends SpringBootServletInitializer {
 			migrationInstanceService.runProcessingThread();
 			log.info(this + " startMigrationProcessingThread started.");
 		} catch (InterruptedException e) {
+			//TODO put the error in UI eventually
 			log.error(this
-					+ "config error with migrationInstanceService.runProcessingThread() "
+					+ " error starting migrationInstanceService.runProcessingThread() "
 					+ e.getMessage());
 		}
 	}

@@ -83,27 +83,30 @@ public class MigrationInstanceService {
 			futureListClone.addAll(futureList);
 			
 			for (Future<HashMap<String, String>> future : futureListClone) {
-	            try {
+				try {
 					// get the status of asynchronize processed Box upload request
-					HashMap<String, String> rv = future.get();
-					log.debug("***** future return userId=" + rv.get("userId") + " siteId=" + rv.get("siteId") + " status=" + rv.get("status"));
-					
-					// if the request is finished/processed, remove it from the queue
-					String userId = rv.get("userId");
-					LinkedList<MigrationFields> userMigrationRequests = boxMigrationRequests.get(userId);
-					userMigrationRequests.remove();
-					
-					BoxUtils.setBoxMigrationRequestForUser(userId, userMigrationRequests);
-            		
-            		// finished, remove the task from the future list queue
-            		futureList.remove(future);
-	            } catch (java.util.concurrent.ExecutionException e)
-	            {
-	            	log.error(this + ":createUploadBoxInstance ", e);
-	            } catch (Exception e) {
-	            	log.error(this + ":createUploadBoxInstance ", e);
-	            }
-	        } 
+					if (future.isDone())
+					{
+						HashMap<String, String> rv = future.get();
+						log.debug("***** future return userId=" + rv.get("userId") + " siteId=" + rv.get("siteId") + " status=" + rv.get("status"));
+						
+						// if the request is finished/processed, remove it from the queue
+						String userId = rv.get("userId");
+						LinkedList<MigrationFields> userMigrationRequests = boxMigrationRequests.get(userId);
+						userMigrationRequests.remove();
+						
+						BoxUtils.setBoxMigrationRequestForUser(userId, userMigrationRequests);
+						
+						// finished, remove the task from the future list queue
+						futureList.remove(future);
+					}
+				} catch (java.util.concurrent.ExecutionException e)
+				{
+					log.error(this + ":createUploadBoxInstance ", e);
+				} catch (Exception e) {
+					log.error(this + ":createUploadBoxInstance ", e);
+				}
+			} 
 		}
 	}
 	

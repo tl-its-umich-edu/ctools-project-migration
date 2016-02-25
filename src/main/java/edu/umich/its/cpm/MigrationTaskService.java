@@ -74,7 +74,7 @@ public class MigrationTaskService {
 
 	// Box has a hard limit of 5GB per any single file
 	// use the decimal version of GB here, smaller than the binary version
-	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L * 1024 * 1024 * 1024;
+	private static final int MAX_CONTENT_SIZE_FOR_BOX = 5 * 1024 * 1024 * 1024;
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
@@ -769,7 +769,8 @@ public class MigrationTaskService {
 			}
 		} else {
 			// files
-			long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
+			String fileName = contentUrl.replace(rootFolderPath, "");
+			int size = Utils.getJSONInt(contentItem, CONTENT_JSON_ATTR_SIZE);
 
 			// check whether the file size exceeds Box's limit
 			if (size >= MAX_CONTENT_SIZE_FOR_BOX) {
@@ -797,7 +798,7 @@ public class MigrationTaskService {
 					itemStatus.append(uploadFile(type, httpContext,
 							boxFolderIdStack.peek(), title, contentUrl,
 							contentAccessUrl, description, author,
-							copyrightAlert, sessionId, api));
+							copyrightAlert, sessionId, api, size));
 				}
 			}
 		}
@@ -816,7 +817,7 @@ public class MigrationTaskService {
 	private String uploadFile(String type, HttpContext httpContext, String boxFolderId,
 			String fileName, String fileUrl, String fileAccessUrl,
 			String fileDescription, String fileAuthor,
-			String fileCopyrightAlert, String sessionId, BoxAPIConnection api) {
+			String fileCopyrightAlert, String sessionId, BoxAPIConnection api, final long fileSize) {
 		// status string
 		StringBuffer status = new StringBuffer();
 
@@ -871,9 +872,7 @@ public class MigrationTaskService {
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
-							double percentComplete = numBytes / totalBytes;
-							log.debug(uploadFileName + " uploaded "
-									+ percentComplete);
+							log.debug(numBytes + " out of total bytes " + totalBytes + " and file size " + fileSize);
 						}
 					});
 
