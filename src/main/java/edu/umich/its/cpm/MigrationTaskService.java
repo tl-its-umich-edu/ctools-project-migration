@@ -501,6 +501,7 @@ public class MigrationTaskService {
 		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 				boxClientSecret, BoxUtils.getBoxAccessToken(userId),
 				BoxUtils.getBoxRefreshToken(userId));
+		
 		// site root folder
 		String rootFolderPath = null;
 
@@ -576,7 +577,7 @@ public class MigrationTaskService {
 				else
 				{
 					// do uploads
-					HashMap<String, Object> rvValues= processBoxUploadSiteContent(type, rootFolderPath,
+					HashMap<String, Object> rvValues= processBoxUploadSiteContent(userId, type, rootFolderPath,
 							contentUrl, containerStack, boxFolderIdStack, title,
 							container, boxFolderId, api, itemStatus, description,
 							contentItem, httpContext, contentAccessUrl, author,
@@ -584,8 +585,8 @@ public class MigrationTaskService {
 					itemStatus = (StringBuffer) rvValues.get("itemStatus");
 					containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
 					boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
-					log.info("containerStack length=" + containerStack.size());
-					log.info("boxFolderStack length=" + boxFolderIdStack.size());
+					log.debug("containerStack length=" + containerStack.size());
+					log.debug("boxFolderStack length=" + boxFolderIdStack.size());
 				}
 
 			}
@@ -653,7 +654,7 @@ public class MigrationTaskService {
 	 * @param sessionId
 	 * @return
 	 */
-	private HashMap<String, Object> processBoxUploadSiteContent(String type,
+	private HashMap<String, Object> processBoxUploadSiteContent(String userId, String type,
 			String rootFolderPath, String contentUrl,
 			java.util.Stack<String> containerStack,
 			java.util.Stack<String> boxFolderIdStack, String title,
@@ -677,6 +678,7 @@ public class MigrationTaskService {
 			}
 
 			// create box folder
+			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
@@ -714,7 +716,6 @@ public class MigrationTaskService {
 						log.info("Cannot find conflicting Box folder id for folder name "
 								+ title);
 					}
-
 				}
 			}
 		} else {
@@ -745,7 +746,7 @@ public class MigrationTaskService {
 							+ contentUrl;
 					log.error(parentError);
 				} else {
-					itemStatus.append(uploadFile(httpContext,
+					itemStatus.append(uploadFile(userId, httpContext,
 							boxFolderIdStack.peek(), fileName, contentUrl,
 							contentAccessUrl, description, author,
 							copyrightAlert, sessionId, api, size));
@@ -764,7 +765,7 @@ public class MigrationTaskService {
 	/**
 	 * upload files to Box
 	 */
-	private String uploadFile(HttpContext httpContext, String boxFolderId,
+	private String uploadFile(String userId, HttpContext httpContext, String boxFolderId,
 			String fileName, String fileUrl, String fileAccessUrl,
 			String fileDescription, String fileAuthor,
 			String fileCopyrightAlert, String sessionId, BoxAPIConnection api, final long fileSize) {
@@ -803,6 +804,8 @@ public class MigrationTaskService {
 		try {
 
 			bContent = new BufferedInputStream(content);
+			// check if Box access token needs refresh
+			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			final String uploadFileName = fileName;
 			BoxFile.Info newFileInfo = folder.uploadFile(bContent, fileName,
