@@ -170,16 +170,16 @@ public class Utils {
 	}
 	
 	/**
-	 * return int value based on JSON string
+	 * return long value based on JSON string
 	 * 
 	 * @param object
 	 * @param key
 	 * @return
 	 */
-	public static int getJSONInt(JSONObject object, String key) {
-		int rv = 0;
+	public static long getJSONLong(JSONObject object, String key) {
+		long rv = 0;
 		if (object.has(key) && object.get(key) != JSONObject.NULL) {
-			rv = object.getInt(key);
+			rv = object.getLong(key);
 		}
 		return rv;
 	}

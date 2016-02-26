@@ -74,7 +74,7 @@ public class MigrationTaskService {
 
 	// Box has a hard limit of 5GB per any single file
 	// use the decimal version of GB here, smaller than the binary version
-	private static final int MAX_CONTENT_SIZE_FOR_BOX = 5 * 1024 * 1024 * 1024;
+	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L * 1024 * 1024 * 1024;
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
