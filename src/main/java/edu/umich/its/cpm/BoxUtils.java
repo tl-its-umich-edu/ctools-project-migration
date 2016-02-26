@@ -339,8 +339,8 @@ public class BoxUtils {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
-			// If the access token expires, you will have to manually refresh it.
-			api.refresh();
+			// update stored access token and refresh token
+			api = refreshAccessAndRefreshTokens(userId, api);
 	
 			// get the root Box folder
 			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
@@ -348,9 +348,6 @@ public class BoxUtils {
 			// get list of properties from all Box items contained
 			List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
 					null, api, rootFolder, "", 0);
-			
-			// update stored access token and refresh token
-			refreshAccessAndRefreshTokens(userId, api);
 			
 			return folderItems;
 		}
@@ -364,22 +361,26 @@ public class BoxUtils {
 	/**
 	 * store the current access token and refresh token locally for given user
 	 */
-	public static void refreshAccessAndRefreshTokens (String userId, BoxAPIConnection api){
-		// refresh tokens
-		try
+	public static BoxAPIConnection refreshAccessAndRefreshTokens (String userId, BoxAPIConnection api){
+		// refresh accessToken and refreshToken if necessary
+		if (api.needsRefresh())
 		{
-			setBoxAccessToken(userId, api.getAccessToken());
-			setBoxRefreshToken(userId, api.getRefreshToken());
+			try
+			{
+				setBoxAccessToken(userId, api.getAccessToken());
+				setBoxRefreshToken(userId, api.getRefreshToken());
+			}
+			catch (BoxAPIException e)
+			{
+				log.error("refreshAccessAndRefreshTokens ", e);
+				// access token expired, refresh access token
+				api.refresh();
+				
+				setBoxAccessToken(userId, api.getAccessToken());
+				setBoxRefreshToken(userId, api.getRefreshToken());
+			}
 		}
-		catch (BoxAPIException e)
-		{
-			log.error("refreshAccessAndRefreshTokens ", e);
-			// access token expired, refresh access token
-			api.refresh();
-			
-			setBoxAccessToken(userId, api.getAccessToken());
-			setBoxRefreshToken(userId, api.getRefreshToken());
-		}
+		return api;
 	}
 
 	/**

@@ -37,12 +37,10 @@ public class MigrationInstanceService {
 		
 		List<Future<HashMap<String, String>>> futureList = new ArrayList<Future<HashMap<String, String>>>();
 
-		log.info("Box Migration Processing thread is running01");
 		while (true)
 		{
 
-			log.info("Box Migration Processing thread is running02");
-			 // Artificial delay of 5s for demonstration purposes
+			// delay for 5 seconds
 			Thread.sleep(5000L);
 	        
 			// looping through
