@@ -770,7 +770,6 @@ public class MigrationTaskService {
 			}
 		} else {
 			// files
-			String fileName = contentUrl.replace(rootFolderPath, "");
 			long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
 
 			// check whether the file size exceeds Box's limit
@@ -797,7 +796,7 @@ public class MigrationTaskService {
 					log.error(parentError);
 				} else {
 					itemStatus.append(uploadFile(userId, type, httpContext,
-							boxFolderIdStack.peek(), fileName, contentUrl,
+							boxFolderIdStack.peek(), title, contentUrl,
 							contentAccessUrl, description, author,
 							copyrightAlert, sessionId, api, size));
 				}
@@ -870,7 +869,6 @@ public class MigrationTaskService {
 			// check if Box access token needs refresh
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
-			final String uploadFileName = fileName;
 			BoxFile.Info newFileInfo = folder.uploadFile(bContent, fileName,
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
