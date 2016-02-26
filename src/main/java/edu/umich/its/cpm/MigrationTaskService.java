@@ -771,7 +771,7 @@ public class MigrationTaskService {
 		} else {
 			// files
 			String fileName = contentUrl.replace(rootFolderPath, "");
-			int size = Utils.getJSONInt(contentItem, CONTENT_JSON_ATTR_SIZE);
+			long size = Utils.getJSONLong(contentItem, CONTENT_JSON_ATTR_SIZE);
 
 			// check whether the file size exceeds Box's limit
 			if (size >= MAX_CONTENT_SIZE_FOR_BOX) {
