@@ -796,7 +796,7 @@ public class MigrationTaskService {
 							+ contentUrl;
 					log.error(parentError);
 				} else {
-					itemStatus.append(uploadFile(userId, httpContext,
+					itemStatus.append(uploadFile(userId, type, httpContext,
 							boxFolderIdStack.peek(), fileName, contentUrl,
 							contentAccessUrl, description, author,
 							copyrightAlert, sessionId, api, size));
@@ -815,7 +815,7 @@ public class MigrationTaskService {
 	/**
 	 * upload files to Box
 	 */
-	private String uploadFile(String userId, HttpContext httpContext, String boxFolderId,
+	private String uploadFile(String userId, String type, HttpContext httpContext, String boxFolderId,
 			String fileName, String fileUrl, String fileAccessUrl,
 			String fileDescription, String fileAuthor,
 			String fileCopyrightAlert, String sessionId, BoxAPIConnection api, final long fileSize) {
