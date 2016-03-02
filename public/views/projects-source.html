@@ -1,92 +1,93 @@
 <div class="no-items" ng-show="loadingProjects"><span class="spinner"></span> <span> Loading projects from CTools...</span></div>
 <div ng-if="!sourceProjects.length && !loadingProjects">
-	No project sites available.
+  No project sites available.
 </div>
 <div ng-show="sourceProjects.length">
-	<ul class="list-group" style="margin-bottom:0">
-  	<li ng-repeat="project in sourceProjects" class="{{project.type}}"
-		ng-class="project.tool_id !== '' ? 'list-group-item toolRow noFocus' : 'list-group-item projectRow noFocus'" ng-hide="project.hideTools && project.tool"  id="toolSel{{project.tool_id}}" tabindex="-1">
-  		<!--// using same contorsions to match the data model of migrations and migrated -->
-  		<div class="noFocus" ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''" id="project{{project.site_id}}" tabindex="-1">
-  			<div class="row">
-	  			<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-	  				<h4 class="site-header" id="{{project.site_id | fixMyWspId}}">{{project.site_name}}  <br><small class="bigSmall" ng-show="project.last_migrated">last migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small></h4>
-	  			</div>
-	  			<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-	  				<span class="label label-default"  ng-show="project.migrating">Migrating...</span>
-	  				<a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
-			  			Get tools <span class="sr-only">for site {{project.site_name}}</span>
-						</a>
-						<button id="export{{project.site_id}}" class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='zip' || project.selectDestinationType.name==='Box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export<span class="sr-only"> selected tools of site {{project.site_name}}</span> </button>
-					</div>
-				</div>
-				<div class="row noFocus" ng-show="project.stateExportConfirm" tabindex="-1" id="confirm{{project.site_id}}" role="alert">
-		    	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-  					<small class="bigSmall">Migration Process of selected tools is about to start. Are you sure?</small>
-	  			</div>
-  				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-  					<div class="pull-right">
-  					<br>
-							<button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name,project.selectDestinationType.name)">Proceed<span class="sr-only"> with export of selected tools for site {{project.site_name}}</span></button>
-							<button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)" style="color:#005bb2">Cancel<span class="sr-only"> export of selected tools for site {{project.site_name}}</span></button>
-						</div>
-					</div>
-		  	</div>
-		  </div>
-			<div class="x" ng-hide="project.tool_id === 'notools' || project.tool_id === ''">
-				<div ng-show="!project.migrating">
-					<div class="row">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-							<input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}" ng-model="project.selected" ng-change="checkIfSelectionExists(project.site_id, project.tool_id)"/ >
-							<label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
-						</div>
-					</div>
-					<div class="row noFocus" ng-show="project.selected" id="toolSelDest{{project.tool_id}}" tabindex="-1">
-						<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
-						</div>
-						<div class="col-md-11 col-lg-11 col-sm-11 col-xs-11 resDestPanel">
-							<small>
-		    				<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="Box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'Box','Box')">
-			    			<label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
-			    		</small>
-		    			<div class="noFocus" ng-show="project.selectDestinationType.name ==='Box'" style="padding:0 0 5px 16px" id="toolSelDestBox{{project.tool_id}}" tabindex="-1">
-			    			<small>
-                  <span ng-show="selectBoxFolder">Currently selected Box folder is <strong><em>{{selectBoxFolder.name}}</em></strong></span>
-			    				<a ng-show="boxAuthorized" href="" data-toggle="modal" data-target="#boxFolderModal" id="boxSelLink{{project.site_id}}{{project.tool_id}}" ng-click="getBoxFolders()"><span ng-show="selectBoxFolder">Change?</span><span ng-show="!selectBoxFolder">You will need to select a Box folder</span></a></small>
-				    		</small>
-					    	<small ng-show="!boxAuthorized">
-					    		You will need to <a data-target="#boxAuthModal" data-toggle="modal" href="">authorize this app to Box</a> and then select a folder.
-					    	</small>
-				    	</div>
-				    	<small>
-			    			<input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="zip" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'zip','zip')">
-			    			<label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a zip file</label>
-			    		</small>
-						</div>
-					</div>
-				</div>	
+  <ul class="list-group" style="margin-bottom:0">
+    <li ng-repeat="project in sourceProjects" class="{{project.type}}"
+    ng-class="project.tool_id !== '' ? 'list-group-item toolRow noFocus' : 'list-group-item projectRow noFocus'" ng-hide="project.hideTools && project.tool"  id="toolSel{{project.tool_id}}" tabindex="-1">
+      <!--// using same contorsions to match the data model of migrations and migrated -->
+      <div class="noFocus" ng-if ="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''" id="project{{project.site_id}}" tabindex="-1">
+        <div class="row">
+          <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+            <h4 class="site-header" id="{{project.site_id | fixMyWspId}}">{{project.site_name}}  <br><small class="bigSmall" ng-show="project.last_migrated">last migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small></h4>
+          </div>
+          <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+            <span class="label label-default"  ng-show="project.migrating">Migrating...</span>
+            <a ng-click="getTools(project.site_id)" href="" ng-show="!project.stateHasTools && !project.migrating">
+              Get tools <span class="sr-only">for site {{project.site_name}}</span>
+            </a>
+            <button id="export{{project.site_id}}" class="btn btn-primary btn-xs pull-right" ng-show="project.stateSelectionExists && (project.selectDestinationType.name==='zip' || project.selectDestinationType.name==='Box' && selectBoxFolder) && !project.stateExportConfirm && !project.migrating" ng-click="startMigrationConfirm(project.site_id)">Export<span class="sr-only"> selected tools of site {{project.site_name}}</span> </button>
+          </div>
+        </div>
+        <div class="row noFocus" ng-show="project.stateExportConfirm" tabindex="-1" id="confirm{{project.site_id}}" role="alert">
+          <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+            <small class="bigSmall">Migration Process of selected tools is about to start. Are you sure?</small>
+          </div>
+          <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+            <div class="pull-right">
+            <br>
+              <button class="btn btn-primary btn-xs" ng-click="startMigration(project.site_id, project.site_name,project.selectDestinationType.name)">Proceed<span class="sr-only"> with export of selected tools for site {{project.site_name}}</span></button>
+              <button class="btn btn-link btn-xs" ng-click="cancelStartMigrationConfirm(project.site_id)" style="color:#005bb2">Cancel<span class="sr-only"> export of selected tools for site {{project.site_name}}</span></button>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="x" ng-hide="project.tool_id === 'notools' || project.tool_id === ''">
+        <div ng-show="!project.migrating">
+          <div class="row">
+            <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+              <input type="checkbox" id="check{{project.site_id}}{{project.tool_id}}" ng-model="project.selected" ng-change="checkIfSelectionExists(project.site_id, project.tool_id)"/ >
+              <label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
+            </div>
+          </div>
+          <div class="row noFocus" ng-show="project.selected" id="toolSelDest{{project.tool_id}}" tabindex="-1">
+            <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+            </div>
+            <div class="col-md-11 col-lg-11 col-sm-11 col-xs-11 resDestPanel">
+              <small>
+                <input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="Box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'Box','Box')">
+                <label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
+              </small>
+              <div class="noFocus" ng-show="project.selectDestinationType.name ==='Box'" style="padding:0 0 5px 16px" id="toolSelDestBox{{project.tool_id}}" tabindex="-1">
+                <small>
+                  <span ng-show="project.boxFolder">Currently selected Box folder is <strong><em>{{project.boxFolder.name}}</em></strong></span>
+
+                  <a ng-show="boxAuthorized" href="" data-toggle="modal" data-target="#boxFolderModal" id="boxSelLink{{project.site_id}}{{project.tool_id}}" ng-click="getBoxFolders(project.site_id, project.tool_id)"><span ng-show="project.boxFolder">Change?</span><span ng-show="!project.boxFolder">You will need to select a Box folder</span></a></small>
+                </small>
+                <small ng-show="!boxAuthorized">
+                  You will need to <a data-target="#boxAuthModal" data-toggle="modal" href="">authorize this app to Box</a> and then select a folder.
+                </small>
+              </div>
+              <small>
+                <input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="zip" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'zip','zip')">
+                <label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a zip file</label>
+              </small>
+            </div>
+          </div>
+        </div>  
 
 
-				<div ng-show="project.migrating">
-					<div class="row">
-					  <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-							<span>{{project.tool_name}}</span>
-						</div>
-						<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
-							<div class="spinner"></div>
-						</div>
-						<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="row" ng-show="project.tool_id === 'notools'">
-			  <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-			  	{{project.tool_name}}
-				</div>
-			</div>
-		</li>
-	</ul>
+        <div ng-show="project.migrating">
+          <div class="row">
+            <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+              <span>{{project.tool_name}}</span>
+            </div>
+            <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
+              <div class="spinner"></div>
+            </div>
+            <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="row" ng-show="project.tool_id === 'notools'">
+        <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+          {{project.tool_name}}
+        </div>
+      </div>
+    </li>
+  </ul>
 </div>
 <!-- Button trigger modal -->
 <!-- Box Folder Selection Modal -->
@@ -98,19 +99,19 @@
         <h4 class="modal-title" id="myModalLabel">Box Folder Selection <small ng-show="boxFolders.length">({{boxFolders.length}} folders found)</small></h4>
       </div>
       <div class="modal-body">
-      	<div ng-show="loadingFolders"><div class="spinner"></div>&nbsp;&nbsp;Loading folders...</div>
-	      <ul class="list-group">
-		    	<li class="list-group-item" ng-repeat="folder in boxFolders">
-		    		<div class="row"><!-- Button trigger modal -->
-			    		<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-			    			<input type="radio" name="boxSelect" ng-model="folderSelected" 
-			    				value="folder{{folder.ID}}" id="folder{{folder.ID}}" ng-click="boxFolderSelect(folder)">
-			    				<span>&nbsp;&nbsp;</span>
-			    			<label for="folder{{folder.ID}}"> {{folder.name}}</label>
-			    		</div>	
-		    		</div>
-		    	</li>
-	      </ul>  
+        <div ng-show="loadingFolders"><div class="spinner"></div>&nbsp;&nbsp;Loading folders...</div>
+        <ul class="list-group">
+          <li class="list-group-item" ng-repeat="folder in boxFolders">
+            <div class="row"><!-- Button trigger modal -->
+              <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                <input type="radio" name="boxSelect" ng-model="folderSelected" 
+                  value="folder{{folder.ID}}" id="folder{{folder.ID}}" ng-click="boxFolderSelect(folder)">
+                  <span>&nbsp;&nbsp;</span>
+                <label for="folder{{folder.ID}}"> {{folder.name}}</label>
+              </div>  
+            </div>
+          </li>
+        </ul>  
       </div>
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal" ng-disabled="!selectBoxFolder">Done</button>
@@ -124,8 +125,8 @@
 <div class="modal fade" id="boxAuthModal" tabindex="-1" role="dialog" aria-labelledby="boxAuthModalLabel">
   <div class="modal-dialog" role="document">
     <div class="modal-content">
-    	<div class="modal-body">
-				<iframe class="boxIFrame" src="/box/authorize" frameborder="0"></iframe>
+      <div class="modal-body">
+        <iframe class="boxIFrame" src="/box/authorize" frameborder="0"></iframe>
       </div>
     </div>
   </div>
@@ -140,7 +141,7 @@
       </div>
       <div class="modal-body">
         Are you sure you want to unauthorize this app to access your Box account?
-      </div>	
+      </div>  
       <div class="modal-footer">
         <button type="button" class="btn btn-primary" data-dismiss="modal" ng-click="boxUnauthorize()">Unauthorize</button>
         <button type="button" class="btn btn-link" data-dismiss="modal" style="color:#005bb2">Cancel</button>
