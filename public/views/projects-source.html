@@ -104,7 +104,7 @@
 		    		<div class="row"><!-- Button trigger modal -->
 			    		<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
 			    			<input type="radio" name="boxSelect" ng-model="folderSelected" 
-			    				value="folder{{folder.ID}}" id="folder{{folder.ID}}" ng-change="boxFolderSelect({{folder}})">
+			    				value="folder{{folder.ID}}" id="folder{{folder.ID}}" ng-click="boxFolderSelect(folder)">
 			    				<span>&nbsp;&nbsp;</span>
 			    			<label for="folder{{folder.ID}}"> {{folder.name}}</label>
 			    		</div>	
