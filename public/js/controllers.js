@@ -136,6 +136,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
         $scope.boxAuthorized = false;
+        $('#boxIFrame').remove();
+        $('#boxIFrameContainer').append('<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize" frameborder="0"></iframe>')
     	// current user un-authorize the app from accessing Box
         $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
         $log.info(' - - - - GET /box/unauthorize');
