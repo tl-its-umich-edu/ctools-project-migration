@@ -46,12 +46,12 @@
             </div>
             <div class="col-md-11 col-lg-11 col-sm-11 col-xs-11 resDestPanel">
               <small>
-                <input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="Box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'Box','Box')">
+                <input type="radio" name="" ng-model="project.destinationTypeSelected" value="Box" id="radioBox{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'Box','Box')">
                 <label for="radioBox{{project.site_id}}{{project.tool_id}}">Upload To Box</label><br>
               </small>
               <div class="noFocus" ng-show="project.selectDestinationType.name ==='Box'" style="padding:0 0 5px 16px" id="toolSelDestBox{{project.tool_id}}" tabindex="-1">
                 <small>
-                  <span ng-show="project.boxFolder">Currently selected Box folder is <strong><em>{{project.boxFolder.name}}</em></strong></span>
+                  <span ng-show="project.boxFolder && boxAuthorized">Currently selected Box folder is <strong><em>{{project.boxFolder.name}}</em></strong></span>
 
                   <a ng-show="boxAuthorized" href="" data-toggle="modal" data-target="#boxFolderModal" id="boxSelLink{{project.site_id}}{{project.tool_id}}" ng-click="getBoxFolders(project.site_id, project.tool_id)"><span ng-show="project.boxFolder">Change?</span><span ng-show="!project.boxFolder">You will need to select a Box folder</span></a></small>
                 </small>
@@ -60,7 +60,7 @@
                 </small>
               </div>
               <small>
-                <input type="radio" name="destinationSelect" ng-model="project.destinationTypeSelected" value="zip" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'zip','zip')">
+                <input type="radio" name="" ng-model="project.destinationTypeSelected" value="zip" id="radioLocal{{project.site_id}}{{project.tool_id}}" ng-change="destinationTypeSelect(project.site_id, project.tool_id, 'zip','zip')">
                 <label for="radioLocal{{project.site_id}}{{project.tool_id}}">Download as a zip file</label>
               </small>
             </div>

@@ -10,6 +10,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxAuthorized = false;
   // whether the current user authorized app to Box or not
   var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+
   Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
 	  if(result.data === 'true'){
       $scope.boxAuthorized = true;  
@@ -136,6 +137,19 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
         $scope.boxAuthorized = false;
+        //void the folders in scope
+        $scope.boxFolders = false;
+        // reset all things in all projects that depend on authorization
+        _.each($scope.sourceProjects, function(sourceProject) {
+          if(sourceProject !==null && sourceProject !==undefined){
+            sourceProject.boxFolder = false;
+            sourceProject.stateSelectionExists = false;
+            sourceProject.selectDestination = false;
+            sourceProject.destinationTypeSelected = false;
+            sourceProject.selectDestinationType = false;
+            sourceProject.selected = false;
+          }
+        });
         $('#boxIFrame').remove();
         $('#boxIFrameContainer').append('<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize" frameborder="0"></iframe>')
     	// current user un-authorize the app from accessing Box
