@@ -10,6 +10,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.boxAuthorized = false;
   // whether the current user authorized app to Box or not
   var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+
   Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
 	  if(result.data === 'true'){
       $scope.boxAuthorized = true;  
@@ -98,7 +99,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   };
   
   //handler for a request for the user's Box folders
-  $scope.getBoxFolders = function() {
+  $scope.getBoxFolders = function(projectSiteId, projectToolId) {
+    $scope.currentTool = projectToolId;
+    $scope.currentSite = projectSiteId;
     // get the box folder info if it has not been gotten yet
     if (!$scope.boxFolders) {
       $scope.loadingFolders = true;
@@ -134,6 +137,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       var boxUrl = '/box/unauthorize';
       Projects.boxUnauthorize(boxUrl).then(function(result) {
         $scope.boxAuthorized = false;
+        //void the folders in scope
+        $scope.boxFolders = false;
+        // reset all things in all projects that depend on authorization
+        _.each($scope.sourceProjects, function(sourceProject) {
+          if(sourceProject !==null && sourceProject !==undefined){
+            sourceProject.boxFolder = false;
+            sourceProject.stateSelectionExists = false;
+            sourceProject.selectDestination = false;
+            sourceProject.destinationTypeSelected = false;
+            sourceProject.selectDestinationType = false;
+            sourceProject.selected = false;
+          }
+        });
+        $('#boxIFrame').remove();
+        $('#boxIFrameContainer').append('<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize" frameborder="0"></iframe>')
     	// current user un-authorize the app from accessing Box
         $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
         $log.info(' - - - - GET /box/unauthorize');
@@ -143,6 +161,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   //handler for a user's selection of a particular Box folder 
   //as a destination of a migration
   $scope.boxFolderSelect = function(folder) {
+    // decorate both the tool row and the parent site row with the selected folder
+    var toolRow = _.findWhere($scope.sourceProjects, {tool_id: $scope.currentTool});
+    var parentRow = _.findWhere($scope.sourceProjects, {site_id: $scope.currentSite, tool_id:''});
+    parentRow.boxFolder = {'name':folder.name,'id':folder.ID};
+    toolRow.boxFolder = {'name':folder.name,'id':folder.ID};
     $scope.selectBoxFolder = {'name':folder.name,'id':folder.ID};
     $log.info('BOX Folder "' + $scope.selectBoxFolder.name + '" (ID: ' + $scope.selectBoxFolder.id + ') selected');
   };
@@ -292,6 +315,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
     $scope.sourceProjects[targetProjChildPos].migrating=true;
     $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
 
+
     $scope.$evalAsync(function() { 
       focus('project' + projectId);
     });
@@ -311,7 +335,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
       if (destinationType =='Box')
       {
     	  // migrate to Box
-    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.selectBoxFolder.id;
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id;
          
           $log.info("box " + migrationUrl);
     	  // use promise factory to execute the post
