@@ -204,7 +204,10 @@ public class MigrationController {
 					// find user MyWorkspace site
 					siteJson = siteEntity.getBody();
 				}
-				else
+			} catch (RestClientException e) {
+				log.error(this + requestUrl + e.getMessage());
+				
+				try 
 				{
 					// 2. site not found, try "~<eid>" next
 					// get the user id first
@@ -215,20 +218,21 @@ public class MigrationController {
 					ResponseEntity<String> userEntity = restTemplate.getForEntity(requestUrl, String.class);
 					if (userEntity.getStatusCode().is2xxSuccessful())
 					{
-						String userId = userEntity.getBody();
+						JSONObject userObject = new JSONObject(userEntity.getBody());
+						String userId = (String) userObject.get("id");
 						// use this userId to form user myworkspace id
 						requestUrl = env.getProperty("ctools.server.url") + "direct/site/~" + userId + ".json?_sessionId=" + sessionId;
 						log.info(this + " get_user_myworkspace_site_json " + requestUrl);
-						siteEntity = restTemplate.getForEntity(requestUrl, String.class);
+						ResponseEntity<String>  siteEntity = restTemplate.getForEntity(requestUrl, String.class);
 						if (siteEntity.getStatusCode().is2xxSuccessful())
 						{
 							// now we find the user MyWorkspace site
 							siteJson = siteEntity.getBody();
 						}
 					}
+				} catch (RestClientException e2) {
+					log.error(this + requestUrl + e2.getMessage());
 				}
-			} catch (RestClientException e) {
-				log.error(this + requestUrl + e.getMessage());
 			}
 
 		}
@@ -507,6 +511,7 @@ public class MigrationController {
 		List<Migration> migratingSiteTools = repository.findMigrating(currentUserId);
 		for (Migration m : migratingSiteTools)
 		{
+			log.info("migrating reord " + m.getSite_id() + " tool id=" + toolId + "user id=" + currentUserId);
 			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id()))
 			{
 				// still on-going migration
@@ -518,7 +523,7 @@ public class MigrationController {
 		// exit if it is duplicate request
 		if (!valid_migration_request)
 		{
-			rv.put("errorMessage", "Duplicate migration request for site " + siteId + " tool=" + toolId);
+			rv.put("errorMessage", "Duplicate migration request for site " + siteId + " tool=" + toolId + " user id=" + currentUserId);
 			return rv;
 		}
 		
