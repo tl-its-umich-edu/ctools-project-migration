@@ -270,6 +270,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.showDetails = function(index, site_title){
     var reportDetails = $scope.migratedProjects[index].status;
     reportDetails.title = site_title;
+    $log.info(JSON.stringify(reportDetails));
+    reportDetails.data = reportDetails.data.slice(1, reportDetails.data.length)
     if(reportDetails.status.indexOf('Finished upload site content for site') !== -1){
       reportDetails.status = 'Finished upload site content for site ' + site_title;
     }
