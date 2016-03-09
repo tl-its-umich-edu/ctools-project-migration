@@ -270,6 +270,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   $scope.showDetails = function(index, site_title){
     var reportDetails = $scope.migratedProjects[index].status;
     reportDetails.title = site_title;
+    if(reportDetails.status.indexOf('Finished upload site content for site') !== -1){
+      reportDetails.status = 'Finished upload site content for site ' + site_title;
+    }
+
     sessionStorage.setItem('proj_migr_report', JSON.stringify(reportDetails));
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
     reportWin.focus();

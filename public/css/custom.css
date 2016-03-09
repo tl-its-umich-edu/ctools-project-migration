@@ -26,11 +26,14 @@ small, h1 small, h2 small, h3 small, h4 small, h5 small, h6 small, .h1 small, .h
 .btn-primary:hover {
 	background:#0068cc
 }	
-h3, h4.site-header {
+.site-header {
 	font-size: 14px;
   margin: 0;
   padding: 3px 0 0;
-  font-weight:bolder;
+}
+
+h3, h4.site-header {
+	font-weight: bolder
 }
 .alert-inline {
     display:inline-block;font-size: 14px;font-weight: 400;
