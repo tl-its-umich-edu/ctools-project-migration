@@ -117,7 +117,7 @@ var prepareReport = function (data){
   // remove the site folder
   var data = data.slice(1, data.length)
   $.each(data, function(i, item){
-    if(item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1) {
+    if(item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1 && item.status !=='') {
       item.status_code="fail";
       fails.push('fail');
     }
