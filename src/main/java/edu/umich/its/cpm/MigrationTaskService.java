@@ -9,7 +9,6 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -22,11 +21,9 @@ import java.net.URLDecoder;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-import java.util.concurrent.Callable;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -38,7 +35,6 @@ import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-import org.springframework.util.concurrent.ListenableFuture;
 
 import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIException;
@@ -46,6 +42,11 @@ import com.box.sdk.BoxFile;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
+
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypes;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.config.TikaConfig;
 
 @Service
 @Component
@@ -271,7 +272,7 @@ public class MigrationTaskService {
 		} // for
 		return fileItems;
 	}
-
+	
 	/**
 	 * create zip entry for files
 	 */
@@ -947,13 +948,30 @@ public class MigrationTaskService {
 	}
 
 	/**
-	 * for Web Link and citation type of resources, append ".html" to the file name String
+	 * If file extension is missing, look up the extension by file MIME type
+	 * Then for Web Link and citation type of resources, append ".html" to the file name String
 	 * @param type
 	 * @param fileName
 	 * @return
 	 */
 	private String modifyFileNameOnType(String type, String fileName) {
-		if (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
+		if (!fileName.contains(Utils.FILE_EXTENSION_CHAR))
+		{
+			// do extension lookup first
+			try {
+				TikaConfig config = TikaConfig.getDefaultConfig();
+				MimeType mimeType = config.getMimeRepository().forName(type);
+				if (mimeType != null) {
+					String extension = mimeType.getExtension();
+				    //do something with the extension
+					fileName = fileName.concat(extension);
+				}
+			} catch (MimeTypeException e) {
+				log.error(this + " Couldn't find file extension for resource: " + fileName + " of MIME type = " + type , e);
+			}
+		}
+		
+		if (!fileName.contains(Utils.FILE_EXTENSION_CHAR) && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
 		{
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;
 		}
