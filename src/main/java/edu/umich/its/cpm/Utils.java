@@ -52,7 +52,6 @@ public class Utils {
 	public static final String SERVER_URL = "server_url";
 	
 	// CTools resource type strings
-	public static final String FILE_EXTENSION_CHAR = ".";
 	public static final String CTOOLS_RESOURCE_TYPE_URL = "text/url";
 	public static final String CTOOLS_RESOURCE_TYPE_URL_EXTENSION = ".URL";
 	public static final String CTOOLS_RESOURCE_TYPE_CITATION = "text/html";

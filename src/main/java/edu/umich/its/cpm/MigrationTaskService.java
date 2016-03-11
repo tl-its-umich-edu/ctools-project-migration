@@ -44,9 +44,9 @@ import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
 import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypes;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.config.TikaConfig;
+import org.apache.commons.io.FilenameUtils;
 
 @Service
 @Component
@@ -80,6 +80,8 @@ public class MigrationTaskService {
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
 
+	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+	
 	/**
 	 * Download CTools site resource in zip file
 	 * 
@@ -272,7 +274,7 @@ public class MigrationTaskService {
 		} // for
 		return fileItems;
 	}
-	
+
 	/**
 	 * create zip entry for files
 	 */
@@ -948,19 +950,18 @@ public class MigrationTaskService {
 	}
 
 	/**
-	 * If file extension is missing, look up the extension by file MIME type
-	 * Then for Web Link and citation type of resources, append ".html" to the file name String
+	 * If file extension is missing, look up the extension by file MIME type and add extension if found;
+	 * If file extension is still missing, append ".html" for Web Link and citation type of resources
 	 * @param type
 	 * @param fileName
 	 * @return
 	 */
 	private String modifyFileNameOnType(String type, String fileName) {
-		if (!fileName.contains(Utils.FILE_EXTENSION_CHAR))
+		if (FilenameUtils.getExtension(fileName).isEmpty())
 		{
 			// do extension lookup first
 			try {
-				TikaConfig config = TikaConfig.getDefaultConfig();
-				MimeType mimeType = config.getMimeRepository().forName(type);
+				MimeType mimeType = tikaConfig.getMimeRepository().forName(type);
 				if (mimeType != null) {
 					String extension = mimeType.getExtension();
 				    //do something with the extension
@@ -971,7 +972,7 @@ public class MigrationTaskService {
 			}
 		}
 		
-		if (!fileName.contains(Utils.FILE_EXTENSION_CHAR) && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
+		if (FilenameUtils.getExtension(fileName).isEmpty() && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
 		{
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;
 		}
