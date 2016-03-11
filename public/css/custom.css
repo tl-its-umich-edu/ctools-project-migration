@@ -1,11 +1,11 @@
 a {
 	color:#005bb2;
 }
-.export-fail {
-	color:#c00;
+small.export-fail {
+	color:#c00 !important;
 }
-.export-success {
-	color:#390;
+small.export-success {
+	color:#390 !important;
 }
 .myworkspace {
 	margin-bottom:10px;
