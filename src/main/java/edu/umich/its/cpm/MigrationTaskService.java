@@ -261,8 +261,12 @@ public class MigrationTaskService {
 					}
 
 				} else {
+					// get the zip file name with folder path info
+					String zipFileName = container.substring(container.indexOf(rootFolderPath) + rootFolderPath.length());
+					zipFileName = zipFileName.concat(title);
+					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
-					String zipFileStatus = zipFiles(type, httpContext, title,
+					String zipFileStatus = zipFiles(type, httpContext, zipFileName,
 							contentUrl, contentAccessUrl, sessionId, out);
 					itemStatus.append(zipFileStatus + LINE_BREAK);
 				}
@@ -957,7 +961,7 @@ public class MigrationTaskService {
 	 * @return
 	 */
 	private String modifyFileNameOnType(String type, String fileName) {
-		if (FilenameUtils.getExtension(fileName).isEmpty())
+		if (type != null && FilenameUtils.getExtension(fileName).isEmpty())
 		{
 			// do extension lookup first
 			try {
