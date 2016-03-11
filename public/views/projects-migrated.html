@@ -19,14 +19,20 @@
 	    			{{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
 		  	</div>
 		  	<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
-		  		<span ng-class="migratedProject.status.status.status_code ==='Fail' ? 'export-fail' : 'export-success'">{{migratedProject.status.status.status_code}} </span>
-		  		<small><a href="" ng-click="showDetails($index, migratedProject.site_name )">(info) <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>	
+		  		<small><a href="" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">(info) <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>	
  
 		  	</div>
 		  </div>
 		  <div class="row">
-		  	<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-		  		<span>Exported to {{migratedProject.destination_type}}</span>	
+		  	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+		  		<span>Exported to {{migratedProject.destination_type}}
+          </span>	
+        </div>
+        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
+          <small ng-show="migratedProject.status.data.counts.failures !==0" class="export-fail">
+            There were {{migratedProject.status.data.counts.failures}} failures
+          </small>
+        </div>
 		  	</div>
 		  </div>	
 		</li>
