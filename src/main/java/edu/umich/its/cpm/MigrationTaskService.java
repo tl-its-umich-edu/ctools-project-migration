@@ -222,11 +222,8 @@ public class MigrationTaskService {
 					.indexOf(CTOOLS_ACCESS_STRING)
 					+ CTOOLS_ACCESS_STRING.length());
 
-			// inside the JSON feed, the container string is of format
-			// /content/<folder_url>
-			// remote the prefix "/content"
-			String container = URLDecoder.decode(Utils.getJSONString(
-					contentItem, CONTENT_JSON_ATTR_CONTAINER));
+			// get container string from content url
+			String container = getContainerStringFromContentUrl(contentUrl);
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
@@ -277,6 +274,19 @@ public class MigrationTaskService {
 			fileItems.add(fileItem);
 		} // for
 		return fileItems;
+	}
+
+	/**
+	 * based on the content url, get its parent folder - container
+	 * folder url ends with "/", need remove the ending "/" first;
+	 * <container_path_end_with_slash><content_title>
+	 * @param contentUrl
+	 * @return
+	 */
+	private String getContainerStringFromContentUrl(String contentUrl) {
+		String container = contentUrl.endsWith(Utils.PATH_SEPARATOR) ? contentUrl.substring(0, contentUrl.length()-1) : contentUrl;
+		container = container.substring(0, container.lastIndexOf(Utils.PATH_SEPARATOR) + 1);
+		return container;
 	}
 
 	/**
@@ -414,7 +424,7 @@ public class MigrationTaskService {
 			urlContent = fileUrl.substring(0, fileUrl.length()-4);
 		}
 		// get the last 
-		urlContent = urlContent.substring(urlContent.lastIndexOf("/") + 1);
+		urlContent = urlContent.substring(urlContent.lastIndexOf(Utils.PATH_SEPARATOR) + 1);
 		// decode first
 		try
 		{
@@ -425,7 +435,7 @@ public class MigrationTaskService {
 			log.error(this + " getWebLinkContent: UnsupportedEncodingException " + e);
 		}
 		// then replace all "_" char with "/", was encoded by CTools
-		urlContent=urlContent.replace("_", "/");
+		urlContent=urlContent.replace("_", Utils.PATH_SEPARATOR);
 		StringBuffer b = new StringBuffer();
 		b.append("<a href=\"");
 		b.append(urlContent);
@@ -593,15 +603,8 @@ public class MigrationTaskService {
 			contentUrl = contentUrl.substring(contentUrl
 					.indexOf(CTOOLS_ACCESS_STRING)
 					+ CTOOLS_ACCESS_STRING.length());
-
-			// inside the JSON feed, the container string is of format
-			// /content/<folder_url>
-			// remote the prefix "/content"
-			String container = URLDecoder.decode(contentItem
-					.getString(CONTENT_JSON_ATTR_CONTAINER));
-			container = container.substring(container
-					.indexOf(CTOOLS_CONTENT_STRING)
-					+ CTOOLS_CONTENT_STRING.length());
+			// get container string from content url
+			String container = getContainerStringFromContentUrl(contentUrl);
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);

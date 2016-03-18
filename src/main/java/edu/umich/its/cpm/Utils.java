@@ -61,6 +61,8 @@ public class Utils {
 	// the at sign used in email address
 	private static final String EMAIL_AT = "@";
 	private static final String EMAIL_AT_UMICH = "@umich.edu";
+	// the path separator
+	public static final String PATH_SEPARATOR = "/";
 	
 	private static final Logger log = LoggerFactory
 			.getLogger(Utils.class);
