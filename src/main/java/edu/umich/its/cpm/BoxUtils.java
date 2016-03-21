@@ -397,7 +397,7 @@ public class BoxUtils {
 
 				BoxFolder.Info folderInfo = (BoxFolder.Info) itemInfo;
 				BoxFolder xfolder = new BoxFolder(api, folderInfo.getID());
-				String currentFolderPath = folderPath + "/"
+				String currentFolderPath = folderPath + Utils.PATH_SEPARATOR
 						+ folderInfo.getName();
 				folderMap.add(getBoxItemProperties(xfolder.getInfo(),
 						currentFolderPath));
