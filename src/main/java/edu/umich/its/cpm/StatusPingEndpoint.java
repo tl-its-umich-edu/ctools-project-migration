@@ -1,12 +1,13 @@
 package edu.umich.its.cpm;
 
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -22,6 +23,12 @@ import org.json.JSONObject;
  */
 @Component
 public class StatusPingEndpoint implements Endpoint<String>{
+	
+	@Autowired
+	MigrationRepository repository;
+	
+	@Autowired
+	private Environment env;
 
 	private static ServletContext servletContext = null;
 	
@@ -44,9 +51,17 @@ public class StatusPingEndpoint implements Endpoint<String>{
 		try {
 			// output the git version, CTools and Box url 
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put("status", "OK");
+			String pingQuery = env.containsProperty("spring.datasource.validationQuery") ? env.getProperty("spring.datasource.validationQuery") : "SELECT 1 from dual";
+			String pingResult = repository.ping(pingQuery);
+			if ("1".equals(pingResult))
+			{
+				statusMap.put("status", "OK");
+			}
+			else
+			{
+				statusMap.put("status", pingResult);
+			}
 			rv = (new JSONObject(statusMap)).toString();
-			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}
