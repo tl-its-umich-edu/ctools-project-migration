@@ -1,8 +1,6 @@
 package edu.umich.its.cpm;
 
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
-import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
 import java.util.List;
@@ -24,12 +22,6 @@ import org.json.JSONObject;
 @Component
 public class StatusPingEndpoint implements Endpoint<String>{
 	
-	@Autowired
-	MigrationRepository repository;
-	
-	@Autowired
-	private Environment env;
-
 	private static ServletContext servletContext = null;
 	
 	public String getId() {
