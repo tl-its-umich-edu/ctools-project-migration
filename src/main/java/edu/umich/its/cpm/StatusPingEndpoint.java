@@ -51,16 +51,7 @@ public class StatusPingEndpoint implements Endpoint<String>{
 		try {
 			// output the git version, CTools and Box url 
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			String pingQuery = env.containsProperty("spring.datasource.validationQuery") ? env.getProperty("spring.datasource.validationQuery") : "SELECT 1 from dual";
-			String pingResult = repository.ping(pingQuery);
-			if ("1".equals(pingResult))
-			{
-				statusMap.put("status", "OK");
-			}
-			else
-			{
-				statusMap.put("status", pingResult);
-			}
+			statusMap.put("status", "OK");
 			rv = (new JSONObject(statusMap)).toString();
 		} catch (Throwable e) {
 			e.printStackTrace();

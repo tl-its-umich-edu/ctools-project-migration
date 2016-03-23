@@ -47,7 +47,7 @@ public class Utils {
 	public static final String MIGRATION_DATA = "data";
 	
 	// the format of folder path in box
-	// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
+	// e.g. https://umich.app.box.com/files/0/f/<folderId>
 	public static final String BOX_FILE_PATH_URL = "https://umich.app.box.com/files/0/f/";
 	public static final String BOX_CLIENT_ID = "box_client_id";
 	public static final String BOX_CLIENT_SECRET = "box_client_secret";

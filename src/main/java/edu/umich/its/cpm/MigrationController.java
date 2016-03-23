@@ -757,15 +757,15 @@ public class MigrationController {
 		String destinationType = parameterMap.get("destination_type")[0];
 		String userId = Utils.getCurrentUserId(request, env);
 		String targetUrl = "";
-		if (Utils.MIGRATION_TYPE_BOX.equals(destinationType))
+		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType))
 		{
+			// the format of folder path in box
+			// e.g. https://umich.app.box.com/files/0/f/<folderId>
 			String boxFolderId = parameterMap.get("box_folder_id")[0];
-			String boxFolderName = parameterMap.get("box_folder_id")[0];
-			if (boxFolderId != null && !boxFolderId.isEmpty()
-				&& boxFolderName != null && !boxFolderName.isEmpty())
+			if (boxFolderId != null && !boxFolderId.isEmpty())
 			{
 
-				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId + Utils.PATH_SEPARATOR + boxFolderName;
+				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId;
 			}
 		}
 		

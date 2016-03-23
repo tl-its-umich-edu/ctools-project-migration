@@ -15,14 +15,6 @@ import org.springframework.transaction.annotation.Transactional;
 public interface MigrationRepository extends CrudRepository<Migration, String> {
 	
 	/**
-	 * database ping
-	 * 
-	 * @return 1
-	 */
-	@Query(" %:ping_query%")
-	public String ping(@Param("ping_query") String ping_query);
-	
-	/**
 	 * Finds finished migrations issued by given user
 	 * 
 	 * @param userId
