@@ -6,6 +6,7 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
+
 import java.util.Iterator;
 import java.util.Properties;
 
@@ -21,7 +22,7 @@ import org.json.JSONObject;
  */
 @Component
 public class StatusPingEndpoint implements Endpoint<String>{
-	
+
 	private static ServletContext servletContext = null;
 	
 	public String getId() {
@@ -45,6 +46,7 @@ public class StatusPingEndpoint implements Endpoint<String>{
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
 			statusMap.put("status", "OK");
 			rv = (new JSONObject(statusMap)).toString();
+			
 		} catch (Throwable e) {
 			e.printStackTrace();
 		}

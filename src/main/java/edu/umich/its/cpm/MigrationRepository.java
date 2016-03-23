@@ -1,12 +1,12 @@
 package edu.umich.its.cpm;
 
 import java.util.List;
+
 import java.sql.Timestamp;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.jpa.repository.Modifying;
-
 import org.springframework.transaction.annotation.Transactional;
 
 public interface MigrationRepository extends CrudRepository<Migration, String> {
