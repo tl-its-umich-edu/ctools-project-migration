@@ -761,7 +761,7 @@ public class MigrationTaskService {
 				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
 					itemStatus.append("There is already a folder with name "
-							+ title);
+							+ title + "- folder was not created in Box");
 
 					String exisingFolderId = getExistingBoxFolderIdFromBoxException(
 							e, title);
@@ -905,7 +905,7 @@ public class MigrationTaskService {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 				// 409 means name conflict - item already existed
 				String conflictString = "There is already a file with name "
-						+ fileName;
+						+ fileName + " - file was not added to Box";
 				log.info(conflictString);
 				status.append(conflictString + LINE_BREAK);
 			}
