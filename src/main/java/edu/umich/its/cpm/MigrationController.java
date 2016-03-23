@@ -454,7 +454,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// zip download
-		HashMap<String, String> callStatus = migration_call(request, response, "zip", Utils.getCurrentUserId(request, env));	
+		HashMap<String, String> callStatus = migration_call(request, response, Utils.MIGRATION_TYPE_ZIP, Utils.getCurrentUserId(request, env));	
 		if (callStatus.containsKey("errorMessage"))
 		{
 			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
@@ -548,13 +548,13 @@ public class MigrationController {
 				
 				// call asynchronous method for zip file download
 				String migrationStatus = null;
-		        if ("zip".equals(target))
+		        if (Utils.MIGRATION_TYPE_ZIP.equals(target))
 				{
 		        	// call asynchronous method for zip file download
 		        	log.info("start to call zip migration asynch for siteId=" + siteId + " tooId=" + toolId);
 					migrationInstanceService.createDownloadZipInstance(env, request, response, currentUserId, sessionAttributes, siteId, migrationId, repository);
 				}
-				else if ("box".equals(target))
+				else if (Utils.MIGRATION_TYPE_BOX.equals(target))
 				{
 		        	// call asynchronous method for Box file upload
 		        	log.info("start to call Box migration asynch for siteId=" + siteId + " tooId=" + toolId);
@@ -756,12 +756,24 @@ public class MigrationController {
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = parameterMap.get("destination_type")[0];
 		String userId = Utils.getCurrentUserId(request, env);
+		String targetUrl = "";
+		if (Utils.MIGRATION_TYPE_BOX.equals(destinationType))
+		{
+			String boxFolderId = parameterMap.get("box_folder_id")[0];
+			String boxFolderName = parameterMap.get("box_folder_id")[0];
+			if (boxFolderId != null && !boxFolderId.isEmpty()
+				&& boxFolderName != null && !boxFolderName.isEmpty())
+			{
 
+				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId + Utils.PATH_SEPARATOR + boxFolderName;
+			}
+		}
+		
 		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
 																	// now
-				null, destinationType, null, "" /* status */);
+				null, destinationType, targetUrl, "" /* status */);
 
 		Migration newMigration = null;
 
@@ -771,6 +783,7 @@ public class MigrationController {
 				.append(" tool_id=").append(toolId).append(" tool_name=")
 				.append(toolName).append(" migrated_by=").append(userId)
 				.append(" destination_type=").append(destinationType)
+				
 				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
 		try {
@@ -807,7 +820,7 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
- 		HashMap<String, String> callStatus = migration_call(request, response, "box", Utils.getCurrentUserId(request, env));	
+ 		HashMap<String, String> callStatus = migration_call(request, response, Utils.MIGRATION_TYPE_BOX, Utils.getCurrentUserId(request, env));	
 		HttpHeaders headers = new HttpHeaders();
  		if (callStatus.containsKey("errorMessage"))
  		{

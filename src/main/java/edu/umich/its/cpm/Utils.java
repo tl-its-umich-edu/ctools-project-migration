@@ -40,9 +40,15 @@ import javax.naming.directory.SearchResult;
 @Configuration
 public class Utils {
 
+	public static final String MIGRATION_TYPE_BOX = "box";
+	public static final String MIGRATION_TYPE_ZIP = "zip";
+	
 	public static final String MIGRATION_STATUS = "status";
 	public static final String MIGRATION_DATA = "data";
 	
+	// the format of folder path in box
+	// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
+	public static final String BOX_FILE_PATH_URL = "https://umich.app.box.com/files/0/f/";
 	public static final String BOX_CLIENT_ID = "box_client_id";
 	public static final String BOX_CLIENT_SECRET = "box_client_secret";
 	public static final String BOX_API_URL = "box_api_url";
