@@ -19,22 +19,28 @@
 	    			{{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
 		  	</div>
 		  	<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
-		  		<small><a href="" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">(info) <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>	
- 
+		  		<small><a href="" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">(info) <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a></small>
 		  	</div>
 		  </div>
 		  <div class="row">
-		  	<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-		  		<span>Exported to {{migratedProject.destination_type}}
-          </span>	
-        </div>
+				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+					Exported to
+				  <span ng-show="migratedProject.destination_type==='Box' && migratedProject.destination_url">
+				    <a target="_blank" href="{{migratedProject.destination_url}}">
+				      <span class="sr-only">Go to Box folder for content migrated from site {{migratedProject.site_name}}</span>
+				      <span aria-hidden="true">{{migratedProject.destination_type}}</span>
+				    </a>
+				  </span>
+
+				 <span ng-show="migratedProject.destination_url===null">{{migratedProject.destination_type}}</span>
+				</div>
         <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
           <small ng-show="migratedProject.status.data.counts.failures !==0" class="export-fail">
             There were {{migratedProject.status.data.counts.failures}} failures
           </small>
         </div>
 		  	</div>
-		  </div>	
+		  </div>
 		</li>
 	</ul>
 </div>
