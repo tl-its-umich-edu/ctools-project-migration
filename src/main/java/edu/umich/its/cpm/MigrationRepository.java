@@ -11,6 +11,14 @@ import org.springframework.transaction.annotation.Transactional;
 
 public interface MigrationRepository extends CrudRepository<Migration, String> {
 	/**
+	 * validate the database connection
+	 *
+	 * @return 1 if database connection works as expected
+	 */
+	@Query("SELECT count(*) from Migration")
+	public int validate();
+
+	/**
 	 * Finds finished migrations issued by given user
 	 * 
 	 * @param userId
