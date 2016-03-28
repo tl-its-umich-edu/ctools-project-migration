@@ -760,12 +760,14 @@ public class MigrationController {
 		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType))
 		{
 			// the format of folder path in box
-			// e.g. https://umich.app.box.com/files/0/f/<folderId>
+			// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
 			String boxFolderId = parameterMap.get("box_folder_id")[0];
-			if (boxFolderId != null && !boxFolderId.isEmpty())
+			String boxFolderName = parameterMap.get("box_folder_name")[0];
+			log.info("boxFolderName=" + boxFolderName);
+			if (boxFolderId != null && !boxFolderId.isEmpty() &&
+				boxFolderName != null && !boxFolderName.isEmpty())
 			{
-
-				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId;
+				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId + Utils.PATH_SEPARATOR + boxFolderName;
 			}
 		}
 		
