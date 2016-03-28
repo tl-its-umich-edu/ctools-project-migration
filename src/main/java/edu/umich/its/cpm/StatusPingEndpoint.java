@@ -16,6 +16,9 @@ import org.json.JSONObject;
 
 import edu.umich.its.cpm.MigrationRepository;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 /**
  * this is a single static page serves as /status/ping
  * 
@@ -29,6 +32,9 @@ public class StatusPingEndpoint implements Endpoint<String>{
 
 	@Autowired
 	MigrationRepository repository;
+	
+	private static final Logger log = LoggerFactory
+			.getLogger(StatusPingEndpoint.class);
 	
 	public String getId() {
 		return "status/ping";
@@ -49,8 +55,16 @@ public class StatusPingEndpoint implements Endpoint<String>{
 		try {
 			// output the git version, CTools and Box url 
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put("status", "OK");
-			statusMap.put("database connection", repository.validate() >= 0);
+			try
+			{
+				statusMap.put("status", repository.validate() >= 0 ? "OK":"Unable to connect to database.");
+			}
+			catch (Exception e)
+			{
+				// IOException might be thrown, due to database connection problems
+				statusMap.put("status", "Unable to connect to database.");
+				log.error(this + " Unable to connect to database.");
+			}
 			rv = (new JSONObject(statusMap)).toString();
 			
 		} catch (Throwable e) {
