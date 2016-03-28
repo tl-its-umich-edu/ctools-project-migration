@@ -285,6 +285,26 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
     reportWin.focus();
   };
+  
+  $scope.getBoxTargetUrl = function(url){
+	// input: <box_server_url>/<folder_id>/<folder_name>
+	// output: <box_server_url>/<folder_id>
+	return url.substring(0, url.lastIndexOf("/"));
+  };
+  
+  $scope.getBoxTargetName= function(url){
+	 // input: <box_server_url>/<folder_id>/<folder_name>
+	// output: <folder_name>
+	if (!url.endsWith("/"))
+	{
+		// return string after the last "/"
+		return url.substring(url.lastIndexOf("/") + 1);
+	}
+	else
+	{
+		return "";
+	}
+  };
 
   $scope.checkBoxAuth = function(){
     var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
@@ -346,7 +366,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
       if (destinationType =='Box')
       {
     	  // migrate to Box
-    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id;
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id + '&box_folder_name=' + $scope.sourceProjects[targetProjPos].boxFolder.name;
          
           $log.info("box " + migrationUrl);
     	  // use promise factory to execute the post
