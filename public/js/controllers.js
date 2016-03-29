@@ -63,6 +63,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       _.each(result.data.entity, function(migrated){
         migrated.status.data = prepareReport(migrated.status.data);
       })
+      result = transformMigrated(result);
       $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
       $rootScope.status.migrated = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
@@ -285,26 +286,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
     reportWin.focus();
   };
-  
-  $scope.getBoxTargetUrl = function(url){
-	// input: <box_server_url>/<folder_id>/<folder_name>
-	// output: <box_server_url>/<folder_id>
-	return url.substring(0, url.lastIndexOf("/"));
-  };
-  
-  $scope.getBoxTargetName= function(url){
-	 // input: <box_server_url>/<folder_id>/<folder_name>
-	// output: <folder_name>
-	if (!url.endsWith("/"))
-	{
-		// return string after the last "/"
-		return url.substring(url.lastIndexOf("/") + 1);
-	}
-	else
-	{
-		return "";
-	}
-  };
 
   $scope.checkBoxAuth = function(){
     var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
@@ -428,6 +409,7 @@ var poll = function (pollName, url, interval, targetPanel){
         _.each(result.data.entity, function(migrated){
           migrated.status.data = prepareReport(migrated.status.data);
         })
+        result = transformMigrated(result)
         $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
         // this poll has different data than the last one
         if(!angular.equals($scope.migratedProjects, $scope.migratedProjectsShadow)){
