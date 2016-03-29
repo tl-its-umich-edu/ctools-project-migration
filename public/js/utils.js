@@ -129,3 +129,11 @@ var prepareReport = function (data){
   return {'counts': {'successes': succs.length, 'failures':fails.length}, 'items': data};
 };
 
+var transformMigrated = function(result) {
+  _.each(result.data.entity, function(migrated){
+    if (migrated.destination_url){
+      migrated.destination_folder = _.last(migrated.destination_url.split('/'));
+    }
+  })
+  return result;
+}

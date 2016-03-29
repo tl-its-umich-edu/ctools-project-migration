@@ -174,7 +174,7 @@ projectMigrationApp.factory('Migrated', function($http) {
 			}).then(function success(result) {
 				// endpoint will return a 200, but the payload may be an error message with a status flag
 				if(result.data.status ===200){
-					return result;
+					return transformMigrated(result);
 				}
 				else {
 					result.status = result.data.status;
