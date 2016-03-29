@@ -132,7 +132,14 @@ var prepareReport = function (data){
 var transformMigrated = function(result) {
   _.each(result.data.entity, function(migrated){
     if (migrated.destination_url){
-      migrated.destination_folder = _.last(migrated.destination_url.split('/'));
+      var destination_urlArr = migrated.destination_url.split('/');
+      if(destination_urlArr.length > 7) {
+        migrated.destination_folder = _.last(destination_urlArr);
+        migrated.destination_url = _.initial(destination_urlArr).join('/');
+      }
+      else {
+        migrated.destination_folder =null;
+      }
     }
   })
   return result;
