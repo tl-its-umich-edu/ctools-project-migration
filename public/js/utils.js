@@ -20,6 +20,7 @@ var transformProjects = function (siteList){
     projObj.tool_name= '',
     projObj.tool_id= '',
     projObj.migrated_by= '',
+    projObj.url= item.entityURL,
     projObj.start_time= '',
     projObj.end_time='',
     projObj.destination_type= '',
@@ -109,4 +110,38 @@ var transformMigrations = function (data){
     item.tool_site_id= item.site_id + item.tool_id;
   });
   return data;
+}
+
+var prepareReport = function (data){
+  var fails = [];
+  var succs = [];
+  // remove the site folder
+  var data = data.slice(1, data.length)
+  $.each(data, function(i, item){
+    if(item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1 && item.status !=='') {
+      item.status_code="fail";
+      fails.push('fail');
+    }
+    else {
+      item.status_code="success";
+      succs.push('suc');
+    }
+  });
+  return {'counts': {'successes': succs.length, 'failures':fails.length}, 'items': data};
+};
+
+var transformMigrated = function(result) {
+  _.each(result.data.entity, function(migrated){
+    if (migrated.destination_url){
+      var destination_urlArr = migrated.destination_url.split('/');
+      if(destination_urlArr.length > 7) {
+        migrated.destination_folder = _.last(destination_urlArr);
+        migrated.destination_url = _.initial(destination_urlArr).join('/');
+      }
+      else {
+        migrated.destination_folder =null;
+      }
+    }
+  })
+  return result;
 }

@@ -1,11 +1,11 @@
 a {
 	color:#005bb2;
 }
-.export-fail {
-	color:#c00;
+small.export-fail {
+	color:#c00 !important;
 }
-.export-success {
-	color:#390;
+small.export-success {
+	color:#390 !important;
 }
 .myworkspace {
 	margin-bottom:10px;
@@ -31,6 +31,10 @@ small, h1 small, h2 small, h3 small, h4 small, h5 small, h6 small, .h1 small, .h
   margin: 0;
   padding: 3px 0 0;
 }
+
+h3, h4.site-header {
+	font-weight: bolder
+}
 .alert-inline {
     display:inline-block;font-size: 14px;font-weight: 400;
     line-height: 1.42857;
@@ -48,6 +52,14 @@ small, h1 small, h2 small, h3 small, h4 small, h5 small, h6 small, .h1 small, .h
 }
 .muted {
 	
+}
+
+#helpLink {
+	padding:7px;margin-top: 7px;color:fff;border:1px solid transparent;
+}
+#helpLink:hover {
+	color:fff;
+	background: #0068cc
 }
 .btn-primary[disabled] {
 	background:#000;

@@ -60,6 +60,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
 
   Migrated.getMigrated(migratedUrl).then(function(result) {
     if (result.status ===200) {
+      _.each(result.data.entity, function(migrated){
+        migrated.status.data = prepareReport(migrated.status.data);
+      })
+      result = transformMigrated(result);
       $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
       $rootScope.status.migrated = moment().format('h:mm:ss');
       $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
@@ -269,7 +273,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
   //handler for showing the details of a migrated thing
   $scope.showDetails = function(index, site_title){
     var reportDetails = $scope.migratedProjects[index].status;
+    var destination = $scope.migratedProjects[index].destination_type;
     reportDetails.title = site_title;
+    //on success - add site title to status
+    if(reportDetails.status.indexOf('Finished upload site content for site') !== -1){
+      reportDetails.status = 'Finished upload site content for site ' + site_title;
+    }
+    if(destination ==='zip') {
+      reportDetails.status = 'Finished creating zip file for ' + site_title;
+    }
     sessionStorage.setItem('proj_migr_report', JSON.stringify(reportDetails));
     var reportWin = window.open('/report.html', 'ReportWindow', 'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
     reportWin.focus();
@@ -335,7 +347,7 @@ $(document).on('hidden.bs.modal', '#boxAuthModal', function(){
       if (destinationType =='Box')
       {
     	  // migrate to Box
-    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id;
+    	  migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + siteName + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id + '&box_folder_name=' + $scope.sourceProjects[targetProjPos].boxFolder.name;
          
           $log.info("box " + migrationUrl);
     	  // use promise factory to execute the post
@@ -394,6 +406,10 @@ var poll = function (pollName, url, interval, targetPanel){
       //update time stamp displayed in /migrated  panel
       $rootScope.status.migrated = moment().format('h:mm:ss');
       if(result.data.status ===200) {
+        _.each(result.data.entity, function(migrated){
+          migrated.status.data = prepareReport(migrated.status.data);
+        })
+        result = transformMigrated(result)
         $scope.migratedProjects = _.sortBy(result.data.entity, 'site_name');
         // this poll has different data than the last one
         if(!angular.equals($scope.migratedProjects, $scope.migratedProjectsShadow)){

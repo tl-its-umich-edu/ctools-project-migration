@@ -57,6 +57,7 @@ public class MigrationTaskService {
 	// String values used in content json feed
 	private static final String COLLECTION_TYPE = "collection";
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
+	private static final String CTOOLS_CITATION_ACCESS_STRING = "/access/citation/content";
 	private static final String CTOOLS_CONTENT_STRING = "/content";
 	private static final String CONTENT_JSON_ATTR_CONTENT_COLLECTION = "content_collection";
 	private static final String CONTENT_JSON_ATTR_CONTAINER = "container";
@@ -217,17 +218,6 @@ public class MigrationTaskService {
 
 			JSONObject contentItem = array.getJSONObject(i);
 
-			String contentAccessUrl = contentItem
-					.getString(CONTENT_JSON_ATTR_URL);
-			// get only the url after "/access/" string
-			String contentUrl = URLDecoder.decode(contentAccessUrl);
-			contentUrl = contentUrl.substring(contentUrl
-					.indexOf(CTOOLS_ACCESS_STRING)
-					+ CTOOLS_ACCESS_STRING.length());
-
-			// get container string from content url
-			String container = getContainerStringFromContentUrl(contentUrl);
-
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
 
@@ -237,6 +227,24 @@ public class MigrationTaskService {
 			
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
+			
+			String contentAccessUrl = contentItem
+					.getString(CONTENT_JSON_ATTR_URL);
+			// get only the url after "/access/" string
+			String contentUrl = getContentUrl(contentAccessUrl);
+			if (contentUrl == null)
+			{
+				// log error
+				itemStatus.append("Content url " + contentUrl + " does not contain " + CTOOLS_ACCESS_STRING + " nor " + CTOOLS_CITATION_ACCESS_STRING);
+				
+				// document the error and break
+				MigrationFileItem item = new MigrationFileItem(contentUrl, title,
+						itemStatus.toString());
+				fileItems.add(item);
+				break;
+			}
+			// get container string from content url
+			String container = getContainerStringFromContentUrl(contentUrl);
 
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
@@ -617,18 +625,7 @@ public class MigrationTaskService {
 			StringBuffer itemStatus = new StringBuffer();
 
 			JSONObject contentItem = array.getJSONObject(i);
-
-			// get only the url after "/access/content" string
-			String contentAccessUrl = contentItem
-					.getString(CONTENT_JSON_ATTR_URL);
-
-			String contentUrl = URLDecoder.decode(contentAccessUrl);
-			contentUrl = contentUrl.substring(contentUrl
-					.indexOf(CTOOLS_ACCESS_STRING)
-					+ CTOOLS_ACCESS_STRING.length());
-			// get container string from content url
-			String container = getContainerStringFromContentUrl(contentUrl);
-
+			
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
 			String title = sanitizeFilename(Utils.getJSONString(contentItem,
@@ -641,11 +638,29 @@ public class MigrationTaskService {
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
 
+			// get only the url after "/access/content" string
+			String contentAccessUrl = contentItem
+					.getString(CONTENT_JSON_ATTR_URL);
+			String contentUrl = getContentUrl(contentAccessUrl);
+			if (contentUrl == null)
+			{
+				itemStatus.append("Content url " + contentUrl + " does not contain " + CTOOLS_ACCESS_STRING + " nor " + CTOOLS_CITATION_ACCESS_STRING);
+				
+				// document the error and break
+				MigrationFileItem item = new MigrationFileItem(contentUrl, title,
+						itemStatus.toString());
+				rv.add(item);
+				break;
+			}
+			
+			// get container string from content url
+			String container = getContainerStringFromContentUrl(contentUrl);
+
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
 					title, copyrightAlert);
 
-			log.info("type=" + type + " error=" + itemStatus.toString());
+			log.info("type=" + type + " contentUrl=" + contentUrl + " error=" + itemStatus.toString());
 
 			if (itemStatus.length() == 0) {
 				// now alerts, do Box uploads next
@@ -681,6 +696,36 @@ public class MigrationTaskService {
 		} // for
 
 		return rv;
+	}
+
+	/**
+	 * get substring of contentAccessUrl
+	 * @param itemStatus
+	 * @param contentAccessUrl
+	 * @return
+	 */
+	private String getContentUrl(String contentAccessUrl) {
+		String contentUrl = URLDecoder.decode(contentAccessUrl);
+		if (contentUrl.contains(CTOOLS_ACCESS_STRING))
+		{
+			// non-citation resource
+			contentUrl = contentUrl.substring(contentUrl
+					.indexOf(CTOOLS_ACCESS_STRING)
+					+ CTOOLS_ACCESS_STRING.length());
+		}
+		else if (contentUrl.contains(CTOOLS_CITATION_ACCESS_STRING))
+		{
+			// citation resource
+			contentUrl = contentUrl.substring(contentUrl
+					.indexOf(CTOOLS_CITATION_ACCESS_STRING)
+					+ CTOOLS_CITATION_ACCESS_STRING.length());
+		}
+		else
+		{
+			// log error
+			contentUrl = null;
+		}
+		return contentUrl;
 	}
 
 	/**
@@ -784,7 +829,7 @@ public class MigrationTaskService {
 				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
 					itemStatus.append("There is already a folder with name "
-							+ title);
+							+ title + "- folder was not created in Box");
 
 					String exisingFolderId = getExistingBoxFolderIdFromBoxException(
 							e, title);
@@ -928,7 +973,7 @@ public class MigrationTaskService {
 			if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 				// 409 means name conflict - item already existed
 				String conflictString = "There is already a file with name "
-						+ fileName;
+						+ fileName + " - file was not added to Box";
 				log.info(conflictString);
 				status.append(conflictString + LINE_BREAK);
 			}
