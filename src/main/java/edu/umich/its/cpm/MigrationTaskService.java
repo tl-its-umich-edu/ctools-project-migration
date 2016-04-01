@@ -25,6 +25,9 @@ import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
 
+import java.util.regex.Pattern;
+import java.util.regex.Matcher;
+
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.ws.rs.core.MediaType;
@@ -227,8 +230,11 @@ public class MigrationTaskService {
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
-			String title = Utils.getJSONString(contentItem,
-					CONTENT_JSON_ATTR_TITLE);
+
+			
+			String title = sanitizeFilename(Utils.getJSONString(contentItem,
+					CONTENT_JSON_ATTR_TITLE));
+			
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
 
@@ -274,6 +280,22 @@ public class MigrationTaskService {
 			fileItems.add(fileItem);
 		} // for
 		return fileItems;
+	}
+	
+	/**
+	 * replace characters not matching the regular expression to "_"
+	 * @param fileName
+	 * @return
+	 */
+	public String sanitizeFilename(String fileName) {
+		log.info("pre ??? " + fileName);
+		
+		Pattern p = Pattern.compile("[\\/]");
+		Matcher m = p.matcher(fileName);
+		fileName = m.replaceAll("_");
+		
+	    log.info("after ??? " + fileName);
+	    return fileName;
 	}
 
 	/**
@@ -599,6 +621,7 @@ public class MigrationTaskService {
 			// get only the url after "/access/content" string
 			String contentAccessUrl = contentItem
 					.getString(CONTENT_JSON_ATTR_URL);
+
 			String contentUrl = URLDecoder.decode(contentAccessUrl);
 			contentUrl = contentUrl.substring(contentUrl
 					.indexOf(CTOOLS_ACCESS_STRING)
@@ -608,8 +631,8 @@ public class MigrationTaskService {
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
-			String title = Utils.getJSONString(contentItem,
-					CONTENT_JSON_ATTR_TITLE);
+			String title = sanitizeFilename(Utils.getJSONString(contentItem,
+					CONTENT_JSON_ATTR_TITLE));
 			String description = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_DESCRIPTION);
 			// metadata
