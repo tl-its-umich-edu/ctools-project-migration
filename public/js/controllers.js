@@ -43,7 +43,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects', 'Migra
       $log.info(' - - - - GET /migrating');
       
       if (result.data.entity.length && result.status ===200) {
-        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'start_time');
+        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'start_time').reverse();
         $log.info('Updating projects panel based on CURRENT migrations');
         updateProjectsPanel($scope.migratingProjects, 'migrating');
       }
@@ -388,13 +388,13 @@ var poll = function (pollName, url, interval, targetPanel){
         }
         //update time stamp displayed in /migrations panel
         $rootScope.status.migrations = moment().format('h:mm:ss');
-        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'start_time');
+        $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity, 'start_time').reverse();
         // this poll has different data than the last one
         if(!angular.equals($scope.migratingProjects, $scope.migratingProjectsShadow)){
           $log.info('Updating projects panel based on CURRENT migrations poll');
           updateProjectsPanel($scope.migratingProjects, 'migrating');
         }
-        $scope.migratingProjectsShadow = _.sortBy(transformMigrations(result).data.entity, 'site_id');
+        $scope.migratingProjectsShadow = _.sortBy(transformMigrations(result).data.entity, 'start_time').reverse();
         //clear error condition if any
         $scope.migratingProjectsError = false;
       }
