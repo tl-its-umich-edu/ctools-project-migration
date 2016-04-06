@@ -220,11 +220,8 @@ public class MigrationTaskService {
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
-
-			
 			String title = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TITLE);
-			
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
 			
@@ -624,7 +621,7 @@ public class MigrationTaskService {
 			StringBuffer itemStatus = new StringBuffer();
 
 			JSONObject contentItem = array.getJSONObject(i);
-			
+
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
 			String title = Utils.getJSONString(contentItem,
