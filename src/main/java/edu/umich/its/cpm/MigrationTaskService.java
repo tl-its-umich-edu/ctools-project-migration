@@ -220,11 +220,8 @@ public class MigrationTaskService {
 
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
-
-			
 			String title = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TITLE);
-			
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
 			
@@ -625,16 +622,6 @@ public class MigrationTaskService {
 
 			JSONObject contentItem = array.getJSONObject(i);
 			
-			// get only the url after "/access/content" string
-			String contentAccessUrl = contentItem
-					.getString(CONTENT_JSON_ATTR_URL);
-
-			String contentUrl = URLDecoder.decode(contentAccessUrl);
-			contentUrl = contentUrl.substring(contentUrl
-					.indexOf(CTOOLS_ACCESS_STRING)
-					+ CTOOLS_ACCESS_STRING.length());
-			// get container string from content url
-			String container = getContainerStringFromContentUrl(contentUrl);
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
 			String title = Utils.getJSONString(contentItem,
