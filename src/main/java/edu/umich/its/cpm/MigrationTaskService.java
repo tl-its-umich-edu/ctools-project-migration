@@ -222,8 +222,8 @@ public class MigrationTaskService {
 					CONTENT_JSON_ATTR_TYPE);
 
 			
-			String title = sanitizeFilename(Utils.getJSONString(contentItem,
-					CONTENT_JSON_ATTR_TITLE));
+			String title = Utils.getJSONString(contentItem,
+					CONTENT_JSON_ATTR_TITLE);
 			
 			String copyrightAlert = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_COPYRIGHT_ALERT);
@@ -274,10 +274,10 @@ public class MigrationTaskService {
 				} else {
 					// get the zip file name with folder path info
 					String zipFileName = container.substring(container.indexOf(rootFolderPath) + rootFolderPath.length());
-					zipFileName = zipFileName.concat(title);
+					zipFileName = zipFileName.concat(sanitizeFileName(title));
 					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
-					String zipFileStatus = zipFiles(type, httpContext, zipFileName,
+					String zipFileStatus = zipFiles(type, httpContext, zipFileName, title,
 							contentUrl, contentAccessUrl, sessionId, out);
 					itemStatus.append(zipFileStatus + LINE_BREAK);
 				}
@@ -291,18 +291,17 @@ public class MigrationTaskService {
 	}
 	
 	/**
-	 * replace characters not matching the regular expression to "_"
+	 * replace characters match the regular expression to "_"
 	 * @param fileName
 	 * @return
 	 */
-	public String sanitizeFilename(String fileName) {
-		log.info("pre ??? " + fileName);
+	public String sanitizeFileName(String fileName) {
 		
-		Pattern p = Pattern.compile("[\\/]");
+		// only look for ":" and "/" as of now
+		Pattern p = Pattern.compile("[:\\/]");
 		Matcher m = p.matcher(fileName);
 		fileName = m.replaceAll("_");
 		
-	    log.info("after ??? " + fileName);
 	    return fileName;
 	}
 
@@ -322,7 +321,7 @@ public class MigrationTaskService {
 	/**
 	 * create zip entry for files
 	 */
-	private String zipFiles(String type, HttpContext httpContext, String fileName,
+	private String zipFiles(String type, HttpContext httpContext, String fileName, String title,
 			String fileUrl, String fileAccessUrl, String sessionId,
 			ZipOutputStream out) {
 		log.info("*** " + fileAccessUrl);
@@ -365,7 +364,7 @@ public class MigrationTaskService {
 				int bCount = -1;
 				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 				{
-					out.write(getWebLinkContent(fileName, fileUrl).getBytes());
+					out.write(getWebLinkContent(title, fileUrl).getBytes());
 				}
 				else
 				{
@@ -638,8 +637,8 @@ public class MigrationTaskService {
 			String container = getContainerStringFromContentUrl(contentUrl);
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
-			String title = sanitizeFilename(Utils.getJSONString(contentItem,
-					CONTENT_JSON_ATTR_TITLE));
+			String title = Utils.getJSONString(contentItem,
+					CONTENT_JSON_ATTR_TITLE);
 			String description = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_DESCRIPTION);
 			// metadata
@@ -921,9 +920,6 @@ public class MigrationTaskService {
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		InputStream content = null;
 		
-		// update file name
-		fileName = modifyFileNameOnType(type, fileName);
-		
 		if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 		{
 			// special handling of Web Links resources
@@ -944,6 +940,9 @@ public class MigrationTaskService {
 			}
 		}
 
+		// update file name
+		fileName = modifyFileNameOnType(type, fileName);
+		
 		// exit if content stream is null
 		if (content == null)
 			return null;
@@ -957,7 +956,7 @@ public class MigrationTaskService {
 			// check if Box access token needs refresh
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
-			BoxFile.Info newFileInfo = folder.uploadFile(bContent, fileName,
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, sanitizeFileName(fileName),
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
