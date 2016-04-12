@@ -329,12 +329,65 @@ public class MigrationController {
 						+ e.getMessage();
 				log.error(errorMessage);
 			}
+		
+			pagesString = siteHasContentItems(site_id, pagesString, sessionId);
 		}
 		
 		rv.put("pagesString", pagesString);
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
 		return rv;	
+	}
+	
+	/**
+	 * adds an extra "hasContentItem" JSON element to the site tool JSON feed. 
+	 * True if site has content resources; false if the site content is empty.
+	 * @param site_id
+	 * @param pagesString
+	 * @param sessionId
+	 * @return
+	 */
+	private String siteHasContentItems(String site_id, String pagesString,String sessionId) {
+		JSONArray rvSitePagesArray = new JSONArray() ;
+		
+		RestTemplate restTemplate;
+		JSONArray pages = new JSONArray(pagesString);
+		// iterate through all pages
+		for (int iPage = 0; iPage < pages.length(); ++iPage) {
+		    JSONObject page = pages.getJSONObject(iPage);
+		    if (page.has("tools"))
+		    {
+				// iterate through all tools within page
+		    	JSONArray tools = (JSONArray) page.get("tools");
+		    	for (int iTool = 0; iTool < tools.length(); ++iTool) {
+				    JSONObject tool = tools.getJSONObject(iTool);
+				    if (tool.has("toolId") && "sakai.resources".equals(tool.get("toolId")))
+				    {
+				    	// found Resource tool
+				    	restTemplate = new RestTemplate();
+						String resourceToolRequestUrl = env.getProperty("ctools.server.url")
+								+ "direct/content/site/" + site_id + ".json?_sessionId="
+								+ sessionId;
+
+						try {
+							JSONObject resourceToolResultString = new JSONObject(restTemplate.getForObject(resourceToolRequestUrl, String.class));
+							if (resourceToolResultString.has("content_collection"))
+							{
+								// find the resource elements in content_collection
+								JSONArray resourceList = (JSONArray) resourceToolResultString.get("content_collection");
+								// insert the "hasContentItem" attribute to JSON object
+								page.put("hasContentItem", resourceList.length() > 1);
+							}
+						} catch (RestClientException e) {
+							log.error("Cannot find site content by siteId: " + site_id + " "
+									+ e.getMessage());
+						}
+				    }
+		    	}
+		    }
+		    rvSitePagesArray.put(iPage, page);
+		}
+		return rvSitePagesArray.toString();
 	}
 
 
