@@ -8,13 +8,13 @@
 
 <div ng-if="migratingProjects.length && !migratingProjectsError">
 	<ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratingProject in migratingProjects | orderBy:site_id">
-  		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratingProject.site_id !== migratingProjects[$index - 1].site_id">
+  	<li class="list-group-item" ng-repeat="migratingProject in migratingProjects">
+  		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px">
   			<h4 class="site-header">{{migratingProject.site_name}}</h4>
   		</div>
   		<div class="row">
 	  		<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
-	    			{{migratingProject.tool_name}}
+	    			{{migratingProject.tool_name}} 
 		  	</div>
 		  	<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
 	    			{{migratingProject.site_name}}

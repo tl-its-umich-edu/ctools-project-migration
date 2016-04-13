@@ -16,4 +16,8 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
   return function( id) {
     return id.replace('~','');
   }
+}).filter('linkToSite', function() {
+  return function( url) {
+    return url.replace('ctqasearch','ctqa').replace('ctdevsearch','ctdev').replace('ctsearch.vip.itd','ctools').replace('/direct','/portal')
+  }
 });

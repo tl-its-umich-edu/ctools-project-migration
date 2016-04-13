@@ -20,6 +20,7 @@ var transformProjects = function (siteList){
     projObj.tool_name= '',
     projObj.tool_id= '',
     projObj.migrated_by= '',
+    projObj.url= item.entityURL,
     projObj.start_time= '',
     projObj.end_time='',
     projObj.destination_type= '',

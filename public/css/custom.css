@@ -53,6 +53,14 @@ h3, h4.site-header {
 .muted {
 	
 }
+
+#helpLink {
+	padding:7px;margin-top: 7px;color:fff;border:1px solid transparent;
+}
+#helpLink:hover {
+	color:fff;
+	background: #0068cc
+}
 .btn-primary[disabled] {
 	background:#000;
 }
