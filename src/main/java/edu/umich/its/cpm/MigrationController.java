@@ -353,15 +353,15 @@ public class MigrationController {
 		RestTemplate restTemplate;
 		JSONArray pages = new JSONArray(pagesString);
 		// iterate through all pages
-		for (int iPage = 0; iPage < pages.length(); ++iPage) {
+		for (int iPage = 0; pages != null && iPage < pages.length(); ++iPage) {
 		    JSONObject page = pages.getJSONObject(iPage);
 		    if (page.has("tools"))
 		    {
 				// iterate through all tools within page
 		    	JSONArray tools = (JSONArray) page.get("tools");
-		    	for (int iTool = 0; iTool < tools.length(); ++iTool) {
+		    	for (int iTool = 0; tools!= null && iTool < tools.length(); ++iTool) {
 				    JSONObject tool = tools.getJSONObject(iTool);
-				    if (tool.has("toolId") && "sakai.resources".equals(tool.get("toolId")))
+				    if (tool != null && tool.has("toolId") && "sakai.resources".equals(tool.get("toolId")))
 				    {
 				    	// found Resource tool
 				    	restTemplate = new RestTemplate();
@@ -371,12 +371,12 @@ public class MigrationController {
 
 						try {
 							JSONObject resourceToolResultString = new JSONObject(restTemplate.getForObject(resourceToolRequestUrl, String.class));
-							if (resourceToolResultString.has("content_collection"))
+							if (resourceToolResultString != null && resourceToolResultString.has("content_collection"))
 							{
 								// find the resource elements in content_collection
 								JSONArray resourceList = (JSONArray) resourceToolResultString.get("content_collection");
 								// insert the "hasContentItem" attribute to JSON object
-								page.put("hasContentItem", resourceList.length() > 1);
+								page.put("hasContentItem", resourceList!= null && resourceList.length() > 1);
 							}
 						} catch (RestClientException e) {
 							log.error("Cannot find site content by siteId: " + site_id + " "
