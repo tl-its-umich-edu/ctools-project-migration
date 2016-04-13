@@ -2,6 +2,8 @@ package edu.umich.its.cpm;
 
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
@@ -353,4 +355,18 @@ public class Utils {
 		return rv;
 	}
 	
+	/**
+	 * replace characters match the regular expression to "_"
+	 * @param name
+	 * @return
+	 */
+	public static String sanitizeName(String name) {
+		
+		// only look for ":" and "/" as of now
+		Pattern p = Pattern.compile("[\\\\:\\/]");
+		Matcher m = p.matcher(name);
+		name = m.replaceAll("_");
+		
+	    return name;
+	}
 }

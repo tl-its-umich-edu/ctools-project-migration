@@ -271,7 +271,7 @@ public class MigrationTaskService {
 				} else {
 					// get the zip file name with folder path info
 					String zipFileName = container.substring(container.indexOf(rootFolderPath) + rootFolderPath.length());
-					zipFileName = zipFileName.concat(sanitizeFileName(title));
+					zipFileName = zipFileName.concat(Utils.sanitizeName(title));
 					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
 					String zipFileStatus = zipFiles(type, httpContext, zipFileName, title,
@@ -285,21 +285,6 @@ public class MigrationTaskService {
 			fileItems.add(fileItem);
 		} // for
 		return fileItems;
-	}
-	
-	/**
-	 * replace characters match the regular expression to "_"
-	 * @param fileName
-	 * @return
-	 */
-	public String sanitizeFileName(String fileName) {
-		
-		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[:\\/]");
-		Matcher m = p.matcher(fileName);
-		fileName = m.replaceAll("_");
-		
-	    return fileName;
 	}
 
 	/**
@@ -806,7 +791,7 @@ public class MigrationTaskService {
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
-						.createFolder(title);
+						.createFolder(Utils.sanitizeName(title));
 				itemStatus.append("folder " + title + " created.");
 
 				// push the current folder id into the stack
@@ -943,7 +928,7 @@ public class MigrationTaskService {
 			// check if Box access token needs refresh
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
-			BoxFile.Info newFileInfo = folder.uploadFile(bContent, sanitizeFileName(fileName),
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, Utils.sanitizeName(fileName),
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
