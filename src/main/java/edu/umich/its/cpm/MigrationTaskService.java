@@ -46,11 +46,6 @@ import com.box.sdk.BoxFolder;
 import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.config.TikaConfig;
-import org.apache.commons.io.FilenameUtils;
-
 @Service
 @Component
 public class MigrationTaskService {
@@ -83,8 +78,6 @@ public class MigrationTaskService {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
-
-	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	
 	/**
 	 * Download CTools site resource in zip file
@@ -271,7 +264,7 @@ public class MigrationTaskService {
 				} else {
 					// get the zip file name with folder path info
 					String zipFileName = container.substring(container.indexOf(rootFolderPath) + rootFolderPath.length());
-					zipFileName = zipFileName.concat(Utils.sanitizeName(title));
+					zipFileName = zipFileName.concat(Utils.sanitizeName(type, title));
 					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
 					String zipFileStatus = zipFiles(type, httpContext, zipFileName, title,
@@ -307,9 +300,6 @@ public class MigrationTaskService {
 			String fileUrl, String fileAccessUrl, String sessionId,
 			ZipOutputStream out) {
 		log.info("*** " + fileAccessUrl);
-		
-		// update file name
-		fileName = modifyFileNameOnType(type, fileName);
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
@@ -791,7 +781,7 @@ public class MigrationTaskService {
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
-						.createFolder(Utils.sanitizeName(title));
+						.createFolder(Utils.sanitizeName(type, title));
 				itemStatus.append("folder " + title + " created.");
 
 				// push the current folder id into the stack
@@ -913,7 +903,7 @@ public class MigrationTaskService {
 		}
 
 		// update file name
-		fileName = modifyFileNameOnType(type, fileName);
+		fileName = Utils.modifyFileNameOnType(type, fileName);
 		
 		// exit if content stream is null
 		if (content == null)
@@ -928,7 +918,7 @@ public class MigrationTaskService {
 			// check if Box access token needs refresh
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
-			BoxFile.Info newFileInfo = folder.uploadFile(bContent, Utils.sanitizeName(fileName),
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, Utils.sanitizeName(type, fileName),
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
@@ -1004,37 +994,7 @@ public class MigrationTaskService {
 		}
 		return status.toString();
 	}
-
-	/**
-	 * If file extension is missing, look up the extension by file MIME type and add extension if found;
-	 * If file extension is still missing, append ".html" for Web Link and citation type of resources
-	 * @param type
-	 * @param fileName
-	 * @return
-	 */
-	private String modifyFileNameOnType(String type, String fileName) {
-		if (type != null && FilenameUtils.getExtension(fileName).isEmpty())
-		{
-			// do extension lookup first
-			try {
-				MimeType mimeType = tikaConfig.getMimeRepository().forName(type);
-				if (mimeType != null) {
-					String extension = mimeType.getExtension();
-				    //do something with the extension
-					fileName = fileName.concat(extension);
-				}
-			} catch (MimeTypeException e) {
-				log.error(this + " Couldn't find file extension for resource: " + fileName + " of MIME type = " + type , e);
-			}
-		}
-		
-		if (FilenameUtils.getExtension(fileName).isEmpty() && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
-		{
-			fileName = fileName + Utils.HTML_FILE_EXTENSION;
-		}
-		return fileName;
-	}
-
+	
 	/**
 	 * Based on the JSON returned inside BoxAPIException object, find out the id
 	 * of conflicting box folder
