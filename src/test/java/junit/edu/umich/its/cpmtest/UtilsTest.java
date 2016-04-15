@@ -35,13 +35,20 @@ public class UtilsTest extends TestCase {
 	@Test
 	public void testSanitizeName() {
 		// escape back slash
-		assertEquals(Utils.sanitizeName("test \\ folder"), "test _ folder");
+		assertEquals(Utils.sanitizeName("folder", "test \\ folder"), "test _ folder");
 		
 		// escape forward slash
-		assertEquals(Utils.sanitizeName("test / folder"), "test _ folder");
+		assertEquals(Utils.sanitizeName("folder", "test / folder"), "test _ folder");
 		
 		// escape : 
-		assertEquals(Utils.sanitizeName("test : folder"), "test _ folder");
+		assertEquals(Utils.sanitizeName("folder", "test : folder"), "test _ folder");
+		
+		// URL as name
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org/"), "http___www.npr.org_.html");
+	
+		// string without extension
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
+			
 	}
 
 }

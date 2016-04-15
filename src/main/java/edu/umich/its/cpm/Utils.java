@@ -7,6 +7,7 @@ import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -18,6 +19,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -38,6 +41,11 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
+
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.commons.io.FilenameUtils;
 
 @Configuration
 public class Utils {
@@ -74,6 +82,8 @@ public class Utils {
 	
 	private static final Logger log = LoggerFactory
 			.getLogger(Utils.class);
+
+	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -360,7 +370,11 @@ public class Utils {
 	 * @param name
 	 * @return
 	 */
-	public static String sanitizeName(String name) {
+	public static String sanitizeName(String type, String name) {
+		
+		
+		// update file name
+		name = modifyFileNameOnType(type, name);
 		
 		// only look for ":" and "/" as of now
 		Pattern p = Pattern.compile("[\\\\:\\/]");
@@ -369,4 +383,35 @@ public class Utils {
 		
 	    return name;
 	}
+	
+	/**
+	 * If file extension is missing, look up the extension by file MIME type and add extension if found;
+	 * If file extension is still missing, append ".html" for Web Link and citation type of resources
+	 * @param type
+	 * @param fileName
+	 * @return
+	 */
+	public static String modifyFileNameOnType(String type, String fileName) {
+		if (type != null && FilenameUtils.getExtension(fileName).isEmpty())
+		{
+			// do extension lookup first
+			try {
+				MimeType mimeType = tikaConfig.getMimeRepository().forName(type);
+				if (mimeType != null) {
+					String extension = mimeType.getExtension();
+				    //do something with the extension
+					fileName = fileName.concat(extension);
+				}
+			} catch (MimeTypeException e) {
+				log.error("Utils.modifyFileNameOnType: Couldn't find file extension for resource: " + fileName + " of MIME type = " + type , e);
+			}
+		}
+		String extension = FilenameUtils.getExtension(fileName);
+		if (extension.isEmpty() && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
+		{
+			fileName = fileName + Utils.HTML_FILE_EXTENSION;
+		}
+		return fileName;
+	}
+
 }
