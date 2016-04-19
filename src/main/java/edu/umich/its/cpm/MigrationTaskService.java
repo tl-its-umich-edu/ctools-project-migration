@@ -233,12 +233,17 @@ public class MigrationTaskService {
 				fileItems.add(item);
 				break;
 			}
+			
+			// modify the contentAccessUrl if needed for copyright alert setting
+			// always export the resource content regardless of the copyright settings
+			contentAccessUrl = Utils.getCopyrightAcceptUrl(copyrightAlert, contentAccessUrl);
+			
 			// get container string from content url
 			String container = getContainerStringFromContentUrl(contentUrl);
 
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
-					title, copyrightAlert);
+					title);
 
 			if (itemStatus.length() == 0) {
 				// no errors, proceed with migration
@@ -624,12 +629,16 @@ public class MigrationTaskService {
 				break;
 			}
 			
+			// modify the contentAccessUrl if needed for copyright alert setting
+			// always export the resource content regardless of the copyright settings
+			contentAccessUrl = Utils.getCopyrightAcceptUrl(copyrightAlert, contentAccessUrl);
+			
 			// get container string from content url
 			String container = getContainerStringFromContentUrl(contentUrl);
 
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
-					title, copyrightAlert);
+					title);
 
 			log.info("type=" + type + " contentUrl=" + contentUrl + " error=" + itemStatus.toString());
 
@@ -709,14 +718,8 @@ public class MigrationTaskService {
 	 * @param copyrightAlert
 	 */
 	private StringBuffer preMigrationChecks(StringBuffer itemStatus,
-			String contentUrl, String container, String title,
-			String copyrightAlert) {
-		if (BOOLEAN_TRUE.equals(copyrightAlert)) {
-			// do not migrate if the item is with copyright
-			itemStatus.append(title
-					+ " is not migrated because of copyright alert. "
-					+ LINE_BREAK);
-		} else if (contentUrl == null || contentUrl.length() == 0) {
+			String contentUrl, String container, String title) {
+		if (contentUrl == null || contentUrl.length() == 0) {
 			// log error if the content url is missing
 			String urlError = "No url for content " + title;
 			log.error(urlError);
