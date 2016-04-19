@@ -35,20 +35,49 @@ public class UtilsTest extends TestCase {
 	@Test
 	public void testSanitizeName() {
 		// escape back slash
-		assertEquals(Utils.sanitizeName("folder", "test \\ folder"), "test _ folder");
-		
+		assertEquals(Utils.sanitizeName("folder", "test \\ folder"),
+				"test _ folder");
+
 		// escape forward slash
-		assertEquals(Utils.sanitizeName("folder", "test / folder"), "test _ folder");
-		
-		// escape : 
-		assertEquals(Utils.sanitizeName("folder", "test : folder"), "test _ folder");
-		
+		assertEquals(Utils.sanitizeName("folder", "test / folder"),
+				"test _ folder");
+
+		// escape :
+		assertEquals(Utils.sanitizeName("folder", "test : folder"),
+				"test _ folder");
+
 		// URL as name
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org/"), "http___www.npr.org_.html");
-	
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
+				"http://www.npr.org/"), "http___www.npr.org_.html");
+
 		// string without extension
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
-			
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
+				"test_url"), "test_url.html");
+
+	}
+
+	@Test
+	public void testGetCopyrightAcceptUrl() {
+		// copyright alert is set to true
+		assertEquals(
+				Utils.getCopyrightAcceptUrl(
+						"True",
+						"https://example.edu/access/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip"),
+				"https://example.edu/access/accept?ref=/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip&url=/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip");
+
+		// copyright alert is set to false
+		assertEquals(
+				Utils.getCopyrightAcceptUrl(
+						"false",
+						"https://example.edu/access/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip"),
+				"https://example.edu/access/accept?ref=/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip&url=/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip");
+
+		// copyright alert is set to null
+		assertEquals(
+				Utils.getCopyrightAcceptUrl(
+						null,
+						"https://example.edu/access/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip"),
+				"https://example.edu/access/content/group/821918a5-c69f-48ca-aa82-3c4b40ac5c91/License%20Keys/Kaspersky-US%20Keys.zip");
 	}
 
 }
