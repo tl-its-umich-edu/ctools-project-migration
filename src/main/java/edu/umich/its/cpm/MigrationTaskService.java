@@ -254,13 +254,13 @@ public class MigrationTaskService {
 				if (COLLECTION_TYPE.equals(type)) {
 					// folders
 					if (rootFolderPath == null) {
-						rootFolderPath = contentUrl.substring(0, contentUrl.length());
+						rootFolderPath = contentUrl;
 					} else {
 						// create the zipentry for the sub-folder first
 						String folderName = contentUrl.replace(rootFolderPath,
 								"");
 						// update folder name
-						folderNameMap = Utils.updateFolderName(folderNameMap, title,
+						folderNameMap = Utils.updateFolderNameMap(folderNameMap, title,
 								folderName);
 						if (folderNameMap.containsKey(folderName))
 						{

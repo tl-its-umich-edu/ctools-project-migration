@@ -437,7 +437,7 @@ public class Utils {
 	 * @param folderName
 	 * @return
 	 */
-	public static HashMap<String, String> updateFolderName(HashMap<String, String> folderNameUpdates,
+	public static HashMap<String, String> updateFolderNameMap(HashMap<String, String> folderNameUpdates,
 			String title, String folderName) {
 		// update folder name if there is any parent folder renaming
 		// checks for folder name updates in the path
