@@ -421,6 +421,22 @@ public class Utils {
 		}
 		return fileName;
 	}
+	
+	public static String getCopyrightAcceptUrl(String copyrightAlert,
+			String contentUrl) {
+		if (copyrightAlert != null)
+		{
+			// for copyright protected resources, we will update the access url,
+			// as if user is already accepted the copyright terms
+			// the format of url will be:
+			// <server_url>/access/accept?ref=<resource_ref>&url=<resource_ref>
+			String resource_ref = contentUrl.substring(contentUrl.indexOf("/access/") + 7);
+			contentUrl = contentUrl.substring(0, contentUrl.indexOf("/access/"))
+					+ "/access/accept?ref=" + resource_ref
+					+ "&url=" + resource_ref;
+		}
+		return contentUrl;
+	}
 
 	/**
 	 * CTools Web Link content is exported as a html file, with the link inside
