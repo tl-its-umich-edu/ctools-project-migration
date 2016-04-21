@@ -204,6 +204,10 @@ public class MigrationTaskService {
 		JSONArray array = obj
 				.getJSONArray(CONTENT_JSON_ATTR_CONTENT_COLLECTION);
 
+		// the map stores folder name conversions;
+		// folder name can be changed within CTools: 
+		// it can be named differently, while the old name still uses in the folder/resource ids
+		HashMap<String, String> folderNameMap =  new HashMap<String, String>();
 		for (int i = 0; i < array.length(); i++) {
 
 			// item status information
@@ -255,6 +259,16 @@ public class MigrationTaskService {
 						// create the zipentry for the sub-folder first
 						String folderName = contentUrl.replace(rootFolderPath,
 								"");
+						// update folder name
+						folderNameMap = Utils.updateFolderNameMap(folderNameMap, title,
+								folderName);
+						if (folderNameMap.containsKey(folderName))
+						{
+							folderName = folderNameMap.get(folderName);
+						}
+
+						log.info("download folder " + folderName);
+						
 						ZipEntry folderEntry = new ZipEntry(folderName);
 						try {
 							out.putNextEntry(folderEntry);
@@ -273,7 +287,7 @@ public class MigrationTaskService {
 					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
 					String zipFileStatus = zipFiles(type, httpContext, zipFileName, title,
-							contentUrl, contentAccessUrl, sessionId, out);
+							contentUrl, contentAccessUrl, sessionId, out, folderNameMap);
 					itemStatus.append(zipFileStatus + LINE_BREAK);
 				}
 			}
@@ -303,7 +317,7 @@ public class MigrationTaskService {
 	 */
 	private String zipFiles(String type, HttpContext httpContext, String fileName, String title,
 			String fileUrl, String fileAccessUrl, String sessionId,
-			ZipOutputStream out) {
+			ZipOutputStream out, HashMap<String, String> folderNameUpdates) {
 		log.info("*** " + fileAccessUrl);
 
 		// record zip status
@@ -333,9 +347,14 @@ public class MigrationTaskService {
 			BufferedInputStream bContent = null;
 
 			try {
+				bContent = new BufferedInputStream(content);
+				
+				// checks for folder renames
+				fileName = Utils.updateFolderPathForFileName(fileName,
+						folderNameUpdates);
 
 				log.info("download file " + fileName);
-				bContent = new BufferedInputStream(content);
+				
 				ZipEntry fileEntry = new ZipEntry(fileName);
 				out.putNextEntry(fileEntry);
 				int bCount = -1;
