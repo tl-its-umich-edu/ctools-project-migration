@@ -1,6 +1,7 @@
 package edu.umich.its.cpm;
 
 import java.io.UnsupportedEncodingException;
+import java.net.URL;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Hashtable;
@@ -432,6 +433,21 @@ public class Utils {
 	{
 		try
 		{
+			URL url = new URL(fileName);
+			// title is of URL format
+			// use the title for link url 
+			fileUrl = fileName;
+		}
+		catch (java.net.MalformedURLException e)
+		{
+			// title is not of url format
+			// use ctools access servlet url for now
+			// next CTools release will provide clean url feed
+			log.info("Utils:getWebLinkContent: use CTools access url for now as URL content for URL-type resource " + fileUrl );
+		}
+		
+		try
+		{
 			fileUrl = URLDecoder.decode(fileUrl, "UTF-8");
 		}
 		catch (UnsupportedEncodingException e)
@@ -439,7 +455,6 @@ public class Utils {
 			log.error("Utils.getWebLinkContent: UnsupportedEncodingException " + e);
 		}
 		
-		System.out.println(fileUrl);
 		StringBuffer b = new StringBuffer();
 		b.append("<a href=\"");
 		b.append(fileUrl);

@@ -336,11 +336,7 @@ public class MigrationTaskService {
 				int bCount = -1;
 				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 				{
-					
-					bContent = new BufferedInputStream(content);
-					String urlString = IOUtils.toString(bContent, "UTF-8");
-					//String urlString = IOUtils.toString(bContent, "UTF-8");
-					out.write(Utils.getWebLinkContent(title, urlString).getBytes());
+					out.write(Utils.getWebLinkContent(title, fileAccessUrl).getBytes());
 				}
 				else
 				{
