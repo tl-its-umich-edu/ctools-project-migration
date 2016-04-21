@@ -437,6 +437,52 @@ public class Utils {
 		}
 		return contentUrl;
 	}
+	
+	/**
+	 * change folder path based on updated folder title
+	 * @param folderNameUpdates
+	 * @param title
+	 * @param folderName
+	 * @return
+	 */
+	public static HashMap<String, String> updateFolderNameMap(HashMap<String, String> folderNameUpdates,
+			String title, String folderName) {
+		// update folder name if there is any parent folder renaming
+		// checks for folder name updates in the path
+		// replace all old folder title with new title
+		String currentFolderName = folderName;
+		for (String oldFolderName : folderNameUpdates.keySet()) {
+			if (folderName.startsWith(oldFolderName))
+			{
+				folderName = folderName.replace(oldFolderName, folderNameUpdates.get(oldFolderName));
+			}
+		}
+		// now checks whether the current folder is renamed
+		if (!folderName.endsWith(title + PATH_SEPARATOR))
+		{
+			// save the parent folder path
+			// remove the trailing "/" from folder name first
+			String parentFolder = folderName.substring(0, folderName.length()-1);
+			if (parentFolder.contains(PATH_SEPARATOR))
+			{
+				// get the parent folder
+				parentFolder = parentFolder.substring(0, parentFolder.lastIndexOf(PATH_SEPARATOR) + 1);
+			}
+			else
+			{
+				// top level folder
+				parentFolder = "";
+			}
+			// update folder name
+			folderName = parentFolder + title + PATH_SEPARATOR;
+		}
+		if (!currentFolderName.equals(folderName))
+		{
+			// put the old and new folder name into map
+			folderNameUpdates.put(currentFolderName, folderName);
+		}
+		return folderNameUpdates;
+	}
 
 	/**
 	 * CTools Web Link content is exported as a html file, with the link inside
@@ -476,5 +522,44 @@ public class Utils {
 		b.append(fileUrl);
 		b.append("\">" + fileName + "</a>");
 		return b.toString();
+	}
+		
+	/*
+	 * update the folder title in file name string
+	 * @param fileName
+	 * @param folderNameMap
+	 * @return
+	 */
+	public static String updateFolderPathForFileName(String fileName,
+			HashMap<String, String> folderNameMap) {
+		// navigate the folder container backwards based on the file name
+		String parentFolder  = fileName.substring(0, fileName.lastIndexOf(PATH_SEPARATOR) + 1);
+		while (parentFolder != null)
+		{
+			// checks for folder name updates in the path
+			// replace all old folder title with new title
+			if (folderNameMap.containsKey(parentFolder))
+			{
+				fileName = fileName.replace(parentFolder, folderNameMap.get(parentFolder));
+				break;
+			}
+			
+			// get the next parent folder
+			// remove the trailing "/"
+			if (parentFolder.endsWith(PATH_SEPARATOR))
+			{
+				parentFolder = parentFolder.substring(0, parentFolder.length()-1);
+			}
+			
+			if (parentFolder.contains(PATH_SEPARATOR))
+			{
+				parentFolder  = parentFolder.substring(0, parentFolder.lastIndexOf(PATH_SEPARATOR)+1);
+			}
+			else
+			{
+				parentFolder = null;
+			}
+		}
+		return fileName;
 	}
 }
