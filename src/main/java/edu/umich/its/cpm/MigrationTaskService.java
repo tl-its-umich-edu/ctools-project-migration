@@ -46,8 +46,6 @@ import com.box.sdk.BoxFolder;
 import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
-import org.apache.commons.io.IOUtils;
-
 @Service
 @Component
 public class MigrationTaskService {
@@ -854,10 +852,8 @@ public class MigrationTaskService {
 			
 			if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 			{
-			// special handling of Web Links resources
-			String urlString = IOUtils.toString(content, "UTF-8");
-			String webLinkContent = Utils.getWebLinkContent(fileName, fileUrl);
-			content = new ByteArrayInputStream(webLinkContent.getBytes());
+				// special handling of Web Links resources
+				content = new ByteArrayInputStream(Utils.getWebLinkContent(fileName, fileAccessUrl).getBytes());
 			}
 		}
 		catch (java.io.IOException e)
