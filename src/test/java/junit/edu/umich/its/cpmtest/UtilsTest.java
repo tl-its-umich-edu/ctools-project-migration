@@ -36,24 +36,29 @@ public class UtilsTest extends TestCase {
 	@Test
 	public void testSanitizeName() {
 		// escape back slash
-		assertEquals(Utils.sanitizeName("folder", "test \\ folder"),
-				"test _ folder");
-
+		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test \\ folder"), "test _ folder");
+		
 		// escape forward slash
-		assertEquals(Utils.sanitizeName("folder", "test / folder"),
-				"test _ folder");
-
-		// escape :
-		assertEquals(Utils.sanitizeName("folder", "test : folder"),
-				"test _ folder");
-
+		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test / folder"), "test _ folder");
+		
+		// escape : 
+		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test : folder"), "test _ folder");
+		
 		// URL as name
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
 				"http://www.npr.org/"), "http___www.npr.org_.html");
 
 		// string without extension
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
-				"test_url"), "test_url.html");
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
+		
+		// URL as name, not ending in "/"
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www.npr.org.html");
+	}
+	
+	@Test
+	public void testGetWebLinkContent() {
+		// escape back slash
+		assertEquals(Utils.getWebLinkContent("http://www.npr.org", "http://www.npr.org"), "<a href=\"http://www.npr.org\">http://www.npr.org</a>");
 
 	}
 

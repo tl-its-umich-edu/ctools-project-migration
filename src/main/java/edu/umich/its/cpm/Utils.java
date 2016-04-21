@@ -1,5 +1,8 @@
 package edu.umich.its.cpm;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.regex.Matcher;
@@ -50,6 +53,8 @@ import org.apache.commons.io.FilenameUtils;
 @Configuration
 public class Utils {
 
+	public static final String COLLECTION_TYPE = "collection";
+	
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
 	
@@ -79,6 +84,8 @@ public class Utils {
 	private static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
+	// the extension character
+	public static final String EXTENSION_SEPARATOR = ".";
 	
 	private static final Logger log = LoggerFactory
 			.getLogger(Utils.class);
@@ -371,10 +378,11 @@ public class Utils {
 	 * @return
 	 */
 	public static String sanitizeName(String type, String name) {
-		
-		
-		// update file name
-		name = modifyFileNameOnType(type, name);
+		// fix file extension
+		if (!COLLECTION_TYPE.equals(type))
+		{
+			name = modifyFileNameOnType(type, name);
+		}
 		
 		// only look for ":" and "/" as of now
 		Pattern p = Pattern.compile("[\\\\:\\/]");
@@ -407,7 +415,7 @@ public class Utils {
 			}
 		}
 		String extension = FilenameUtils.getExtension(fileName);
-		if (extension.isEmpty() && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
+		if ((extension.isEmpty() || !Utils.HTML_FILE_EXTENSION.equals(EXTENSION_SEPARATOR + extension)) && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
 		{
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;
 		}
@@ -477,6 +485,46 @@ public class Utils {
 	}
 
 	/**
+	 * CTools Web Link content is exported as a html file, with the link inside
+	 * @param fileName
+	 * @param fileUrl
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static String getWebLinkContent(String fileName, String fileUrl)
+	{
+		try
+		{
+			URL url = new URL(fileName);
+			// title is of URL format
+			// use the title for link url 
+			fileUrl = fileName;
+		}
+		catch (java.net.MalformedURLException e)
+		{
+			// title is not of url format
+			// use ctools access servlet url for now
+			// next CTools release will provide clean url feed
+			log.info("Utils:getWebLinkContent: use CTools access url for now as URL content for URL-type resource " + fileUrl );
+		}
+		
+		try
+		{
+			fileUrl = URLDecoder.decode(fileUrl, "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			log.error("Utils.getWebLinkContent: UnsupportedEncodingException " + e);
+		}
+		
+		StringBuffer b = new StringBuffer();
+		b.append("<a href=\"");
+		b.append(fileUrl);
+		b.append("\">" + fileName + "</a>");
+		return b.toString();
+	}
+		
+	/*
 	 * update the folder title in file name string
 	 * @param fileName
 	 * @param folderNameMap
