@@ -634,17 +634,34 @@ public class MigrationTaskService {
 				}
 				else
 				{
-					// do uploads
-					HashMap<String, Object> rvValues= processBoxUploadSiteContent(userId, type, rootFolderPath,
-							contentUrl, containerStack, boxFolderIdStack, title,
-							container, boxFolderId, api, itemStatus, description,
-							contentItem, httpContext, contentAccessUrl, author,
-							copyrightAlert, sessionId);
-					itemStatus = (StringBuffer) rvValues.get("itemStatus");
-					containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
-					boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
-					log.debug("containerStack length=" + containerStack.size());
-					log.debug("boxFolderStack length=" + boxFolderIdStack.size());
+					try
+					{
+						// do uploads
+						HashMap<String, Object> rvValues= processBoxUploadSiteContent(userId, type, rootFolderPath,
+								contentUrl, containerStack, boxFolderIdStack, title,
+								container, boxFolderId, api, itemStatus, description,
+								contentItem, httpContext, contentAccessUrl, author,
+								copyrightAlert, sessionId);
+						itemStatus = (StringBuffer) rvValues.get("itemStatus");
+						containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
+						boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
+						log.debug("containerStack length=" + containerStack.size());
+						log.debug("boxFolderStack length=" + boxFolderIdStack.size());
+					}
+					catch (BoxAPIException e)
+					{
+						JSONObject eJSON = new JSONObject(e.getResponse());
+						String errorMessage = eJSON.has("context_info")?eJSON.getString("context_info"):"";
+						itemStatus.append("Box upload process was stopped due to the following error. Please rename the folder/resource item and migrate site again: \"" + errorMessage + "\"");
+						// the status of file upload to Box
+						MigrationFileItem item = new MigrationFileItem(contentUrl, title,
+								itemStatus.toString());
+						rv.add(item);
+						
+						// catch the BoxAPIException e
+						// and halt the whole upload process
+						break;
+					}
 				}
 
 			}
@@ -744,7 +761,7 @@ public class MigrationTaskService {
 			StringBuffer itemStatus, String description,
 			JSONObject contentItem, HttpContext httpContext,
 			String contentAccessUrl, String author, String copyrightAlert,
-			String sessionId) {
+			String sessionId) throws BoxAPIException {
 
 		if (Utils.COLLECTION_TYPE.equals(type)) {
 			// folders
@@ -762,10 +779,11 @@ public class MigrationTaskService {
 			// create box folder
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
+			String sanitizedTitle = Utils.sanitizeName(type, title);
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
-						.createFolder(Utils.sanitizeName(type, title));
-				itemStatus.append("folder " + title + " created.");
+						.createFolder(sanitizedTitle);
+				itemStatus.append("folder " + sanitizedTitle + " created.");
 
 				// push the current folder id into the stack
 				containerStack.push(contentUrl);
@@ -786,7 +804,7 @@ public class MigrationTaskService {
 							+ title + "- folder was not created in Box");
 
 					String exisingFolderId = getExistingBoxFolderIdFromBoxException(
-							e, title);
+							e, sanitizedTitle);
 					if (exisingFolderId != null) {
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
@@ -796,8 +814,17 @@ public class MigrationTaskService {
 								+ " container folder id=" + container);
 					} else {
 						log.info("Cannot find conflicting Box folder id for folder name "
-								+ title);
+								+ sanitizedTitle);
 					}
+				}
+				else
+				{
+					// log the exception message
+					log.info(e.getMessage() + " for " + title);
+					
+					// and throws the exception, 
+					// so that the parent function can catch it and stop the whole upload process
+					throw e;
 				}
 			}
 		} else {
