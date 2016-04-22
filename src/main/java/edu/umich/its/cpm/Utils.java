@@ -3,6 +3,7 @@ package edu.umich.its.cpm;
 import java.io.UnsupportedEncodingException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.regex.Matcher;
@@ -492,6 +493,7 @@ public class Utils {
 	 * @throws UnsupportedEncodingException
 	 */
 	public static String getWebLinkContent(String fileName, String fileUrl)
+			throws MalformedURLException
 	{
 		try
 		{
@@ -500,12 +502,15 @@ public class Utils {
 			// use the title for link url 
 			fileUrl = fileName;
 		}
-		catch (java.net.MalformedURLException e)
+		catch (MalformedURLException e)
 		{
 			// title is not of url format
 			// use ctools access servlet url for now
 			// next CTools release will provide clean url feed
 			log.info("Utils:getWebLinkContent: use CTools access url for now as URL content for URL-type resource " + fileUrl );
+			
+			// throws exception
+			throw e;
 		}
 		
 		try
