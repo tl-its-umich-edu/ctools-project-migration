@@ -353,16 +353,31 @@ public class MigrationTaskService {
 						folderNameUpdates);
 				
 				log.info("download file " + fileName);
-				
-				ZipEntry fileEntry = new ZipEntry(fileName);
-				out.putNextEntry(fileEntry);
-				int bCount = -1;
+
 				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 				{
-					out.write(Utils.getWebLinkContent(title, fileAccessUrl).getBytes());
+					try
+					{
+						// get the html file content first
+						String webLinkContent = Utils.getWebLinkContent(title, fileAccessUrl);
+						
+						ZipEntry fileEntry = new ZipEntry(fileName);
+						out.putNextEntry(fileEntry);
+						out.write(webLinkContent.getBytes());
+					}
+					catch (java.net.MalformedURLException e)
+					{
+						// return status with error message
+						zipFileStatus.append("Link " + title + " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+					}
 				}
 				else
 				{
+					
+					ZipEntry fileEntry = new ZipEntry(fileName);
+					out.putNextEntry(fileEntry);
+					int bCount = -1;
+					
 					bContent = new BufferedInputStream(content);
 					while ((bCount = bContent.read(data)) != -1) {
 						out.write(data, 0, bCount);
@@ -902,8 +917,17 @@ public class MigrationTaskService {
 			
 			if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 			{
-				// special handling of Web Links resources
-				content = new ByteArrayInputStream(Utils.getWebLinkContent(fileName, fileAccessUrl).getBytes());
+				try
+				{
+					// special handling of Web Links resources
+					content = new ByteArrayInputStream(Utils.getWebLinkContent(fileName, fileAccessUrl).getBytes());
+				}
+				catch (java.net.MalformedURLException e)
+				{
+					// return status with error message
+					status.append("Link " + fileName + " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+					return status.toString();
+				}
 			}
 		}
 		catch (java.io.IOException e)

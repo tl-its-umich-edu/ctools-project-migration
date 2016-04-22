@@ -57,9 +57,32 @@ public class UtilsTest extends TestCase {
 	
 	@Test
 	public void testGetWebLinkContent() {
-		// escape back slash
-		assertEquals(Utils.getWebLinkContent("http://www.npr.org", "http://www.npr.org"), "<a href=\"http://www.npr.org\">http://www.npr.org</a>");
-
+		try
+		{
+			// nice formed url
+			assertEquals(Utils.getWebLinkContent("http://www.npr.org", "http://www.npr.org"), "<a href=\"http://www.npr.org\">http://www.npr.org</a>");
+			
+			//  url string missin http protocol
+			assertNotEquals(Utils.getWebLinkContent("www.npr.org", "http://www.npr.org"), "<a href=\"http://www.npr.org\">http://www.npr.org</a>");
+				
+		}
+		catch (java.net.MalformedURLException e)
+		{
+			// log the error
+			System.out.println("java.net.MalforedURLException: testGetWebLinkContent with title www.npr.org " + e.getMessage());
+		}
+		
+		try
+		{
+			// nice formed url
+			assertNotEquals(Utils.getWebLinkContent("npr", "http://www.npr.org"), "<a href=\"http://www.npr.org\">http://www.npr.org</a>");
+				
+		}
+		catch (java.net.MalformedURLException e)
+		{
+			// log the error
+			System.out.println("java.net.MalforedURLException: testGetWebLinkContent with title npr " + e.getMessage());
+		}
 	}
 
 	@Test
