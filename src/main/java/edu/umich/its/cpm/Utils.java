@@ -25,6 +25,8 @@ import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -351,6 +353,27 @@ public class Utils {
 	private static boolean hasValue(String value) {
 		boolean rv= value != null && !value.trim().isEmpty();
 		return rv;
+	}
+	
+	public static String getSiteResourceJSON(String ctoolsServerUrl, String siteId, String sessionId)
+	{
+		String siteResourceJSON = null;
+		
+		RestTemplate restTemplate = new RestTemplate();
+		// the url should be in the format of
+		// "https://server/direct/site/SITE_ID.json"
+		String requestUrl = ctoolsServerUrl
+				+ "direct/content/site/" + siteId + ".json?_sessionId="
+				+ sessionId;
+		try {
+			siteResourceJSON = restTemplate.getForObject(requestUrl,
+					String.class);
+		} catch (RestClientException e) {
+			String errorMessage = "Cannot find site by siteId: " + siteId
+					+ " " + e.getMessage();
+			log.error(errorMessage);
+		}
+		return siteResourceJSON;
 	}
 	
 }

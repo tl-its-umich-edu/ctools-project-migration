@@ -106,17 +106,15 @@ public class MigrationTaskService {
 					.get("httpContext");
 
 			// 3. get all sites that user have permission site.upd
-			RestTemplate restTemplate = new RestTemplate();
-			// the url should be in the format of
-			// "https://server/direct/site/SITE_ID.json"
-			String requestUrl = env.getProperty("ctools.server.url")
-					+ "direct/content/site/" + site_id + ".json?_sessionId="
-					+ sessionId;
-			String siteResourceJson = null;
-			try {
-				siteResourceJson = restTemplate.getForObject(requestUrl,
-						String.class);
-
+			String siteResourceJson = Utils.getSiteResourceJSON(env.getProperty("ctools.server.url"), site_id, sessionId);
+			if (siteResourceJson == null)
+			{
+				String errorMessage = "Cannot find site resource content for siteId=" + site_id;
+				Response.status(Response.Status.NOT_FOUND).entity(errorMessage).type(MediaType.TEXT_PLAIN).build();
+				downloadStatus.append(errorMessage);
+			}
+			try
+			{
 				// null zip content
 				byte[] zipContent = null;
 
@@ -146,13 +144,6 @@ public class MigrationTaskService {
 				out.close();
 				log.info("Finished zip file download for site " + site_id);
 
-			} catch (RestClientException e) {
-				String errorMessage = "Cannot find site by siteId: " + site_id
-						+ " " + e.getMessage();
-				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
-						.type(MediaType.TEXT_PLAIN).build();
-				log.error(errorMessage);
-				downloadStatus.append(errorMessage);
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
