@@ -1,10 +1,17 @@
 package edu.umich.its.cpm;
 
+import java.io.UnsupportedEncodingException;
+import java.net.URL;
+import java.net.URLDecoder;
+import java.net.MalformedURLException;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -16,6 +23,8 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -39,9 +48,16 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
+import org.apache.tika.mime.MimeType;
+import org.apache.tika.mime.MimeTypeException;
+import org.apache.tika.config.TikaConfig;
+import org.apache.commons.io.FilenameUtils;
+
 @Configuration
 public class Utils {
 
+	public static final String COLLECTION_TYPE = "collection";
+	
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
 	
@@ -71,9 +87,13 @@ public class Utils {
 	private static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
+	// the extension character
+	public static final String EXTENSION_SEPARATOR = ".";
 	
 	private static final Logger log = LoggerFactory
 			.getLogger(Utils.class);
+
+	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -398,4 +418,198 @@ public class Utils {
 		return siteResourceJSON;
 	}
 	
+	/**
+	 * replace characters match the regular expression to "_"
+	 * @param name
+	 * @return
+	 */
+	public static String sanitizeName(String type, String name) {
+		// fix file extension
+		if (!COLLECTION_TYPE.equals(type))
+		{
+			name = modifyFileNameOnType(type, name);
+		}
+		
+		// only look for ":" and "/" as of now
+		Pattern p = Pattern.compile("[\\\\:\\/]");
+		Matcher m = p.matcher(name);
+		name = m.replaceAll("_");
+		
+	    return name;
+	}
+	
+	/**
+	 * If file extension is missing, look up the extension by file MIME type and add extension if found;
+	 * If file extension is still missing, append ".html" for Web Link and citation type of resources
+	 * @param type
+	 * @param fileName
+	 * @return
+	 */
+	public static String modifyFileNameOnType(String type, String fileName) {
+		if (type != null && FilenameUtils.getExtension(fileName).isEmpty())
+		{
+			// do extension lookup first
+			try {
+				MimeType mimeType = tikaConfig.getMimeRepository().forName(type);
+				if (mimeType != null) {
+					String extension = mimeType.getExtension();
+				    //do something with the extension
+					fileName = fileName.concat(extension);
+				}
+			} catch (MimeTypeException e) {
+				log.error("Utils.modifyFileNameOnType: Couldn't find file extension for resource: " + fileName + " of MIME type = " + type , e);
+			}
+		}
+		String extension = FilenameUtils.getExtension(fileName);
+		if ((extension.isEmpty() || !Utils.HTML_FILE_EXTENSION.equals(EXTENSION_SEPARATOR + extension)) && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
+		{
+			fileName = fileName + Utils.HTML_FILE_EXTENSION;
+		}
+		return fileName;
+	}
+	
+	public static String getCopyrightAcceptUrl(String copyrightAlert,
+			String contentUrl) {
+		if (copyrightAlert != null)
+		{
+			// for copyright protected resources, we will update the access url,
+			// as if user is already accepted the copyright terms
+			// the format of url will be:
+			// <server_url>/access/accept?ref=<resource_ref>&url=<resource_ref>
+			String resource_ref = contentUrl.substring(contentUrl.indexOf("/access/") + 7);
+			contentUrl = contentUrl.substring(0, contentUrl.indexOf("/access/"))
+					+ "/access/accept?ref=" + resource_ref
+					+ "&url=" + resource_ref;
+		}
+		return contentUrl;
+	}
+	
+	/**
+	 * change folder path based on updated folder title
+	 * @param folderNameUpdates
+	 * @param title
+	 * @param folderName
+	 * @return
+	 */
+	public static HashMap<String, String> updateFolderNameMap(HashMap<String, String> folderNameUpdates,
+			String title, String folderName) {
+		// update folder name if there is any parent folder renaming
+		// checks for folder name updates in the path
+		// replace all old folder title with new title
+		String currentFolderName = folderName;
+		for (String oldFolderName : folderNameUpdates.keySet()) {
+			if (folderName.startsWith(oldFolderName))
+			{
+				folderName = folderName.replace(oldFolderName, folderNameUpdates.get(oldFolderName));
+			}
+		}
+		// now checks whether the current folder is renamed
+		if (!folderName.endsWith(title + PATH_SEPARATOR))
+		{
+			// save the parent folder path
+			// remove the trailing "/" from folder name first
+			String parentFolder = folderName.substring(0, folderName.length()-1);
+			if (parentFolder.contains(PATH_SEPARATOR))
+			{
+				// get the parent folder
+				parentFolder = parentFolder.substring(0, parentFolder.lastIndexOf(PATH_SEPARATOR) + 1);
+			}
+			else
+			{
+				// top level folder
+				parentFolder = "";
+			}
+			// update folder name
+			folderName = parentFolder + title + PATH_SEPARATOR;
+		}
+		if (!currentFolderName.equals(folderName))
+		{
+			// put the old and new folder name into map
+			folderNameUpdates.put(currentFolderName, folderName);
+		}
+		return folderNameUpdates;
+	}
+
+	/**
+	 * CTools Web Link content is exported as a html file, with the link inside
+	 * @param fileName
+	 * @param fileUrl
+	 * @return
+	 * @throws UnsupportedEncodingException
+	 */
+	public static String getWebLinkContent(String fileName, String fileUrl)
+			throws MalformedURLException
+	{
+		try
+		{
+			URL url = new URL(fileName);
+			// title is of URL format
+			// use the title for link url 
+			fileUrl = fileName;
+		}
+		catch (MalformedURLException e)
+		{
+			// title is not of url format
+			// use ctools access servlet url for now
+			// next CTools release will provide clean url feed
+			log.info("Utils:getWebLinkContent: use CTools access url for now as URL content for URL-type resource " + fileUrl );
+			
+			// throws exception
+			throw e;
+		}
+		
+		try
+		{
+			fileUrl = URLDecoder.decode(fileUrl, "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			log.error("Utils.getWebLinkContent: UnsupportedEncodingException " + e);
+		}
+		
+		StringBuffer b = new StringBuffer();
+		b.append("<a href=\"");
+		b.append(fileUrl);
+		b.append("\">" + fileName + "</a>");
+		return b.toString();
+	}
+		
+	/*
+	 * update the folder title in file name string
+	 * @param fileName
+	 * @param folderNameMap
+	 * @return
+	 */
+	public static String updateFolderPathForFileName(String fileName,
+			HashMap<String, String> folderNameMap) {
+		// navigate the folder container backwards based on the file name
+		String parentFolder  = fileName.substring(0, fileName.lastIndexOf(PATH_SEPARATOR) + 1);
+		while (parentFolder != null)
+		{
+			// checks for folder name updates in the path
+			// replace all old folder title with new title
+			if (folderNameMap.containsKey(parentFolder))
+			{
+				fileName = fileName.replace(parentFolder, folderNameMap.get(parentFolder));
+				break;
+			}
+			
+			// get the next parent folder
+			// remove the trailing "/"
+			if (parentFolder.endsWith(PATH_SEPARATOR))
+			{
+				parentFolder = parentFolder.substring(0, parentFolder.length()-1);
+			}
+			
+			if (parentFolder.contains(PATH_SEPARATOR))
+			{
+				parentFolder  = parentFolder.substring(0, parentFolder.lastIndexOf(PATH_SEPARATOR)+1);
+			}
+			else
+			{
+				parentFolder = null;
+			}
+		}
+		return fileName;
+	}
 }
