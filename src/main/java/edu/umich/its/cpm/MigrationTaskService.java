@@ -46,16 +46,10 @@ import com.box.sdk.BoxFolder;
 import com.box.sdk.Metadata;
 import com.box.sdk.ProgressListener;
 
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
-import org.apache.tika.config.TikaConfig;
-import org.apache.commons.io.FilenameUtils;
-
 @Service
 @Component
 public class MigrationTaskService {
 	// String values used in content json feed
-	private static final String COLLECTION_TYPE = "collection";
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
 	private static final String CTOOLS_CITATION_ACCESS_STRING = "/access/citation/content";
 	private static final String CTOOLS_CONTENT_STRING = "/content";
@@ -83,8 +77,6 @@ public class MigrationTaskService {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
-
-	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	
 	/**
 	 * Download CTools site resource in zip file
@@ -211,6 +203,10 @@ public class MigrationTaskService {
 		JSONArray array = obj
 				.getJSONArray(CONTENT_JSON_ATTR_CONTENT_COLLECTION);
 
+		// the map stores folder name conversions;
+		// folder name can be changed within CTools: 
+		// it can be named differently, while the old name still uses in the folder/resource ids
+		HashMap<String, String> folderNameMap =  new HashMap<String, String>();
 		for (int i = 0; i < array.length(); i++) {
 
 			// item status information
@@ -240,16 +236,21 @@ public class MigrationTaskService {
 				fileItems.add(item);
 				break;
 			}
+			
+			// modify the contentAccessUrl if needed for copyright alert setting
+			// always export the resource content regardless of the copyright settings
+			contentAccessUrl = Utils.getCopyrightAcceptUrl(copyrightAlert, contentAccessUrl);
+			
 			// get container string from content url
 			String container = getContainerStringFromContentUrl(contentUrl);
 
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
-					title, copyrightAlert);
+					title);
 
 			if (itemStatus.length() == 0) {
 				// no errors, proceed with migration
-				if (COLLECTION_TYPE.equals(type)) {
+				if (Utils.COLLECTION_TYPE.equals(type)) {
 					// folders
 					if (rootFolderPath == null) {
 						rootFolderPath = contentUrl;
@@ -257,6 +258,16 @@ public class MigrationTaskService {
 						// create the zipentry for the sub-folder first
 						String folderName = contentUrl.replace(rootFolderPath,
 								"");
+						// update folder name
+						folderNameMap = Utils.updateFolderNameMap(folderNameMap, title,
+								folderName);
+						if (folderNameMap.containsKey(folderName))
+						{
+							folderName = folderNameMap.get(folderName);
+						}
+
+						log.info("download folder " + folderName);
+						
 						ZipEntry folderEntry = new ZipEntry(folderName);
 						try {
 							out.putNextEntry(folderEntry);
@@ -271,11 +282,11 @@ public class MigrationTaskService {
 				} else {
 					// get the zip file name with folder path info
 					String zipFileName = container.substring(container.indexOf(rootFolderPath) + rootFolderPath.length());
-					zipFileName = zipFileName.concat(sanitizeFileName(title));
+					zipFileName = zipFileName.concat(Utils.sanitizeName(type, title));
 					log.info("zip download processing file " + zipFileName);
 					// Call the zipFiles method for creating a zip stream.
 					String zipFileStatus = zipFiles(type, httpContext, zipFileName, title,
-							contentUrl, contentAccessUrl, sessionId, out);
+							contentUrl, contentAccessUrl, sessionId, out, folderNameMap);
 					itemStatus.append(zipFileStatus + LINE_BREAK);
 				}
 			}
@@ -320,11 +331,8 @@ public class MigrationTaskService {
 	 */
 	private String zipFiles(String type, HttpContext httpContext, String fileName, String title,
 			String fileUrl, String fileAccessUrl, String sessionId,
-			ZipOutputStream out) {
+			ZipOutputStream out, HashMap<String, String> folderNameUpdates) {
 		log.info("*** " + fileAccessUrl);
-		
-		// update file name
-		fileName = modifyFileNameOnType(type, fileName);
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
@@ -353,18 +361,39 @@ public class MigrationTaskService {
 			BufferedInputStream bContent = null;
 
 			try {
-
-				log.info("download file " + fileName);
 				bContent = new BufferedInputStream(content);
-				ZipEntry fileEntry = new ZipEntry(fileName);
-				out.putNextEntry(fileEntry);
-				int bCount = -1;
+				
+				// checks for folder renames
+				fileName = Utils.updateFolderPathForFileName(fileName,
+						folderNameUpdates);
+				
+				log.info("download file " + fileName);
+
 				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
 				{
-					out.write(getWebLinkContent(title, fileUrl).getBytes());
+					try
+					{
+						// get the html file content first
+						String webLinkContent = Utils.getWebLinkContent(title, fileAccessUrl);
+						
+						ZipEntry fileEntry = new ZipEntry(fileName);
+						out.putNextEntry(fileEntry);
+						out.write(webLinkContent.getBytes());
+					}
+					catch (java.net.MalformedURLException e)
+					{
+						// return status with error message
+						zipFileStatus.append("Link " + title + " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+					}
 				}
 				else
 				{
+					
+					ZipEntry fileEntry = new ZipEntry(fileName);
+					out.putNextEntry(fileEntry);
+					int bCount = -1;
+					
+					bContent = new BufferedInputStream(content);
 					while ((bCount = bContent.read(data)) != -1) {
 						out.write(data, 0, bCount);
 						length = length + bCount;
@@ -428,45 +457,6 @@ public class MigrationTaskService {
 		}
 
 		return zipFileStatus.toString();
-	}
-
-	/**
-	 * CTools Web Link content is exported as a html file, with the link inside
-	 * @param fileName
-	 * @param fileUrl
-	 * @return
-	 * @throws UnsupportedEncodingException
-	 */
-	private String getWebLinkContent(String fileName, String fileUrl)
-	{
-		// special handling of CTools Web link resources
-		// will create a HTML file containing a link inside
-		// For example: original fileUrl of format "/group/<site id>/http:__google.com.URL"
-		// and the end result url will be "http://google.com"
-		String urlContent = "";
-		if (fileUrl.endsWith(Utils.CTOOLS_RESOURCE_TYPE_URL_EXTENSION))
-		{
-			// remote the 
-			urlContent = fileUrl.substring(0, fileUrl.length()-4);
-		}
-		// get the last 
-		urlContent = urlContent.substring(urlContent.lastIndexOf(Utils.PATH_SEPARATOR) + 1);
-		// decode first
-		try
-		{
-			urlContent = URLDecoder.decode(urlContent, "UTF-8");
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			log.error(this + " getWebLinkContent: UnsupportedEncodingException " + e);
-		}
-		// then replace all "_" char with "/", was encoded by CTools
-		urlContent=urlContent.replace("_", Utils.PATH_SEPARATOR);
-		StringBuffer b = new StringBuffer();
-		b.append("<a href=\"");
-		b.append(urlContent);
-		b.append("\">" + fileName + "</a>");
-		return b.toString();
 	}
 
 	/*************** Box Migration ********************/
@@ -649,18 +639,22 @@ public class MigrationTaskService {
 				break;
 			}
 			
+			// modify the contentAccessUrl if needed for copyright alert setting
+			// always export the resource content regardless of the copyright settings
+			contentAccessUrl = Utils.getCopyrightAcceptUrl(copyrightAlert, contentAccessUrl);
+			
 			// get container string from content url
 			String container = getContainerStringFromContentUrl(contentUrl);
 
 			// come checkpoints before migration
 			itemStatus = preMigrationChecks(itemStatus, contentUrl, container,
-					title, copyrightAlert);
+					title);
 
 			log.info("type=" + type + " contentUrl=" + contentUrl + " error=" + itemStatus.toString());
 
 			if (itemStatus.length() == 0) {
 				// now alerts, do Box uploads next
-				if (rootFolderPath == null && COLLECTION_TYPE.equals(type)) {
+				if (rootFolderPath == null && Utils.COLLECTION_TYPE.equals(type)) {
 					// root folder
 					rootFolderPath = contentUrl;
 
@@ -670,17 +664,34 @@ public class MigrationTaskService {
 				}
 				else
 				{
-					// do uploads
-					HashMap<String, Object> rvValues= processBoxUploadSiteContent(userId, type, rootFolderPath,
-							contentUrl, containerStack, boxFolderIdStack, title,
-							container, boxFolderId, api, itemStatus, description,
-							contentItem, httpContext, contentAccessUrl, author,
-							copyrightAlert, sessionId);
-					itemStatus = (StringBuffer) rvValues.get("itemStatus");
-					containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
-					boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
-					log.debug("containerStack length=" + containerStack.size());
-					log.debug("boxFolderStack length=" + boxFolderIdStack.size());
+					try
+					{
+						// do uploads
+						HashMap<String, Object> rvValues= processBoxUploadSiteContent(userId, type, rootFolderPath,
+								contentUrl, containerStack, boxFolderIdStack, title,
+								container, boxFolderId, api, itemStatus, description,
+								contentItem, httpContext, contentAccessUrl, author,
+								copyrightAlert, sessionId);
+						itemStatus = (StringBuffer) rvValues.get("itemStatus");
+						containerStack = (java.util.Stack<String>) rvValues.get("containerStack");
+						boxFolderIdStack = (java.util.Stack<String>) rvValues.get("boxFolderIdStack");
+						log.debug("containerStack length=" + containerStack.size());
+						log.debug("boxFolderStack length=" + boxFolderIdStack.size());
+					}
+					catch (BoxAPIException e)
+					{
+						JSONObject eJSON = new JSONObject(e.getResponse());
+						String errorMessage = eJSON.has("context_info")?eJSON.getString("context_info"):"";
+						itemStatus.append("Box upload process was stopped due to the following error. Please rename the folder/resource item and migrate site again: \"" + errorMessage + "\"");
+						// the status of file upload to Box
+						MigrationFileItem item = new MigrationFileItem(contentUrl, title,
+								itemStatus.toString());
+						rv.add(item);
+						
+						// catch the BoxAPIException e
+						// and halt the whole upload process
+						break;
+					}
 				}
 
 			}
@@ -734,14 +745,8 @@ public class MigrationTaskService {
 	 * @param copyrightAlert
 	 */
 	private StringBuffer preMigrationChecks(StringBuffer itemStatus,
-			String contentUrl, String container, String title,
-			String copyrightAlert) {
-		if (BOOLEAN_TRUE.equals(copyrightAlert)) {
-			// do not migrate if the item is with copyright
-			itemStatus.append(title
-					+ " is not migrated because of copyright alert. "
-					+ LINE_BREAK);
-		} else if (contentUrl == null || contentUrl.length() == 0) {
+			String contentUrl, String container, String title) {
+		if (contentUrl == null || contentUrl.length() == 0) {
 			// log error if the content url is missing
 			String urlError = "No url for content " + title;
 			log.error(urlError);
@@ -786,9 +791,9 @@ public class MigrationTaskService {
 			StringBuffer itemStatus, String description,
 			JSONObject contentItem, HttpContext httpContext,
 			String contentAccessUrl, String author, String copyrightAlert,
-			String sessionId) {
+			String sessionId) throws BoxAPIException {
 
-		if (COLLECTION_TYPE.equals(type)) {
+		if (Utils.COLLECTION_TYPE.equals(type)) {
 			// folders
 
 			log.info("Begin to create folder " + title);
@@ -804,10 +809,11 @@ public class MigrationTaskService {
 			// create box folder
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
+			String sanitizedTitle = Utils.sanitizeName(type, title);
 			try {
 				BoxFolder.Info childFolderInfo = parentFolder
-						.createFolder(title);
-				itemStatus.append("folder " + title + " created.");
+						.createFolder(sanitizedTitle);
+				itemStatus.append("folder " + sanitizedTitle + " created.");
 
 				// push the current folder id into the stack
 				containerStack.push(contentUrl);
@@ -828,7 +834,7 @@ public class MigrationTaskService {
 							+ title + "- folder was not created in Box");
 
 					String exisingFolderId = getExistingBoxFolderIdFromBoxException(
-							e, title);
+							e, sanitizedTitle);
 					if (exisingFolderId != null) {
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
@@ -838,8 +844,17 @@ public class MigrationTaskService {
 								+ " container folder id=" + container);
 					} else {
 						log.info("Cannot find conflicting Box folder id for folder name "
-								+ title);
+								+ sanitizedTitle);
 					}
+				}
+				else
+				{
+					// log the exception message
+					log.info(e.getMessage() + " for " + title);
+					
+					// and throws the exception, 
+					// so that the parent function can catch it and stop the whole upload process
+					throw e;
 				}
 			}
 		} else {
@@ -907,28 +922,36 @@ public class MigrationTaskService {
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		InputStream content = null;
 		
-		if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
-		{
-			// special handling of Web Links resources
-			String webLinkContent = getWebLinkContent(fileName, fileUrl);
-			content = new ByteArrayInputStream(webLinkContent.getBytes());
-		}
-		else
-		{
-			try {
-				// get file content from /access url
-				HttpGet getRequest = new HttpGet(fileAccessUrl);
-				getRequest.setHeader("Content-Type",
-						"application/x-www-form-urlencoded");
-				HttpResponse r = httpClient.execute(getRequest, httpContext);
-				content = r.getEntity().getContent();
-			} catch (Exception e) {
-				log.info(e.getMessage());
+		try {
+			// get file content from /access url
+			HttpGet getRequest = new HttpGet(fileAccessUrl);
+			getRequest.setHeader("Content-Type",
+					"application/x-www-form-urlencoded");
+			HttpResponse r = httpClient.execute(getRequest, httpContext);
+			content = r.getEntity().getContent();
+			
+			if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type))
+			{
+				try
+				{
+					// special handling of Web Links resources
+					content = new ByteArrayInputStream(Utils.getWebLinkContent(fileName, fileAccessUrl).getBytes());
+				}
+				catch (java.net.MalformedURLException e)
+				{
+					// return status with error message
+					status.append("Link " + fileName + " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+					return status.toString();
+				}
 			}
+		}
+		catch (java.io.IOException e)
+		{
+			log.info(this + " uploadFile: cannot get web link contenet " + e.getMessage());
 		}
 
 		// update file name
-		fileName = modifyFileNameOnType(type, fileName);
+		fileName = Utils.modifyFileNameOnType(type, fileName);
 		
 		// exit if content stream is null
 		if (content == null)
@@ -943,7 +966,7 @@ public class MigrationTaskService {
 			// check if Box access token needs refresh
 			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
-			BoxFile.Info newFileInfo = folder.uploadFile(bContent, sanitizeFileName(fileName),
+			BoxFile.Info newFileInfo = folder.uploadFile(bContent, Utils.sanitizeName(type, fileName),
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
@@ -1019,37 +1042,7 @@ public class MigrationTaskService {
 		}
 		return status.toString();
 	}
-
-	/**
-	 * If file extension is missing, look up the extension by file MIME type and add extension if found;
-	 * If file extension is still missing, append ".html" for Web Link and citation type of resources
-	 * @param type
-	 * @param fileName
-	 * @return
-	 */
-	private String modifyFileNameOnType(String type, String fileName) {
-		if (type != null && FilenameUtils.getExtension(fileName).isEmpty())
-		{
-			// do extension lookup first
-			try {
-				MimeType mimeType = tikaConfig.getMimeRepository().forName(type);
-				if (mimeType != null) {
-					String extension = mimeType.getExtension();
-				    //do something with the extension
-					fileName = fileName.concat(extension);
-				}
-			} catch (MimeTypeException e) {
-				log.error(this + " Couldn't find file extension for resource: " + fileName + " of MIME type = " + type , e);
-			}
-		}
-		
-		if (FilenameUtils.getExtension(fileName).isEmpty() && (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)))
-		{
-			fileName = fileName + Utils.HTML_FILE_EXTENSION;
-		}
-		return fileName;
-	}
-
+	
 	/**
 	 * Based on the JSON returned inside BoxAPIException object, find out the id
 	 * of conflicting box folder

@@ -41,7 +41,12 @@
               <label for="check{{project.site_id}}{{project.tool_id}}" style="text-indent:20px;font-weight:normal">{{project.tool_name}}</label>
             </div>
           </div>
-          <div class="row noFocus" ng-show="project.selected" id="toolSelDest{{project.tool_id}}" tabindex="-1">
+          <div class="row noFocus" ng-show="!project.hasContentItem" id="hasNoContentItem{{project.tool_id}}" tabindex="-1">
+			<div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+            </div>
+            This site has no content in Resources to be migrated.
+          </div>
+          <div class="row noFocus" ng-show="project.selected && project.hasContentItem" id="toolSelDest{{project.tool_id}}" tabindex="-1">
             <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
             </div>
             <div class="col-md-11 col-lg-11 col-sm-11 col-xs-11 resDestPanel">
@@ -149,5 +154,3 @@
     </div>
   </div>
 </div>
-
-
