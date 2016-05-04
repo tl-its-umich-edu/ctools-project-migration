@@ -98,15 +98,17 @@ public class MigrationTaskService {
 					.get("httpContext");
 
 			// 3. get all sites that user have permission site.upd
-			String siteResourceJson = Utils.getSiteResourceJSON(env.getProperty("ctools.server.url"), site_id, sessionId);
-			if (siteResourceJson == null)
-			{
-				String errorMessage = "Cannot find site resource content for siteId=" + site_id;
-				Response.status(Response.Status.NOT_FOUND).entity(errorMessage).type(MediaType.TEXT_PLAIN).build();
-				downloadStatus.append(errorMessage);
-			}
-			try
-			{
+			RestTemplate restTemplate = new RestTemplate();
+			// the url should be in the format of
+			// "https://server/direct/site/SITE_ID.json"
+			String requestUrl = env.getProperty("ctools.server.url")
+					+ "direct/content/site/" + site_id + ".json?_sessionId="
+					+ sessionId;
+			String siteResourceJson = null;
+			try {
+				siteResourceJson = restTemplate.getForObject(requestUrl,
+						String.class);
+
 				// null zip content
 				byte[] zipContent = null;
 
@@ -136,6 +138,13 @@ public class MigrationTaskService {
 				out.close();
 				log.info("Finished zip file download for site " + site_id);
 
+			} catch (RestClientException e) {
+				String errorMessage = "Cannot find site by siteId: " + site_id
+						+ " " + e.getMessage();
+				Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
+						.type(MediaType.TEXT_PLAIN).build();
+				log.error(errorMessage);
+				downloadStatus.append(errorMessage);
 			} catch (IOException e) {
 				String errorMessage = "Problem getting content zip file for "
 						+ site_id + " " + e.getMessage();
@@ -287,21 +296,6 @@ public class MigrationTaskService {
 			fileItems.add(fileItem);
 		} // for
 		return fileItems;
-	}
-	
-	/**
-	 * replace characters match the regular expression to "_"
-	 * @param fileName
-	 * @return
-	 */
-	public String sanitizeFileName(String fileName) {
-		
-		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[:\\/]");
-		Matcher m = p.matcher(fileName);
-		fileName = m.replaceAll("_");
-		
-	    return fileName;
 	}
 
 	/**
@@ -602,7 +596,7 @@ public class MigrationTaskService {
 			StringBuffer itemStatus = new StringBuffer();
 
 			JSONObject contentItem = array.getJSONObject(i);
-			
+
 			String type = Utils.getJSONString(contentItem,
 					CONTENT_JSON_ATTR_TYPE);
 			String title = Utils.getJSONString(contentItem,
