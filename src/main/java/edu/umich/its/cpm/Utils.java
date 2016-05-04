@@ -216,6 +216,7 @@ public class Utils {
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
+	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
 	
 	/*
@@ -226,7 +227,7 @@ public class Utils {
 	 */
 	public static String getCurrentUserId(HttpServletRequest request, Environment env) {
 		// get CoSign user first
-		String remoteUser = request.getRemoteUser();
+		String remoteUser = getRemoteUser(request);
 
 		String rvUser = remoteUser;
 		
@@ -256,6 +257,27 @@ public class Utils {
 		}
 		return rvUser;
 
+	}
+
+	/*
+	 * check whether the current user is in cpm admin MCommunity group
+	 * based on ldap group membership
+	 */
+	public static boolean isCurrentUserCPMAdmin(HttpServletRequest request, Environment env) {
+		// get CoSign user first
+		String remoteUser = getRemoteUser(request);
+		
+		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
+		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
+		return ldapAuthorizationVerification(propLdapServerUrl, propAdminMCommGroup, remoteUser);
+	}
+
+	/*
+	 * get CoSign user
+	 */
+	private static String getRemoteUser(HttpServletRequest request) {
+		String remoteUser = request.getRemoteUser();
+		return remoteUser;
 	}
 	
 	/*

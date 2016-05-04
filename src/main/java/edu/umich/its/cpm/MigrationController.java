@@ -841,4 +841,19 @@ public class MigrationController {
  		}
 	    
 	}
+	
+	/**
+	 * check whether the current user is of cpm admin group
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/isAdmin")
+	public void bulkMigrationBox(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+
+		boolean isAdmin = Utils.isCurrentUserCPMAdmin(request, env);
+		JSON_response(response, Boolean.valueOf(isAdmin).toString(), "", "/isAdmin");
+	    
+	}
 }
