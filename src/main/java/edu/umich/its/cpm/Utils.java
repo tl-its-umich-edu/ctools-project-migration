@@ -229,7 +229,7 @@ public class Utils {
 	}
 	
 	/************* LDAP lookup ****************/
-	private static final String OU_GROUPS = "ou=groups";
+	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
 	private static final String ALLOW_TESTUSER_URLOVERRIDE = "allow.testUser.urlOverride";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
@@ -294,8 +294,7 @@ public class Utils {
 	 * get CoSign user
 	 */
 	private static String getRemoteUser(HttpServletRequest request) {
-		String remoteUser = request.getRemoteUser();
-		return remoteUser;
+		return request.getRemoteUser();
 	}
 	
 	/*
@@ -320,37 +319,34 @@ public class Utils {
 			log.error(" [ldap.server.url] or [mcomm.group] properties are not set");
 			return isAuthorized;
 		}
+		
 		try {
-			dirContext = new InitialDirContext(env);
-			String[] attrIDs = {"member"};
-			SearchControls searchControls = new SearchControls();
-			searchControls.setReturningAttributes(attrIDs);
-			searchControls.setReturningObjFlag(true);
-			searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
+		    DirContext ctx = new InitialDirContext(env);
+		    SearchControls searchControls = new SearchControls();
+		    searchControls.setSearchScope(SearchControls.SUBTREE_SCOPE);
 			String searchBase = OU_GROUPS;
 			String filter = "(&(cn=" + mcommunityGroup + "))";
-			listOfPeopleInAuthGroup = dirContext.search(searchBase, filter, searchControls);
-			String positiveMatch = "uid=" + user + ",";
+		    listOfPeopleInAuthGroup = ctx.search(searchBase, filter, searchControls);
+		    String positiveMatch = "uid=" + user + ",";
 			outerloop:
-				while (listOfPeopleInAuthGroup.hasMore()) {
-					SearchResult searchResults = (SearchResult)listOfPeopleInAuthGroup.next();
-					allSearchResultAttributes = (searchResults.getAttributes()).getAll();
-					while (allSearchResultAttributes.hasMoreElements()){
-						Attribute attr = (Attribute) allSearchResultAttributes.nextElement();
-						simpleListOfPeople = attr.getAll();
-						while (simpleListOfPeople.hasMoreElements()){
+			while (listOfPeopleInAuthGroup.hasMore()) {
+	
+		        SearchResult searchResults = (SearchResult)listOfPeopleInAuthGroup.next();
+		        allSearchResultAttributes = (searchResults.getAttributes()).getAll();
+		        while (allSearchResultAttributes.hasMoreElements()){
+		                Attribute attr = (Attribute) allSearchResultAttributes.nextElement();
+		                simpleListOfPeople = attr.getAll();
+		                while (simpleListOfPeople.hasMoreElements()){
 							String val = (String) simpleListOfPeople.nextElement();
 							if(val.indexOf(positiveMatch) != -1){
 								isAuthorized = true;
 								break outerloop;
 							}
-						}
-					}
-				}
-			return isAuthorized;
-		} catch (NamingException e) {
+		                }
+		        }
+			}
+		}catch (NamingException e) {
 			log.error("Problem getting attribute:" + e);
-			return isAuthorized;
 		}
 		finally {
 			try {
@@ -382,7 +378,7 @@ public class Utils {
 				log.error("Problem occurred while closing the  \"dirContext\"  object",e);
 			}
 		}
-
+		return isAuthorized;
 	}
 	
 	/**
