@@ -15,8 +15,8 @@ projectMigrationApp.factory('Projects', function($http) {
 			}).then(function success(result) {
 				// filter everything course sites
 
-				var sourceProjects = _.filter(result.data.site_collection, 
-					function(site){ 
+				var sourceProjects = _.filter(result.data.site_collection,
+					function(site){
 					return (site.type !== 'course' && site.type !== 'specialized_courses' && site.type !== 'GradToolsStudent');
 				});
 				// use a transform to make project data mirror data in
@@ -28,7 +28,7 @@ projectMigrationApp.factory('Projects', function($http) {
 				errorDisplay(url, result.status, 'Unable to get projects');
 				result.errors.failure = true;
 				return result;
-			});	
+			});
 		},
 		getProject : function(url) {
 			return $http.get(url, {
@@ -101,7 +101,23 @@ projectMigrationApp.factory('Projects', function($http) {
 						result.errors.failure = true;
 						return result;
 					});
-		}
+		},
+    checkIsAdminUser : function(url) {
+
+      return $http.get(url, {
+        cache : false
+      }).then(
+          function success(result) {
+            // forward the data - let the controller deal with it
+            return result;
+          },
+          function error(result) {
+            errorDisplay(url, result.status,
+                'Unable to check if user is an admin.');
+            return result;
+          });
+    }
+
 
 	};
 });
@@ -237,7 +253,7 @@ projectMigrationApp.factory('Status', function($http) {
 					return result;
 				}
 			}, function error(result) {
-			
+
 				result.errors.failure = true;
 				return result;
 			});
