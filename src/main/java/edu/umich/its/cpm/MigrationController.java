@@ -925,6 +925,25 @@ public class MigrationController {
 	}
 
 	/******* bulk migration *********/
+	
+	/**
+	 * check whether the current user is of Box admin
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/isAdmin")
+	public void isAdmin(HttpServletRequest request,
+			HttpServletResponse response) {
+
+		JSONObject jObject = new JSONObject();
+		jObject.put("isAdmin", Utils.isCurrentUserCPMAdmin(request, env));
+		
+		// JSON response
+		JSON_response(response, jObject.toString(),
+				"Problem with checking admin status for current user.", "/isAdmin");
+	}
+	
 	/**
 	 * Admin User authenticates into the Box account
 	 * 
