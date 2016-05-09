@@ -70,6 +70,9 @@ public class Utils {
 	public static final String BOX_API_URL = "box_api_url";
 	public static final String BOX_TOKEN_URL = "box_token_url";
 	public static final String BOX_CLIENT_REDIRECT_URL = "box_client_redirect_uri";
+	public static final String BOX_ADMIN_CLIENT_ID = "box_admin_client_id";
+	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
+	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
 
 	public static final String SERVER_URL = "server_url";
 

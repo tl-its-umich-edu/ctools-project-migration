@@ -77,9 +77,6 @@ public class BoxUtils {
 	// HashMap, indexed by user id, holds queue for Box migration tasks
 	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();		
 	
-	private static final String BOX_CLIENT_ID = "box_client_id";
-	private static final String BOX_CLIENT_SECRET = "box_client_secret";
-	
 	/**
 	 * get Box migration request for all users
 	 */
