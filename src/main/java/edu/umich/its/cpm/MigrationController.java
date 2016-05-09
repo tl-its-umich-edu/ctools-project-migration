@@ -102,7 +102,6 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @RestController
 public class MigrationController {
 
-
 	private static final String BOX_AUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\" style=\"background:#fff\"><h1 role=\"alert\">Authorized</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a onclick=\"window.parent.closeBoxAuthModal()\" href=\"#\">Close</a></p></div>";
 	private static final String BOX_UNAUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
 
@@ -115,9 +114,9 @@ public class MigrationController {
 	@Autowired
 	private Environment env;
 
-	@Autowired 
+	@Autowired
 	private MigrationInstanceService migrationInstanceService;
-	
+
 	// WSDL operation
 	private static final String OPERATION_GET_CONTENT_DATA = "getContentData";
 	private static final String OPERTAION_GET_CONTENT_DATA_PARAM_SESSIONID = "sessionid";
@@ -132,100 +131,110 @@ public class MigrationController {
 	@RequestMapping("/projects")
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
-		
+
 		// get non-course sites that user have site.upd permission
 		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
-		
+
 		// JSON response
-		JSON_response(response, projectsMap.get("projectsString"), projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
+		JSON_response(response, projectsMap.get("projectsString"),
+				projectsMap.get("errorMessage"), projectsMap.get("requestUrl"));
 	}
 
 	/**
-	 * return HashMap object with non-course sites that user have site.upd permission
+	 * return HashMap object with non-course sites that user have site.upd
+	 * permission
+	 * 
 	 * @param request
 	 * @return
 	 */
 	private HashMap<String, String> getUserAllSitesMap(
 			HttpServletRequest request) {
 		HashMap<String, String> projectsMap = get_user_sites(request);
-		
+
 		// this is a json value contains non-MyWorkspace sites
 		String sitesJson = projectsMap.get("projectsString");
 		// get the json value for user MyWorkspace site
 		String myworkspaceJson = get_user_myworkspace_site_json(request);
-		if (myworkspaceJson != null)
-		{
+		if (myworkspaceJson != null) {
 			// insert the MyWorkspace json into the other-sites json
-			try
-			{
+			try {
 				JSONObject sitesJSONObject = new JSONObject(sitesJson);
-				sitesJSONObject.append("site_collection", new JSONObject(myworkspaceJson));
-				// get the updated sites json string with MyWorkspace info inserted
+				sitesJSONObject.append("site_collection", new JSONObject(
+						myworkspaceJson));
+				// get the updated sites json string with MyWorkspace info
+				// inserted
 				projectsMap.put("projectsString", sitesJSONObject.toString());
-			}
-			catch (JSONException e)
-			{
-				log.error(this + " error parsing sites JSON value " + sitesJson );
+			} catch (JSONException e) {
+				log.error(this + " error parsing sites JSON value " + sitesJson);
 			}
 		}
 		return projectsMap;
 	}
-	
+
 	/**
 	 * REST API call to get user MyWorkspace site
+	 * 
 	 * @param req
 	 * @return
 	 */
-	private String get_user_myworkspace_site_json(HttpServletRequest request)
-	{
+	private String get_user_myworkspace_site_json(HttpServletRequest request) {
 		String siteJson = null;
-		
+
 		String requestUrl = "";
-		
+
 		// login to CTools and get sessionId
 		String userEid = Utils.getCurrentUserId(request, env);
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, userEid);
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
+				request, userEid);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
-			
+
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-			// Response Code Details: 200 plus data; 404 if not found, 406 if format unavailable
-			// user MyWorkspace site ID could be two forms 
+			// Response Code Details: 200 plus data; 404 if not found, 406 if
+			// format unavailable
+			// user MyWorkspace site ID could be two forms
 			// 1. try "~<user_id>" first
-			requestUrl = env.getProperty("ctools.server.url") + "direct/site/~" + userEid + ".json?_sessionId=" + sessionId;
+			requestUrl = env.getProperty("ctools.server.url") + "direct/site/~"
+					+ userEid + ".json?_sessionId=" + sessionId;
 			log.info(this + " get_user_myworkspace_site_json " + requestUrl);
-			try 
-			{
-				ResponseEntity<String> siteEntity = restTemplate.getForEntity(requestUrl, String.class);
-				if (siteEntity.getStatusCode().is2xxSuccessful())
-				{
+			try {
+				ResponseEntity<String> siteEntity = restTemplate.getForEntity(
+						requestUrl, String.class);
+				if (siteEntity.getStatusCode().is2xxSuccessful()) {
 					// find user MyWorkspace site
 					siteJson = siteEntity.getBody();
 				}
 			} catch (RestClientException e) {
 				log.error(this + requestUrl + e.getMessage());
-				
-				try 
-				{
+
+				try {
 					// 2. site not found, try "~<eid>" next
 					// get the user id first
 					// "https://server/direct/user/<eid>.json?_sessionId=<sessionId>"
-					// Response Code Details: 200 plus data; 404 if not found, 406 if format unavailable
-					requestUrl = env.getProperty("ctools.server.url") + "direct/user/" + userEid + ".json?_sessionId=" + sessionId;
-					log.info(this + " get_user_myworkspace_site_json " + requestUrl);
-					ResponseEntity<String> userEntity = restTemplate.getForEntity(requestUrl, String.class);
-					if (userEntity.getStatusCode().is2xxSuccessful())
-					{
-						JSONObject userObject = new JSONObject(userEntity.getBody());
+					// Response Code Details: 200 plus data; 404 if not found,
+					// 406 if format unavailable
+					requestUrl = env.getProperty("ctools.server.url")
+							+ "direct/user/" + userEid + ".json?_sessionId="
+							+ sessionId;
+					log.info(this + " get_user_myworkspace_site_json "
+							+ requestUrl);
+					ResponseEntity<String> userEntity = restTemplate
+							.getForEntity(requestUrl, String.class);
+					if (userEntity.getStatusCode().is2xxSuccessful()) {
+						JSONObject userObject = new JSONObject(
+								userEntity.getBody());
 						String userId = (String) userObject.get("id");
 						// use this userId to form user myworkspace id
-						requestUrl = env.getProperty("ctools.server.url") + "direct/site/~" + userId + ".json?_sessionId=" + sessionId;
-						log.info(this + " get_user_myworkspace_site_json " + requestUrl);
-						ResponseEntity<String>  siteEntity = restTemplate.getForEntity(requestUrl, String.class);
-						if (siteEntity.getStatusCode().is2xxSuccessful())
-						{
+						requestUrl = env.getProperty("ctools.server.url")
+								+ "direct/site/~" + userId
+								+ ".json?_sessionId=" + sessionId;
+						log.info(this + " get_user_myworkspace_site_json "
+								+ requestUrl);
+						ResponseEntity<String> siteEntity = restTemplate
+								.getForEntity(requestUrl, String.class);
+						if (siteEntity.getStatusCode().is2xxSuccessful()) {
 							// now we find the user MyWorkspace site
 							siteJson = siteEntity.getBody();
 						}
@@ -236,29 +245,29 @@ public class MigrationController {
 			}
 
 		}
-		
-		return siteJson;	
+
+		return siteJson;
 	}
-	
 
 	/**
 	 * REST API call to get all sites for user
+	 * 
 	 * @param req
 	 * @return
 	 */
-	private HashMap<String, String> get_user_sites(HttpServletRequest request)
-	{
+	private HashMap<String, String> get_user_sites(HttpServletRequest request) {
 		HashMap<String, String> rv = new HashMap<String, String>();
-		
+
 		String projectsString = "";
 		String errorMessage = "";
 		String requestUrl = "";
-		
+
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, Utils.getCurrentUserId(request, env));
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
+				request, Utils.getCurrentUserId(request, env));
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
-			
+
 			// get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -268,20 +277,21 @@ public class MigrationController {
 					+ sessionId;
 			log.info(this + " get_user_sites " + requestUrl);
 			try {
-				projectsString = restTemplate.getForObject(requestUrl, String.class);
+				projectsString = restTemplate.getForObject(requestUrl,
+						String.class);
 			} catch (RestClientException e) {
-				errorMessage =  e.getMessage();
+				errorMessage = e.getMessage();
 				log.error(requestUrl + errorMessage);
 			}
 
 		}
-		
+
 		rv.put("projectsString", projectsString);
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
-		return rv;	
+		return rv;
 	}
-	
+
 	/**
 	 * get page information
 	 * 
@@ -292,105 +302,118 @@ public class MigrationController {
 	@RequestMapping("/projects/{site_id}")
 	public void getProjectSitePages(@PathVariable String site_id,
 			HttpServletRequest request, HttpServletResponse response) {
-		HashMap<String, String> pagesMap = get_user_project_site_tools(request, site_id);
-		JSON_response(response, pagesMap.get("pagesString"), pagesMap.get("errorMessage"), pagesMap.get("requestUrl"));
+		HashMap<String, String> pagesMap = get_user_project_site_tools(request,
+				site_id);
+		JSON_response(response, pagesMap.get("pagesString"),
+				pagesMap.get("errorMessage"), pagesMap.get("requestUrl"));
 	}
 
 	/**
 	 * REST API call to get CTools site pages and tools
+	 * 
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_user_project_site_tools(HttpServletRequest request, String site_id)
-	{
+	private HashMap<String, String> get_user_project_site_tools(
+			HttpServletRequest request, String site_id) {
 		HashMap<String, String> rv = new HashMap<String, String>();
-		
+
 		String pagesString = "";
 		String errorMessage = "";
 		String requestUrl = "";
-		
+
 		// login to CTools and get sessionId
-		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, Utils.getCurrentUserId(request, env));
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
+				request, Utils.getCurrentUserId(request, env));
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
-			
+
 			// get all pages inside site
 			// the url should be in the format of
 			// "https://server/direct/site/SITE_ID/pages.json"
 			RestTemplate restTemplate = new RestTemplate();
-			requestUrl = env.getProperty("ctools.server.url")
-					+ "direct/site/" + site_id + "/pages.json?_sessionId="
-					+ sessionId;
+			requestUrl = env.getProperty("ctools.server.url") + "direct/site/"
+					+ site_id + "/pages.json?_sessionId=" + sessionId;
 
 			try {
-				pagesString = restTemplate.getForObject(requestUrl, String.class);
+				pagesString = restTemplate.getForObject(requestUrl,
+						String.class);
 			} catch (RestClientException e) {
-				errorMessage = "Cannot find site pages by siteId: " + site_id + " "
-						+ e.getMessage();
+				errorMessage = "Cannot find site pages by siteId: " + site_id
+						+ " " + e.getMessage();
 				log.error(errorMessage);
 			}
-		
+
 			pagesString = siteHasContentItems(site_id, pagesString, sessionId);
 		}
-		
+
 		rv.put("pagesString", pagesString);
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
-		return rv;	
+		return rv;
 	}
-	
+
 	/**
-	 * adds an extra "hasContentItem" JSON element to the site tool JSON feed. 
+	 * adds an extra "hasContentItem" JSON element to the site tool JSON feed.
 	 * True if site has content resources; false if the site content is empty.
+	 * 
 	 * @param site_id
 	 * @param pagesString
 	 * @param sessionId
 	 * @return
 	 */
-	private String siteHasContentItems(String site_id, String pagesString,String sessionId) {
-		JSONArray rvSitePagesArray = new JSONArray() ;
-		
+	private String siteHasContentItems(String site_id, String pagesString,
+			String sessionId) {
+		JSONArray rvSitePagesArray = new JSONArray();
+
 		RestTemplate restTemplate;
 		JSONArray pages = new JSONArray(pagesString);
 		// iterate through all pages
 		for (int iPage = 0; pages != null && iPage < pages.length(); ++iPage) {
-		    JSONObject page = pages.getJSONObject(iPage);
-		    if (page.has("tools"))
-		    {
+			JSONObject page = pages.getJSONObject(iPage);
+			if (page.has("tools")) {
 				// iterate through all tools within page
-		    	JSONArray tools = (JSONArray) page.get("tools");
-		    	for (int iTool = 0; tools!= null && iTool < tools.length(); ++iTool) {
-				    JSONObject tool = tools.getJSONObject(iTool);
-				    if (tool != null && tool.has("toolId") && "sakai.resources".equals(tool.get("toolId")))
-				    {
-				    	// found Resource tool
-				    	restTemplate = new RestTemplate();
-						String resourceToolRequestUrl = env.getProperty("ctools.server.url")
-								+ "direct/content/site/" + site_id + ".json?_sessionId="
-								+ sessionId;
+				JSONArray tools = (JSONArray) page.get("tools");
+				for (int iTool = 0; tools != null && iTool < tools.length(); ++iTool) {
+					JSONObject tool = tools.getJSONObject(iTool);
+					if (tool != null && tool.has("toolId")
+							&& "sakai.resources".equals(tool.get("toolId"))) {
+						// found Resource tool
+						restTemplate = new RestTemplate();
+						String resourceToolRequestUrl = env
+								.getProperty("ctools.server.url")
+								+ "direct/content/site/"
+								+ site_id
+								+ ".json?_sessionId=" + sessionId;
 
 						try {
-							JSONObject resourceToolResultString = new JSONObject(restTemplate.getForObject(resourceToolRequestUrl, String.class));
-							if (resourceToolResultString != null && resourceToolResultString.has("content_collection"))
-							{
-								// find the resource elements in content_collection
-								JSONArray resourceList = (JSONArray) resourceToolResultString.get("content_collection");
-								// insert the "hasContentItem" attribute to JSON object
-								page.put("hasContentItem", resourceList!= null && resourceList.length() > 1);
+							JSONObject resourceToolResultString = new JSONObject(
+									restTemplate.getForObject(
+											resourceToolRequestUrl,
+											String.class));
+							if (resourceToolResultString != null
+									&& resourceToolResultString
+											.has("content_collection")) {
+								// find the resource elements in
+								// content_collection
+								JSONArray resourceList = (JSONArray) resourceToolResultString
+										.get("content_collection");
+								// insert the "hasContentItem" attribute to JSON
+								// object
+								page.put("hasContentItem", resourceList != null
+										&& resourceList.length() > 1);
 							}
 						} catch (RestClientException e) {
-							log.error("Cannot find site content by siteId: " + site_id + " "
-									+ e.getMessage());
+							log.error("Cannot find site content by siteId: "
+									+ site_id + " " + e.getMessage());
 						}
-				    }
-		    	}
-		    }
-		    rvSitePagesArray.put(iPage, page);
+					}
+				}
+			}
+			rvSitePagesArray.put(iPage, page);
 		}
 		return rvSitePagesArray.toString();
 	}
-
-
 
 	/**
 	 * get all migration records
@@ -507,66 +530,69 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// zip download
-		HashMap<String, String> callStatus = migration_call(request, response, Utils.MIGRATION_TYPE_ZIP, Utils.getCurrentUserId(request, env));	
-		if (callStatus.containsKey("errorMessage"))
-		{
-			log.info(this + " MigrationZip call error message=" + callStatus.get("errorMessage"));
-		}
-		else if (callStatus.containsKey("migrationId"))
-		{
-			log.info(this + " MigrationZip call migration started id=" + callStatus.get("migrationId"));
+		HashMap<String, String> callStatus = migration_call(request, response,
+				Utils.MIGRATION_TYPE_ZIP, Utils.getCurrentUserId(request, env));
+		if (callStatus.containsKey("errorMessage")) {
+			log.info(this + " MigrationZip call error message="
+					+ callStatus.get("errorMessage"));
+		} else if (callStatus.containsKey("migrationId")) {
+			log.info(this + " MigrationZip call migration started id="
+					+ callStatus.get("migrationId"));
 		}
 	}
-	
+
 	/**
 	 * handle migration request
+	 * 
 	 * @param
 	 */
-	private HashMap<String, String> migration_call(HttpServletRequest request, HttpServletResponse response, String target, String remoteUser)
-	{
+	private HashMap<String, String> migration_call(HttpServletRequest request,
+			HttpServletResponse response, String target, String remoteUser) {
 		HashMap<String, String> rv = new HashMap<String, String>();
-		
-		// we need to do series checks to make sure the migration request is valid
+
+		// we need to do series checks to make sure the migration request is
+		// valid
 		// 1. check if missing site_id or tool_id attribute
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
 		String toolId = parameterMap.get("tool_id")[0];
-		if (siteId == null || siteId.isEmpty() || toolId == null || toolId.isEmpty())
-		{
-			rv.put("errorMessage", "Migration request missing required parameter: site_id, or tool_id");
+		if (siteId == null || siteId.isEmpty() || toolId == null
+				|| toolId.isEmpty()) {
+			rv.put("errorMessage",
+					"Migration request missing required parameter: site_id, or tool_id");
 			return rv;
 		}
-		
-		log.info("request migration for site " + siteId  + " and tool " + toolId);
-		
-		// 2. check to see whether the site_id and tool_id is valid and associated with current user
+
+		log.info("request migration for site " + siteId + " and tool " + toolId);
+
+		// 2. check to see whether the site_id and tool_id is valid and
+		// associated with current user
 		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
 		String projectsString = projectsMap.get("projectsString");
-		if (projectsString.indexOf(siteId) == -1)
-		{
-			rv.put("errorMessage", "Invalid site id = " + siteId + " for user " + remoteUser);
+		if (projectsString.indexOf(siteId) == -1) {
+			rv.put("errorMessage", "Invalid site id = " + siteId + " for user "
+					+ remoteUser);
 			return rv;
-		}
-		else
-		{
-			HashMap<String, String> pagesMap = get_user_project_site_tools(request, siteId);
+		} else {
+			HashMap<String, String> pagesMap = get_user_project_site_tools(
+					request, siteId);
 			String pagesString = pagesMap.get("pagesString");
-			if (pagesString.indexOf(toolId) == -1)
-			{
-				rv.put("errorMessage", "Invalid tool id = " + toolId + " for site id= " + siteId + " for user " + remoteUser);
+			if (pagesString.indexOf(toolId) == -1) {
+				rv.put("errorMessage", "Invalid tool id = " + toolId
+						+ " for site id= " + siteId + " for user " + remoteUser);
 				return rv;
 			}
 		}
-		
+
 		// 3. check if there is an ongoing migration for the same site and tool
 		boolean valid_migration_request = true;
 		String currentUserId = Utils.getCurrentUserId(request, env);
-		List<Migration> migratingSiteTools = repository.findMigrating(currentUserId);
-		for (Migration m : migratingSiteTools)
-		{
-			log.info("migrating reord " + m.getSite_id() + " tool id=" + toolId + "user id=" + currentUserId);
-			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id()))
-			{
+		List<Migration> migratingSiteTools = repository
+				.findMigrating(currentUserId);
+		for (Migration m : migratingSiteTools) {
+			log.info("migrating reord " + m.getSite_id() + " tool id=" + toolId
+					+ "user id=" + currentUserId);
+			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id())) {
 				// still on-going migration
 				valid_migration_request = false;
 				break;
@@ -574,55 +600,61 @@ public class MigrationController {
 
 		}
 		// exit if it is duplicate request
-		if (!valid_migration_request)
-		{
-			rv.put("errorMessage", "Duplicate migration request for site " + siteId + " tool=" + toolId + " user id=" + currentUserId);
+		if (!valid_migration_request) {
+			rv.put("errorMessage", "Duplicate migration request for site "
+					+ siteId + " tool=" + toolId + " user id=" + currentUserId);
 			return rv;
 		}
-		
+
 		// now after all checks passed, we are ready for migration
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
 		Migration newMigration = null;
-		
+
 		log.info("after save migration");
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
 			// no new Migration record created
-			rv.put("errorMessage", "Cannot create migration records for user " + currentUserId + " and site=" + siteId);
+			rv.put("errorMessage", "Cannot create migration records for user "
+					+ currentUserId + " and site=" + siteId);
 			return rv;
 		} else {
-			
+
 			Migration migration = (Migration) saveMigration.get("migration");
 			String migrationId = migration.getMigration_id();
-			try
-			{	
-				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, remoteUser);
-				
+			try {
+				HashMap<String, Object> sessionAttributes = Utils
+						.login_becomeuser(env, request, remoteUser);
+
 				// call asynchronous method for zip file download
 				String migrationStatus = null;
-		        if (Utils.MIGRATION_TYPE_ZIP.equals(target))
-				{
-		        	// call asynchronous method for zip file download
-		        	log.info("start to call zip migration asynch for siteId=" + siteId + " tooId=" + toolId);
-					migrationInstanceService.createDownloadZipInstance(env, request, response, currentUserId, sessionAttributes, siteId, migrationId, repository);
+				if (Utils.MIGRATION_TYPE_ZIP.equals(target)) {
+					// call asynchronous method for zip file download
+					log.info("start to call zip migration asynch for siteId="
+							+ siteId + " tooId=" + toolId);
+					migrationInstanceService.createDownloadZipInstance(env,
+							request, response, currentUserId,
+							sessionAttributes, siteId, migrationId, repository);
+				} else if (Utils.MIGRATION_TYPE_BOX.equals(target)) {
+					// call asynchronous method for Box file upload
+					log.info("start to call Box migration asynch for siteId="
+							+ siteId + " tooId=" + toolId);
+					migrationInstanceService.createUploadBoxInstance(env,
+							request, response, currentUserId,
+							sessionAttributes, siteId,
+							parameterMap.get("box_folder_id")[0], migrationId,
+							repository);
 				}
-				else if (Utils.MIGRATION_TYPE_BOX.equals(target))
-				{
-		        	// call asynchronous method for Box file upload
-		        	log.info("start to call Box migration asynch for siteId=" + siteId + " tooId=" + toolId);
-					migrationInstanceService.createUploadBoxInstance(env, request, response, currentUserId, sessionAttributes, siteId, parameterMap.get("box_folder_id")[0], migrationId, repository);
-				}	
-			}
-			catch (java.lang.InterruptedException e)
-			{
-				log.error(e.getMessage() + " migration error for user " + currentUserId + " and site=" + siteId  + " target=" + target);
+			} catch (java.lang.InterruptedException e) {
+				log.error(e.getMessage() + " migration error for user "
+						+ currentUserId + " and site=" + siteId + " target="
+						+ target);
 			}
 			rv.put("migrationId", migrationId);
 			return rv;
 		}
 	}
-	
+
 	/**
 	 * generate output for JSON_ready input value
 	 */
@@ -659,9 +691,17 @@ public class MigrationController {
 
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
+		String remoteUserEmail = Utils.getUserEmail(userId);
+
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		}
+
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL)
-				+ "/authorized";
+		String boxClientRedirectUrl = env
+				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
@@ -669,7 +709,6 @@ public class MigrationController {
 			log.error("Missing box integration parameters");
 			return null;
 		}
-		String remoteUserEmail = Utils.getUserEmail(userId);
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
@@ -691,29 +730,8 @@ public class MigrationController {
 	@RequestMapping("/box/authorize")
 	public String boxAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
-		String remoteUserEmail = Utils.getUserEmail(userId);
-
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
-		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
-		String boxClientRedirectUrl = env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL)
-				+ "/authorized";
-
-		log.info("in /box/authorize");
-
-		if (BoxUtils.getBoxAccessToken(userId) == null) {
-			log.info("user " + userId
-					+ " has not authorized to use Box. Start auth process.");
-			// go to Box authentication screen
-			// get access token and refresh token and store locally
-			return BoxUtils.authenticateString(boxAPIUrl, boxClientId,
-					boxClientRedirectUrl, remoteUserEmail, response);
-		} else {
-			log.info("user " + userId + " already authorized");
-			return "Authorized";
-		}
+		// normal user authorize to Box
+		return boxAuthorization(request, response, false);
 	}
 
 	/**
@@ -753,13 +771,6 @@ public class MigrationController {
 	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getBoxAuthzTokens(HttpServletRequest request) {
-
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
-		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
-		String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
-		log.info("token url=" + boxTokenUrl);
-
 		// get the current user id
 		String userId = Utils.getCurrentUserId(request, env);
 		String rv = BoxUtils.getBoxAccessToken(userId);
@@ -767,8 +778,25 @@ public class MigrationController {
 		if (rv == null) {
 			// get the authCode,
 			// and get access token and refresh token subsequently
-			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-					boxClientSecret, boxTokenUrl, userId);
+			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
+
+			if (userId.equals(env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID))
+					|| Utils.isCurrentUserCPMAdmin(request, env)) {
+				// admin user
+				String boxAdminClientId = env
+						.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+				String boxAdminClientSecret = env
+						.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+				BoxUtils.getAuthCodeFromBoxCallback(request, boxAdminClientId,
+						boxAdminClientSecret, boxTokenUrl, userId);
+			} else {
+				// normal user
+				String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
+				String boxClientSecret = env
+						.getProperty(Utils.BOX_CLIENT_SECRET);
+				BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+						boxClientSecret, boxTokenUrl, userId);
+			}
 
 			// try to get the access token after parsing the request string
 			rv = BoxUtils.getBoxAccessToken(userId);
@@ -810,20 +838,19 @@ public class MigrationController {
 		String destinationType = parameterMap.get("destination_type")[0];
 		String userId = Utils.getCurrentUserId(request, env);
 		String targetUrl = "";
-		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType))
-		{
+		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType)) {
 			// the format of folder path in box
 			// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
 			String boxFolderId = parameterMap.get("box_folder_id")[0];
 			String boxFolderName = parameterMap.get("box_folder_name")[0];
 			log.info("boxFolderName=" + boxFolderName);
-			if (boxFolderId != null && !boxFolderId.isEmpty() &&
-				boxFolderName != null && !boxFolderName.isEmpty())
-			{
-				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId + Utils.PATH_SEPARATOR + boxFolderName;
+			if (boxFolderId != null && !boxFolderId.isEmpty()
+					&& boxFolderName != null && !boxFolderName.isEmpty()) {
+				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId
+						+ Utils.PATH_SEPARATOR + boxFolderName;
 			}
 		}
-		
+
 		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
 				new java.sql.Timestamp(System.currentTimeMillis()), // start
 																	// time is
@@ -838,7 +865,7 @@ public class MigrationController {
 				.append(" tool_id=").append(toolId).append(" tool_name=")
 				.append(toolName).append(" migrated_by=").append(userId)
 				.append(" destination_type=").append(destinationType)
-				
+
 				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
 		try {
@@ -875,38 +902,79 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 
 		// box upload
- 		HashMap<String, String> callStatus = migration_call(request, response, Utils.MIGRATION_TYPE_BOX, Utils.getCurrentUserId(request, env));	
+		HashMap<String, String> callStatus = migration_call(request, response,
+				Utils.MIGRATION_TYPE_BOX, Utils.getCurrentUserId(request, env));
 		HttpHeaders headers = new HttpHeaders();
- 		if (callStatus.containsKey("errorMessage"))
- 		{
- 			log.info(this + " MigrationBox call error message=" + callStatus.get("errorMessage"));
- 			return new ResponseEntity<String>(callStatus.get("errorMessage"),headers, HttpStatus.CONFLICT);
- 		}
- 		else
- 		{
- 			log.info(this + " MigrationBox call migration started id=" + callStatus.get("migrationId"));
- 		    if (callStatus.containsKey("migrationId"))
- 		    {
-	 			//http://serverUrl/migration/id
-	 		    headers.setLocation(ucb.path("/migration/{id}").buildAndExpand(callStatus.get("migrationId")).toUri());
- 		    }
- 		    return new ResponseEntity<String>("Migration started.", headers, HttpStatus.ACCEPTED);
- 		}
-	    
+		if (callStatus.containsKey("errorMessage")) {
+			log.info(this + " MigrationBox call error message="
+					+ callStatus.get("errorMessage"));
+			return new ResponseEntity<String>(callStatus.get("errorMessage"),
+					headers, HttpStatus.CONFLICT);
+		} else {
+			log.info(this + " MigrationBox call migration started id="
+					+ callStatus.get("migrationId"));
+			if (callStatus.containsKey("migrationId")) {
+				// http://serverUrl/migration/id
+				headers.setLocation(ucb.path("/migration/{id}")
+						.buildAndExpand(callStatus.get("migrationId")).toUri());
+			}
+			return new ResponseEntity<String>("Migration started.", headers,
+					HttpStatus.ACCEPTED);
+		}
+
 	}
-	
+
+	/******* bulk migration *********/
 	/**
-	 * check whether the current user is of cpm admin group
+	 * Admin User authenticates into the Box account
 	 * 
 	 * @return
 	 */
-	@GET
-	@RequestMapping("/isAdmin")
-	public void bulkMigrationBox(HttpServletRequest request,
-			HttpServletResponse response, UriComponentsBuilder ucb) {
+	@RequestMapping("/box/adminAuthorize")
+	public String boxAdminAuthenticate(HttpServletRequest request,
+			HttpServletResponse response) {
+		// admin user authorize to Box
+		return boxAuthorization(request, response, true);
+	}
 
-		boolean isAdmin = Utils.isCurrentUserCPMAdmin(request, env);
-		JSON_response(response, Boolean.valueOf(isAdmin).toString(), "", "/isAdmin");
-	    
+	/**
+	 * Authorize app to access Box account based on current user's role
+	 * 
+	 * @param request
+	 * @param response
+	 * @return
+	 */
+	private String boxAuthorization(HttpServletRequest request,
+			HttpServletResponse response, boolean adminRole) {
+		// get the current user id
+		String userId = Utils.getCurrentUserId(request, env);
+		String remoteUserEmail = Utils.getUserEmail(userId);
+
+		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
+		if (adminRole) {
+			// verify whether the current user is of Box Admin group
+			if (Utils.isCurrentUserCPMAdmin(request, env)) {
+				boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+				remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+			}
+		}
+
+		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
+		String boxClientRedirectUrl = env
+				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
+
+		log.debug("in boxAuthorization");
+
+		if (BoxUtils.getBoxAccessToken(userId) == null) {
+			log.debug("user " + userId
+					+ " has not authorized to use Box. Start auth process.");
+			// go to Box authentication screen
+			// get access token and refresh token and store locally
+			return BoxUtils.authenticateString(boxAPIUrl, boxClientId,
+					boxClientRedirectUrl, remoteUserEmail, response);
+		} else {
+			log.debug("user " + userId + " already authorized");
+			return "Authorized";
+		}
 	}
 }
