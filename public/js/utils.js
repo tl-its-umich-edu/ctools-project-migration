@@ -9,7 +9,7 @@ var closeBoxAuthModal = function(){
 /projects returns a Sakai like /direct feed
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
-*/ 
+*/
 var transformProjects = function (siteList){
   var projectsColl = [];
   $.each(siteList, function(i, item){
@@ -41,7 +41,7 @@ var getTypeCode = function(type){
     return 2;
   } else {
     return 3;
-  }  
+  }
 }
 
 /*
@@ -59,7 +59,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
     /*need to make this tool filtering more visible & maintainable
     maybe put it in app.js*/
     var toolObj = {};
-    
+
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
       toolObj.migration_id= '',
       toolObj.site_id= siteId,
@@ -82,7 +82,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
 /*
   a request for the tools of a project might return no
   exportable tools. This adds a dummy object to the empty array
-  so that we can display a helpful message  
+  so that we can display a helpful message
   */
   if (!toolColl.length){
     var notoolObj = {};
@@ -105,7 +105,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
 /projects returns a Sakai like /direct feed
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
-*/ 
+*/
 var transformMigrations = function (data){
   $.each(data.data.entity, function(i, item){
     item.tool_site_id= item.site_id + item.tool_id;
@@ -145,4 +145,8 @@ var transformMigrated = function(result) {
     }
   })
   return result;
+}
+
+var errorDisplay = function(url, status, message){
+  alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message)
 }

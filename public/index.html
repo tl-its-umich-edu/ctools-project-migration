@@ -26,6 +26,9 @@
         <!-- Collect the nav links, forms, and other content for toggling -->
         <div id="bs-example-navbar-collapse-1" class="collapse navbar-collapse">
           <ul class="nav navbar-nav navbar-right">
+              <li ng-show="isAdminUser">
+                <a class="btn btn-md btn-link" class="collapse-nav" href="batch.html" style="color:#fff">Batch</a>
+              </li>
               <li>
                   <a class="btn btn-md btn-primary" id="helpLink" class="collapse-nav" href="http://its.umich.edu/projects/ctools-project-sites/training-resources/migration-tool-help" style="color:#fff" target="_blank">Migration Tool Help</a>
               </li>
@@ -45,7 +48,7 @@
           <a ng-show="!boxAuthorized" class="btn btn-primary" href="" data-toggle="modal" data-target="#boxAuthModal">Authorize App to Box</a>
           <a ng-show="boxAuthorized" class="btn btn-primary" href="" data-toggle="modal" data-target="#boxLogoutModal">Unauthorize App from Box</a>
       </div>
-    </div>  
+    </div>
     <div class="row">
       <div class="col-md-4 col-lg-4">
         <div class="panel panel-default">
@@ -58,7 +61,7 @@
         </div>
       </div>
       <div class="col-md-4 col-lg-4">
-        <div class="panel panel-default"> 
+        <div class="panel panel-default">
           <div class="panel-heading">
             <h3 class="panel-title" id="migratingPanelHeader">In Progress
               <small class="hidden-sm hidden-xs" ng-if="status.migrations">Updated: {{status.migrations}}</small>
@@ -110,7 +113,7 @@
                 </tbody>
               </table>
             </div>
-          </div>  
+          </div>
           <div class="modal-footer">
             <button type="button" class="btn btn-link" data-dismiss="modal">Close</button>
           </div>

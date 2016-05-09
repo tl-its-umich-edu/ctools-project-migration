@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Project Site Migration - Batch</title>
+  <link rel="stylesheet" href="vendors/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="css/custom.css">
+</head>
+
+<body ng-app="projectMigrationAppBatch">
+  <nav role="navigation" class="navbar navbar-default" style="background:#00274c">
+    <div class="container-fluid">
+      <!-- Brand and toggle get grouped for better mobile display -->
+      <div class="navbar-header mastHead">
+        <button data-target="#bs-example-navbar-collapse-1" data-toggle="collapse" class="navbar-toggle collapsed" type="button">
+          <span class="sr-only">Toggle navigation</span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+          <span class="icon-bar"></span>
+        </button>
+        <h1 class="navbar-brand collapse-nav" style="margin:0;color:#fff">Project Site Migration - Batch</h1>
+      </div>
+      <div id="bs-example-navbar-collapse-1" class="collapse navbar-collapse">
+        <ul class="nav navbar-nav navbar-right">
+          <li>
+            <a class="btn btn-md btn-link" class="collapse-nav" href="index.html" style="color:#fff">Self Serve</a>
+          </li>
+          <li>
+            <a class="btn btn-md btn-primary" id="helpLink" class="collapse-nav" href="http://its.umich.edu/projects/ctools-project-sites/training-resources/migration-tool-help" style="color:#fff" target="_blank">Migration Tool Help</a>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </nav>
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Start a batch migration</h3>
+          </div>
+          <div class="panel-body">
+            <ul class="nav nav-tabs" role="tablist">
+              <li role="presentation" class="active"><a href="#upload" aria-controls="upload" role="tab" data-toggle="tab">Upload</a></li>
+              <li role="presentation"><a href="#direct" aria-controls="direct" role="tab" data-toggle="tab">Direct input</a></li>
+            </ul>
+            <div class="tab-content">
+              <form role="tabpanel" class="tab-pane active" id="upload">
+                <h3 class="panel-title panel-title-batch">Upload</h3>
+                <div class="form-group">
+                  <label for="name">Batch name</label>
+                  <input type="text" id="name" name="name" value="" class="form-control">
+                </div>
+                <div class="well form-group">
+                  <input type="file" class="form-control">
+                </div>
+                <div class="form-group pull-right">
+                  <div class="spinner" style="display:none"></div>
+                  <button type="reset" name="reset-file-input" class="btn btn-link">Reset</button>
+                  <button type="button" name="process-file-input" class="process-file-input btn btn-primary">Process</button>
+                </div>
+              </form>
+              <form role="tabpanel" class="tab-pane" id="direct">
+                <h3 class="panel-title panel-title-batch">Direct input</h3>
+                <div class="form-group">
+                  <label for="name">Batch name</label>
+                  <input type="text" id="name" name="name" value="" class="form-control">
+                </div>
+                <div class="form-group">
+                  <textarea name="name" rows="8" class="form-control"></textarea>
+                </div>
+                <div class="form-group pull-right">
+                  <div class="spinner" style="display:none"></div>
+                  <button type="reset" name="reset-direct-input" class="btn btn-link">Reset</button>
+                  <button type="button" name="process-direct-input" class="process-direct-input btn btn-primary">Process</button>
+                </div>
+              </form>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
+
+        <div class="panel panel-default">
+          <div class="panel-heading">
+            <h3 class="panel-title">Migrations</h3>
+          </div>
+
+          <div class="panel-body">
+            <ul class="nav nav-tabs" role="tablist" style="margin-bottom:0">
+              <li role="presentation" class="active"><a href="#ongoing" aria-controls="upload" role="tab" data-toggle="tab">Ongoing</a></li>
+              <li role="presentation"><a href="#concluded" aria-controls="concluded" role="tab" data-toggle="tab">Concluded</a></li>
+            </ul>
+            <div class="tab-content">
+              <div role="tabpanel" class="tab-pane active" id="ongoing">
+                <h3 class="panel-title panel-title-batch">Ongoing</h3>
+                <ul class="list-group" style="margin:0 15px 0">
+                  <li class="list-group-item row">
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <h4 class="site-header">Entomology projects</h4>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <small>05/04 10:11AM</small>
+                    </div>
+
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <a href="#" class="showList btn btn-default btn-xs ">Show list</a>
+                    </div>
+                  </li>
+                  <li class="list-group-item row list" style="display:none">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <ol>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                      </ol>
+                    </div>
+                  </li>
+                  <li class="list-group-item row">
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <h4 class="site-header">LSA 1st batch</h4>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <small>05/04 11:11AM</small>
+                    </div>
+
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <a href="#" class="showList btn btn-default btn-xs ">Show list</a>
+                    </div>
+
+                  </li>
+                  <li class="list-group-item row list" style="display:none">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <ol>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                      </ol>
+                    </div>
+
+                  </li>
+                  <li class="list-group-item row">
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <h4 class="site-header">Batch name</h4>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <small>05/04 11:31AM</small>
+                    </div>
+
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <a href="#" class="showList btn btn-default btn-xs ">Show list</a>
+                    </div>
+
+                  </li>
+                  <li class="list-group-item row list" style="display:none">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <ol>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                        <li>
+                          1066936914880-476438
+                        </li>
+                      </ol>
+                    </div>
+
+                  </li>
+                </ul>
+              </div>
+              <div role="tabpanel" class="tab-pane" id="concluded">
+                <h3 class="panel-title panel-title-batch">Concluded</h3>
+                <ul class="list-group" style="margin:0 15px 0">
+                  <li class="list-group-item row">
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                        <h4 class="site-header">Sites running Napster</h4>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                        <small>05/04 10:11AM</small>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <a href="#" class="btn btn-default btn-xs seeReport">See report</a>
+                    </div>
+                  </li>
+                  <li class="list-group-item row report" style="display:none">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <div class="row">
+                        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                          <strong>Site title</strong><br>
+                          ohlordwhatameaninglessstring  <br>
+                          <small>Summary (files, folders transfered), errors listed below</small>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                            <a href="#">See more <span class="glyphicon glyphicon-share-alt"></span></a>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="row">
+                        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                          <strong>Site title</strong><br>
+                          ohlordwhatameaninglessstring  <br>
+                          <small>Summary (files, folders transfered), errors listed below</small>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                            <a href="#">See more <span class="glyphicon glyphicon-share-alt"></span></a>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                  <li class="list-group-item row">
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                        <h4 class="site-header">Batch name</h4>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                        <small>05/04 10:11AM</small>
+                    </div>
+                    <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                      <a href="#" class="btn btn-default btn-xs seeReport">See report</a>
+                    </div>
+                  </li>
+                  <li class="list-group-item row report" style="display:none">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <div class="row">
+                        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                          <strong>Site title</strong><br>
+                          ohlordwhatameaninglessstring  <br>
+                          <small>Summary (files, folders transfered), errors listed below</small>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                            <a href="#">See more <span class="glyphicon glyphicon-share-alt"></span></a>
+                        </div>
+                      </div>
+                      <hr>
+                      <div class="row">
+                        <div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                          <strong>Site title</strong><br>
+                          ohlordwhatameaninglessstring  <br>
+                          <small>Summary (files, folders transfered), errors listed below</small>
+                        </div>
+                        <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                            <a href="#">See more <span class="glyphicon glyphicon-share-alt"></span></a>
+                        </div>
+                      </div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
+
+  <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
+  <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript">
+    $(function() {
+      $('.seeReport').on("click", function(e) {
+        $('li.report').fadeOut('slow');
+        e.preventDefault;
+        $(this).closest('li').next('li.report').fadeIn('slow');
+      });
+      $('.showList').on("click", function(e) {
+        $('li.list').fadeOut('slow');
+        e.preventDefault;
+        $(this).closest('li').next('li.list').fadeIn('slow');
+      });
+    });
+    $('button.process-direct-input, button.process-file-input ').on("click", function(e) {
+      $(this).closest('.form-group').find('.spinner').show().delay(5000).fadeOut('slow');
+    });
+
+  </script>
+
+</body>
+
+</html>

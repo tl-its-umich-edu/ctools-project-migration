@@ -24,7 +24,8 @@ projectMigrationApp.run(function($rootScope) {
       'migratedUrl': 'data/migrated.json',
       'migratingUrl': 'data/migrations.json',
       'projectUrl': 'data/project_id.json',
-      'checkBoxAuthorizedUrl': ''
+      'checkBoxAuthorizedUrl': '',
+      'checkIsAdminUser':''
     };
   } else {
     $rootScope.urls = {
@@ -37,7 +38,8 @@ projectMigrationApp.run(function($rootScope) {
       'migratedUrl': '/migrated',
       'migratingUrl': '/migrating',
       'projectUrl': '/projects/',
-      'checkBoxAuthorizedUrl': '/box/checkAuthorized'
+      'checkBoxAuthorizedUrl': '/box/checkAuthorized',
+      'checkIsAdminUser':'/isAdmin'
     };
   }
   $rootScope.addProjectSites = [];
