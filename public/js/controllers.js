@@ -519,3 +519,16 @@ projectMigrationApp.controller('projectMigrationControllerStatus', ['Status', '$
     });
   }
 }]);
+
+projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', 'BulkUpload', function($rootScope, $scope, $log, $q, $window, BulkUpload) {
+
+  $scope.bulkUpload = function(){
+  	var file = $scope.bulkUploadFile;
+    var bulkUploadUrl = $rootScope.urls.bulkUploadUrl;
+    BulkUpload.bulkUpload(file, bulkUploadUrl).then(function() {
+    	$log.info('hhh after');
+      // TODO
+    });
+  }
+}]);
+

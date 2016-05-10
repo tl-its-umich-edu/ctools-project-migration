@@ -10,7 +10,7 @@
   <link rel="stylesheet" href="css/custom.css">
 </head>
 
-<body ng-app="projectMigrationAppBatch">
+<body ng-app="projectMigrationApp">
   <nav role="navigation" class="navbar navbar-default" style="background:#00274c">
     <div class="container-fluid">
       <!-- Brand and toggle get grouped for better mobile display -->
@@ -54,13 +54,12 @@
                   <label for="name">Batch name</label>
                   <input type="text" id="name" name="name" value="" class="form-control">
                 </div>
-                <div class="well form-group">
-                  <input type="file" class="form-control">
-                </div>
-                <div class="form-group pull-right">
+                
+                <div class="well form-group" ng-controller="projectMigrationBatchController">
+                  <input type="file" file-model="bulkUploadFile">
                   <div class="spinner" style="display:none"></div>
                   <button type="reset" name="reset-file-input" class="btn btn-link">Reset</button>
-                  <button type="button" name="process-file-input" class="process-file-input btn btn-primary">Process</button>
+                  <button class="btn btn-primary btn-xs" ng-click="bulkUpload()" name="process-file-input">Process</button>
                 </div>
               </form>
               <form role="tabpanel" class="tab-pane" id="direct">
@@ -322,12 +321,22 @@
         $(this).closest('li').next('li.list').fadeIn('slow');
       });
     });
-    $('button.process-direct-input, button.process-file-input ').on("click", function(e) {
-      $(this).closest('.form-group').find('.spinner').show().delay(5000).fadeOut('slow');
-    });
-
+    //$('button.process-direct-input, button.process-file-input ').on("click", function(e) {
+    //  $(this).closest('.form-group').find('.spinner').show().delay(5000).fadeOut('slow');
+    //});
   </script>
-
+</div>
+  <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
+  <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular-animate.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/underscore/underscore-min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/moment/moment.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/app.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/controllers.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/factories.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
 </body>
 
 </html>
