@@ -21,6 +21,9 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.util.concurrent.Callable;
+import java.util.Set;
+import java.util.HashSet;
+import java.util.Iterator;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
@@ -69,6 +72,9 @@ import org.springframework.web.context.request.async.DeferredResult;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.util.UriComponentsBuilder;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartException;
 
 import org.json.JSONObject;
 import org.json.JSONArray;
@@ -925,7 +931,7 @@ public class MigrationController {
 	}
 
 	/******* bulk migration *********/
-	
+
 	/**
 	 * check whether the current user is of Box admin
 	 * 
@@ -933,17 +939,17 @@ public class MigrationController {
 	 */
 	@GET
 	@RequestMapping("/isAdmin")
-	public void isAdmin(HttpServletRequest request,
-			HttpServletResponse response) {
+	public void isAdmin(HttpServletRequest request, HttpServletResponse response) {
 
 		JSONObject jObject = new JSONObject();
 		jObject.put("isAdmin", Utils.isCurrentUserCPMAdmin(request, env));
-		
+
 		// JSON response
 		JSON_response(response, jObject.toString(),
-				"Problem with checking admin status for current user.", "/isAdmin");
+				"Problem with checking admin status for current user.",
+				"/isAdmin");
 	}
-	
+
 	/**
 	 * Admin User authenticates into the Box account
 	 * 
@@ -995,5 +1001,54 @@ public class MigrationController {
 			log.debug("user " + userId + " already authorized");
 			return "Authorized";
 		}
+	}
+
+	/**
+	 * upload resource files into Box folder
+	 * 
+	 * @return
+	 */
+	@POST
+	@Produces("application/json")
+	@RequestMapping("/bulkUpload")
+	@ResponseBody
+	public ResponseEntity<String> uploadBatch(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		HttpHeaders headers = new HttpHeaders();
+
+		// the set of site ids for bulk migration
+		Set<String> bulkUploadSiteIds = new HashSet<String>();
+		try {
+			MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
+
+			Set set = multipartRequest.getFileMap().entrySet();
+			Iterator i = set.iterator();
+			while (i.hasNext()) {
+				Map.Entry mEntry = (Map.Entry) i.next();
+				MultipartFile multipartFile = (MultipartFile) mEntry.getValue();
+				try {
+					InputStream is = new ByteArrayInputStream(
+							multipartFile.getBytes());
+					BufferedReader br = new BufferedReader(
+							new InputStreamReader(is));
+					String strLine;
+
+					while ((strLine = br.readLine()) != null) {
+						// read site id, and insert into set
+						String siteId = strLine.trim();
+						bulkUploadSiteIds.add(siteId);
+					}
+				} catch (IOException ioException) {
+					log.error(this
+							+ " uploadBatch Cannot read in uploaded file "
+							+ ioException.getStackTrace());
+				}
+			}
+		} catch (MultipartException multipartException) {
+			log.error(this + " uploadBatch Cannot read in uploaded file "
+					+ multipartException.getStackTrace());
+		}
+		return new ResponseEntity<String>("Bulk Migration started.", headers,
+				HttpStatus.ACCEPTED);
 	}
 }

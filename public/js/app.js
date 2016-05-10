@@ -3,6 +3,22 @@
 
 var projectMigrationApp = angular.module('projectMigrationApp', ['projectMigrationFilters','ngAnimate']);
 
+// getting the file-model attribute into controller's scope
+projectMigrationApp.directive('fileModel', ['$parse', function ($parse) {
+    return {
+        restrict: 'A',
+        link: function(scope, element, attrs) {
+            var model = $parse(attrs.fileModel);
+            var modelSetter = model.assign;
+            element.bind('change', function(){
+                scope.$apply(function(){
+                    modelSetter(scope, element[0].files[0]);
+                });
+            });
+        }
+    };
+}]);
+
 projectMigrationApp.run(function($rootScope) {
   //for any init values needed
   $rootScope.server = '';
@@ -25,7 +41,8 @@ projectMigrationApp.run(function($rootScope) {
       'migratingUrl': 'data/migrations.json',
       'projectUrl': 'data/project_id.json',
       'checkBoxAuthorizedUrl': '',
-      'checkIsAdminUser':''
+      'checkIsAdminUser':'',
+      'bulkUploadUrl':''
     };
   } else {
     $rootScope.urls = {
@@ -39,7 +56,8 @@ projectMigrationApp.run(function($rootScope) {
       'migratingUrl': '/migrating',
       'projectUrl': '/projects/',
       'checkBoxAuthorizedUrl': '/box/checkAuthorized',
-      'checkIsAdminUser':'/isAdmin'
+      'checkIsAdminUser':'/isAdmin',
+      'bulkUploadUrl':'/bulkUpload'
     };
   }
   $rootScope.addProjectSites = [];
