@@ -1003,6 +1003,116 @@ public class MigrationController {
 		}
 	}
 
+	/******************* bulk migration **************************/
+	/**
+	 * get all bulk migration IDs
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/bulkUpload/all")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getAllBulkUploadIds(HttpServletRequest request) {
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(repository.getAllBulkMigrationIds()).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get all bulk upload records: " + e.getMessage()).build();
+		}
+	}
+	
+	/**
+	 * get all ongoing bulk migration IDs
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/bulkUpload/ongoing")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getOngoingBulkUploadIds(HttpServletRequest request) {
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(repository.getOngoingBulkMigrationIds()).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get ongoing bulk upload records: " + e.getMessage()).build();
+		}
+	}
+	
+	/**
+	 * get all concluded bulk migration IDs
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/bulkUpload/concluded")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getConcludedBulkUploadIds(HttpServletRequest request) {
+		// calculate those concluded bulk upload by doing diff of all bulk uploads and those ongoing bulk uploads
+		List<String> allBulkConcludedUpgrades = repository.getAllBulkMigrationIds();
+		List<String> allBulkOngoingUpgrades = repository.getOngoingBulkMigrationIds();
+		allBulkConcludedUpgrades.removeAll(allBulkOngoingUpgrades);
+		
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(allBulkConcludedUpgrades).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get concluded bulk upload records: " + e.getMessage()).build();
+		}
+	}
+	
+	/**
+	 * get all migration records within one bulk upload process
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/bulkUpload/{bulk_upload_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getMigrationInBulkUpload(
+			@PathVariable("bulk_upload_id") String bulk_upload_id,
+			HttpServletRequest request) {
+		try {
+			List<Migration> migrations = repository.getMigrationsInBulkUpload(bulk_upload_id);
+			return Response.status(Response.Status.OK)
+					.entity(migrations).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrated records for bulk upload id=" + bulk_upload_id
+							+ ": " + e.getMessage()).build();
+		}
+	}
+	
+	/**
+	 * get all migration records within one bulk upload process
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/bulkUpload/{bulk_upload_id}/{site_id}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSiteMigrationInBulkUpload(
+			@PathVariable("bulk_upload_id") String bulk_upload_id,
+			@PathVariable("site_id") String site_id,
+			HttpServletRequest request) {
+		try {
+			Migration m = repository.getSiteMigrationInBulkUpload(bulk_upload_id, site_id);
+			return Response.status(Response.Status.OK)
+					.entity(m).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get migrated record for bulk upload id=" + bulk_upload_id + " and site id=" + site_id
+							+ ": " + e.getMessage()).build();
+		}
+	}
+	
 	/** TODO
 	 * upload resource files into Box folder
 	 * 
