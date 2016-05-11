@@ -12,6 +12,8 @@ use cpm;
 -- create table migration
 create table migration (
 migration_id VARCHAR(99) NOT NULL,
+bulk_migration_id VARCHAR(99),
+bulk_migration_name VARCHAR(99),
 site_id VARCHAR(99) NOT NULL,
 site_name VARCHAR(99) NOT NULL,
 tool_id VARCHAR(99) NOT NULL,
