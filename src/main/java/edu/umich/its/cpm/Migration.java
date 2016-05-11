@@ -28,6 +28,16 @@ public class Migration {
 	@Getter
 	@Setter
 	private String migration_id;
+	
+	@Column(name = "BULK_MIGRATION_ID", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
+	@Getter
+	@Setter
+	private String bulk_migration_id;
+	
+	@Column(name = "BULK_MIGRATION_NAME", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
+	@Getter
+	@Setter
+	private String bulk_migration_name;
 
 	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter

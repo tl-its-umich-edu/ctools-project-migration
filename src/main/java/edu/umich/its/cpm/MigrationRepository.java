@@ -79,5 +79,40 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	@Modifying(clearAutomatically=false)
 	@Query("update Migration m set m.end_time = ?#{[0]} where m.id = ?#{[1]}")
 	public int setMigrationEndTime(Timestamp t, String migrationId);
-
+	
+	/******** bulk migration ******/
+	/**
+	 * get all bulk migration ids
+	 *
+	 * @return
+	 */
+	@Query("SELECT DISTINCT(m.bulk_migration_id) FROM Migration m")
+	public List<String> getAllBulkMigrationIds();
+	
+	/**
+	 * get all ongoing bulk migration ids
+	 *
+	 * @return
+	 */
+	@Query("SELECT DISTINCT(m.bulk_migration_id) FROM Migration m where m.end_time is null")
+	public List<String> getOngoingBulkMigrationIds();
+	
+	/**
+	 * get all migration with the bulk migration
+	 * @param bulk_migration_id
+	 * @return
+	 */
+	@Query("SELECT m FROM Migration m where m.bulk_migration_id = ?#{[0]}")
+	public List<Migration> getMigrationsInBulkUpload(String bulk_migration_id);
+	
+	/**
+	 * get migration with the bulk migration id and site id
+	 * 
+	 * @param bulk_migration_id
+	 * @param site_id
+	 * @return
+	 */
+	@Query("SELECT m FROM Migration m where m.bulk_migration_id = ?#{[0]} and m.site_id = ?#{[1]}")
+	public Migration getSiteMigrationInBulkUpload(String bulk_migration_id, String site_id);
+	
 }
