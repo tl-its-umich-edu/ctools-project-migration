@@ -170,4 +170,19 @@ public class UtilsTest extends TestCase {
 		assertEquals("top.txt",Utils.updateFolderPathForFileName("top.txt", folderNamesMap));
 	}
 
+	@Test
+	public void testUtilsGetWebLinkContent() {
+		
+		// url value does not need to be full url
+		String fileName = "web link example";
+		String url = "google.com";
+		try
+		{
+			assertEquals("<a href=\"google.com\">web link example</a>", Utils.getWebLinkContent(fileName, url));
+	
+		} catch (java.net.MalformedURLException e)
+		{
+			System.out.println(this + " java.net.MalformedURLException " + url);
+		}
+	}
 }
