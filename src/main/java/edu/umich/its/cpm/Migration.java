@@ -4,7 +4,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.sql.Timestamp;
-
 import java.util.UUID;
 
 import javax.persistence.Column;
@@ -28,12 +27,12 @@ public class Migration {
 	@Getter
 	@Setter
 	private String migration_id;
-	
+
 	@Column(name = "BULK_MIGRATION_ID", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
 	@Getter
 	@Setter
 	private String bulk_migration_id;
-	
+
 	@Column(name = "BULK_MIGRATION_NAME", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
 	@Getter
 	@Setter
@@ -111,14 +110,39 @@ public class Migration {
 		this.status = status;
 	}
 
+	public Migration(String bulk_migration_id, String bulk_migration_name,
+			String site_id, String site_name, String tool_id, String tool_name,
+			String migrated_by, Timestamp start_time, Timestamp end_time,
+			String destination_type, String destination_url, String status) {
+		this.migration_id = UUID.randomUUID().toString();
+		log.info(this.migration_id);
+		this.bulk_migration_id = bulk_migration_id;
+		this.bulk_migration_name = bulk_migration_name;
+		this.site_id = site_id;
+		this.site_name = site_name;
+		this.tool_id = tool_id;
+		this.tool_name = tool_name;
+		this.migrated_by = migrated_by;
+		this.start_time = start_time;
+		this.end_time = end_time;
+		this.destination_type = destination_type;
+		this.destination_url = destination_url;
+		this.status = status;
+	}
+
 	@Override
 	public String toString() {
-		return String.format("Migration[migration_id=%d, " + "site_id='%s',"
-				+ "site_name='%s'," + "tool_id='%s'," + "tool_name='%s',"
-				+ "migrated_by='%s'," + "start_time='%s'," + "end_time='%s',"
-				+ "destination_type='%s'," + "destination_url='%s'"
-				+ "status='%s'" + "]", migration_id, site_id, site_name,
-				tool_id, tool_name, migrated_by, start_time, end_time,
-				destination_type, destination_url, status);
+		String s = String
+				.format("Migration[migration_id=%d, "
+						+ "bulk_migration_id='%s',"
+						+ "bulk_migration_name='%s'," + "site_id='%s',"
+						+ "site_name='%s'," + "tool_id='%s',"
+						+ "tool_name='%s'," + "migrated_by='%s',"
+						+ "start_time='%s'," + "end_time='%s',"
+						+ "destination_type='%s'," + "destination_url='%s'"
+						+ "status='%s'" + "]", migration_id, site_id,
+						site_name, tool_id, tool_name, migrated_by, start_time,
+						end_time, destination_type, destination_url, status);
+		return s;
 	}
 }

@@ -45,6 +45,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.UUID;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
@@ -75,7 +76,6 @@ import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartException;
-
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -592,12 +592,11 @@ public class MigrationController {
 
 		// 3. check if there is an ongoing migration for the same site and tool
 		boolean valid_migration_request = true;
-		String currentUserId = Utils.getCurrentUserId(request, env);
 		List<Migration> migratingSiteTools = repository
-				.findMigrating(currentUserId);
+				.findMigrating(remoteUser);
 		for (Migration m : migratingSiteTools) {
 			log.info("migrating reord " + m.getSite_id() + " tool id=" + toolId
-					+ "user id=" + currentUserId);
+					+ "user id=" + remoteUser);
 			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id())) {
 				// still on-going migration
 				valid_migration_request = false;
@@ -608,21 +607,50 @@ public class MigrationController {
 		// exit if it is duplicate request
 		if (!valid_migration_request) {
 			rv.put("errorMessage", "Duplicate migration request for site "
-					+ siteId + " tool=" + toolId + " user id=" + currentUserId);
+					+ siteId + " tool=" + toolId + " user id=" + remoteUser);
 			return rv;
 		}
 
 		// now after all checks passed, we are ready for migration
 		// save migration record into database
 		HashMap<String, Object> saveMigration = saveMigrationRecord(request);
-		Migration newMigration = null;
 
-		log.info("after save migration");
+		rv = createMigrationTask(
+				request,
+				response,
+				target,
+				remoteUser,
+				rv,
+				parameterMap.get("box_folder_id") != null ? parameterMap
+						.get("box_folder_id")[0] : null, siteId, toolId,
+				saveMigration);
+		return rv;
+	}
+
+	/**
+	 * create the actual migration tasks
+	 * 
+	 * @param request
+	 * @param response
+	 * @param target
+	 * @param remoteUser
+	 * @param rv
+	 * @param parameterMap
+	 * @param siteId
+	 * @param toolId
+	 * @param saveMigration
+	 * @return
+	 */
+	private HashMap<String, String> createMigrationTask(
+			HttpServletRequest request, HttpServletResponse response,
+			String target, String remoteUser, HashMap<String, String> rv,
+			String boxFolderId, String siteId, String toolId,
+			HashMap<String, Object> saveMigration) {
 		// exit if there is no new Migration record saved into DB
 		if (!saveMigration.containsKey("migration")) {
 			// no new Migration record created
 			rv.put("errorMessage", "Cannot create migration records for user "
-					+ currentUserId + " and site=" + siteId);
+					+ remoteUser + " and site=" + siteId);
 			return rv;
 		} else {
 
@@ -639,21 +667,19 @@ public class MigrationController {
 					log.info("start to call zip migration asynch for siteId="
 							+ siteId + " tooId=" + toolId);
 					migrationInstanceService.createDownloadZipInstance(env,
-							request, response, currentUserId,
-							sessionAttributes, siteId, migrationId, repository);
+							request, response, remoteUser, sessionAttributes,
+							siteId, migrationId, repository);
 				} else if (Utils.MIGRATION_TYPE_BOX.equals(target)) {
 					// call asynchronous method for Box file upload
 					log.info("start to call Box migration asynch for siteId="
 							+ siteId + " tooId=" + toolId);
 					migrationInstanceService.createUploadBoxInstance(env,
-							request, response, currentUserId,
-							sessionAttributes, siteId,
-							parameterMap.get("box_folder_id")[0], migrationId,
-							repository);
+							request, response, remoteUser, sessionAttributes,
+							siteId, boxFolderId, migrationId, repository);
 				}
 			} catch (java.lang.InterruptedException e) {
 				log.error(e.getMessage() + " migration error for user "
-						+ currentUserId + " and site=" + siteId + " target="
+						+ remoteUser + " and site=" + siteId + " target="
 						+ target);
 			}
 			rv.put("migrationId", migrationId);
@@ -793,6 +819,8 @@ public class MigrationController {
 						.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
 				String boxAdminClientSecret = env
 						.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+				String boxAdminAccountId = env
+						.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 				BoxUtils.getAuthCodeFromBoxCallback(request, boxAdminClientId,
 						boxAdminClientSecret, boxTokenUrl, userId);
 			} else {
@@ -857,10 +885,78 @@ public class MigrationController {
 			}
 		}
 
-		Migration m = new Migration(siteId, siteName, toolId, toolName, userId,
-				new java.sql.Timestamp(System.currentTimeMillis()), // start
-																	// time is
-																	// now
+		// assign null values to batch id and name
+		// create new migration record
+		rv = newMigrationRecord(status, null, null, siteId, siteName, toolId,
+				toolName, destinationType, userId, targetUrl);
+
+		return rv;
+	}
+
+	/**
+	 * Save Migration record to DB
+	 * 
+	 * @return HasMap key="status", value=status message; key="migration",
+	 *         value=MigrationObject
+	 */
+	private HashMap<String, Object> saveBulkMigrationRecord(
+			String bulkMigrationId, String bulkMigrationName, String siteId,
+			String siteName, String toolId, String toolName,
+			String boxFolderId, String boxFolderName, String userId) {
+		// the return hashmap provide newly created Migration object, and status
+		// message
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+
+		// status message
+		StringBuffer status = new StringBuffer();
+
+		String destinationType = "box";
+		String targetUrl = "";
+		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType)) {
+			// the format of folder path in box
+			// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
+			log.info("boxFolderName=" + boxFolderName);
+			if (boxFolderId != null && !boxFolderId.isEmpty()
+					&& boxFolderName != null && !boxFolderName.isEmpty()) {
+				targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId
+						+ Utils.PATH_SEPARATOR + boxFolderName;
+			}
+		}
+
+		// assign null values to batch id and name
+		// create new migration record
+		rv = newMigrationRecord(status, bulkMigrationId, bulkMigrationName,
+				siteId, siteName, toolId, toolName, destinationType, userId,
+				targetUrl);
+
+		return rv;
+	}
+
+	/**
+	 * create new migration record
+	 * 
+	 * @param status
+	 * @param batch_id
+	 * @param batch_name
+	 * @param siteId
+	 * @param siteName
+	 * @param toolId
+	 * @param toolName
+	 * @param destinationType
+	 * @param userId
+	 * @param targetUrl
+	 * @return
+	 */
+	private HashMap<String, Object> newMigrationRecord(StringBuffer status,
+			String batch_id, String batch_name, String siteId, String siteName,
+			String toolId, String toolName, String destinationType,
+			String userId, String targetUrl) {
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+		Migration m = new Migration(batch_id, batch_name, siteId, siteName,
+				toolId, toolName, userId, new java.sql.Timestamp(
+						System.currentTimeMillis()), // start
+														// time is
+														// now
 				null, destinationType, targetUrl, "" /* status */);
 
 		Migration newMigration = null;
@@ -1019,10 +1115,11 @@ public class MigrationController {
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get all bulk upload records: " + e.getMessage()).build();
+					.entity("Cannot get all bulk upload records: "
+							+ e.getMessage()).build();
 		}
 	}
-	
+
 	/**
 	 * get all ongoing bulk migration IDs
 	 * 
@@ -1038,10 +1135,11 @@ public class MigrationController {
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get ongoing bulk upload records: " + e.getMessage()).build();
+					.entity("Cannot get ongoing bulk upload records: "
+							+ e.getMessage()).build();
 		}
 	}
-	
+
 	/**
 	 * get all concluded bulk migration IDs
 	 * 
@@ -1051,21 +1149,25 @@ public class MigrationController {
 	@RequestMapping("/bulkUpload/concluded")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getConcludedBulkUploadIds(HttpServletRequest request) {
-		// calculate those concluded bulk upload by doing diff of all bulk uploads and those ongoing bulk uploads
-		List<String> allBulkConcludedUpgrades = repository.getAllBulkMigrationIds();
-		List<String> allBulkOngoingUpgrades = repository.getOngoingBulkMigrationIds();
+		// calculate those concluded bulk upload by doing diff of all bulk
+		// uploads and those ongoing bulk uploads
+		List<String> allBulkConcludedUpgrades = repository
+				.getAllBulkMigrationIds();
+		List<String> allBulkOngoingUpgrades = repository
+				.getOngoingBulkMigrationIds();
 		allBulkConcludedUpgrades.removeAll(allBulkOngoingUpgrades);
-		
+
 		try {
 			return Response.status(Response.Status.OK)
 					.entity(allBulkConcludedUpgrades).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get concluded bulk upload records: " + e.getMessage()).build();
+					.entity("Cannot get concluded bulk upload records: "
+							+ e.getMessage()).build();
 		}
 	}
-	
+
 	/**
 	 * get all migration records within one bulk upload process
 	 * 
@@ -1078,17 +1180,18 @@ public class MigrationController {
 			@PathVariable("bulk_upload_id") String bulk_upload_id,
 			HttpServletRequest request) {
 		try {
-			List<Migration> migrations = repository.getMigrationsInBulkUpload(bulk_upload_id);
-			return Response.status(Response.Status.OK)
-					.entity(migrations).build();
+			List<Migration> migrations = repository
+					.getMigrationsInBulkUpload(bulk_upload_id);
+			return Response.status(Response.Status.OK).entity(migrations)
+					.build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migrated records for bulk upload id=" + bulk_upload_id
-							+ ": " + e.getMessage()).build();
+					.entity("Cannot get migrated records for bulk upload id="
+							+ bulk_upload_id + ": " + e.getMessage()).build();
 		}
 	}
-	
+
 	/**
 	 * get all migration records within one bulk upload process
 	 * 
@@ -1099,22 +1202,22 @@ public class MigrationController {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSiteMigrationInBulkUpload(
 			@PathVariable("bulk_upload_id") String bulk_upload_id,
-			@PathVariable("site_id") String site_id,
-			HttpServletRequest request) {
+			@PathVariable("site_id") String site_id, HttpServletRequest request) {
 		try {
-			Migration m = repository.getSiteMigrationInBulkUpload(bulk_upload_id, site_id);
-			return Response.status(Response.Status.OK)
-					.entity(m).build();
+			Migration m = repository.getSiteMigrationInBulkUpload(
+					bulk_upload_id, site_id);
+			return Response.status(Response.Status.OK).entity(m).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get migrated record for bulk upload id=" + bulk_upload_id + " and site id=" + site_id
-							+ ": " + e.getMessage()).build();
+					.entity("Cannot get migrated record for bulk upload id="
+							+ bulk_upload_id + " and site id=" + site_id + ": "
+							+ e.getMessage()).build();
 		}
 	}
-	
-	/** TODO
-	 * upload resource files into Box folder
+
+	/**
+	 * TODO upload resource files into Box folder
 	 * 
 	 * @return
 	 */
@@ -1126,11 +1229,14 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 		HttpHeaders headers = new HttpHeaders();
 
+		String userId = Utils.getCurrentUserId(request, env);
+
 		// the set of site ids for bulk migration
 		Set<String> bulkUploadSiteIds = new HashSet<String>();
 		try {
 			MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
 
+			// read the uploaded batch site ids file
 			Set set = multipartRequest.getFileMap().entrySet();
 			Iterator i = set.iterator();
 			while (i.hasNext()) {
@@ -1158,7 +1264,124 @@ public class MigrationController {
 			log.error(this + " uploadBatch Cannot read in uploaded file "
 					+ multipartException.getStackTrace());
 		}
+
+		if (bulkUploadSiteIds.size() > 0) {
+			// now that we get the site ids for batch upload
+			// start the batch process
+			String bulkMigrationId = java.util.UUID.randomUUID().toString();
+			// TODO: need to get the real name input
+			String bulkMigrationName = "temp_bulk_name";
+			// (String) multipartRequest.getAttribute("name");
+
+			for (String siteId : bulkUploadSiteIds) {
+				// for each site id, start the migration process
+				// associate it with the bulk id
+				// 1. get site name
+				String siteName = getSiteName(request, siteId);
+				String toolId = "";
+				String toolName = "";
+
+				// 2. get tool id, tool name
+				HashMap<String, String> pagesMap = get_user_project_site_tools(
+						request, siteId);
+				String pagesString = pagesMap.get("pagesString");
+				JSONArray pagesJSON = new JSONArray(pagesString);
+				for (int pageIndex = 0; pageIndex < pagesJSON.length(); pageIndex++) {
+					JSONObject pageJSON = (JSONObject) pagesJSON.get(pageIndex);
+					// look the tools attribute and find resource tool
+					JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
+					for (int toolIndex = 0; toolIndex < toolsJSON.length(); toolIndex++) {
+						JSONObject toolJSON = (JSONObject) toolsJSON
+								.get(toolIndex);
+						if ("sakai.resources".equals(toolJSON.get("toolId"))) {
+							// found Resources tool
+							toolId = (String) toolJSON.get("id");
+							toolName = (String) toolJSON.get("title");
+						}
+					}
+				}
+
+				// 3. get box folder id
+				String boxAdminClientId = env
+						.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+				String boxAdminClientSecret = env
+						.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+				String boxAdminAccountId = Utils
+						.getUserEmail(Utils.BOX_ADMIN_ACCOUNT_ID);
+				String boxSiteFolderName = "CTools - " + siteName;
+
+				Info boxFolder = null;
+				if (BoxUtils.getBoxAccessToken(userId) == null) {
+					boxAdminAuthenticate(request, response);
+				} else {
+					boxFolder = BoxUtils.createNewFolderAtRootLevel(userId,
+							boxAdminClientId, boxAdminClientSecret,
+							boxSiteFolderName, siteId);
+				}
+
+				// 4. save the migration record into database
+				if (boxFolder != null) {
+					String boxFolderId = boxFolder.getID();
+					String boxFolderName = boxFolder.getName();
+					// now after all checks passed, we are ready for migration
+					// save migration record into database
+					HashMap<String, Object> saveBulkMigration = saveBulkMigrationRecord(
+							bulkMigrationId, bulkMigrationName, siteId,
+							siteName, toolId, toolName, boxFolderId,
+							boxFolderName, userId);
+
+					// 5. delegate the actual content migrations to async calls
+					HashMap<String, String> status = createMigrationTask(
+							request, response, "box", userId,
+							new HashMap<String, String>(), boxFolderId, siteId,
+							toolId, saveBulkMigration);
+					if (status.containsKey("errorMessage")) {
+						log.info(this + " batch upload call for site id="
+								+ siteId + " error message="
+								+ status.get("errorMessage"));
+					} else if (status.containsKey("migrationId")) {
+						log.info(this + " batch upload call for site id="
+								+ siteId + " migration started id="
+								+ status.get("migrationId"));
+					}
+				}
+			}
+		}
 		return new ResponseEntity<String>("Bulk Migration started.", headers,
 				HttpStatus.ACCEPTED);
+	}
+
+	/**
+	 * use CTools entity feed to get site name based on site id
+	 * 
+	 * @param request
+	 * @return
+	 */
+	private String getSiteName(HttpServletRequest request, String siteId) {
+		String siteName = "";
+		// login to CTools and get sessionId
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
+				request, Utils.getCurrentUserId(request, env));
+		if (sessionAttributes.containsKey("sessionId")) {
+			String sessionId = (String) sessionAttributes.get("sessionId");
+
+			// get all sites that user have permission site.upd
+			RestTemplate restTemplate = new RestTemplate();
+			// the url should be in the format of
+			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
+			String requestUrl = env.getProperty("ctools.server.url")
+					+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+			log.info(this + " get_user_sites " + requestUrl);
+			try {
+				String siteJson = restTemplate.getForObject(requestUrl,
+						String.class);
+				JSONObject siteJSONObject = new JSONObject(siteJson);
+				siteName = (String) siteJSONObject.get("title");
+			} catch (RestClientException e) {
+				log.error(requestUrl + e.getMessage());
+			}
+
+		}
+		return siteName;
 	}
 }
