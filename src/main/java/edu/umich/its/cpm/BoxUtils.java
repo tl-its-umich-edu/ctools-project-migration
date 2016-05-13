@@ -36,6 +36,7 @@ import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIRequest;
 import com.box.sdk.BoxAPIResponse;
 import com.box.sdk.BoxAPIException;
+import com.box.sdk.BoxResource;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
@@ -57,7 +58,6 @@ import org.apache.http.util.EntityUtils;
 import org.apache.http.StatusLine;
 import org.apache.http.HttpStatus;
 
-
 /**
  * provides util functions for accessing Box APIs
  * 
@@ -73,117 +73,103 @@ public class BoxUtils {
 	private static HashMap<String, String> boxAccessTokens = new HashMap<String, String>();
 
 	private static HashMap<String, String> boxRefreshTokens = new HashMap<String, String>();
-	
+
 	// HashMap, indexed by user id, holds queue for Box migration tasks
-	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();		
-	
+	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();
+
 	/**
 	 * get Box migration request for all users
 	 */
-	public static HashMap<String, LinkedList<MigrationFields>> getBoxMigrationRequests()
-	{
+	public static HashMap<String, LinkedList<MigrationFields>> getBoxMigrationRequests() {
 		// return all
 		return userBoxMigrationRequests;
 	}
-	
+
 	/**
 	 * get Box migration request list for given user
 	 */
-	public static LinkedList<MigrationFields> getBoxMigrationRequestForUser(String userId)
-	{
+	public static LinkedList<MigrationFields> getBoxMigrationRequestForUser(
+			String userId) {
 		LinkedList<MigrationFields> requests = null;
-		if (userBoxMigrationRequests.containsKey(userId))
-		{
+		if (userBoxMigrationRequests.containsKey(userId)) {
 			// if the request exists for given user
 			requests = userBoxMigrationRequests.get(userId);
 		}
 		return requests;
 	}
-	
+
 	/**
 	 * set Box migration request list for given user
 	 */
-	public static synchronized void setBoxMigrationRequestForUser(String userId, LinkedList<MigrationFields> requests)
-	{
-		if (requests.size() == 0)
-		{
+	public static synchronized void setBoxMigrationRequestForUser(
+			String userId, LinkedList<MigrationFields> requests) {
+		if (requests.size() == 0) {
 			// if the request list is empty, remove the user entry altogether
 			userBoxMigrationRequests.remove(userId);
-		}
-		else
-		{
+		} else {
 			// set the new requests value
 			userBoxMigrationRequests.put(userId, requests);
 		}
 	}
-	
-	
+
 	/**
 	 * get Box access token for given user
 	 */
-	public static String getBoxAccessToken(String userId)
-	{
+	public static String getBoxAccessToken(String userId) {
 		String boxAccessToken = null;
-		if (boxAccessTokens.containsKey(userId))
-		{
+		if (boxAccessTokens.containsKey(userId)) {
 			// if the token exists for given user
 			boxAccessToken = boxAccessTokens.get(userId);
 		}
 		return boxAccessToken;
 	}
-	
+
 	/**
 	 * set Box access token for given user
 	 */
-	public static void setBoxAccessToken(String userId, String boxAccessToken)
-	{
+	public static void setBoxAccessToken(String userId, String boxAccessToken) {
 		boxAccessTokens.put(userId, boxAccessToken);
 	}
-	
+
 	/**
 	 * remote Box access token for given user
 	 */
-	public static void removeBoxAccessToken(String userId)
-	{
+	public static void removeBoxAccessToken(String userId) {
 		boxAccessTokens.remove(userId);
 	}
-	
-	
+
 	/**
 	 * get Box refresh token for given user
 	 */
-	public static String getBoxRefreshToken(String userId)
-	{
+	public static String getBoxRefreshToken(String userId) {
 		String boxRefreshToken = null;
-		if (boxRefreshTokens.containsKey(userId))
-		{
+		if (boxRefreshTokens.containsKey(userId)) {
 			// if the token exists for given user
 			boxRefreshToken = boxRefreshTokens.get(userId);
 		}
 		return boxRefreshToken;
 	}
-	
+
 	/**
 	 * set Box refresh token for given user
 	 */
-	public static void setBoxRefreshToken(String userId, String boxRefreshToken)
-	{
+	public static void setBoxRefreshToken(String userId, String boxRefreshToken) {
 		boxRefreshTokens.put(userId, boxRefreshToken);
 	}
-	
+
 	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
 			"yyyy-MM-dd-hh.mm.ss");
 
 	private static final Logger log = LoggerFactory.getLogger(BoxUtils.class);
-	
+
 	public static void getCurrentUser(BoxAPIConnection connection) {
 		BoxUser user = BoxUser.getCurrentUser(connection);
 		BoxUser.Info info = user.getInfo();
 	}
-	
-	public static String authenticateString(String boxAPIUrl, String boxClientId,
-			String boxClientRedirectUri, String remoteUserEmail,
-			HttpServletResponse response) {
+
+	public static String authenticateString(String boxAPIUrl,
+			String boxClientId, String boxClientRedirectUri,
+			String remoteUserEmail, HttpServletResponse response) {
 		// Box authorization
 		RestTemplate restTemplate = new RestTemplate();
 
@@ -205,7 +191,7 @@ public class BoxUtils {
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
-		
+
 		return "";
 	}
 
@@ -244,7 +230,9 @@ public class BoxUtils {
 	/**
 	 * get the authCode as embedded from Box callback response
 	 */
-	public static String getAuthCodeFromBoxCallback(HttpServletRequest request, String boxClientId, String boxClientSecret, String boxTokenUrl, String userId) {
+	public static String getAuthCodeFromBoxCallback(HttpServletRequest request,
+			String boxClientId, String boxClientSecret, String boxTokenUrl,
+			String userId) {
 		// get the code String from Box authorization callback
 		String authCode = null;
 		java.util.Enumeration<java.lang.String> e = request.getParameterNames();
@@ -255,124 +243,163 @@ public class BoxUtils {
 				break;
 			}
 		}
-		
-		if (authCode == null)
-		{
-			log.error("getAuthCodeFromBoxCallback: authCode is null for user " + userId);
+
+		if (authCode == null) {
+			log.error("getAuthCodeFromBoxCallback: authCode is null for user "
+					+ userId);
 			return null;
 		}
-		
-		// now that we have the authCode, use it to get access token and fresh token
-	    // Returns a new access_token & refresh_token from an existing refresh_token
-	    // Each access_token is valid for 1 hour. In order to get a new, valid token, you can use the accompanying
-	    // refresh_token. Each refresh token is valid for 14 days. Every time you get a new access_token by using a
-	    // refresh_token, we reset your timer for the 14 day period. This means that as long as your users use your
-	    // application once every 14 days, their login is valid forever.
-	    // Args:
-	    //    - client_id: The client_id you obtained in the initial setup.
-	    //    - client_secret: The client_secret you obtained in the initial setup.
-	    //    - code: a string containing the code, or a dictionary containing the GET query
-	    // Returns:
-	    //    - a dictionary with the token and additional info
-		try
-		{
+
+		// now that we have the authCode, use it to get access token and fresh
+		// token
+		// Returns a new access_token & refresh_token from an existing
+		// refresh_token
+		// Each access_token is valid for 1 hour. In order to get a new, valid
+		// token, you can use the accompanying
+		// refresh_token. Each refresh token is valid for 14 days. Every time
+		// you get a new access_token by using a
+		// refresh_token, we reset your timer for the 14 day period. This means
+		// that as long as your users use your
+		// application once every 14 days, their login is valid forever.
+		// Args:
+		// - client_id: The client_id you obtained in the initial setup.
+		// - client_secret: The client_secret you obtained in the initial setup.
+		// - code: a string containing the code, or a dictionary containing the
+		// GET query
+		// Returns:
+		// - a dictionary with the token and additional info
+		try {
 			CloseableHttpClient httpclient = HttpClients.createDefault();
 			HttpPost httpPost = new HttpPost(boxTokenUrl);
-			List <NameValuePair> nvps = new ArrayList <NameValuePair>();
+			List<NameValuePair> nvps = new ArrayList<NameValuePair>();
 			nvps.add(new BasicNameValuePair("grant_type", "authorization_code"));
 			nvps.add(new BasicNameValuePair("client_id", boxClientId));
 			nvps.add(new BasicNameValuePair("client_secret", boxClientSecret));
 			nvps.add(new BasicNameValuePair("code", authCode));
 			httpPost.setEntity(new UrlEncodedFormEntity(nvps));
 			CloseableHttpResponse response = httpclient.execute(httpPost);
-			
+
 			try {
 				StatusLine statusLine = response.getStatusLine();
 				log.info("token request status" + statusLine);
-				if (statusLine.getStatusCode() == HttpStatus.SC_OK)
-				{
+				if (statusLine.getStatusCode() == HttpStatus.SC_OK) {
 					// if success, get the access_token and refresh_token
 					HttpEntity entity = response.getEntity();
 					InputStream body = entity.getContent();
 					String theString = IOUtils.toString(body, "UTF-8");
 					JSONObject obj = new JSONObject(theString);
 					setBoxAccessToken(userId, (String) obj.get("access_token"));
-					setBoxRefreshToken(userId, (String) obj.get("refresh_token"));
-					
+					setBoxRefreshToken(userId,
+							(String) obj.get("refresh_token"));
+
 					// close inputstream and entity
 					IOUtils.closeQuietly(body);
 					EntityUtils.consume(entity);
-				}
-				else
-				{
+				} else {
 					// log when the statusLine did not return 200 code
-					log.error("getAuthCodeFromBoxCallback: status code= " + statusLine.getStatusCode() + " " + statusLine.toString());
+					log.error("getAuthCodeFromBoxCallback: status code= "
+							+ statusLine.getStatusCode() + " "
+							+ statusLine.toString());
 				}
 			} finally {
-			    response.close();
+				response.close();
 			}
-		}
-		catch (java.net.MalformedURLException exception)
-		{
-			log.error("getAuthCodeFromBoxCallback MalformedURLException " + boxTokenUrl);
-		}
-		catch (java.io.IOException exception)
-		{
+		} catch (java.net.MalformedURLException exception) {
+			log.error("getAuthCodeFromBoxCallback MalformedURLException "
+					+ boxTokenUrl);
+		} catch (java.io.IOException exception) {
 			log.error("getAuthCodeFromBoxCallback IOException " + boxTokenUrl);
 		}
 		return authCode;
 	}
-	
+
 	/**
 	 * method to return json list of Box folders
 	 */
-	public static List<HashMap<String, String>> getBoxFolders(String userId, String boxClientId, String boxClientSecret)
-	{
+	public static List<HashMap<String, String>> getBoxFolders(String userId,
+			String boxClientId, String boxClientSecret) {
 		String boxAccessToken = getBoxAccessToken(userId);
 		String boxRefreshToken = getBoxRefreshToken(userId);
-		
-		try
-		{
+
+		try {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
 			// update stored access token and refresh token
 			api = refreshAccessAndRefreshTokens(userId, api);
-	
+
 			// get the root Box folder
 			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
-			
+
 			// get list of properties from all Box items contained
-			List<HashMap<String, String>> folderItems = BoxUtils.listBoxFolders(
-					null, api, rootFolder, "", 0);
-			
+			List<HashMap<String, String>> folderItems = BoxUtils
+					.listBoxFolders(null, api, rootFolder, "", 0);
+
 			return folderItems;
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 			log.info("BoxUtils:getBoxFolders " + e.toString());
 		}
 		return null;
 	}
-	
+
+	/**
+	 * method add a folder to the root level
+	 */
+	public static Info createNewFolderAtRootLevel(String userId,
+			String boxClientId, String boxClientSecret,
+			String newBoxFolderName, String siteId) {
+		BoxFolder.Info newFolderInfo = null;
+
+		String boxAccessToken = getBoxAccessToken(userId);
+		String boxRefreshToken = getBoxRefreshToken(userId);
+
+		try {
+			// make connection
+			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
+					boxClientSecret, boxAccessToken, boxRefreshToken);
+			// update stored access token and refresh token
+			api = refreshAccessAndRefreshTokens(userId, api);
+
+			// get the root Box folder
+			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+
+			for (Info c : rootFolder.getChildren()) {
+				if (newBoxFolderName.equals(c.getName())) {
+					// folder already exist
+					newFolderInfo = (BoxFolder.Info) c;
+				}
+			}
+
+			if (newFolderInfo == null) {
+				// no such folder yet, create the folder
+				newFolderInfo = rootFolder.createFolder(newBoxFolderName);
+				BoxFolder newFolder = newFolderInfo.getResource();
+				newFolderInfo.setDescription(siteId);
+				newFolder.updateInfo(newFolderInfo);
+			}
+
+			return newFolderInfo;
+		} catch (Exception e) {
+			log.info("BoxUtils:getBoxFolders " + e.toString());
+		}
+		return null;
+	}
+
 	/**
 	 * store the current access token and refresh token locally for given user
 	 */
-	public static BoxAPIConnection refreshAccessAndRefreshTokens (String userId, BoxAPIConnection api){
+	public static BoxAPIConnection refreshAccessAndRefreshTokens(String userId,
+			BoxAPIConnection api) {
 		// refresh accessToken and refreshToken if necessary
-		if (api.needsRefresh())
-		{
-			try
-			{
+		if (api.needsRefresh()) {
+			try {
 				setBoxAccessToken(userId, api.getAccessToken());
 				setBoxRefreshToken(userId, api.getRefreshToken());
-			}
-			catch (BoxAPIException e)
-			{
+			} catch (BoxAPIException e) {
 				log.error("refreshAccessAndRefreshTokens ", e);
 				// access token expired, refresh access token
 				api.refresh();
-				
+
 				setBoxAccessToken(userId, api.getAccessToken());
 				setBoxRefreshToken(userId, api.getRefreshToken());
 			}
@@ -448,7 +475,7 @@ public class BoxUtils {
 		String rv = "";
 		if (date != null) {
 			// SimpleDateFormat is not threadsafe
-			synchronized(date_formatter){
+			synchronized (date_formatter) {
 				rv = date_formatter.format(date);
 			}
 		}

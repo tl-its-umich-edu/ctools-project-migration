@@ -477,6 +477,12 @@ public class MigrationTaskService {
 
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
 		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			// for admin user to do bulk upload
+			// get the admin app attributes instead
+			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+		}
 		String boxClientRedirectUrl = env
 				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
@@ -676,9 +682,9 @@ public class MigrationTaskService {
 								userId, type, rootFolderPath, contentUrl,
 								containerStack, boxFolderIdStack, title,
 								container, boxFolderId, api, itemStatus,
-								description, contentItem, httpContext, webLinkUrl,
-								contentAccessUrl, author, copyrightAlert,
-								sessionId);
+								description, contentItem, httpContext,
+								webLinkUrl, contentAccessUrl, author,
+								copyrightAlert, sessionId);
 						itemStatus = (StringBuffer) rvValues.get("itemStatus");
 						containerStack = (java.util.Stack<String>) rvValues
 								.get("containerStack");
@@ -815,7 +821,9 @@ public class MigrationTaskService {
 			}
 
 			// create box folder
-			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
+			if (api.needsRefresh()) {
+				api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
+			}
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			String sanitizedTitle = Utils.sanitizeName(type, title);
 			try {
