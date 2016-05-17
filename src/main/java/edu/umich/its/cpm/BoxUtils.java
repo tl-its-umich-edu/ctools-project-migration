@@ -394,20 +394,11 @@ public class BoxUtils {
 	 */
 	public static BoxAPIConnection refreshAccessAndRefreshTokens(String userId,
 			BoxAPIConnection api) {
-		// refresh accessToken and refreshToken if necessary
-		if (api.needsRefresh()) {
-			try {
-				setBoxAccessToken(userId, api.getAccessToken());
-				setBoxRefreshToken(userId, api.getRefreshToken());
-			} catch (BoxAPIException e) {
-				log.error("refreshAccessAndRefreshTokens ", e);
-				// access token expired, refresh access token
-				api.refresh();
 
-				setBoxAccessToken(userId, api.getAccessToken());
-				setBoxRefreshToken(userId, api.getRefreshToken());
-			}
-		}
+		// refresh accessToken and refreshToken if necessary
+		setBoxAccessToken(userId, api.getAccessToken());
+		setBoxRefreshToken(userId, api.getRefreshToken());
+
 		return api;
 	}
 

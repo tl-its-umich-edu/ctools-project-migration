@@ -815,9 +815,7 @@ public class MigrationTaskService {
 			}
 
 			// create box folder
-			if (api.needsRefresh()) {
-				api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
-			}
+			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			String sanitizedTitle = Utils.sanitizeName(type, title);
 			try {
