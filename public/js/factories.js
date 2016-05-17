@@ -102,6 +102,21 @@ projectMigrationApp.factory('Projects', function($http) {
 						return result;
 					});
 		},
+		checkBoxAdminAuthorized : function(url) {
+			return $http.get(url, {
+				cache : false
+			}).then(
+					function success(result) {
+						// forward the data - let the controller deal with it
+						return result;
+					},
+					function error(result) {
+						errorDisplay(url, result.status,
+								'Unable to check admin user authentication info with Box.');
+						result.errors.failure = true;
+						return result;
+					});
+		},
     checkIsAdminUser : function(url) {
 
       return $http.get(url, {

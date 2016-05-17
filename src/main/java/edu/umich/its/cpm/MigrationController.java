@@ -721,19 +721,13 @@ public class MigrationController {
 		// get the current user id
 		String userId = Utils.getCurrentUserId(request, env);
 
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
-		String remoteUserEmail = Utils.getUserEmail(userId);
-
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
-			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
-			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		}
+		String boxClientId = BoxUtils.getBoxClientId(request, env);
+		String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
+		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
 
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
-		String boxClientRedirectUrl = env
-				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
+		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
+				env);
 
 		// need to have all Box app configurations
 		if (boxClientId == null || boxClientSecret == null
@@ -763,7 +757,7 @@ public class MigrationController {
 	public String boxAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
 		// normal user authorize to Box
-		return boxAuthorization(request, response, false);
+		return boxAuthorization(request, response);
 	}
 
 	/**
@@ -805,6 +799,9 @@ public class MigrationController {
 	public String getBoxAuthzTokens(HttpServletRequest request) {
 		// get the current user id
 		String userId = Utils.getCurrentUserId(request, env);
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		}
 		String rv = BoxUtils.getBoxAccessToken(userId);
 
 		if (rv == null) {
@@ -812,25 +809,10 @@ public class MigrationController {
 			// and get access token and refresh token subsequently
 			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
 
-			if (userId.equals(env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID))
-					|| Utils.isCurrentUserCPMAdmin(request, env)) {
-				// admin user
-				String boxAdminClientId = env
-						.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
-				String boxAdminClientSecret = env
-						.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
-				String boxAdminAccountId = env
-						.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-				BoxUtils.getAuthCodeFromBoxCallback(request, boxAdminClientId,
-						boxAdminClientSecret, boxTokenUrl, userId);
-			} else {
-				// normal user
-				String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-				String boxClientSecret = env
-						.getProperty(Utils.BOX_CLIENT_SECRET);
-				BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-						boxClientSecret, boxTokenUrl, userId);
-			}
+			String boxClientId = BoxUtils.getBoxClientId(request, env);
+			String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
+			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
+					boxClientSecret, boxTokenUrl, userId);
 
 			// try to get the access token after parsing the request string
 			rv = BoxUtils.getBoxAccessToken(userId);
@@ -845,7 +827,21 @@ public class MigrationController {
 
 		// get the current user id
 		String userId = Utils.getCurrentUserId(request, env);
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			// use admin account id instead
+			userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		}
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
+	}
+
+	@RequestMapping("/box/checkAdminAuthorized")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Boolean boxCheckAdminAuthorized(HttpServletRequest request) {
+
+		// get the admin account user
+		String adminUserId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		String adminToken = BoxUtils.getBoxAccessToken(adminUserId);
+		return Boolean.valueOf(adminToken != null);
 	}
 
 	/**
@@ -1055,7 +1051,7 @@ public class MigrationController {
 	public String boxAdminAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
 		// admin user authorize to Box
-		return boxAuthorization(request, response, true);
+		return boxAuthorization(request, response);
 	}
 
 	/**
@@ -1066,23 +1062,14 @@ public class MigrationController {
 	 * @return
 	 */
 	private String boxAuthorization(HttpServletRequest request,
-			HttpServletResponse response, boolean adminRole) {
+			HttpServletResponse response) {
 		// get the current user id
 		String userId = Utils.getCurrentUserId(request, env);
-		String remoteUserEmail = Utils.getUserEmail(userId);
-
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-		if (adminRole) {
-			// verify whether the current user is of Box Admin group
-			if (Utils.isCurrentUserCPMAdmin(request, env)) {
-				boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
-				remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-			}
-		}
-
+		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
+		String boxClientId = BoxUtils.getBoxClientId(request, env);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
-		String boxClientRedirectUrl = env
-				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
+		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
+				env);
 
 		log.debug("in boxAuthorization");
 
@@ -1229,7 +1216,8 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 		HttpHeaders headers = new HttpHeaders();
 
-		String userId = Utils.getCurrentUserId(request, env);
+		// use the Box admin id
+		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 
 		// the set of site ids for bulk migration
 		Set<String> bulkUploadSiteIds = new HashSet<String>();
@@ -1302,12 +1290,9 @@ public class MigrationController {
 				}
 
 				// 3. get box folder id
-				String boxAdminClientId = env
-						.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
-				String boxAdminClientSecret = env
-						.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
-				String boxAdminAccountId = Utils
-						.getUserEmail(Utils.BOX_ADMIN_ACCOUNT_ID);
+				String boxAdminClientId = BoxUtils.getBoxClientId(request, env);
+				String boxAdminClientSecret = BoxUtils.getBoxClientSecret(
+						request, env);
 				String boxSiteFolderName = "CTools - " + siteName;
 
 				Info boxFolder = null;

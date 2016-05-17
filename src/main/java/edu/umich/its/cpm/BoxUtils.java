@@ -26,6 +26,7 @@ import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
@@ -76,6 +77,9 @@ public class BoxUtils {
 
 	// HashMap, indexed by user id, holds queue for Box migration tasks
 	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();
+
+	@Autowired
+	private Environment env;
 
 	/**
 	 * get Box migration request for all users
@@ -492,4 +496,57 @@ public class BoxUtils {
 		}
 		return rv;
 	}
+
+	/**
+	 * get the Box Client ID based on user role
+	 * 
+	 * @param request
+	 * @param env
+	 * @return
+	 */
+	public static String getBoxClientId(HttpServletRequest request,
+			Environment env) {
+		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
+
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+		}
+		return boxClientId;
+	}
+
+	/**
+	 * get the Box Client secret based on user role
+	 * 
+	 * @param request
+	 * @param env
+	 * @return
+	 */
+	public static String getBoxClientSecret(HttpServletRequest request,
+			Environment env) {
+		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
+
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+		}
+		return boxClientSecret;
+	}
+
+	/**
+	 * get the Box Client redirect url based on user
+	 * 
+	 * @param request
+	 * @param env
+	 * @return
+	 */
+	public static String getBoxClientRedirectUrl(HttpServletRequest request,
+			Environment env) {
+		/*
+		 * if (Utils.isCurrentUserCPMAdmin(request, env)) { return
+		 * env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/adminAuthorized";
+		 * } else { return env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) +
+		 * "/authorized"; }
+		 */
+		return env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
+	}
+
 }
