@@ -223,8 +223,12 @@ public class Utils {
 	/**
 	 * construct the user email address
 	 */
-	public static String getUserEmail(String userId) {
+	public static String getUserEmail(String userId, HttpServletRequest request, Environment env) {
 		String remoteUserEmail = userId;
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			return remoteUserEmail = env
+					.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		}
 		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
 			// if the remote user value is not of email format
 			// then it is the uniqname of umich user
@@ -262,7 +266,8 @@ public class Utils {
 		String allowTestUserUrlOverride = env.getProperty(
 				ALLOW_TESTUSER_URLOVERRIDE, Boolean.FALSE.toString());
 		if (hasValue(allowTestUserUrlOverride)
-				&& Boolean.valueOf(allowTestUserUrlOverride)) {
+				&& Boolean.valueOf(allowTestUserUrlOverride)
+				&& request.getParameter(TEST_USER) != null) {
 			// non-prod environment
 			// check for the "testUser" param in url
 			String testUser = request.getParameter(TEST_USER);
@@ -284,6 +289,7 @@ public class Utils {
 			log.debug("CoSign user=" + remoteUser + " test user=" + testUser
 					+ " returned user=" + rvUser);
 		}
+		
 		return rvUser;
 
 	}

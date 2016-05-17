@@ -27,6 +27,7 @@ projectMigrationApp
 							$scope.migratingProjects = [];
 							$scope.migratedProjects = [];
 							$scope.boxAuthorized = false;
+							$scope.boxAdminAuthorized = false;
 							$scope.isAdminUser = false;
 
 							// whether the current user is a member of the admin
@@ -62,6 +63,22 @@ projectMigrationApp
 												}
 												// $scope.boxAuthorized ===
 												// result.data;
+												$log
+														.info(' - - - - User authorized to Box: '
+																+ result.data);
+											});
+							// whether the current user as Box Admin authorized app to Box or
+							// not
+							var checkBoxAdminAuthorizedUrl = $rootScope.urls.checkBoxAdminAuthorizedUrl;
+							Projects
+									.checkBoxAdminAuthorized(checkBoxAdminAuthorizedUrl)
+									.then(
+											function(result) {
+												if (result.data === 'true') {
+													$scope.boxAdminAuthorized = true;
+												} else {
+													$scope.boxAdminAuthorized = false;
+												}
 												$log
 														.info(' - - - - User authorized to Box: '
 																+ result.data);
@@ -530,6 +547,23 @@ projectMigrationApp
 													}
 													$log
 															.info(' - - - - User authorized to Box: '
+																	+ result.data);
+												});
+							}
+							$scope.checkBoxAdminAuth = function() {
+								var checkBoxAdminAuthorizedUrl = $rootScope.urls.checkBoxAdminAuthorizedUrl;
+								Projects
+										.checkBoxAdminAuthorized(
+												checkBoxAdminAuthorizedUrl)
+										.then(
+												function(result) {
+													if (result.data === 'true') {
+														$scope.boxAdminAuthorized = true;
+													} else {
+														$scope.boxAdminAuthorized = false;
+													}
+													$log
+															.info(' - - - - Admin User authorized to Box: '
 																	+ result.data);
 												});
 							}

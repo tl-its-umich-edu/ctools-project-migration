@@ -475,14 +475,8 @@ public class MigrationTaskService {
 		StringBuffer boxMigrationStatus = new StringBuffer();
 		List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
 
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			// for admin user to do bulk upload
-			// get the admin app attributes instead
-			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
-			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
-		}
+		String boxClientId = BoxUtils.getBoxClientId(request, env);
+		String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
 		String boxClientRedirectUrl = env
 				.getProperty(Utils.BOX_CLIENT_REDIRECT_URL);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
@@ -493,7 +487,7 @@ public class MigrationTaskService {
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
 
-		String remoteUserEmail = Utils.getUserEmail(userId);
+		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
 
 		if (BoxUtils.getBoxAccessToken(userId) == null) {
 			// go to Box authentication screen
