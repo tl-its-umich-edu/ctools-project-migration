@@ -692,6 +692,8 @@ public class MigrationTaskService {
 						log.debug("boxFolderStack length="
 								+ boxFolderIdStack.size());
 					} catch (BoxAPIException e) {
+						log.error(this + " boxUploadSiteContent "
+								+ e.getResponse());
 						JSONObject eJSON = new JSONObject(e.getResponse());
 						String errorMessage = eJSON.has("context_info") ? eJSON
 								.getString("context_info") : "";
@@ -849,16 +851,16 @@ public class MigrationTaskService {
 						// push the current folder id into the stack
 						containerStack.push(contentUrl);
 						boxFolderIdStack.push(exisingFolderId);
-						log.debug("top of stack folder id = "
+						log.error("top of stack folder id = "
 								+ containerStack.peek() + " "
 								+ " container folder id=" + container);
 					} else {
-						log.info("Cannot find conflicting Box folder id for folder name "
+						log.error("Cannot find conflicting Box folder id for folder name "
 								+ sanitizedTitle);
 					}
 				} else {
 					// log the exception message
-					log.info(e.getResponse() + " for " + title);
+					log.error(e.getResponse() + " for " + title);
 
 					// and throws the exception,
 					// so that the parent function can catch it and stop the
@@ -1004,7 +1006,8 @@ public class MigrationTaskService {
 				log.info(conflictString);
 				status.append(conflictString + LINE_BREAK);
 			}
-			log.info(this + "uploadFile fileName=" + fileName + e.getResponse());
+			log.error(this + "uploadFile fileName=" + fileName
+					+ e.getResponse());
 		} catch (IllegalArgumentException iException) {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
 					+ fileName
