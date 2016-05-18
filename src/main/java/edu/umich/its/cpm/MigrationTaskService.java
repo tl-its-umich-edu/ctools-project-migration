@@ -584,7 +584,7 @@ public class MigrationTaskService {
 		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId,
 				boxClientId, boxClientSecret);
 		if (api == null) {
-			// exist if no Box API connection could be made
+			// exit if no Box API connection could be made
 			return rv;
 		}
 

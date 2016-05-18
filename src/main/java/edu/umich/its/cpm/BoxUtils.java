@@ -542,13 +542,10 @@ public class BoxUtils {
 		if (api != null) {
 			try {
 				BoxFolder folder = new BoxFolder(api, folderId);
-				if ("Owner".equals(role)) {
-					// CTools Owner user role
-					folder.collaborate(userEmail, BoxCollaboration.Role.CO_OWNER);
-				} else {
-					// CTools other user roles, i.e. Member
-					folder.collaborate(userEmail, BoxCollaboration.Role.VIEWER);
-				}
+				// map CTools roles to Box Collaborator role
+				BoxCollaboration.Role boxRole = "Owner".equals(role) ? BoxCollaboration.Role.CO_OWNER
+						: BoxCollaboration.Role.VIEWER;
+				folder.collaborate(userEmail, boxRole);
 			} catch (BoxAPIException e) {
 				log.error("BoxUils:addCollaboration " + e.getResponse());
 			}
