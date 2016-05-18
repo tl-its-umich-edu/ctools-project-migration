@@ -37,6 +37,8 @@ import com.box.sdk.BoxAPIConnection;
 import com.box.sdk.BoxAPIRequest;
 import com.box.sdk.BoxAPIResponse;
 import com.box.sdk.BoxAPIException;
+import com.box.sdk.BoxCollaborator;
+import com.box.sdk.BoxCollaboration;
 import com.box.sdk.BoxResource;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxFile;
@@ -322,15 +324,10 @@ public class BoxUtils {
 	 */
 	public static List<HashMap<String, String>> getBoxFolders(String userId,
 			String boxClientId, String boxClientSecret) {
-		String boxAccessToken = getBoxAccessToken(userId);
-		String boxRefreshToken = getBoxRefreshToken(userId);
 
-		try {
-			// make connection
-			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-					boxClientSecret, boxAccessToken, boxRefreshToken);
-			// update stored access token and refresh token
-			api = refreshAccessAndRefreshTokens(userId, api);
+		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
+				boxClientSecret);
+		if (api != null) {
 
 			// get the root Box folder
 			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
@@ -340,8 +337,6 @@ public class BoxUtils {
 					.listBoxFolders(null, api, rootFolder, "", 0);
 
 			return folderItems;
-		} catch (Exception e) {
-			log.info("BoxUtils:getBoxFolders " + e.toString());
 		}
 		return null;
 	}
@@ -354,16 +349,9 @@ public class BoxUtils {
 			String newBoxFolderName, String siteId) {
 		BoxFolder.Info newFolderInfo = null;
 
-		String boxAccessToken = getBoxAccessToken(userId);
-		String boxRefreshToken = getBoxRefreshToken(userId);
-
-		try {
-			// make connection
-			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-					boxClientSecret, boxAccessToken, boxRefreshToken);
-			// update stored access token and refresh token
-			api = refreshAccessAndRefreshTokens(userId, api);
-
+		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
+				boxClientSecret);
+		if (api != null) {
 			// get the root Box folder
 			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
 
@@ -383,8 +371,6 @@ public class BoxUtils {
 			}
 
 			return newFolderInfo;
-		} catch (Exception e) {
-			log.info("BoxUtils:getBoxFolders " + e.toString());
 		}
 		return null;
 	}
@@ -394,7 +380,6 @@ public class BoxUtils {
 	 */
 	public static BoxAPIConnection refreshAccessAndRefreshTokens(String userId,
 			BoxAPIConnection api) {
-
 		// refresh accessToken and refreshToken if necessary
 		setBoxAccessToken(userId, api.getAccessToken());
 		setBoxRefreshToken(userId, api.getRefreshToken());
@@ -538,6 +523,77 @@ public class BoxUtils {
 		 * "/authorized"; }
 		 */
 		return env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
+	}
+
+	/**
+	 * add user as collaborate to Box folder
+	 * 
+	 * @param userEmail
+	 * @param role
+	 * @param folderId
+	 * @param boxClientId
+	 * @param boxClientSecret
+	 */
+	public static void addCollaboration(String boxAdminId, String userEmail,
+			String role, String folderId, String boxClientId,
+			String boxClientSecret) {
+		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, boxClientId,
+				boxClientSecret);
+		if (api != null) {
+			try {
+				BoxFolder folder = new BoxFolder(api, folderId);
+				// map CTools roles to Box Collaborator role
+				BoxCollaboration.Role boxRole = "Owner".equals(role) ? BoxCollaboration.Role.CO_OWNER
+						: BoxCollaboration.Role.VIEWER;
+				folder.collaborate(userEmail, boxRole);
+			} catch (BoxAPIException e) {
+				log.error("BoxUils:addCollaboration " + e.getResponse());
+			}
+		}
+
+	}
+
+	/**
+	 * get the BoxAPIConnection object renew access token and refresh token if
+	 * necessary
+	 * 
+	 * @param boxClientId
+	 * @param boxClientSecret
+	 * @param boxAccessToken
+	 * @param boxRefreshToken
+	 */
+	public static BoxAPIConnection getBoxAPIConnection(String userId,
+			String boxClientId, String boxClientSecret) {
+
+		String boxAccessToken = getBoxAccessToken(userId);
+		String boxRefreshToken = getBoxRefreshToken(userId);
+
+		try {
+			// make connection
+			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
+					boxClientSecret, boxAccessToken, boxRefreshToken);
+			api.setAutoRefresh(false);
+
+			if (api.needsRefresh()) {
+				api = refreshAccessAndRefreshTokens(userId, api);
+			}
+			return api;
+
+		} catch (BoxAPIException e) {
+			log.info("BoxUtils:addCollaboration " + e.toString());
+			String response = e.getResponse();
+			if (response.contains("Refresh token has expired")) {
+				// time to refresh the refresh token
+				// remove the locally stored token for the user
+				// so that the user will need to go through the Box
+				// authentication process again to generate refresh token and
+				// access token
+				boxRefreshTokens.remove(userId);
+				boxAccessTokens.remove(userId);
+
+			}
+			return null;
+		}
 	}
 
 }

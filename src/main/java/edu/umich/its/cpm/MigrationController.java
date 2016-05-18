@@ -360,6 +360,65 @@ public class MigrationController {
 	}
 
 	/**
+	 * REST API call to get CTools site members
+	 * 
+	 * @param request
+	 * @param site_id
+	 * @return
+	 */
+	private HashMap<String, String> get_site_members(
+			HttpServletRequest request, String site_id) {
+		HashMap<String, String> rv = new HashMap<String, String>();
+
+		String membersString = "";
+		String errorMessage = "";
+		String requestUrl = "";
+
+		// login to CTools and get sessionId
+		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
+				request, Utils.getCurrentUserId(request, env));
+		if (!sessionAttributes.containsKey("sessionId")) {
+			// exit if login_becomeuser call is not successful
+			return rv;
+		}
+
+		String sessionId = (String) sessionAttributes.get("sessionId");
+
+		// get all members inside site
+		// the url should be in the format of
+		// "https://server/direct/membership/site/SITE_ID.json"
+		RestTemplate restTemplate = new RestTemplate();
+		requestUrl = env.getProperty("ctools.server.url")
+				+ "direct/membership/site/" + site_id + ".json?_sessionId="
+				+ sessionId;
+
+		try {
+			membersString = restTemplate.getForObject(requestUrl, String.class);
+		} catch (RestClientException e) {
+			errorMessage = "Cannot find site members by siteId: " + site_id
+					+ " " + e.getMessage();
+			log.error(errorMessage);
+		}
+
+		if (membersString != null) {
+			JSONObject sJSON = new JSONObject(membersString);
+			JSONArray members = (JSONArray) sJSON.get("membership_collection");
+			// iterate through all members
+			for (int iMember = 0; members != null && iMember < members.length(); ++iMember) {
+				JSONObject member = members.getJSONObject(iMember);
+				String userEid = member.getString("userEid");
+				String userRole = member.getString("memberRole");
+				boolean isActive = member.getBoolean("active");
+				if (isActive) {
+					rv.put(userEid, userRole);
+				}
+			}
+		}
+
+		return rv;
+	}
+
+	/**
 	 * adds an extra "hasContentItem" JSON element to the site tool JSON feed.
 	 * True if site has content resources; false if the site content is empty.
 	 * 
@@ -1308,6 +1367,19 @@ public class MigrationController {
 				if (boxFolder != null) {
 					String boxFolderId = boxFolder.getID();
 					String boxFolderName = boxFolder.getName();
+
+					// add site members to Box folder as collaborators
+					HashMap<String, String> userRoles = get_site_members(
+							request, siteId);
+					for (String userEid : userRoles.keySet()) {
+						String userRole = userRoles.get(userEid);
+						String userEmail = userEid + Utils.EMAIL_AT_UMICH;
+						BoxUtils.addCollaboration(
+								env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
+								userEmail, userRole, boxFolderId,
+								boxAdminClientId, boxAdminClientSecret);
+					}
+
 					// now after all checks passed, we are ready for migration
 					// save migration record into database
 					HashMap<String, Object> saveBulkMigration = saveBulkMigrationRecord(

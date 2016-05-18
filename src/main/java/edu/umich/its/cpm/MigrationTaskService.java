@@ -581,9 +581,12 @@ public class MigrationTaskService {
 
 		List<MigrationFileItem> rv = new ArrayList<MigrationFileItem>();
 
-		BoxAPIConnection api = new BoxAPIConnection(boxClientId,
-				boxClientSecret, BoxUtils.getBoxAccessToken(userId),
-				BoxUtils.getBoxRefreshToken(userId));
+		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId,
+				boxClientId, boxClientSecret);
+		if (api == null) {
+			// exit if no Box API connection could be made
+			return rv;
+		}
 
 		// site root folder
 		String rootFolderPath = null;
@@ -815,7 +818,6 @@ public class MigrationTaskService {
 			}
 
 			// create box folder
-			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 			String sanitizedTitle = Utils.sanitizeName(type, title);
 			try {
@@ -856,7 +858,7 @@ public class MigrationTaskService {
 					}
 				} else {
 					// log the exception message
-					log.info(e.getMessage() + " for " + title);
+					log.info(e.getResponse() + " for " + title);
 
 					// and throws the exception,
 					// so that the parent function can catch it and stop the
@@ -969,8 +971,6 @@ public class MigrationTaskService {
 		try {
 
 			bContent = new BufferedInputStream(content);
-			// check if Box access token needs refresh
-			api = BoxUtils.refreshAccessAndRefreshTokens(userId, api);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
 			BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 					Utils.sanitizeName(type, fileName),
@@ -1004,6 +1004,7 @@ public class MigrationTaskService {
 				log.info(conflictString);
 				status.append(conflictString + LINE_BREAK);
 			}
+			log.info(this + "uploadFile fileName=" + fileName + e.getResponse());
 		} catch (IllegalArgumentException iException) {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
 					+ fileName
