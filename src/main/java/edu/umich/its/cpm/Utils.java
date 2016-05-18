@@ -85,7 +85,7 @@ public class Utils {
 
 	// the at sign used in email address
 	private static final String EMAIL_AT = "@";
-	private static final String EMAIL_AT_UMICH = "@umich.edu";
+	public static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
@@ -223,7 +223,8 @@ public class Utils {
 	/**
 	 * construct the user email address
 	 */
-	public static String getUserEmail(String userId, HttpServletRequest request, Environment env) {
+	public static String getUserEmail(String userId,
+			HttpServletRequest request, Environment env) {
 		String remoteUserEmail = userId;
 		if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			return remoteUserEmail = env
