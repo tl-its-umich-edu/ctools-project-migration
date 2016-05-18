@@ -352,25 +352,29 @@ public class BoxUtils {
 		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
 				boxClientSecret);
 		if (api != null) {
-			// get the root Box folder
-			BoxFolder rootFolder = BoxFolder.getRootFolder(api);
+			try {
+				// get the root Box folder
+				BoxFolder rootFolder = BoxFolder.getRootFolder(api);
 
-			for (Info c : rootFolder.getChildren()) {
-				if (newBoxFolderName.equals(c.getName())) {
-					// folder already exist
-					newFolderInfo = (BoxFolder.Info) c;
+				for (Info c : rootFolder.getChildren()) {
+					if (newBoxFolderName.equals(c.getName())) {
+						// folder already exist
+						newFolderInfo = (BoxFolder.Info) c;
+					}
 				}
-			}
 
-			if (newFolderInfo == null) {
-				// no such folder yet, create the folder
-				newFolderInfo = rootFolder.createFolder(newBoxFolderName);
-				BoxFolder newFolder = newFolderInfo.getResource();
-				newFolderInfo.setDescription(siteId);
-				newFolder.updateInfo(newFolderInfo);
-			}
+				if (newFolderInfo == null) {
+					// no such folder yet, create the folder
+					newFolderInfo = rootFolder.createFolder(newBoxFolderName);
+					BoxFolder newFolder = newFolderInfo.getResource();
+					newFolderInfo.setDescription(siteId);
+					newFolder.updateInfo(newFolderInfo);
+				}
 
-			return newFolderInfo;
+				return newFolderInfo;
+			} catch (BoxAPIException e) {
+				log.error("createNewFolderAtRootLevel: " + e.getResponse());
+			}
 		}
 		return null;
 	}
@@ -580,7 +584,7 @@ public class BoxUtils {
 			return api;
 
 		} catch (BoxAPIException e) {
-			log.info("BoxUtils:addCollaboration " + e.toString());
+			log.error("BoxUtils:addCollaboration " + e.getResponse());
 			String response = e.getResponse();
 			if (response.contains("Refresh token has expired")) {
 				// time to refresh the refresh token
