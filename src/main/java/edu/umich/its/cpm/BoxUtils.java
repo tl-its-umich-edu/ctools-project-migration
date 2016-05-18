@@ -544,7 +544,7 @@ public class BoxUtils {
 				BoxFolder folder = new BoxFolder(api, folderId);
 				if ("Owner".equals(role)) {
 					// CTools Owner user role
-					folder.collaborate(userEmail, BoxCollaboration.Role.EDITOR);
+					folder.collaborate(userEmail, BoxCollaboration.Role.CO_OWNER);
 				} else {
 					// CTools other user roles, i.e. Member
 					folder.collaborate(userEmail, BoxCollaboration.Role.VIEWER);
