@@ -22,6 +22,24 @@ projectMigrationApp.factory('BulkUpload', function($http, $log) {
           result.errors.failure = true;
           return result;
         });
+    },
+    getList : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(function success(result) {
+        // endpoint will return a 200, but the payload may be an error message with a status flag
+        if(result.data.status ===200){
+          return result;
+        } else {
+          result.status = result.data.status;
+          return result;
+        }
+      }, function error(result) {
+        errorDisplay(url, result.status, 'Unable to get current migrations');
+        result.errors.failure = true;
+        return result;
+      });
     }
+
   };
 });

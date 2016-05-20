@@ -8,7 +8,7 @@ projectMigrationApp.run(function($rootScope) {
   $rootScope.server = '';
   $rootScope.user = {};
   $rootScope.pollInterval = 15000;
-  $rootScope.stubs = false;
+  $rootScope.stubs = true;
   if ($rootScope.stubs) {
     $rootScope.urls = {
       'isAdminCheckUrl': 'data/isAdmin.json',
@@ -17,8 +17,8 @@ projectMigrationApp.run(function($rootScope) {
       'listBulkUploadOngoingUrl': 'data/bulkUploadOngoing.json',
       'listBulkUploadConcludedUrl': 'data/bulkUploadConcluded.json',
       // only needed to mock gettin a list and a site
-      'bulkUploadList': '/bulkUploadList.json',
-      'bulkUploadSite': '/bulkUploadSite.json',
+      'bulkUploadList': 'data/bulkUploadList.json',
+      'bulkUploadSite': 'data/bulkUploadSite.json',
 
     };
   } else {
