@@ -8,44 +8,26 @@ projectMigrationApp.run(function($rootScope) {
   $rootScope.server = '';
   $rootScope.user = {};
   $rootScope.pollInterval = 15000;
-  $rootScope.status = {
-    'projects': '',
-    'migrations': '',
-    'migrated': ''
-  };
   $rootScope.stubs = false;
   if ($rootScope.stubs) {
     $rootScope.urls = {
-      'projectsUrl': 'data/projects.json',
-      'migrationsUrl': 'data/migrations.json',
-      'migrationUrl': '',
-      'migrationZipUrl': '',
-      'migrationBoxUrl': '',
-      'migratedUrl': 'data/migrated.json',
-      'migratingUrl': 'data/migrations.json',
-      'projectUrl': 'data/project_id.json',
-      'checkBoxAuthorizedUrl': '',
-      'checkBoxAdminAuthorizedUrl': '',
-      'checkIsAdminUser':'',
-      'bulkUploadUrl':''
+      'isAdminCheckUrl': 'data/isAdmin.json',
+      'bulkUploadPostUrl': 'data/bulkUpload', // not needed
+      'listBulkUploadAllUrl': 'data/bulkUploadAll.json',
+      'listBulkUploadOngoingUrl': 'data/bulkUploadOngoing.json',
+      'listBulkUploadConcludedUrl': 'data/bulkUploadConcluded.json',
+      // only needed to mock gettin a list and a site
+      'bulkUploadList': '/bulkUploadList.json',
+      'bulkUploadSite': '/bulkUploadSite.json',
+
     };
   } else {
     $rootScope.urls = {
-      // TODO: store "ctools-project-migration" as configuration variable
-      'projectsUrl': '/projects',
-      'migrationsUrl': '/migrations',
-      'migrationUrl': '/migration',
-      'migrationZipUrl': '/migrationZip',
-      'migrationBoxUrl': '/migrationBox',
-      'migratedUrl': '/migrated',
-      'migratingUrl': '/migrating',
-      'projectUrl': '/projects/',
-      'checkBoxAuthorizedUrl': '/box/checkAuthorized',
-      'checkBoxAdminAuthorizedUrl': '/box/checkAdminAuthorized',
-      'checkIsAdminUser':'/isAdmin',
-      'bulkUploadUrl' : '/bulkUpload'
+      'isAdminCheckUrl': '/isAdmin',
+      'bulkUploadPostUrl': '/bulkUpload',
+      'listBulkUploadAllUrl': '/bulkUpload/all',
+      'listBulkUploadOngoingUrl': '/bulkUpload/ongoing',
+      'listBulkUploadConcludedUrl': '/bulkUpload/concluded',
     };
   }
-  $rootScope.addProjectSites = [];
-
 });
