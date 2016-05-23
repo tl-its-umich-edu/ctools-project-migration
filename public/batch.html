@@ -39,7 +39,7 @@
 			</div>
 		</div>
 	</nav>
-	<div class="container-fluid">
+	<div class="container-fluid" ng-controller="projectMigrationBatchController">
 		<div class="row">
 			<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
 				<div class="panel panel-default">
@@ -57,8 +57,7 @@
 						<div class="tab-content">
 							<form role="tabpanel" class="tab-pane active" id="upload">
 								<h3 class="panel-title panel-title-batch">Upload</h3>
-								<div class="well form-group"
-									ng-controller="projectMigrationBatchController">
+								<div class="well form-group">
 									<label for="name">Batch name</label> <input type="text"
 										id="name" name="name" value=""> <input type="file"
 										file-model="bulkUploadFile">
@@ -92,187 +91,72 @@
 			</div>
 			<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
 
-				<div class="panel panel-default">
+				<div class="panel panel-default"  ng-cloak>
 					<div class="panel-heading">
 						<h3 class="panel-title">Migrations</h3>
 					</div>
 
 					<div class="panel-body">
 						<ul class="nav nav-tabs" role="tablist" style="margin-bottom: 0">
-							<li role="presentation" class="active"><a href="#ongoing"
+							<li role="presentation" class="active"><a href="#ongoing"  ng-click="getOngoingList()"
 								aria-controls="upload" role="tab" data-toggle="tab">Ongoing</a></li>
-							<li role="presentation"><a href="#concluded"
+							<li role="presentation"><a href="#concluded"  ng-click="getConcludedList()"
 								aria-controls="concluded" role="tab" data-toggle="tab">Concluded</a></li>
 						</ul>
 						<div class="tab-content">
 							<div role="tabpanel" class="tab-pane active" id="ongoing">
 								<h3 class="panel-title panel-title-batch">Ongoing</h3>
 								<ul class="list-group" style="margin: 0 15px 0">
-									<li class="list-group-item row">
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<h4 class="site-header">Entomology projects</h4>
+                  <li ng-show="ongoing.length ===0" class="list-group-item">
+                    <div class=" row">
+											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        No ongoing batches
+                      </div>
+                    </div>
+                  </li>
+                  <li ng-repeat="batch in ongoing" class="list-group-item">
+                    <div class="row">
+  										<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+                        <h4 class="site-header" ng-if="!batch.name">{{batch}}</h4>
+                        <h4 class="site-header" ng-if="batch.name">{{batch.name}}</h4>
+  										</div>
+                      <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+                        <a ng-show="!batch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(batch, $index)">Show
+													list</a>
+										  </div>
+                    </div>
+                    <div class="row" ng-show="batch.list">
+											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+												<ol style="margin:0;padding:10px 30px">
+													<li ng-repeat="item in batch.list">{{item}}</li>
+												</ol>
+											</div>
 										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<small>05/04 10:11AM</small>
-										</div>
-
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<a href="#" class="showList btn btn-default btn-xs ">Show
-												list</a>
-										</div>
-									</li>
-									<li class="list-group-item row list" style="display: none">
-										<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-											<ol>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-											</ol>
-										</div>
-									</li>
-									<li class="list-group-item row">
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<h4 class="site-header">LSA 1st batch</h4>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<small>05/04 11:11AM</small>
-										</div>
-
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<a href="#" class="showList btn btn-default btn-xs ">Show
-												list</a>
-										</div>
-
-									</li>
-									<li class="list-group-item row list" style="display: none">
-										<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-											<ol>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-											</ol>
-										</div>
-
-									</li>
-									<li class="list-group-item row">
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<h4 class="site-header">Batch name</h4>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<small>05/04 11:31AM</small>
-										</div>
-
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<a href="#" class="showList btn btn-default btn-xs ">Show
-												list</a>
-										</div>
-
-									</li>
-									<li class="list-group-item row list" style="display: none">
-										<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-											<ol>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-												<li>1066936914880-476438</li>
-											</ol>
-										</div>
-
 									</li>
 								</ul>
 							</div>
 							<div role="tabpanel" class="tab-pane" id="concluded">
 								<h3 class="panel-title panel-title-batch">Concluded</h3>
 								<ul class="list-group" style="margin: 0 15px 0">
-									<li class="list-group-item row">
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<h4 class="site-header">Sites running Napster</h4>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<small>05/04 10:11AM</small>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<a href="#" class="btn btn-default btn-xs seeReport">See
-												report</a>
-										</div>
-									</li>
-									<li class="list-group-item row report" style="display: none">
-										<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-											<div class="row">
-												<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-													<strong>Site title</strong><br>
-													ohlordwhatameaninglessstring <br> <small>Summary
-														(files, folders transfered), errors listed below</small>
-												</div>
-												<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-													<a href="#">See more <span
-														class="glyphicon glyphicon-share-alt"></span></a>
-												</div>
+                  <li ng-show="concluded.length ===0" class="list-group-item">
+                    <div class=" row">
+                      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        No concluded batches
+                      </div>
+                    </div>
+                  </li>
+									<li class="list-group-item row" ng-repeat="batch in concluded">
+                    <div class="row">
+											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
+												<h4 class="site-header" ng-show="batch.name">{{batch.name}}</h4>
+                        <h4 class="site-header" ng-show="!batch.name">{{batch}}</h4>
 											</div>
-											<hr>
-											<div class="row">
-												<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-													<strong>Site title</strong><br>
-													ohlordwhatameaninglessstring <br> <small>Summary
-														(files, folders transfered), errors listed below</small>
-												</div>
-												<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-													<a href="#">See more <span
-														class="glyphicon glyphicon-share-alt"></span></a>
-												</div>
+											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
+												<a href="#" class="btn btn-default btn-xs seeReport">See
+													report</a>
 											</div>
 										</div>
-									</li>
-									<li class="list-group-item row">
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<h4 class="site-header">Batch name</h4>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<small>05/04 10:11AM</small>
-										</div>
-										<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-											<a href="#" class="btn btn-default btn-xs seeReport">See
-												report</a>
-										</div>
-									</li>
-									<li class="list-group-item row report" style="display: none">
-										<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-											<div class="row">
-												<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-													<strong>Site title</strong><br>
-													ohlordwhatameaninglessstring <br> <small>Summary
-														(files, folders transfered), errors listed below</small>
-												</div>
-												<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-													<a href="#">See more <span
-														class="glyphicon glyphicon-share-alt"></span></a>
-												</div>
-											</div>
-											<hr>
-											<div class="row">
-												<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-													<strong>Site title</strong><br>
-													ohlordwhatameaninglessstring <br> <small>Summary
-														(files, folders transfered), errors listed below</small>
-												</div>
-												<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-													<a href="#">See more <span
-														class="glyphicon glyphicon-share-alt"></span></a>
-												</div>
-											</div>
-										</div>
-									</li>
+                  </li>
 								</ul>
 							</div>
 						</div>
