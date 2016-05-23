@@ -371,7 +371,7 @@ public class MigrationTaskService {
 
 				log.info("download file " + fileName);
 
-				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)) {
+				if (Utils.CTOOLS_RESOURCE_TYPE_URL.equalsIgnoreCase(type)) {
 					try {
 						// get the html file content first
 						String webLinkContent = Utils.getWebLinkContent(title,
@@ -942,7 +942,7 @@ public class MigrationTaskService {
 			HttpResponse r = httpClient.execute(getRequest, httpContext);
 			content = r.getEntity().getContent();
 
-			if (Utils.CTOOLS_RESOURCE_TYPE_URL.equals(type)) {
+			if (Utils.CTOOLS_RESOURCE_TYPE_URL.equalsIgnoreCase(type)) {
 				try {
 					// special handling of Web Links resources
 					content = new ByteArrayInputStream(Utils.getWebLinkContent(
