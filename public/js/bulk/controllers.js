@@ -27,18 +27,18 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
     };
     $scope.getUploadList = function(batchId, $index) {
 
-      // for non stub we will need to construct the url as:
-      //var bulkUploadListUrl = $rootScope.urls.bulkUploadList + '/' + batchId;
-      //stub version
-      var bulkUploadListUrl = $rootScope.urls.bulkUploadList;
+      // non stub version
+      var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
+      if ($rootScope.stubs){
+        // stub version
+        bulkUploadListUrl = $rootScope.urls.bulkUploadList;
+      }
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting list of sites in a batch process  batches with  ' + bulkUploadListUrl);
         $scope.ongoing[$index].list = resultList.data.entity;
       });
       return null;
     };
-
-
 
     $scope.getOngoingList();
   }

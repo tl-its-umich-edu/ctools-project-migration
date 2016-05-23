@@ -91,7 +91,7 @@
 			</div>
 			<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
 
-				<div class="panel panel-default">
+				<div class="panel panel-default" ng-cloak>
 					<div class="panel-heading">
 						<h3 class="panel-title">Migrations</h3>
 					</div>
@@ -107,11 +107,19 @@
 							<div role="tabpanel" class="tab-pane active" id="ongoing">
 								<h3 class="panel-title panel-title-batch">Ongoing</h3>
 								<ul class="list-group" style="margin: 0 15px 0">
+                  <li ng-show="ongoing.length ===0" class="list-group-item">
+                    <div class=" row">
+											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        No ongoing batches
+                      </div>
+                    </div>
+                  </li>
 									<li ng-repeat="batch in ongoing" class="list-group-item">
 										<div class=" row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-												<h4 class="site-header">{{batch.name}}</h4>
-											</div>
+                        <h4 class="site-header" ng-if="!batch.name">{{batch}}</h4>
+                        <h4 class="site-header" ng-if="batch.name">{{batch.name}}</h4>
+                      </div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
 												<a ng-show="!batch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(batch.id, $index)">Show
 													list</a>
@@ -130,10 +138,18 @@
 							<div role="tabpanel" class="tab-pane" id="concluded">
 								<h3 class="panel-title panel-title-batch">Concluded</h3>
 								<ul class="list-group" style="margin: 0 15px 0">
+                  <li ng-show="concluded.length ===0" class="list-group-item">
+                    <div class=" row">
+                      <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                        No ongoing batches
+                      </div>
+                    </div>
+                  </li>
 									<li class="list-group-item" ng-repeat="batch in concluded">
 										<div class="row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-												<h4 class="site-header">{{batch.name}}</h4>
+												<h4 class="site-header" ng-show="batch.name">{{batch.name}}</h4>
+                        <h4 class="site-header" ng-show="!batch.name">{{batch}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
 												<a href="#" class="btn btn-default btn-xs seeReport">See
