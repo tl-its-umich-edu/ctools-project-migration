@@ -474,7 +474,7 @@ public class Utils {
 		if ((extension.isEmpty() || !Utils.HTML_FILE_EXTENSION
 				.equals(EXTENSION_SEPARATOR + extension))
 				&& (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL
-						.equals(type))) {
+						.equalsIgnoreCase(type))) {
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;
 		}
 		return fileName;
