@@ -473,8 +473,7 @@ public class Utils {
 		String extension = FilenameUtils.getExtension(fileName);
 		if ((extension.isEmpty() || !Utils.HTML_FILE_EXTENSION
 				.equals(EXTENSION_SEPARATOR + extension))
-				&& (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.CTOOLS_RESOURCE_TYPE_URL
-						.equalsIgnoreCase(type))) {
+				&& (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.isOfURLMIMEType(type))) {
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;
 		}
 		return fileName;
@@ -606,5 +605,15 @@ public class Utils {
 			}
 		}
 		return fileName;
+	}
+	
+	/**
+	 * check whether the given type is of URL MIME type
+	 * @param type
+	 * @return
+	 */
+	public static boolean isOfURLMIMEType(String type)
+	{
+		return CTOOLS_RESOURCE_TYPE_URL.equalsIgnoreCase(type);
 	}
 }
