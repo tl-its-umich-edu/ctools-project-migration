@@ -520,12 +520,6 @@ public class BoxUtils {
 	 */
 	public static String getBoxClientRedirectUrl(HttpServletRequest request,
 			Environment env) {
-		/*
-		 * if (Utils.isCurrentUserCPMAdmin(request, env)) { return
-		 * env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/adminAuthorized";
-		 * } else { return env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) +
-		 * "/authorized"; }
-		 */
 		return env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL) + "/authorized";
 	}
 

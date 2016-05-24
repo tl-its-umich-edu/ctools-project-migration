@@ -893,16 +893,6 @@ public class MigrationController {
 		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
 	}
 
-	@RequestMapping("/box/checkAdminAuthorized")
-	@Produces(MediaType.APPLICATION_JSON)
-	public Boolean boxCheckAdminAuthorized(HttpServletRequest request) {
-
-		// get the admin account user
-		String adminUserId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		String adminToken = BoxUtils.getBoxAccessToken(adminUserId);
-		return Boolean.valueOf(adminToken != null);
-	}
-
 	/**
 	 * Save Migration record to DB
 	 * 
@@ -1099,18 +1089,6 @@ public class MigrationController {
 		JSON_response(response, jObject.toString(),
 				"Problem with checking admin status for current user.",
 				"/isAdmin");
-	}
-
-	/**
-	 * Admin User authenticates into the Box account
-	 * 
-	 * @return
-	 */
-	@RequestMapping("/box/adminAuthorize")
-	public String boxAdminAuthenticate(HttpServletRequest request,
-			HttpServletResponse response) {
-		// admin user authorize to Box
-		return boxAuthorization(request, response);
 	}
 
 	/**
@@ -1356,7 +1334,7 @@ public class MigrationController {
 
 				Info boxFolder = null;
 				if (BoxUtils.getBoxAccessToken(userId) == null) {
-					boxAdminAuthenticate(request, response);
+					boxAuthenticate(request, response);
 				} else {
 					boxFolder = BoxUtils.createNewFolderAtRootLevel(userId,
 							boxAdminClientId, boxAdminClientSecret,
