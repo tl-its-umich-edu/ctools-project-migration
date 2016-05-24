@@ -25,7 +25,6 @@ projectMigrationApp.run(function($rootScope) {
       'migratingUrl': 'data/migrations.json',
       'projectUrl': 'data/project_id.json',
       'checkBoxAuthorizedUrl': '',
-      'checkBoxAdminAuthorizedUrl': '',
       'checkIsAdminUser':'',
       'bulkUploadUrl':''
     };
@@ -41,7 +40,6 @@ projectMigrationApp.run(function($rootScope) {
       'migratingUrl': '/migrating',
       'projectUrl': '/projects/',
       'checkBoxAuthorizedUrl': '/box/checkAuthorized',
-      'checkBoxAdminAuthorizedUrl': '/box/checkAdminAuthorized',
       'checkIsAdminUser':'/isAdmin',
       'bulkUploadUrl' : '/bulkUpload'
     };

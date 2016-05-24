@@ -30,12 +30,9 @@
 			<div id="bs-example-navbar-collapse-1"
 				class="collapse navbar-collapse">
 				<ul class="nav navbar-nav navbar-right">
-					<li ng-show="isAdminUser && boxAdminAuthorized"><a
+					<li ng-show="isAdminUser && boxAuthorized"><a
 						class="btn btn-md btn-link" class="collapse-nav" href="batch.html"
 						style="color: #fff">Batch</a></li>
-					<li ng-show="isAdminUser && !boxAdminAuthorized"><a
-						data-target="#boxAdminAuthModal" data-toggle="modal" href="">authorize
-							this app to Box</a></li>
 					<li><a class="btn btn-md btn-primary" id="helpLink"
 						class="collapse-nav"
 						href="http://its.umich.edu/projects/ctools-project-sites/training-resources/migration-tool-help"
@@ -156,21 +153,6 @@
 			</div>
 		</div>
 	</div>
-
-	<!-- Button trigger modal -->
-	<!-- Box Admin Authentication Modal -->
-	<div class="modal fade" id="boxAdminAuthModal" tabindex="-1"
-		role="dialog" aria-labelledby="boxAdminAuthModalLabel">
-		<div class="modal-dialog" role="document">
-			<div class="modal-content">
-				<div class="modal-body" id="boxIFrameContainer">
-					<iframe class="boxIFrame" id="boxIFrame" src="/box/adminAuthorize"
-						frameborder="0"></iframe>
-				</div>
-			</div>
-		</div>
-	</div>
-
 	<script type="text/javascript"
 		src="vendors/jquery/jquery-1.11.0.min.js"></script>
 	<script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript"
