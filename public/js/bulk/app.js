@@ -8,7 +8,7 @@ projectMigrationApp.run(function($rootScope) {
   $rootScope.server = '';
   $rootScope.user = {};
   $rootScope.pollInterval = 15000;
-  $rootScope.stubs = false;
+  $rootScope.stubs = false ;
   if ($rootScope.stubs) {
     $rootScope.urls = {
       'isAdminCheckUrl': 'data/isAdmin.json',
