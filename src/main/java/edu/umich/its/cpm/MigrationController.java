@@ -1135,7 +1135,7 @@ public class MigrationController {
 	public Response getAllBulkUploadIds(HttpServletRequest request) {
 		try {
 			return Response.status(Response.Status.OK)
-					.entity(repository.getAllBulkMigrationIds()).build();
+					.entity(repository.getAllBulkMigrations()).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1155,7 +1155,7 @@ public class MigrationController {
 	public Response getOngoingBulkUploadIds(HttpServletRequest request) {
 		try {
 			return Response.status(Response.Status.OK)
-					.entity(repository.getOngoingBulkMigrationIds()).build();
+					.entity(repository.getOngoingBulkMigrations()).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1175,10 +1175,10 @@ public class MigrationController {
 	public Response getConcludedBulkUploadIds(HttpServletRequest request) {
 		// calculate those concluded bulk upload by doing diff of all bulk
 		// uploads and those ongoing bulk uploads
-		List<String> allBulkConcludedUpgrades = repository
-				.getAllBulkMigrationIds();
-		List<String> allBulkOngoingUpgrades = repository
-				.getOngoingBulkMigrationIds();
+		List<Object[]> allBulkConcludedUpgrades = repository
+				.getAllBulkMigrations();
+		List<Object[]> allBulkOngoingUpgrades = repository
+				.getOngoingBulkMigrations();
 		allBulkConcludedUpgrades.removeAll(allBulkOngoingUpgrades);
 
 		try {

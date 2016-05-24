@@ -85,16 +85,16 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 *
 	 * @return
 	 */
-	@Query("SELECT DISTINCT(m.bulk_migration_id) FROM Migration m where m.bulk_migration_id is not null")
-	public List<String> getAllBulkMigrationIds();
+	@Query("SELECT m.bulk_migration_name, m.bulk_migration_id FROM Migration m where m.bulk_migration_id is not null group by m.bulk_migration_name, m.bulk_migration_id order by m.bulk_migration_name, m.bulk_migration_id desc")
+	public List<Object[]> getAllBulkMigrations();
 
 	/**
 	 * get all ongoing bulk migration ids
 	 *
 	 * @return
 	 */
-	@Query("SELECT DISTINCT(m.bulk_migration_id) FROM Migration m where m.end_time is null")
-	public List<String> getOngoingBulkMigrationIds();
+	@Query("select m.bulk_migration_name, m.bulk_migration_id FROM Migration m where m.bulk_migration_id is not null and m.end_time is null group by m.bulk_migration_name, m.bulk_migration_id order by m.bulk_migration_name, m.bulk_migration_id desc")
+	public List<Object[]> getOngoingBulkMigrations();
 
 	/**
 	 * get all migration with the bulk migration
