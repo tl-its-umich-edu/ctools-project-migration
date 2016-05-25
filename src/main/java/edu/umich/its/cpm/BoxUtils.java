@@ -540,9 +540,37 @@ public class BoxUtils {
 		if (api != null) {
 			try {
 				BoxFolder folder = new BoxFolder(api, folderId);
-				// map CTools roles to Box Collaborator role
-				BoxCollaboration.Role boxRole = "Owner".equals(role) ? BoxCollaboration.Role.CO_OWNER
-						: BoxCollaboration.Role.VIEWER;
+				// map CTools roles to Box Collaborator roles
+				// default to be Box View role
+				BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
+				if ("Owner".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.CO_OWNER;
+				}
+				else if ("Organizer".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.EDITOR;
+				}
+				else if ("Member".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+				}
+				else if ("Observer".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.VIEWER;
+				}
+				else if ("maintainer".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.CO_OWNER;
+				}
+				else if ("Instructor".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.EDITOR;
+				}
+				else if ("student".equals(role))
+				{
+					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+				}
 				folder.collaborate(userEmail, boxRole);
 			} catch (BoxAPIException e) {
 				log.error("BoxUils:addCollaboration " + e.getResponse());
