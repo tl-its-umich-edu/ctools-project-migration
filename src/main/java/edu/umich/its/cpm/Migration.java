@@ -22,17 +22,29 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
 public class Migration {
 
 	private static final Logger log = LoggerFactory.getLogger(Migration.class);
+	
+	/**
+	 * primary key field
+	 * a migration is for a single tool (i.e. Resources tool) in a single CTools site
+	 */
 	@Id
 	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
 	@Getter
 	@Setter
 	private String migration_id;
 
+	/**
+	 * bulk migration id 
+	 * null for self-migrated (non-batch) site migration
+	 */
 	@Column(name = "BULK_MIGRATION_ID", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
 	@Getter
 	@Setter
 	private String bulk_migration_id;
 
+	/**
+	 * user entered name for a bulk migration process
+	 */
 	@Column(name = "BULK_MIGRATION_NAME", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
 	@Getter
 	@Setter
