@@ -37,9 +37,9 @@ projectMigrationApp
                         function(result) {
                             $timeout(function() {
                                 if (result.data.isAdmin) {
-                                    $rootScope.isAdminUser = true;
+                                    $scope.isAdminUser = true;
                                 } else {
-                                    $rootScope.isAdminUser = false;
+                                    $scope.isAdminUser = false;
                                 }
                                 $log
                                     .info(' - - - - User is admin: ' + result.data);
