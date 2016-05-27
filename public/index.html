@@ -11,39 +11,45 @@
 </head>
 
 <body ng-app="projectMigrationApp">
-	<nav role="navigation" class="navbar navbar-default"
-		style="background: #00274c">
-		<div class="container-fluid">
-			<!-- Brand and toggle get grouped for better mobile display -->
-			<div class="navbar-header mastHead">
-				<button data-target="#bs-example-navbar-collapse-1"
-					data-toggle="collapse" class="navbar-toggle collapsed"
-					type="button">
-					<span class="sr-only">Toggle navigation</span> <span
-						class="icon-bar"></span> <span class="icon-bar"></span> <span
-						class="icon-bar"></span>
-				</button>
-				<h1 class="navbar-brand collapse-nav" style="margin: 0; color: #fff">Project
-					Site Migration</h1>
-			</div>
-			<!-- Collect the nav links, forms, and other content for toggling -->
-			<div id="bs-example-navbar-collapse-1"
-				class="collapse navbar-collapse">
-				<ul class="nav navbar-nav navbar-right">
-					<li ng-show="isAdminUser && boxAuthorized"><a
-						class="btn btn-md btn-link" class="collapse-nav" href="batch.html"
-						style="color: #fff">Batch</a></li>
-					<li><a class="btn btn-md btn-primary" id="helpLink"
-						class="collapse-nav"
-						href="http://its.umich.edu/projects/ctools-project-sites/training-resources/migration-tool-help"
-						style="color: #fff" target="_blank">Migration Tool Help</a></li>
-				</ul>
-			</div>
-			<!-- /.navbar-collapse -->
-		</div>
-	</nav>
 	<div ng-controller="projectMigrationController" class="container-fluid"
 		style="padding: 0 20px">
+		<nav role="navigation" class="navbar navbar-default"
+			style="background: #00274c">
+			<div class="container-fluid">
+				<!-- Brand and toggle get grouped for better mobile display -->
+				<div class="navbar-header mastHead">
+					<button data-target="#bs-example-navbar-collapse-1"
+						data-toggle="collapse" class="navbar-toggle collapsed"
+						type="button">
+						<span class="sr-only">Toggle navigation</span> <span
+							class="icon-bar"></span> <span class="icon-bar"></span> <span
+							class="icon-bar"></span>
+					</button>
+					<h1 class="navbar-brand collapse-nav" style="margin: 0; color: #fff">Project
+						Site Migration</h1>
+				</div>
+				<!-- Collect the nav links, forms, and other content for toggling -->
+				<div id="bs-example-navbar-collapse-1"
+					class="collapse navbar-collapse">
+					<ul class="nav navbar-nav navbar-right">
+						<li>
+							<a class="btn btn-md btn-primary" id="batch" 
+								ng-show="isAdminUser && boxAuthorized"
+								class="collapse-nav"
+								href="batch.html"
+								style="color: #fff">Batch</a>
+						</li>
+						<li>
+							<a class="btn btn-md btn-primary" id="helpLink"
+								class="collapse-nav"
+								href="http://its.umich.edu/projects/ctools-project-sites/training-resources/migration-tool-help"
+								style="color: #fff" target="_blank">Migration Tool Help</a>
+						</li>
+					</ul>
+				</div>
+				<!-- /.navbar-collapse -->
+			</div>
+		</nav>
 		<div role="alert" class="sr-only alert alert-info"
 			ng-show="migratingProjects.length !== 0 && activeMigrations">Current
 			migrations: {{migratingProjects.length}}</div>

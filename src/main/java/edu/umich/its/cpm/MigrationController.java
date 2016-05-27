@@ -1255,13 +1255,20 @@ public class MigrationController {
 
 		// use the Box admin id
 		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		
+		// the bulk migration name based on user input
+		String bulkMigrationName = "Default Bulk Upload Name";
 
 		// the set of site ids for bulk migration
 		Set<String> bulkUploadSiteIds = new HashSet<String>();
 		try {
 			MultipartHttpServletRequest multipartRequest = (MultipartHttpServletRequest) request;
-
-			// read the uploaded batch site ids file
+			
+			if (multipartRequest.getParameter("name") != null){
+				// get the user input bulk upload name
+				bulkMigrationName = (String) multipartRequest.getParameter("name");
+			}
+			
 			Set set = multipartRequest.getFileMap().entrySet();
 			Iterator i = set.iterator();
 			while (i.hasNext()) {
@@ -1294,9 +1301,6 @@ public class MigrationController {
 			// now that we get the site ids for batch upload
 			// start the batch process
 			String bulkMigrationId = java.util.UUID.randomUUID().toString();
-			// TODO: need to get the real name input
-			String bulkMigrationName = "temp_bulk_name";
-			// (String) multipartRequest.getAttribute("name");
 
 			for (String siteId : bulkUploadSiteIds) {
 				// for each site id, start the migration process

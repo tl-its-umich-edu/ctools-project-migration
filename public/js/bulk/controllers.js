@@ -5,8 +5,9 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
   function($rootScope, $scope, $log, $q, $window, BulkUpload) {
     $scope.bulkUpload = function() {
       var file = $scope.bulkUploadFile;
+      var name = $scope.upload.name;
       var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-      BulkUpload.bulkUpload(file, bulkUploadUrl).then(function() {
+      BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function() {
         $log.info('hhh after ' + bulkUploadUrl);
         // TODO
       });
