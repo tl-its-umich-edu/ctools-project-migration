@@ -4,10 +4,12 @@
 //Bulk upload FACTORY - upload to bulk process
 projectMigrationApp.factory('BulkUpload', function($http, $log) {
   return {
-    bulkUpload: function(file, uploadUrl) {
+    bulkUpload: function(file, name, uploadUrl) {
       $log.info("uploadUrl" + uploadUrl);
       var fd = new FormData();
       fd.append('file', file);
+      fd.append('name', name);
+      $log.info('upload name=' + name);
       return $http.post(uploadUrl, fd, {
         transformRequest: angular.identity,
         headers: { 'Content-Type': undefined }

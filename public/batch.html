@@ -58,9 +58,9 @@
 							<form role="tabpanel" class="tab-pane active" id="upload">
 								<h3 class="panel-title panel-title-batch">Upload</h3>
 								<div class="well form-group">
-									<label for="name">Batch name</label> <input type="text"
-										id="name" name="name" value=""> <input type="file"
-										file-model="bulkUploadFile">
+									<label for="name">Batch name</label> 
+										<input type="text" name="name" ng-model="upload.name" value="">
+										<input type="file" file-model="bulkUploadFile">
 									<div class="spinner" style="display: none"></div>
 									<button type="reset" name="reset-file-input"
 										class="btn btn-link">Reset</button>
