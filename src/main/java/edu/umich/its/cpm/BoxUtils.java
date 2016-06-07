@@ -134,13 +134,6 @@ public class BoxUtils {
 		return boxRefreshToken;
 	}
 
-	/**
-	 * set Box refresh token for given user
-	 */
-	/*public static void setBoxRefreshToken(String userId, String boxRefreshToken) {
-		boxRefreshTokens.put(userId, boxRefreshToken);
-	}*/
-
 	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
 			"yyyy-MM-dd-hh.mm.ss");
 
@@ -162,16 +155,15 @@ public class BoxUtils {
 			log.error("No Box API url specified. ");
 			return "";
 		}
-        
+		
 		String requestUrl = boxAPIUrl + "/oauth2/authorize"
 							+ "?response_type=code" + "&client_id=" + boxClientId
 							+ "&redirect_uri=" + boxClientRedirectUri
 							+ "&state=&box_login=" + remoteUserEmail;
-        
+
+		
 		try {
-			String resultString = restTemplate.getForObject(requestUrl,
-			                String.class);
-			return resultString;
+			return restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
@@ -400,7 +392,8 @@ public class BoxUtils {
 	}
 
 	/**
-	 * store the current access token and refresh token locally for given user
+	 * Refresh Box access token and refresh token if necessary
+	 * Store new tokens into database
 	 */
 	public static BoxAPIConnection refreshAccessAndRefreshTokens(String boxClientId, String boxClientSecret, 
 			String userId, BoxAPIConnection api, BoxAuthUserRepository repository) {

@@ -315,7 +315,7 @@ public class Utils {
 	 * get CoSign user
 	 */
 	private static String getRemoteUser(HttpServletRequest request) {
-		return "zqian";//request.getRemoteUser();
+		return request.getRemoteUser();
 	}
 
 	/*
