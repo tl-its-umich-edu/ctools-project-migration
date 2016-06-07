@@ -30,6 +30,9 @@ public class MigrationInstanceService {
 	@Autowired
 	private MigrationTaskService migrationTaskService;
 	
+	@Autowired
+	private BoxAuthUserRepository uRepository;
+	
 	@Async
 	public void runProcessingThread() throws InterruptedException {
 		
@@ -61,7 +64,7 @@ public class MigrationInstanceService {
 					{
 						// if the first request for the user is not processed yet
 						// process with the Box upload request
-						futureList.add( migrationTaskService.uploadToBox(mFields.getEnv(), mFields.getRequest(), mFields.getResponse(), mFields.getUserId(), mFields.getSessionAttributes(), mFields.getSiteId(), mFields.getBoxFolderId(), mFields.getMigrationId(), mFields.getRepository()));
+						futureList.add( migrationTaskService.uploadToBox(mFields.getEnv(), mFields.getRequest(), mFields.getResponse(), mFields.getUserId(), mFields.getSessionAttributes(), mFields.getSiteId(), mFields.getBoxFolderId(), mFields.getMigrationId(), mFields.getRepository(), uRepository));
 						
 						// mark this request as being processed
 						mFields.setProcessed(true);
