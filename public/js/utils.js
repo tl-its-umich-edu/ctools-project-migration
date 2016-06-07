@@ -148,5 +148,5 @@ var transformMigrated = function(result) {
 }
 
 var errorDisplay = function(url, status, message){
-  alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message)
-}
+  alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
+};

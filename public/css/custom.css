@@ -119,6 +119,11 @@ h3.panel-title small {
 .panel-title-batch {
   margin:20px 0
 }
+
+.has-error label {
+  color:#a94442
+}
+
 @media (max-width: 480px) {
 	.panel-heading {
 		background-color: #777 !important;
@@ -169,7 +174,6 @@ h3.panel-title small {
 	text-align:left;
 	padding-bottom:10px;
 }
-
 
 #statusModal .modal-dialog {
 	width:auto

@@ -1,16 +1,36 @@
 'use strict';
-/* global projectMigrationApp*/
+/* global projectMigrationApp, validateBulkRequest, $*/
 
-projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', 'BulkUpload',
-  function($rootScope, $scope, $log, $q, $window, BulkUpload) {
+projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload',
+  function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload) {
+
     $scope.bulkUpload = function() {
-      var file = $scope.bulkUploadFile;
-      var name = $scope.upload.name;
-      var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-      BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function() {
-        $log.info('hhh after ' + bulkUploadUrl);
-        // TODO
-      });
+      //$log.info($scope.upload.name);
+      if(!$scope.bulkUploadFile || !$scope.upload.name){
+        $('#bulkUploadFileContainer').find('.form-group').addClass("has-error");
+      }
+      else {
+        var file = $scope.bulkUploadFile;
+        var name = $scope.upload.name;
+        $scope.bulkUploadInProcess = true;
+        var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
+        BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
+          $scope.bulkUploadInProcess = false;
+          $log.info('hhh after ' + bulkUploadUrl);
+          // Reset form
+          $scope.upload.name ='';
+          $scope.bulkUploadFile ='';
+          $('#upload')[0].reset();
+          //notify user
+
+          $scope.uploadStarted = true;
+          $scope.uploadStartedMessage=response;
+          $timeout(function() {
+            $scope.uploadStarted = false;
+          }, 3000);
+
+        });
+      }
     };
 
     $scope.getOngoingList = function() {

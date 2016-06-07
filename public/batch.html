@@ -58,14 +58,27 @@
 							<form role="tabpanel" class="tab-pane active" id="upload">
 								<h3 class="panel-title panel-title-batch">Upload</h3>
 								<div class="well form-group">
-									<label for="name">Batch name</label> 
-										<input type="text" name="name" ng-model="upload.name" value="">
-										<input type="file" file-model="bulkUploadFile">
-									<div class="spinner" style="display: none"></div>
-									<button type="reset" name="reset-file-input"
+                  <div id="bulkUploadFileContainer">
+                    <div class="form-group">
+                      <label for="bulkUploadName">Batch name (required)</label>
+                      <input type="text" id="bulkUploadName" class="form-control" name="name" ng-model="upload.name" value="">
+                    </div>
+                    <div class="form-group">
+                      <label for="bulkUploadFile">File (required)</label>
+                      <input type="file" id="bulkUploadFile" file-model="bulkUploadFile">
+                    </div>
+                  </div>
+                  <div class="form-group">
+                    <div ng-show="uploadStarted">
+                      <div class="alert alert-success" ng-show="uploadStartedMessage.status===202">{{uploadStartedMessage.data}}</div>
+                      <div class="alert alert-danger" ng-show="uploadStartedMessage.status!==202">{{uploadStartedMessage.data}}</div>
+                    </div>
+                    <button type="reset" name="reset-file-input"
 										class="btn btn-link">Reset</button>
-									<button class="btn btn-primary btn-xs" ng-click="bulkUpload()"
+                    <button class="btn btn-primary btn-xs" ng-click="bulkUpload()"
 										name="process-file-input">Process</button>
+                    <div class="spinner" ng-show="bulkUploadInProcess"></div>
+                  </div>
 								</div>
 							</form>
 							<form role="tabpanel" class="tab-pane" id="direct">
@@ -117,18 +130,18 @@
                   <li ng-repeat="batch in ongoing" class="list-group-item">
                     <div class="row">
   										<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-                        <h4 class="site-header" ng-if="!batch.name">{{batch}}</h4>
-                        <h4 class="site-header" ng-if="batch.name">{{batch.name}}</h4>
+                        <h4 class="site-header">{{batch[0]}}</h4>
   										</div>
                       <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-                        <a ng-show="!batch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(batch, $index)">Show
+                        <a ng-show="!batch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(batch[1], $index)">Show
 													list</a>
 										  </div>
                     </div>
                     <div class="row" ng-show="batch.list">
+                      {{batch.list}}
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 												<ol style="margin:0;padding:10px 30px">
-													<li ng-repeat="item in batch.list">{{item}}</li>
+													<li ng-repeat="item in batch.list">{{item.site_name}}</li>
 												</ol>
 											</div>
 										</div>
@@ -148,11 +161,10 @@
 									<li class="list-group-item row" ng-repeat="batch in concluded">
                     <div class="row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-												<h4 class="site-header" ng-show="batch.name">{{batch.name}}</h4>
-                        <h4 class="site-header" ng-show="!batch.name">{{batch}}</h4>
+                        <h4 class="site-header">{{batch[0]}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-												<a href="#" class="btn btn-default btn-xs seeReport">See
+												<a href="#" class="btn btn-default btn-xs" ng-click="seeReport(batch[1])">See
 													report</a>
 											</div>
 										</div>
