@@ -14,6 +14,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
+import java.util.UUID;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -47,6 +48,8 @@ import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
 
 import edu.umich.its.cpm.MigrationInstanceService.MigrationFields;
+import edu.umich.its.cpm.BoxAuthUserRepository;
+import edu.umich.its.cpm.BoxAuthUser;
 
 import org.apache.commons.io.IOUtils;
 import org.apache.http.impl.client.HttpClients;
@@ -72,10 +75,10 @@ public class BoxUtils {
 	private static final int MAX_DEPTH = 0;
 
 	private static final String CODE = "code";
-
-	private static HashMap<String, String> boxAccessTokens = new HashMap<String, String>();
-
-	private static HashMap<String, String> boxRefreshTokens = new HashMap<String, String>();
+	
+	// the state variable used in OAuth process 
+	// to associate Box returned tokens with right OAuth requester  
+	private static final String STATE = "state";
 
 	// HashMap, indexed by user id, holds queue for Box migration tasks
 	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();
@@ -119,39 +122,14 @@ public class BoxUtils {
 	}
 
 	/**
-	 * get Box access token for given user
-	 */
-	public static String getBoxAccessToken(String userId) {
-		String boxAccessToken = null;
-		if (boxAccessTokens.containsKey(userId)) {
-			// if the token exists for given user
-			boxAccessToken = boxAccessTokens.get(userId);
-		}
-		return boxAccessToken;
-	}
-
-	/**
-	 * set Box access token for given user
-	 */
-	public static void setBoxAccessToken(String userId, String boxAccessToken) {
-		boxAccessTokens.put(userId, boxAccessToken);
-	}
-
-	/**
-	 * remote Box access token for given user
-	 */
-	public static void removeBoxAccessToken(String userId) {
-		boxAccessTokens.remove(userId);
-	}
-
-	/**
 	 * get Box refresh token for given user
 	 */
-	public static String getBoxRefreshToken(String userId) {
+	public static String getBoxRefreshToken(String userId, BoxAuthUserRepository repository) {
 		String boxRefreshToken = null;
-		if (boxRefreshTokens.containsKey(userId)) {
+		BoxAuthUser u = repository.findOne(userId);
+		if (u != null) {
 			// if the token exists for given user
-			boxRefreshToken = boxRefreshTokens.get(userId);
+			boxRefreshToken = u.getRefreshToken();
 		}
 		return boxRefreshToken;
 	}
@@ -159,9 +137,9 @@ public class BoxUtils {
 	/**
 	 * set Box refresh token for given user
 	 */
-	public static void setBoxRefreshToken(String userId, String boxRefreshToken) {
+	/*public static void setBoxRefreshToken(String userId, String boxRefreshToken) {
 		boxRefreshTokens.put(userId, boxRefreshToken);
-	}
+	}*/
 
 	private static final SimpleDateFormat date_formatter = new SimpleDateFormat(
 			"yyyy-MM-dd-hh.mm.ss");
@@ -174,36 +152,35 @@ public class BoxUtils {
 	}
 
 	public static String authenticateString(String boxAPIUrl,
-			String boxClientId, String boxClientRedirectUri,
-			String remoteUserEmail, HttpServletResponse response) {
+	                String boxClientId, String boxClientRedirectUri,
+	                String remoteUserEmail, HttpServletResponse response) {
 		// Box authorization
 		RestTemplate restTemplate = new RestTemplate();
-
+        
 		if (boxAPIUrl == null) {
 			// log error
 			log.error("No Box API url specified. ");
 			return "";
 		}
-
+        
 		String requestUrl = boxAPIUrl + "/oauth2/authorize"
-				+ "?response_type=code" + "&client_id=" + boxClientId
-				+ "&redirect_uri=" + boxClientRedirectUri
-				+ "&state=&box_login=" + remoteUserEmail;
-
+							+ "?response_type=code" + "&client_id=" + boxClientId
+							+ "&redirect_uri=" + boxClientRedirectUri
+							+ "&state=&box_login=" + remoteUserEmail;
+        
 		try {
 			String resultString = restTemplate.getForObject(requestUrl,
-					String.class);
+			                String.class);
 			return resultString;
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
-
 		return "";
 	}
-
+	
 	public static void authenticate(String boxAPIUrl, String boxClientId,
 			String boxClientRedirectUri, String remoteUserEmail,
-			HttpServletResponse response) {
+			HttpServletResponse response, BoxAuthUserRepository repository) {
 		// Box authorization
 		RestTemplate restTemplate = new RestTemplate();
 
@@ -212,11 +189,33 @@ public class BoxUtils {
 			log.error("No Box API url specified. ");
 			return;
 		}
-
+		
+		// An arbitrary string of your choosing that will be included in the response to your application. 
+		// Anything that might be useful for your application can be included. 
+		// Box roundtrips this information back to your application, 
+		// and strongly recommends that you include an anti-forgery token, 
+		// and confirm it in the response to prevent CSRF attacks to your users.
+		String state = UUID.randomUUID().toString();
+		
+		// create new BoxAuthUser object
+		// store the state value into BoxAuthUser object, 
+		// so that we will pick the right user when getting the access token and refresh token
+		BoxAuthUser u = new BoxAuthUser(remoteUserEmail, state, "", "");
+		try
+		{
+			// save user information into database
+			repository.save(u);
+		}
+		catch (Exception e)
+		{
+			log.error("There is problem saving BoxAuthUser for user " + remoteUserEmail + " " + e);
+			return;
+		}
+		
 		String requestUrl = boxAPIUrl + "/oauth2/authorize"
 				+ "?response_type=code" + "&client_id=" + boxClientId
 				+ "&redirect_uri=" + boxClientRedirectUri
-				+ "&state=&box_login=" + remoteUserEmail;
+				+ "&state=" + state + "&box_login=" + remoteUserEmail;
 
 		try {
 			String resultString = restTemplate.getForObject(requestUrl,
@@ -238,23 +237,41 @@ public class BoxUtils {
 	 */
 	public static String getAuthCodeFromBoxCallback(HttpServletRequest request,
 			String boxClientId, String boxClientSecret, String boxTokenUrl,
-			String userId) {
+			BoxAuthUserRepository repository) {
 		// get the code String from Box authorization callback
 		String authCode = null;
+		String state = null;
 		java.util.Enumeration<java.lang.String> e = request.getParameterNames();
 		while (e.hasMoreElements()) {
 			String paramName = e.nextElement();
 			if (CODE.equals(paramName)) {
 				authCode = request.getParameter(paramName);
-				break;
+			}
+			else if (STATE.equals(paramName)) {
+				state = request.getParameter(paramName);
 			}
 		}
 
 		if (authCode == null) {
-			log.error("getAuthCodeFromBoxCallback: authCode is null for user "
-					+ userId);
+			log.error("getAuthCodeFromBoxCallback: authCode is null");
 			return null;
 		}
+		
+		// find the right user by comparing the state value stored in database 
+		// with the state value returned in the callback
+		List<BoxAuthUser> uList = repository.findBoxAuthUserByState(state);
+		if (uList.isEmpty())
+		{
+			log.error("getAuthCodeFromBoxCallback: cannot find BoxAuthUser with state = " + state);
+			return null;
+		}
+		else if (uList.size() > 1)
+		{
+			log.error("getAuthCodeFromBoxCallback: find more than one BoxAuthUser with state = " + state);
+			return null;
+		}
+		
+		BoxAuthUser u = uList.get(0);
 
 		// now that we have the authCode, use it to get access token and fresh
 		// token
@@ -294,9 +311,8 @@ public class BoxUtils {
 					InputStream body = entity.getContent();
 					String theString = IOUtils.toString(body, "UTF-8");
 					JSONObject obj = new JSONObject(theString);
-					setBoxAccessToken(userId, (String) obj.get("access_token"));
-					setBoxRefreshToken(userId,
-							(String) obj.get("refresh_token"));
+					repository.setBoxAuthUserAccessToken((String) obj.get("access_token"), u.getUserId());
+					repository.setBoxAuthUserRefreshToken((String) obj.get("refresh_token"), u.getUserId());
 
 					// close inputstream and entity
 					IOUtils.closeQuietly(body);
@@ -323,10 +339,10 @@ public class BoxUtils {
 	 * method to return json list of Box folders
 	 */
 	public static List<HashMap<String, String>> getBoxFolders(String userId,
-			String boxClientId, String boxClientSecret) {
+			String boxClientId, String boxClientSecret, BoxAuthUserRepository repository) {
 
 		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
-				boxClientSecret);
+				boxClientSecret, repository);
 		if (api != null) {
 
 			// get the root Box folder
@@ -346,16 +362,21 @@ public class BoxUtils {
 	 */
 	public static Info createNewFolderAtRootLevel(String userId,
 			String boxClientId, String boxClientSecret,
-			String newBoxFolderName, String siteId) {
+			String newBoxFolderName, String siteId, BoxAuthUserRepository repository) {
 		BoxFolder.Info newFolderInfo = null;
 
 		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
-				boxClientSecret);
+				boxClientSecret, repository);
 		if (api != null) {
+			BoxFolder rootFolder = null;
 			try {
 				// get the root Box folder
-				BoxFolder rootFolder = BoxFolder.getRootFolder(api);
-
+				rootFolder = BoxFolder.getRootFolder(api);
+				
+				// test the newly created object
+				// and watch for any BoxAPIException
+				rootFolder.getChildren();
+				
 				for (Info c : rootFolder.getChildren()) {
 					if (newBoxFolderName.equals(c.getName())) {
 						// folder already exist
@@ -370,23 +391,45 @@ public class BoxUtils {
 					newFolderInfo.setDescription(siteId);
 					newFolder.updateInfo(newFolderInfo);
 				}
-
-				return newFolderInfo;
 			} catch (BoxAPIException e) {
-				log.error("createNewFolderAtRootLevel: " + e.getResponse());
+				log.error("createNewFolderAtRootLevel: message=" + e.getMessage() + " response=" + e.getResponse());
 			}
 		}
-		return null;
+
+		return newFolderInfo;
 	}
 
 	/**
 	 * store the current access token and refresh token locally for given user
 	 */
-	public static BoxAPIConnection refreshAccessAndRefreshTokens(String userId,
-			BoxAPIConnection api) {
+	public static BoxAPIConnection refreshAccessAndRefreshTokens(String boxClientId, String boxClientSecret, 
+			String userId, BoxAPIConnection api, BoxAuthUserRepository repository) {
 		// refresh accessToken and refreshToken if necessary
-		setBoxAccessToken(userId, api.getAccessToken());
-		setBoxRefreshToken(userId, api.getRefreshToken());
+		try
+		{
+			api.refresh();
+			String newAccessToken = api.getAccessToken();
+			String newRefreshToken = api.getRefreshToken();
+			
+			// save the new tokens into database
+			repository.setBoxAuthUserAccessToken(newAccessToken, userId);
+			repository.setBoxAuthUserRefreshToken(newRefreshToken, userId);
+			
+			// return construct new BoxAPIConnection object
+			api = new BoxAPIConnection(boxClientId,
+					boxClientSecret, newAccessToken, newRefreshToken);
+			}
+		catch (BoxAPIException e)
+		{
+			log.error("refreshAccessAndRefreshTokens message=" + e.getMessage() + " response=" + e.getResponse());
+			if (400 == e.getResponseCode())
+			{
+				// refresh token is expired
+				// user needs to authenticate again
+				repository.deleteBoxAuthUserAccessToken(userId);
+				repository.deleteBoxAuthUserRefreshToken(userId);
+			}
+		}
 
 		return api;
 	}
@@ -487,7 +530,7 @@ public class BoxUtils {
 	public static String getBoxClientId(HttpServletRequest request,
 			Environment env) {
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
-
+		
 		if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
 		}
@@ -534,12 +577,16 @@ public class BoxUtils {
 	 */
 	public static void addCollaboration(String boxAdminId, String userEmail,
 			String role, String folderId, String boxClientId,
-			String boxClientSecret) {
+			String boxClientSecret, BoxAuthUserRepository repository) {
 		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, boxClientId,
-				boxClientSecret);
+				boxClientSecret, repository);
+		
+		BoxFolder folder = null;
+		
 		if (api != null) {
 			try {
-				BoxFolder folder = new BoxFolder(api, folderId);
+				folder = new BoxFolder(api, folderId);
+
 				// map CTools roles to Box Collaborator roles
 				// default to be Box View role
 				BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
@@ -573,7 +620,7 @@ public class BoxUtils {
 				}
 				folder.collaborate(userEmail, boxRole);
 			} catch (BoxAPIException e) {
-				log.error("BoxUils:addCollaboration " + e.getResponse());
+				log.warn("addCollaboration messsage=" + e.getMessage() + " response=" + e.getResponse() );
 			}
 		}
 
@@ -589,24 +636,20 @@ public class BoxUtils {
 	 * @param boxRefreshToken
 	 */
 	public static BoxAPIConnection getBoxAPIConnection(String userId,
-			String boxClientId, String boxClientSecret) {
-
-		String boxAccessToken = getBoxAccessToken(userId);
-		String boxRefreshToken = getBoxRefreshToken(userId);
-
+			String boxClientId, String boxClientSecret, BoxAuthUserRepository repository) {
+		
+		String boxAccessToken = repository.findBoxAuthUserAccessToken(userId);
+		String boxRefreshToken = repository.findBoxAuthUserRefreshToken(userId);
 		try {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
 			api.setAutoRefresh(false);
-
-			if (api.needsRefresh()) {
-				api = refreshAccessAndRefreshTokens(userId, api);
-			}
+			
 			return api;
 
 		} catch (BoxAPIException e) {
-			log.error("BoxUtils:addCollaboration " + e.getResponse());
+			log.error("BoxUtils getBoxAPIConnection " + e.getResponse());
 			String response = e.getResponse();
 			if (response.contains("Refresh token has expired")) {
 				// time to refresh the refresh token
@@ -614,9 +657,8 @@ public class BoxUtils {
 				// so that the user will need to go through the Box
 				// authentication process again to generate refresh token and
 				// access token
-				boxRefreshTokens.remove(userId);
-				boxAccessTokens.remove(userId);
-
+				repository.deleteBoxAuthUserAccessToken(userId);
+				repository.deleteBoxAuthUserRefreshToken(userId);
 			}
 			return null;
 		}

@@ -9,6 +9,7 @@ import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
 
@@ -24,7 +25,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
-
 import java.util.regex.Pattern;
 import java.util.regex.Matcher;
 
@@ -49,6 +49,10 @@ import com.box.sdk.ProgressListener;
 @Service
 @Component
 public class MigrationTaskService {
+	
+	@Autowired
+	BoxAuthUserRepository uRepository;
+	
 	// String values used in content json feed
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
 	private static final String CTOOLS_CITATION_ACCESS_STRING = "/access/citation/content";
@@ -465,7 +469,7 @@ public class MigrationTaskService {
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, HashMap<String, Object> sessionAttributes,
 			String siteId, String boxFolderId, String migrationId,
-			MigrationRepository repository) throws InterruptedException {
+			MigrationRepository repository, BoxAuthUserRepository uRepository) throws InterruptedException {
 		// the HashMap object to be returned
 		HashMap<String, String> rvMap = new HashMap<String, String>();
 		rvMap.put("userId", userId);
@@ -487,13 +491,13 @@ public class MigrationTaskService {
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
 
-		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
+		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
 
-		if (BoxUtils.getBoxAccessToken(userId) == null) {
+		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
-					remoteUserEmail, response);
+					remoteUserEmail, response, uRepository);
 
 			rvMap.put("status", "fail");
 			return new AsyncResult<HashMap<String, String>>(rvMap);
@@ -524,7 +528,7 @@ public class MigrationTaskService {
 						String.class);
 				itemMigrationStatus = boxUploadSiteContent(httpContext, userId,
 						sessionId, boxClientId, boxClientSecret,
-						siteResourceJson, boxFolderId);
+						siteResourceJson, boxFolderId, uRepository);
 
 			} catch (RestClientException e) {
 				String errorMessage = "Cannot find site by siteId: " + siteId
@@ -577,12 +581,12 @@ public class MigrationTaskService {
 	private List<MigrationFileItem> boxUploadSiteContent(
 			HttpContext httpContext, String userId, String sessionId,
 			String boxClientId, String boxClientSecret,
-			String siteResourceJson, String boxFolderId) {
+			String siteResourceJson, String boxFolderId, BoxAuthUserRepository uRepository) {
 
 		List<MigrationFileItem> rv = new ArrayList<MigrationFileItem>();
 
 		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId,
-				boxClientId, boxClientSecret);
+				boxClientId, boxClientSecret, uRepository);
 		if (api == null) {
 			// exit if no Box API connection could be made
 			return rv;

@@ -116,6 +116,9 @@ public class MigrationController {
 
 	@Autowired
 	MigrationRepository repository;
+	
+	@Autowired
+	BoxAuthUserRepository uRepository;
 
 	@Autowired
 	private Environment env;
@@ -349,8 +352,16 @@ public class MigrationController {
 						+ " " + e.getMessage();
 				log.error(errorMessage);
 			}
-
-			pagesString = siteHasContentItems(site_id, pagesString, sessionId);
+			
+			if (pagesString.isEmpty())
+			{
+				// generate error when there is no JSON feed for site pages
+				errorMessage += "Cannot find site pages by siteId: " + site_id + ". Maybe user do not have access to that site?";
+			}
+			else
+			{
+				pagesString = siteHasContentItems(site_id, pagesString, sessionId);
+			}
 		}
 
 		rv.put("pagesString", pagesString);
@@ -401,17 +412,24 @@ public class MigrationController {
 		}
 
 		if (membersString != null) {
-			JSONObject sJSON = new JSONObject(membersString);
-			JSONArray members = (JSONArray) sJSON.get("membership_collection");
-			// iterate through all members
-			for (int iMember = 0; members != null && iMember < members.length(); ++iMember) {
-				JSONObject member = members.getJSONObject(iMember);
-				String userEid = member.getString("userEid");
-				String userRole = member.getString("memberRole");
-				boolean isActive = member.getBoolean("active");
-				if (isActive) {
-					rv.put(userEid, userRole);
+			try
+			{
+				JSONObject sJSON = new JSONObject(membersString);
+				JSONArray members = (JSONArray) sJSON.get("membership_collection");
+				// iterate through all members
+				for (int iMember = 0; members != null && iMember < members.length(); ++iMember) {
+					JSONObject member = members.getJSONObject(iMember);
+					String userEid = member.getString("userEid");
+					String userRole = member.getString("memberRole");
+					boolean isActive = member.getBoolean("active");
+					if (isActive) {
+						rv.put(userEid, userRole);
+					}
 				}
+			}
+			catch (Exception e)
+			{
+				log.warn("error parsing member string:" + membersString + " for site " + site_id);
 			}
 		}
 
@@ -782,7 +800,7 @@ public class MigrationController {
 
 		String boxClientId = BoxUtils.getBoxClientId(request, env);
 		String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
-		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
+		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
 
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
@@ -795,14 +813,14 @@ public class MigrationController {
 			return null;
 		}
 
-		if (BoxUtils.getBoxAccessToken(userId) == null) {
+		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
-					remoteUserEmail, response);
+					remoteUserEmail, response, uRepository);
 		} else {
 			// get box folders json
-			return BoxUtils.getBoxFolders(userId, boxClientId, boxClientSecret);
+			return BoxUtils.getBoxFolders(userId, boxClientId, boxClientSecret, uRepository);
 		}
 		return null;
 	}
@@ -835,10 +853,11 @@ public class MigrationController {
 		String rv = "";
 
 		// check whether the user authentication token is store in memory
-		if (BoxUtils.getBoxAccessToken(userId) == null) {
+		if (uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) == null) {
 			rv = "Cannot find user's Box authentication info. ";
 		} else {
-			BoxUtils.removeBoxAccessToken(userId);
+			uRepository.deleteBoxAuthUserAccessToken(userId);
+			uRepository.deleteBoxAuthUserRefreshToken(userId);
 			rv = "User authentication info is removed. ";
 		}
 
@@ -856,12 +875,8 @@ public class MigrationController {
 	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getBoxAuthzTokens(HttpServletRequest request) {
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		}
-		String rv = BoxUtils.getBoxAccessToken(userId);
+		String userEmail = Utils.getCurrentUserEmail(request, env);
+		String rv = uRepository.findBoxAuthUserAccessToken(userEmail);
 
 		if (rv == null) {
 			// get the authCode,
@@ -871,10 +886,10 @@ public class MigrationController {
 			String boxClientId = BoxUtils.getBoxClientId(request, env);
 			String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
-					boxClientSecret, boxTokenUrl, userId);
+					boxClientSecret, boxTokenUrl, uRepository);
 
 			// try to get the access token after parsing the request string
-			rv = BoxUtils.getBoxAccessToken(userId);
+			rv = uRepository.findBoxAuthUserAccessToken(userEmail);
 		}
 
 		return rv != null ? BOX_AUTHORIZED_HTML : BOX_UNAUTHORIZED_HTML;
@@ -883,14 +898,7 @@ public class MigrationController {
 	@RequestMapping("/box/checkAuthorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
-
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			// use admin account id instead
-			userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		}
-		return Boolean.valueOf(BoxUtils.getBoxAccessToken(userId) != null);
+		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) != null);
 	}
 
 	/**
@@ -1100,9 +1108,7 @@ public class MigrationController {
 	 */
 	private String boxAuthorization(HttpServletRequest request,
 			HttpServletResponse response) {
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
-		String remoteUserEmail = Utils.getUserEmail(userId, request, env);
+		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
 		String boxClientId = BoxUtils.getBoxClientId(request, env);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
@@ -1110,15 +1116,16 @@ public class MigrationController {
 
 		log.debug("in boxAuthorization");
 
-		if (BoxUtils.getBoxAccessToken(userId) == null) {
-			log.debug("user " + userId
+		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
+			log.debug("user " + remoteUserEmail
 					+ " has not authorized to use Box. Start auth process.");
 			// go to Box authentication screen
 			// get access token and refresh token and store locally
-			return BoxUtils.authenticateString(boxAPIUrl, boxClientId,
-					boxClientRedirectUrl, remoteUserEmail, response);
+			BoxUtils.authenticate(boxAPIUrl, boxClientId,
+					boxClientRedirectUrl, remoteUserEmail, response, uRepository);
+			return "UnAuthorized";
 		} else {
-			log.debug("user " + userId + " already authorized");
+			log.debug("user " + remoteUserEmail + " already authorized");
 			return "Authorized";
 		}
 	}
@@ -1256,6 +1263,10 @@ public class MigrationController {
 		// use the Box admin id
 		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 		
+		// use the CTools server admin credentials
+		String ctoolsAdminUserName = env.getProperty("username");
+		String ctoolsAdminUserPassword = env.getProperty("password");
+		
 		// the bulk migration name based on user input
 		String bulkMigrationName = "Default Bulk Upload Name";
 
@@ -1337,12 +1348,12 @@ public class MigrationController {
 				String boxSiteFolderName = "CTools - " + siteName;
 
 				Info boxFolder = null;
-				if (BoxUtils.getBoxAccessToken(userId) == null) {
+				if (uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) == null) {
 					boxAuthenticate(request, response);
 				} else {
 					boxFolder = BoxUtils.createNewFolderAtRootLevel(userId,
 							boxAdminClientId, boxAdminClientSecret,
-							boxSiteFolderName, siteId);
+							boxSiteFolderName, siteId, uRepository);
 				}
 
 				// 4. save the migration record into database
@@ -1359,7 +1370,7 @@ public class MigrationController {
 						BoxUtils.addCollaboration(
 								env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 								userEmail, userRole, boxFolderId,
-								boxAdminClientId, boxAdminClientSecret);
+								boxAdminClientId, boxAdminClientSecret, uRepository);
 					}
 
 					// now after all checks passed, we are ready for migration

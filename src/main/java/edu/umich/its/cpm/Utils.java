@@ -223,12 +223,11 @@ public class Utils {
 	/**
 	 * construct the user email address
 	 */
-	public static String getUserEmail(String userId,
-			HttpServletRequest request, Environment env) {
-		String remoteUserEmail = userId;
+	public static String getCurrentUserEmail(HttpServletRequest request, Environment env) {
+		String remoteUserEmail = Utils.getCurrentUserId(request, env);
 		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			return remoteUserEmail = env
-					.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+			// use admin account id instead
+			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 		}
 		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
 			// if the remote user value is not of email format
@@ -259,9 +258,11 @@ public class Utils {
 	public static String getCurrentUserId(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String remoteUser = getRemoteUser(request);
-
-		String rvUser = remoteUser;
+		String rvUser = getRemoteUser(request);
+		
+		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+		}*/
 
 		// get the environment setting, default to "false"
 		String allowTestUserUrlOverride = env.getProperty(
@@ -281,13 +282,13 @@ public class Utils {
 					// check whether the current user is authorized to set
 					// "testUser" param in URL
 					if (ldapAuthorizationVerification(propLdapServerUrl,
-							propMCommGroup, remoteUser)) {
+							propMCommGroup, rvUser)) {
 						rvUser = testUser;
 					}
 				}
 			}
 
-			log.debug("CoSign user=" + remoteUser + " test user=" + testUser
+			log.debug("CoSign user=" + rvUser + " test user=" + testUser
 					+ " returned user=" + rvUser);
 		}
 		
@@ -314,7 +315,7 @@ public class Utils {
 	 * get CoSign user
 	 */
 	private static String getRemoteUser(HttpServletRequest request) {
-		return request.getRemoteUser();
+		return "zqian";//request.getRemoteUser();
 	}
 
 	/*
@@ -471,7 +472,7 @@ public class Utils {
 			}
 		}
 		String extension = FilenameUtils.getExtension(fileName);
-		if ((extension.isEmpty() || !Utils.HTML_FILE_EXTENSION
+		if ((extension == null || extension.isEmpty() || !Utils.HTML_FILE_EXTENSION
 				.equals(EXTENSION_SEPARATOR + extension))
 				&& (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.isOfURLMIMEType(type))) {
 			fileName = fileName + Utils.HTML_FILE_EXTENSION;

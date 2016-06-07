@@ -25,3 +25,11 @@ destination_type VARCHAR(99) NOT NULL,
 destination_url VARCHAR(99),
 status CLOB,
 PRIMARY KEY (MIGRATION_ID));
+
+-- create table box_auth_user
+create table box_auth_user (
+user_id VARCHAR(99) NOT NULL,
+state VARCHAR(99),
+access_token VARCHAR(99),
+refresh_token VARCHAR(99)
+PRIMARY KEY (user_id));
