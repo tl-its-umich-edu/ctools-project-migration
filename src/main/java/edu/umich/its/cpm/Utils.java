@@ -85,7 +85,7 @@ public class Utils {
 
 	// the at sign used in email address
 	private static final String EMAIL_AT = "@";
-	public static final String EMAIL_AT_UMICH = "@umich.edu";
+	private static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
@@ -232,16 +232,20 @@ public class Utils {
 			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
 		}
-		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
-			// if the remote user value is not of email format
-			// then it is the uniqname of umich user
-			// we need to attach "@umich.edu" to it to make it a full email
-			// address
-			remoteUserEmail = remoteUserEmail + EMAIL_AT_UMICH;
-		}
+		remoteUserEmail = getUserEmailFromUserId(remoteUserEmail);
 		return remoteUserEmail;
 	}
 
+	static public String getUserEmailFromUserId(String userEmail) {
+		if (userEmail.indexOf(EMAIL_AT) == -1) {
+			// if the userEmail value is not of email format
+			// then it is the uniqname of umich user
+			// we need to attach "@umich.edu" to it to make it a full email
+			// address
+			userEmail = userEmail + EMAIL_AT_UMICH;
+		}
+		return userEmail;
+	}
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
 	private static final String ALLOW_TESTUSER_URLOVERRIDE = "allow.testUser.urlOverride";
