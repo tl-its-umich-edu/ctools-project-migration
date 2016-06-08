@@ -225,9 +225,12 @@ public class Utils {
 	 */
 	public static String getCurrentUserEmail(HttpServletRequest request, Environment env) {
 		String remoteUserEmail = Utils.getCurrentUserId(request, env);
+		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
+		
 		if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			// use admin account id instead
 			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
 		}
 		if (remoteUserEmail.indexOf(EMAIL_AT) == -1) {
 			// if the remote user value is not of email format
