@@ -60,6 +60,22 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       });
       return null;
     };
+
+    $scope.seeReport = function(batchId, $index) {
+      // non stub version
+      var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
+      if ($rootScope.stubs){
+        // stub version
+        bulkUploadListUrl = $rootScope.urls.bulkUploadList;
+      }
+      BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
+        $log.warn(resultList)
+        $log.info('Getting list of sites in a batch process  batches with  ' + bulkUploadListUrl);
+        $scope.concluded[$index].list = resultList.data.entity;
+      });
+      return null;
+    };
+
     $scope.getOngoingList();
   }
 ]);

@@ -138,11 +138,25 @@
 										  </div>
                     </div>
                     <div class="row" ng-show="batch.list">
-                      {{batch.list}}
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-												<ol style="margin:0;padding:10px 30px">
-													<li ng-repeat="item in batch.list">{{item.site_name}}</li>
-												</ol>
+												<table class="table table-striped">
+                          <thead>
+                            <tr>
+                              <th scope="col">Site name</th>
+                              <th scope="col">Destination</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+  													<tr ng-repeat="item in batch.list">
+                              <td>
+                                {{item.site_name}}
+                              </td>
+                              <td>
+                                <a target="_top" href="{{item.destination_url}}">{{item.destination_url | destinationLinkName}}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+												</table>
 											</div>
 										</div>
 									</li>
@@ -164,10 +178,33 @@
                         <h4 class="site-header">{{batch[0]}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-												<a href="#" class="btn btn-default btn-xs" ng-click="seeReport(batch[1])">See
+												<a href="#" class="btn btn-default btn-xs" ng-click="seeReport(batch[1], $index)">See
 													report</a>
 											</div>
 										</div>
+                    <div class="row" ng-show="batch.list">
+											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+												<table class="table table-striped">
+                          <thead>
+                            <tr>
+                              <th scope="col">Site name</th>
+                              <th scope="col">Destination</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+  													<tr ng-repeat="item in batch.list">
+                              <td>
+                                {{item.site_name}}
+                              </td>
+                              <td>
+                                <a target="_top" href="{{item.destination_url}}">{{item.destination_url | destinationLinkName}}</a>
+                              </td>
+                            </tr>
+                          </tbody>
+												</table>
+											</div>
+										</div>
+                    
                   </li>
 								</ul>
 							</div>
