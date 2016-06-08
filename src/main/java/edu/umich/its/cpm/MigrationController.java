@@ -1366,7 +1366,7 @@ public class MigrationController {
 							request, siteId);
 					for (String userEid : userRoles.keySet()) {
 						String userRole = userRoles.get(userEid);
-						String userEmail = userEid + Utils.EMAIL_AT_UMICH;
+						String userEmail = Utils.getUserEmailFromUserId(userEid);
 						BoxUtils.addCollaboration(
 								env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 								userEmail, userRole, boxFolderId,

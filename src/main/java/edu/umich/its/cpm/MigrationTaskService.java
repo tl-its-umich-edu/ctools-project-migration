@@ -490,8 +490,8 @@ public class MigrationTaskService {
 			log.error(boxClientIdError);
 			boxMigrationStatus.append(boxClientIdError + LINE_BREAK);
 		}
-
-		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
+		
+		String remoteUserEmail = Utils.getUserEmailFromUserId(userId);
 
 		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
 			// go to Box authentication screen
