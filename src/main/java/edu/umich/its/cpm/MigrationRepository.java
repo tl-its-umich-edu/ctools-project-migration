@@ -6,6 +6,7 @@ import java.sql.Timestamp;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -24,8 +25,8 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.migrated_by = ?#{[0]} order by m.start_time desc")
-	List<Migration> findMigrations(String userId);
+	@Query("SELECT m FROM Migration m WHERE m.migrated_by like %:userId% order by m.start_time desc")
+	List<Migration> findMigrations(@Param("userId") String userId);
 
 	/**
 	 * Finds finished migrations, with not-null stop time
@@ -33,8 +34,8 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by = ?#{[0]} order by m.end_time desc")
-	public List<Migration> findMigrated(String userId);
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NOT NULL and m.migrated_by like %:userId% order by m.end_time desc")
+	public List<Migration> findMigrated(@Param("userId") String userId);
 
 	/**
 	 * Finds ongoing migrations, done by given user
@@ -42,8 +43,8 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param userId
 	 * @return
 	 */
-	@Query("SELECT m FROM Migration m WHERE m.end_time IS NULL and m.migrated_by = ?#{[0]} order by m.start_time desc")
-	public List<Migration> findMigrating(String userId);
+	@Query("SELECT m FROM Migration m WHERE m.end_time IS NULL and m.migrated_by LIKE %:userId% order by m.start_time desc")
+	public List<Migration> findMigrating(@Param("userId") String userId);
 
 	/**
 	 * Finds migration with migration_id
@@ -51,7 +52,7 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 * @param migration_id
 	 * @return A migration with migration_id
 	 */
-	// @Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
+	@Query("SELECT m FROM Migration m WHERE m.migration_id = ?#{[0]}")
 	public Migration findOne(String migration_id);
 
 	/**
