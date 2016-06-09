@@ -11,7 +11,7 @@
 </head>
 
 <body ng-app="projectMigrationApp">
-	<nav role="navigation" class="navbar navbar-default"
+<nav role="navigation" class="navbar navbar-default"
 		style="background: #00274c">
 		<div class="container-fluid">
 			<!-- Brand and toggle get grouped for better mobile display -->
@@ -127,32 +127,28 @@
                       </div>
                     </div>
                   </li>
-                  <li ng-repeat="batch in ongoing" class="list-group-item">
+                  <li ng-repeat="ongoingBatch in ongoing" class="list-group-item">
                     <div class="row">
   										<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-                        <h4 class="site-header">{{batch[0]}}</h4>
+                        <h4 class="site-header">{{ongoingBatch[0]}}</h4>
   										</div>
                       <div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-                        <a ng-show="!batch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(batch[1], $index)">Show
+                        <a ng-show="!ongoingBatch.list" href="" class="showList btn btn-default btn-xs" ng-click="getUploadList(ongoingBatch[1], $index)">Show
 													list</a>
 										  </div>
                     </div>
-                    <div class="row" ng-show="batch.list">
+                    <div class="row" ng-show="ongoingBatch.list">
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 												<table class="table table-striped">
                           <thead>
                             <tr>
                               <th scope="col">Site name</th>
-                              <th scope="col">Destination</th>
                             </tr>
                           </thead>
                           <tbody>
-  													<tr ng-repeat="item in batch.list">
+  													<tr ng-repeat="item in ongoingBatch.list">
                               <td>
                                 {{item.site_name}}
-                              </td>
-                              <td>
-                                <a target="_top" href="{{item.destination_url}}">{{item.destination_url | destinationLinkName}}</a>
                               </td>
                             </tr>
                           </tbody>
@@ -172,39 +168,43 @@
                       </div>
                     </div>
                   </li>
-									<li class="list-group-item row" ng-repeat="batch in concluded">
+									<li class="list-group-item row" ng-repeat="concludedBatch in concluded">
                     <div class="row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-                        <h4 class="site-header">{{batch[0]}}</h4>
+                        <h4 class="site-header">{{concludedBatch[0]}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-												<a href="#" class="btn btn-default btn-xs" ng-click="seeReport(batch[1], $index)">See
+												<a href="#" class="btn btn-default btn-xs" ng-click="getBatchReport(concludedBatch[1], $index)">See
 													report</a>
 											</div>
 										</div>
-                    <div class="row" ng-show="batch.list">
+                    <div class="row" ng-show="concludedBatch.list">
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
 												<table class="table table-striped">
                           <thead>
                             <tr>
                               <th scope="col">Site name</th>
                               <th scope="col">Destination</th>
+                              <th scope="col">Report</th>
                             </tr>
                           </thead>
                           <tbody>
-  													<tr ng-repeat="item in batch.list">
+  													<tr ng-repeat="item in concludedBatch.list">
                               <td>
                                 {{item.site_name}}
                               </td>
                               <td>
                                 <a target="_top" href="{{item.destination_url}}">{{item.destination_url | destinationLinkName}}</a>
                               </td>
+                              <td>
+                                <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(item.bulk_migration_id, item.site_id)">Site Report</a>
+                              </td>
                             </tr>
                           </tbody>
 												</table>
 											</div>
 										</div>
-                    
+
                   </li>
 								</ul>
 							</div>
@@ -213,7 +213,41 @@
 				</div>
 			</div>
 		</div>
-	</div>
+
+    <div class="modal fade" id="siteReportModal" tabindex="-1" role="dialog"
+      aria-labelledby="siteReportModalLabel">
+      <div class="modal-dialog" role="document">
+        <div class="modal-content">
+          <div class="modal-header">
+            <button type="button" class="close" data-dismiss="modal"
+              aria-label="Close">
+              <span aria-hidden="true">&times;</span>
+            </button>
+            <h4 class="modal-title" id="siteReportModalLabel">Report for site {{siteReport.site_name}}</h4>
+          </div>
+          <div class="modal-body">
+            <div class="container">
+              <p>
+                {{siteReport.tool_name}}
+              </p>
+
+              <ul class="list-group" style="margin: 0 0;width:635px">
+                <li ng-repeat="item in siteReport.status.data" class="list-group-item">
+                  {{item.file_name}}<br><small>{{item.status}}</small>
+                </li>
+              </ul>
+
+            </div>
+          </div>
+          <div class="modal-footer">
+            <button type="button" class="btn btn-link" data-dismiss="modal">Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
 
 
 
@@ -221,20 +255,6 @@
 		src="vendors/jquery/jquery-1.11.0.min.js"></script>
 	<script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript"
 		charset="utf-8"></script>
-	<script type="text/javascript">
-		$(function() {
-			$('.seeReport').on("click", function(e) {
-				$('li.report').fadeOut('slow');
-				e.preventDefault;
-				$(this).closest('li').next('li.report').fadeIn('slow');
-			});
-			$('.showList').on("click", function(e) {
-				$('li.list').fadeOut('slow');
-				e.preventDefault;
-				$(this).closest('li').next('li.list').fadeIn('slow');
-			});
-		});
-	</script>
 	</div>
 	<script type="text/javascript"
 		src="vendors/jquery/jquery-1.11.0.min.js"></script>

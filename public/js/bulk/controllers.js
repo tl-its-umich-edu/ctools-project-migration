@@ -61,17 +61,21 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       return null;
     };
 
-    $scope.seeReport = function(batchId, $index) {
-      // non stub version
+    $scope.getBatchReport = function(batchId, $index) {
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
-      if ($rootScope.stubs){
-        // stub version
-        bulkUploadListUrl = $rootScope.urls.bulkUploadList;
-      }
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
-        $log.warn(resultList)
-        $log.info('Getting list of sites in a batch process  batches with  ' + bulkUploadListUrl);
+        $log.info('Getting of sites in a batch process batches with  ' + bulkUploadListUrl);
         $scope.concluded[$index].list = resultList.data.entity;
+      });
+      return null;
+    };
+
+    $scope.getSiteReport = function(batchId, siteId) {
+      // non stub version
+      var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
+      BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
+        $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
+        $scope.siteReport = resultList.data.entity;
       });
       return null;
     };
