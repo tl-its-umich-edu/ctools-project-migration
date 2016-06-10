@@ -1,16 +1,36 @@
 'use strict';
-/* global projectMigrationApp*/
+/* global projectMigrationApp, validateBulkRequest, $*/
 
-projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', 'BulkUpload',
-  function($rootScope, $scope, $log, $q, $window, BulkUpload) {
+projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload',
+  function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload) {
+
     $scope.bulkUpload = function() {
-      var file = $scope.bulkUploadFile;
-      var name = $scope.upload.name;
-      var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-      BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function() {
-        $log.info('hhh after ' + bulkUploadUrl);
-        // TODO
-      });
+      //$log.info($scope.upload.name);
+      if(!$scope.bulkUploadFile || !$scope.upload.name){
+        $('#bulkUploadFileContainer').find('.form-group').addClass("has-error");
+      }
+      else {
+        var file = $scope.bulkUploadFile;
+        var name = $scope.upload.name;
+        $scope.bulkUploadInProcess = true;
+        var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
+        BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
+          $scope.bulkUploadInProcess = false;
+          $log.info('hhh after ' + bulkUploadUrl);
+          // Reset form
+          $scope.upload.name ='';
+          $scope.bulkUploadFile ='';
+          $('#upload')[0].reset();
+          //notify user
+
+          $scope.uploadStarted = true;
+          $scope.uploadStartedMessage=response;
+          $timeout(function() {
+            $scope.uploadStarted = false;
+          }, 3000);
+
+        });
+      }
     };
 
     $scope.getOngoingList = function() {
@@ -40,6 +60,26 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       });
       return null;
     };
+
+    $scope.getBatchReport = function(batchId, $index) {
+      var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
+      BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
+        $log.info('Getting of sites in a batch process batches with  ' + bulkUploadListUrl);
+        $scope.concluded[$index].list = resultList.data.entity;
+      });
+      return null;
+    };
+
+    $scope.getSiteReport = function(batchId, siteId) {
+      // non stub version
+      var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
+      BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
+        $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
+        $scope.siteReport = resultList.data.entity;
+      });
+      return null;
+    };
+
     $scope.getOngoingList();
   }
 ]);
