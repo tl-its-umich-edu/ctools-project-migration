@@ -583,31 +583,31 @@ public class BoxUtils {
 				// map CTools roles to Box Collaborator roles
 				// default to be Box View role
 				BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
-				if ("Owner".equals(role))
+				if (Utils.ROLE_OWNER.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.CO_OWNER;
 				}
-				else if ("Organizer".equals(role))
+				else if (Utils.ROLE_ORGANIZER.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.EDITOR;
 				}
-				else if ("Member".equals(role))
+				else if (Utils.ROLE_MEMBER.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
 				}
-				else if ("Observer".equals(role))
+				else if (Utils.ROLE_OBSERVER.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.VIEWER;
 				}
-				else if ("maintainer".equals(role))
+				else if (Utils.ROLE_MAINTAINER.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.CO_OWNER;
 				}
-				else if ("Instructor".equals(role))
+				else if (Utils.ROLE_INSTRUCTOR.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.EDITOR;
 				}
-				else if ("student".equals(role))
+				else if (Utils.ROLE_STUDENT.equals(role))
 				{
 					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
 				}

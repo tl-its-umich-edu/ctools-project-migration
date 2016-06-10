@@ -54,6 +54,14 @@ import org.apache.commons.io.FilenameUtils;
 @Configuration
 public class Utils {
 
+	public static final String ROLE_OWNER = "Owner";
+	public static final String ROLE_ORGANIZER = "Organizer";
+	public static final String ROLE_MEMBER = "Member";
+	public static final String ROLE_OBSERVER = "Observer";
+	public static final String ROLE_MAINTAINER = "maintainer";
+	public static final String ROLE_INSTRUCTOR = "Instructor";
+	public static final String ROLE_STUDENT = "student";
+	
 	public static final String COLLECTION_TYPE = "collection";
 
 	public static final String MIGRATION_TYPE_BOX = "box";

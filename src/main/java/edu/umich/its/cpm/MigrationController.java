@@ -937,11 +937,25 @@ public class MigrationController {
 						+ Utils.PATH_SEPARATOR + boxFolderName;
 			}
 		}
+		
+		// add site members to migration
+		HashMap<String, String> userRoles = get_site_members(
+				request, siteId);
+		StringBuffer allSiteOwners = new StringBuffer(Utils.getUserEmailFromUserId(userId));
+		for (String userEid : userRoles.keySet()) {
+			String userRole = userRoles.get(userEid);
+			String userEmail = Utils.getUserEmailFromUserId(userEid);
+			
+			if (Utils.ROLE_OWNER.equals(userRole))
+			{
+				allSiteOwners.append(",").append(userEmail);
+			}
+		}
 
 		// assign null values to batch id and name
 		// create new migration record
 		rv = newMigrationRecord(status, null, null, siteId, siteName, toolId,
-				toolName, destinationType, userId, targetUrl);
+				toolName, destinationType, allSiteOwners.toString(), targetUrl);
 
 		return rv;
 	}
@@ -963,7 +977,7 @@ public class MigrationController {
 		// status message
 		StringBuffer status = new StringBuffer();
 
-		String destinationType = "box";
+		String destinationType = Utils.MIGRATION_TYPE_BOX;
 		String targetUrl = "";
 		if (Utils.MIGRATION_TYPE_BOX.equalsIgnoreCase(destinationType)) {
 			// the format of folder path in box
@@ -1357,6 +1371,8 @@ public class MigrationController {
 				}
 
 				// 4. save the migration record into database
+				// the string to hold on all site owner's id, and the admin id who are doing bulk migration
+				StringBuffer allSiteOwners = new StringBuffer(userId);
 				if (boxFolder != null) {
 					String boxFolderId = boxFolder.getID();
 					String boxFolderName = boxFolder.getName();
@@ -1371,6 +1387,10 @@ public class MigrationController {
 								env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 								userEmail, userRole, boxFolderId,
 								boxAdminClientId, boxAdminClientSecret, uRepository);
+						if (Utils.ROLE_OWNER.equals(userRole))
+						{
+							allSiteOwners.append(",").append(userEmail);
+						}
 					}
 
 					// now after all checks passed, we are ready for migration
@@ -1378,11 +1398,12 @@ public class MigrationController {
 					HashMap<String, Object> saveBulkMigration = saveBulkMigrationRecord(
 							bulkMigrationId, bulkMigrationName, siteId,
 							siteName, toolId, toolName, boxFolderId,
-							boxFolderName, userId);
+							boxFolderName, allSiteOwners.toString());
 
 					// 5. delegate the actual content migrations to async calls
+					// Concatenating all site owners' names together with 
 					HashMap<String, String> status = createMigrationTask(
-							request, response, "box", userId,
+							request, response, Utils.MIGRATION_TYPE_BOX, userId,
 							new HashMap<String, String>(), boxFolderId, siteId,
 							toolId, saveBulkMigration);
 					if (status.containsKey("errorMessage")) {
