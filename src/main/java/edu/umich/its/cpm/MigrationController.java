@@ -846,7 +846,7 @@ public class MigrationController {
 	public Response unauthorizeBox(HttpServletRequest request,
 			HttpServletResponse response) {
 
-		// get the current user id
+		// get the current user email
 		String userEmail = Utils.getCurrentUserEmail(request, env);
 
 		// the return string
@@ -1238,9 +1238,9 @@ public class MigrationController {
 			for (Migration m : migrations )
 			{
 				String siteId = m.getSite_id();
-				String siteStatusBoolean = "success";
-				String siteStatus = m.getStatus();
-				JSONObject siteStatusJson = new JSONObject(siteStatus);
+				String siteStatus = Utils.STATUS_SUCCESS;
+				String siteStatusString = m.getStatus();
+				JSONObject siteStatusJson = new JSONObject(siteStatusString);
 				// look the tools attribute and find resource tool
 				JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
 				for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
@@ -1252,22 +1252,22 @@ public class MigrationController {
 						// file path did not end with "/"
 						// and if there is error, status message won't have String "Box upload successful for file"
 						// set the site migration status to be failure
-						siteStatusBoolean = "failure";
+						siteStatus = Utils.STATUS_FAILURE;
 						errorSiteCount++;
 						break;
 					}
 				}
-				sitesList.add(siteId + ": " + siteStatusBoolean);
+				sitesList.add(siteId + ": " + siteStatus);
 			}
 			
 			if (errorSiteCount == 0)
 			{
 				// all sites are migrated successfully within the bulk migration
-				statusMap.put("status", "success");
+				statusMap.put("status", Utils.STATUS_SUCCESS);
 			}
 			else
 			{
-				statusMap.put("status", "failure");
+				statusMap.put("status", Utils.STATUS_FAILURE);
 				statusMap.put("errors", errorSiteCount);
 			}
 			

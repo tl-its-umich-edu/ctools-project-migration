@@ -571,7 +571,7 @@ public class MigrationTaskService {
 						migrationId);
 		repository.setMigrationStatus(obj.toString(), migrationId);
 
-		rvMap.put("status", "success");
+		rvMap.put("status", Utils.STATUS_SUCCESS);
 		return new AsyncResult<HashMap<String, String>>(rvMap);
 	}
 

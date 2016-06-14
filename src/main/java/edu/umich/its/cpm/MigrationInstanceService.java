@@ -139,7 +139,7 @@ public class MigrationInstanceService {
 		userBoxMigrationRequests.add(mFields);
 		BoxUtils.setBoxMigrationRequestForUser(userId, userBoxMigrationRequests);
         
-        return "success";
+        return Utils.STATUS_SUCCESS;
 	}
 	
 	/**

@@ -54,6 +54,10 @@ import org.apache.commons.io.FilenameUtils;
 @Configuration
 public class Utils {
 
+	// migration status string
+	public static final String STATUS_SUCCESS = "success";
+	public static final String STATUS_FAILURE = "failure";
+	
 	public static final String ROLE_OWNER = "Owner";
 	public static final String ROLE_ORGANIZER = "Organizer";
 	public static final String ROLE_MEMBER = "Member";
