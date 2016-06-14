@@ -1246,7 +1246,7 @@ public class MigrationController {
 				for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
 					JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
 					String path = itemJSON.getString("path");
-					String status = itemJSON.getString("status");
+					String status = itemJSON.getString(Utils.MIGRATION_STATUS);
 					if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
 					{
 						// file path did not end with "/"
@@ -1263,15 +1263,15 @@ public class MigrationController {
 			if (errorSiteCount == 0)
 			{
 				// all sites are migrated successfully within the bulk migration
-				statusMap.put("status", Utils.STATUS_SUCCESS);
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
 			}
 			else
 			{
-				statusMap.put("status", Utils.STATUS_FAILURE);
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_FAILURE);
 				statusMap.put("errors", errorSiteCount);
 			}
 			
-			totalMap.put("status", statusMap);
+			totalMap.put("status-summary", statusMap);
 			totalMap.put("sites", sitesList);
 			
 			

@@ -57,12 +57,12 @@ public class StatusPingEndpoint implements Endpoint<String>{
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
 			try
 			{
-				statusMap.put("status", repository.validate() >= 0 ? "OK":"Unable to connect to database.");
+				statusMap.put(Utils.MIGRATION_STATUS, repository.validate() >= 0 ? "OK":"Unable to connect to database.");
 			}
 			catch (Exception e)
 			{
 				// IOException might be thrown, due to database connection problems
-				statusMap.put("status", "Unable to connect to database.");
+				statusMap.put(Utils.MIGRATION_STATUS, "Unable to connect to database.");
 				log.error(this + " Unable to connect to database.");
 			}
 			rv = (new JSONObject(statusMap)).toString();
