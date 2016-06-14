@@ -499,7 +499,7 @@ public class MigrationTaskService {
 			BoxUtils.authenticate(boxAPIUrl, boxClientId, boxClientRedirectUrl,
 					remoteUserEmail, response, uRepository);
 
-			rvMap.put("status", "fail");
+			rvMap.put(Utils.MIGRATION_STATUS, "fail");
 			return new AsyncResult<HashMap<String, String>>(rvMap);
 		}
 
@@ -571,7 +571,7 @@ public class MigrationTaskService {
 						migrationId);
 		repository.setMigrationStatus(obj.toString(), migrationId);
 
-		rvMap.put("status", "success");
+		rvMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
 		return new AsyncResult<HashMap<String, String>>(rvMap);
 	}
 

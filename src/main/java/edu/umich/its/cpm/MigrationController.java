@@ -846,8 +846,8 @@ public class MigrationController {
 	public Response unauthorizeBox(HttpServletRequest request,
 			HttpServletResponse response) {
 
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
+		// get the current user email
+		String userEmail = Utils.getCurrentUserEmail(request, env);
 
 		// the return string
 		String rv = "";
@@ -856,19 +856,19 @@ public class MigrationController {
 		if (uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) == null) {
 			rv = "Cannot find user's Box authentication info. ";
 		} else {
-			uRepository.deleteBoxAuthUserAccessToken(userId);
-			uRepository.deleteBoxAuthUserRefreshToken(userId);
+			uRepository.deleteBoxAuthUserAccessToken(userEmail);
+			uRepository.deleteBoxAuthUserRefreshToken(userEmail);
 			rv = "User authentication info is removed. ";
 		}
 
-		log.info("/box/unauthorize for user " + userId + " " + rv);
+		log.info("/box/unauthorize for user " + userEmail + " " + rv);
 		try {
 			return Response.status(Response.Status.OK).entity(rv).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity("Cannot remove box authentication info for user "
-							+ userId + ": " + e.getMessage()).build();
+							+ userEmail + ": " + e.getMessage()).build();
 		}
 	}
 
@@ -1215,6 +1215,9 @@ public class MigrationController {
 
 	/**
 	 * get all migration records within one bulk upload process
+	 * according to TLCPM-295, the json should not return the data node of the status node. 
+	 * The status node should return a generic status key with a generic message value that also has error count. 
+	 * As well as the list of sites with failure/success flags.
 	 * 
 	 * @return
 	 */
@@ -1227,7 +1230,52 @@ public class MigrationController {
 		try {
 			List<Migration> migrations = repository
 					.getMigrationsInBulkUpload(bulk_upload_id);
-			return Response.status(Response.Status.OK).entity(migrations)
+			
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			List<String> sitesList = new ArrayList<String>();
+			HashMap<String, Object> totalMap = new HashMap<String, Object>();
+			int errorSiteCount = 0;
+			for (Migration m : migrations )
+			{
+				String siteId = m.getSite_id();
+				String siteStatus = Utils.STATUS_SUCCESS;
+				String siteStatusString = m.getStatus();
+				JSONObject siteStatusJson = new JSONObject(siteStatusString);
+				// look the tools attribute and find resource tool
+				JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
+				for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
+					JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
+					String path = itemJSON.getString("path");
+					String status = itemJSON.getString(Utils.MIGRATION_STATUS);
+					if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
+					{
+						// file path did not end with "/"
+						// and if there is error, status message won't have String "Box upload successful for file"
+						// set the site migration status to be failure
+						siteStatus = Utils.STATUS_FAILURE;
+						errorSiteCount++;
+						break;
+					}
+				}
+				sitesList.add(siteId + ": " + siteStatus);
+			}
+			
+			if (errorSiteCount == 0)
+			{
+				// all sites are migrated successfully within the bulk migration
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
+			}
+			else
+			{
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_FAILURE);
+				statusMap.put("errors", errorSiteCount);
+			}
+			
+			totalMap.put("status-summary", statusMap);
+			totalMap.put("sites", sitesList);
+			
+			
+			return Response.status(Response.Status.OK).entity(totalMap)
 					.build();
 		} catch (Exception e) {
 			return Response

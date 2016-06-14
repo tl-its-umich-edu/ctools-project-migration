@@ -89,7 +89,7 @@ public class MigrationInstanceService {
 					if (future.isDone())
 					{
 						HashMap<String, String> rv = future.get();
-						log.debug("***** future return userId=" + rv.get("userId") + " siteId=" + rv.get("siteId") + " status=" + rv.get("status"));
+						log.debug("***** future return userId=" + rv.get("userId") + " siteId=" + rv.get("siteId") + " status=" + rv.get(Utils.MIGRATION_STATUS));
 						
 						// if the request is finished/processed, remove it from the queue
 						String userId = rv.get("userId");
@@ -139,7 +139,7 @@ public class MigrationInstanceService {
 		userBoxMigrationRequests.add(mFields);
 		BoxUtils.setBoxMigrationRequestForUser(userId, userBoxMigrationRequests);
         
-        return "success";
+        return Utils.STATUS_SUCCESS;
 	}
 	
 	/**

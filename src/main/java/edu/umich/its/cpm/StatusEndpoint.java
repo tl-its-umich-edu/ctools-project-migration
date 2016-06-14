@@ -6,18 +6,15 @@ import org.springframework.stereotype.Component;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.HashMap;
-
 import java.util.Iterator;
 import java.util.Properties;
 
 import javax.servlet.ServletContext;
 
 import org.springframework.web.context.ServletContextAware;
-
 import org.springframework.core.env.Environment;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.annotation.PropertySource;
-
 import org.json.JSONObject;
 
 /**
@@ -37,7 +34,7 @@ public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 	private Environment env;
 	
 	public String getId() {
-		return "status";
+		return Utils.MIGRATION_STATUS;
 	}
 
 	public boolean isEnabled() {
