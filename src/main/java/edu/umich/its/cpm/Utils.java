@@ -57,6 +57,7 @@ public class Utils {
 	// migration status string
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
+	public static final String STATUS_ONGING = "onging";
 	
 	public static final String ROLE_OWNER = "Owner";
 	public static final String ROLE_ORGANIZER = "Organizer";

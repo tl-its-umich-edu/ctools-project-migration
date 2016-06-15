@@ -1235,40 +1235,55 @@ public class MigrationController {
 			List<String> sitesList = new ArrayList<String>();
 			HashMap<String, Object> totalMap = new HashMap<String, Object>();
 			int errorSiteCount = 0;
+			boolean ongoing = false;
 			for (Migration m : migrations )
 			{
 				String siteId = m.getSite_id();
 				String siteStatus = Utils.STATUS_SUCCESS;
 				String siteStatusString = m.getStatus();
-				JSONObject siteStatusJson = new JSONObject(siteStatusString);
-				// look the tools attribute and find resource tool
-				JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
-				for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
-					JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
-					String path = itemJSON.getString("path");
-					String status = itemJSON.getString(Utils.MIGRATION_STATUS);
-					if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
-					{
-						// file path did not end with "/"
-						// and if there is error, status message won't have String "Box upload successful for file"
-						// set the site migration status to be failure
-						siteStatus = Utils.STATUS_FAILURE;
-						errorSiteCount++;
-						break;
+				if (siteStatusString != null)
+				{
+					JSONObject siteStatusJson = new JSONObject(siteStatusString);
+					// look the tools attribute and find resource tool
+					JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
+					for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
+						JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
+						String path = itemJSON.getString("path");
+						String status = itemJSON.getString(Utils.MIGRATION_STATUS);
+						if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
+						{
+							// file path did not end with "/"
+							// and if there is error, status message won't have String "Box upload successful for file"
+							// set the site migration status to be failure
+							siteStatus = Utils.STATUS_FAILURE;
+							errorSiteCount++;
+							break;
+						}
 					}
+					sitesList.add(siteId + ": " + siteStatus);
 				}
-				sitesList.add(siteId + ": " + siteStatus);
+				else
+				{
+					sitesList.add(siteId + ": " + Utils.STATUS_ONGING);
+					ongoing = true;
+				}
 			}
 			
-			if (errorSiteCount == 0)
+			if (errorSiteCount != 0)
 			{
-				// all sites are migrated successfully within the bulk migration
-				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
+				// error
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_FAILURE);
+				statusMap.put("errors", errorSiteCount);
+			}
+			else if (ongoing)
+			{
+				// migration not finished yet
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_ONGING);
 			}
 			else
 			{
-				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_FAILURE);
-				statusMap.put("errors", errorSiteCount);
+				// all sites are migrated successfully within the bulk migration
+				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
 			}
 			
 			totalMap.put("status-summary", statusMap);
