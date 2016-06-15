@@ -55,9 +55,8 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
         bulkUploadListUrl = $rootScope.urls.bulkUploadList;
       }
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
-
         $log.info('Getting list of sites in a batch process  batches with  ' + bulkUploadListUrl);
-        $scope.ongoing[$index].list = resultList.data.entity;
+        $scope.ongoing[$index].list = resultList.data.entity.sites;
       });
       return null;
     };

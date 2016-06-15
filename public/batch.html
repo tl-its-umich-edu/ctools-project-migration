@@ -139,20 +139,11 @@
                     </div>
                     <div class="row" ng-show="ongoingBatch.list">
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-												<table class="table table-striped">
-                          <thead>
-                            <tr>
-                              <th scope="col">Site name</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-  													<tr ng-repeat="item in ongoingBatch.list">
-                              <td>
-                                {{item.site_name}}
-                              </td>
-                            </tr>
-                          </tbody>
-												</table>
+                        <ol>
+                          <li ng-repeat="item in ongoingBatch.list">
+                            {{item.split(':')[0]}}
+                          </li>
+                        </ol>
 											</div>
 										</div>
 									</li>
