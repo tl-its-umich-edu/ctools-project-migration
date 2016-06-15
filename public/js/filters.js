@@ -21,7 +21,22 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
     return url.replace('ctqasearch','ctqa').replace('ctdevsearch','ctdev').replace('ctsearch.vip.itd','ctools').replace('/direct','/portal');
   };
 }).filter('destinationLinkName', function() {
-  return function( url) {
-    return _.last(url.split('/'));
-  };
+    return function( url) {
+      if(url){
+        return _.last(url.split('/'));
+      }
+    };
+
+}).filter('whatStatus', function() {
+    return function(status) {
+      if(status){
+        if(status.indexOf('success') !==-1 || status.indexOf('created') !==-1){
+            return "glyphicon glyphicon-ok";
+        }
+        else {
+            return "glyphicon glyphicon-fire";
+        }
+      }
+    };
+
 });

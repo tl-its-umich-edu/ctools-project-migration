@@ -1,7 +1,7 @@
 'use strict';
 /* global angular */
 
-var projectMigrationApp = angular.module('projectMigrationApp', ['projectMigrationFilters','ngAnimate']);
+var projectMigrationApp = angular.module('projectMigrationApp', ['projectMigrationFilters']);
 
 projectMigrationApp.run(function($rootScope) {
   //for any init values needed
