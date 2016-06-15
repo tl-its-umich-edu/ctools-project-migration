@@ -371,6 +371,30 @@ public class MigrationController {
 	}
 
 	/**
+	 * API call to get CTools site membership
+	 * 
+	 * @return
+	 */
+	@GET
+	@RequestMapping("/siteMembership/{siteId}")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Response getSiteMembershipAPI(
+			@PathVariable("siteId") String siteId,
+			HttpServletRequest request) {
+		try {
+
+			// return CTools site members
+			return Response.status(Response.Status.OK).entity(get_site_members(request, siteId))
+					.build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Cannot get CTools site members for site "
+							+ siteId + ": " + e.getMessage()).build();
+		}
+	}
+	
+	/**
 	 * REST API call to get CTools site members
 	 * 
 	 * @param request
@@ -378,7 +402,8 @@ public class MigrationController {
 	 * @return
 	 */
 	private HashMap<String, String> get_site_members(
-			HttpServletRequest request, String site_id) {
+			HttpServletRequest request, String site_id)
+			throws Exception {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
 		String membersString = "";
@@ -409,6 +434,7 @@ public class MigrationController {
 			errorMessage = "Cannot find site members by siteId: " + site_id
 					+ " " + e.getMessage();
 			log.error(errorMessage);
+			throw e;
 		}
 
 		if (membersString != null) {
@@ -430,6 +456,7 @@ public class MigrationController {
 			catch (Exception e)
 			{
 				log.warn("error parsing member string:" + membersString + " for site " + site_id);
+				throw e;
 			}
 		}
 
@@ -938,18 +965,26 @@ public class MigrationController {
 			}
 		}
 		
-		// add site members to migration
-		HashMap<String, String> userRoles = get_site_members(
-				request, siteId);
+		// include the current user as site owner first
 		StringBuffer allSiteOwners = new StringBuffer(Utils.getUserEmailFromUserId(userId));
-		for (String userEid : userRoles.keySet()) {
-			String userRole = userRoles.get(userEid);
-			String userEmail = Utils.getUserEmailFromUserId(userEid);
-			
-			if (Utils.ROLE_OWNER.equals(userRole))
-			{
-				allSiteOwners.append(",").append(userEmail);
+		try
+		{
+			// add site members to migration
+			HashMap<String, String> userRoles = get_site_members(
+					request, siteId);
+			for (String userEid : userRoles.keySet()) {
+				String userRole = userRoles.get(userEid);
+				String userEmail = Utils.getUserEmailFromUserId(userEid);
+				
+				if (Utils.ROLE_OWNER.equals(userRole))
+				{
+					allSiteOwners.append(",").append(userEmail);
+				}
 			}
+		}
+		catch (Exception e)
+		{
+			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
 		}
 
 		// assign null values to batch id and name
@@ -1444,26 +1479,34 @@ public class MigrationController {
 				}
 
 				// 4. save the migration record into database
-				// the string to hold on all site owner's id, and the admin id who are doing bulk migration
+				// the string to hold on all site owner's id, 
+				// and the admin id who are doing bulk migration is listed first
 				StringBuffer allSiteOwners = new StringBuffer(userId);
 				if (boxFolder != null) {
 					String boxFolderId = boxFolder.getID();
 					String boxFolderName = boxFolder.getName();
 
-					// add site members to Box folder as collaborators
-					HashMap<String, String> userRoles = get_site_members(
-							request, siteId);
-					for (String userEid : userRoles.keySet()) {
-						String userRole = userRoles.get(userEid);
-						String userEmail = Utils.getUserEmailFromUserId(userEid);
-						BoxUtils.addCollaboration(
-								env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
-								userEmail, userRole, boxFolderId,
-								boxAdminClientId, boxAdminClientSecret, uRepository);
-						if (Utils.ROLE_OWNER.equals(userRole))
-						{
-							allSiteOwners.append(",").append(userEmail);
+					try
+					{
+						// add site members to Box folder as collaborators
+						HashMap<String, String> userRoles = get_site_members(
+								request, siteId);
+						for (String userEid : userRoles.keySet()) {
+							String userRole = userRoles.get(userEid);
+							String userEmail = Utils.getUserEmailFromUserId(userEid);
+							BoxUtils.addCollaboration(
+									env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
+									userEmail, userRole, boxFolderId,
+									boxAdminClientId, boxAdminClientSecret, uRepository);
+							if (Utils.ROLE_OWNER.equals(userRole))
+							{
+								allSiteOwners.append(",").append(userEmail);
+							}
 						}
+					}
+					catch (Exception e)
+					{
+						log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
 					}
 
 					// now after all checks passed, we are ready for migration
