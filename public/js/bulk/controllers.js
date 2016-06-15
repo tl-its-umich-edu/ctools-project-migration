@@ -12,6 +12,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       else {
         var file = $scope.bulkUploadFile;
         var name = $scope.upload.name;
+        $log.info(name);
         $scope.bulkUploadInProcess = true;
         var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
         BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
@@ -27,7 +28,10 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
           $scope.uploadStartedMessage=response;
           $timeout(function() {
             $scope.uploadStarted = false;
+            $('a[href="#ongoing"]').trigger('click');
+            $scope.getOngoingList();
           }, 3000);
+
 
         });
       }
