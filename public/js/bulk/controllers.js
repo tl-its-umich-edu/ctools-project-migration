@@ -12,6 +12,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       else {
         var file = $scope.bulkUploadFile;
         var name = $scope.upload.name;
+        $log.info(name);
         $scope.bulkUploadInProcess = true;
         var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
         BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
@@ -27,7 +28,10 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
           $scope.uploadStartedMessage=response;
           $timeout(function() {
             $scope.uploadStarted = false;
+            $('a[href="#ongoing"]').trigger('click');
+            $scope.getOngoingList();
           }, 3000);
+
 
         });
       }
@@ -56,26 +60,30 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       }
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting list of sites in a batch process  batches with  ' + bulkUploadListUrl);
-        $scope.ongoing[$index].list = resultList.data.entity;
+        $scope.ongoing[$index].list = resultList.data.entity.sites;
       });
       return null;
     };
 
     $scope.getBatchReport = function(batchId, $index) {
+      $scope.concluded[$index].batchReportLoading = true;
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting of sites in a batch process batches with  ' + bulkUploadListUrl);
-        $scope.concluded[$index].list = resultList.data.entity;
+        $scope.concluded[$index].list = resultList.data.entity.sites;
+        $scope.concluded[$index].batchReportLoading = false;
       });
       return null;
     };
 
     $scope.getSiteReport = function(batchId, siteId) {
-      // non stub version
+      $scope.siteReportLoading = true;
+      $scope.siteReport='';
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
         $scope.siteReport = resultList.data.entity;
+        $scope.siteReportLoading = false;
       });
       return null;
     };

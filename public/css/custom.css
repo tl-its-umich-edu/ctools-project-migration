@@ -124,6 +124,18 @@ h3.panel-title small {
   color:#a94442
 }
 
+.glyphicon-ok {
+  color:green
+}
+
+.glyphicon-fire {
+  color:red
+}
+
+.table th {
+  font-weight:normal
+}
+
 @media (max-width: 480px) {
 	.panel-heading {
 		background-color: #777 !important;

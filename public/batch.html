@@ -139,20 +139,11 @@
                     </div>
                     <div class="row" ng-show="ongoingBatch.list">
 											<div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-												<table class="table table-striped">
-                          <thead>
-                            <tr>
-                              <th scope="col">Site name</th>
-                            </tr>
-                          </thead>
-                          <tbody>
-  													<tr ng-repeat="item in ongoingBatch.list">
-                              <td>
-                                {{item.site_name}}
-                              </td>
-                            </tr>
-                          </tbody>
-												</table>
+                        <ol>
+                          <li ng-repeat="item in ongoingBatch.list">
+                            {{item.split(':')[0]}}
+                          </li>
+                        </ol>
 											</div>
 										</div>
 									</li>
@@ -174,8 +165,9 @@
                         <h4 class="site-header">{{concludedBatch[0]}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-												<a href="#" class="btn btn-default btn-xs" ng-click="getBatchReport(concludedBatch[1], $index)">See
+												<a ng-hide="concludedBatch.list" href="" class="btn btn-default btn-xs" ng-click="getBatchReport(concludedBatch[1], $index)">See
 													report</a>
+                        <div class="spinner" ng-show="concludedBatch.batchReportLoading"></div>
 											</div>
 										</div>
                     <div class="row" ng-show="concludedBatch.list">
@@ -184,20 +176,26 @@
                           <thead>
                             <tr>
                               <th scope="col">Site name</th>
+                              <!--
                               <th scope="col">Destination</th>
+                              -->
                               <th scope="col">Report</th>
                             </tr>
                           </thead>
                           <tbody>
   													<tr ng-repeat="item in concludedBatch.list">
                               <td>
-                                {{item.site_name}}
+                                {{item.split(':')[0]}}
                               </td>
+                              <!--
                               <td>
                                 <a target="_top" href="{{item.destination_url}}">{{item.destination_url | destinationLinkName}}</a>
                               </td>
+                              -->
                               <td>
-                                <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(item.bulk_migration_id, item.site_id)">Site Report</a>
+                                <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], item.split(':')[0])">Site Report</a>
+                                <i class="glyphicon glyphicon-ok" ng-show="item.split(':')[1]===' success'"></i>
+                                <i class="glyphicon glyphicon-fire" ng-show="item.split(':')[1]===' failure'"></i>
                               </td>
                             </tr>
                           </tbody>
@@ -225,15 +223,30 @@
             </button>
             <h4 class="modal-title" id="siteReportModalLabel">Report for site {{siteReport.site_name}}</h4>
           </div>
-          <div class="modal-body">
+          <div class="modal-body" style="">
             <div class="container">
               <p>
-                {{siteReport.tool_name}}
+                {{siteReport.tool_name}}. <div class="spinner" ng-show="siteReportLoading"></div>
+                Destination: {{siteReport.destination_type | uppercase}}.
+
+                <a href="siteReport.destination_url" target="_top">{{siteReport.destination_url | destinationLinkName}}</a>
               </p>
 
-              <ul class="list-group" style="margin: 0 0;width:635px">
-                <li ng-repeat="item in siteReport.status.data" class="list-group-item">
-                  {{item.file_name}}<br><small>{{item.status}}</small>
+              <ul class="list-group" style="margin: 0 0;width:535px">
+                <li ng-repeat="item in siteReport.status.data" ng-if="!$first" class="list-group-item">
+                  <div class="row">
+                    <div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
+                      {{item.file_name}}
+                    </div>
+                    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
+                      <i class="{{item.status | whatStatus}}"></i>
+                    </div>
+                  </div>
+                  <div class="row" ng-show="item.status.indexOf('success') ===-1 && item.status.indexOf('created') ===-1">
+                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
+                      <small>{{item.status}}</small>
+                    </div>
+                  </div>
                 </li>
               </ul>
 
@@ -245,7 +258,6 @@
         </div>
       </div>
     </div>
-
   </div>
 
 
@@ -262,8 +274,6 @@
 		charset="utf-8"></script>
 	<script src="vendors/angular/angular.min.js" type="text/javascript"
 		charset="utf-8"></script>
-	<script src="vendors/angular/angular-animate.min.js"
-		type="text/javascript" charset="utf-8"></script>
 	<script src="vendors/underscore/underscore-min.js"
 		type="text/javascript" charset="utf-8"></script>
 	<script src="vendors/moment/moment.min.js" type="text/javascript"
