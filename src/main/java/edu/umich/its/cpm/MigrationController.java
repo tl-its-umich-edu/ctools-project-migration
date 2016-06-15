@@ -1232,12 +1232,15 @@ public class MigrationController {
 					.getMigrationsInBulkUpload(bulk_upload_id);
 			
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			List<String> sitesList = new ArrayList<String>();
+			List<HashMap<String, String>> sitesList = new ArrayList<HashMap<String, String>>();
 			HashMap<String, Object> totalMap = new HashMap<String, Object>();
 			int errorSiteCount = 0;
 			boolean ongoing = false;
 			for (Migration m : migrations )
 			{
+				// map to hold site information
+				HashMap<String, String> siteMap = new HashMap<String, String>();
+				
 				String siteId = m.getSite_id();
 				String siteStatus = Utils.STATUS_SUCCESS;
 				String siteStatusString = m.getStatus();
@@ -1260,13 +1263,20 @@ public class MigrationController {
 							break;
 						}
 					}
-					sitesList.add(siteId + ": " + siteStatus);
+					siteMap.put("id", siteId);
+					siteMap.put("name", m.getSite_name());
+					siteMap.put("status", siteStatus);
 				}
 				else
 				{
-					sitesList.add(siteId + ": " + Utils.STATUS_ONGING);
+					siteMap.put("id", siteId);
+					siteMap.put("name", m.getSite_name());
+					siteMap.put("status", Utils.STATUS_ONGING);
 					ongoing = true;
 				}
+				
+				// add this site into sites list
+				sitesList.add(siteMap);
 			}
 			
 			if (errorSiteCount != 0)
