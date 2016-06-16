@@ -477,14 +477,7 @@ projectMigrationApp
                     if (destination === 'zip') {
                         reportDetails.status = 'Finished creating zip file for ' + site_title;
                     }
-                    sessionStorage.setItem('proj_migr_report', JSON
-                        .stringify(reportDetails));
-                    var reportWin = window
-                        .open(
-                            '/report.html',
-                            'ReportWindow',
-                            'toolbar=yes, status=no, menubar=yes, resizable=yes, scrollbars=yes, width=670, height=800');
-                    reportWin.focus();
+                    $scope.reportDetails = reportDetails;
                 };
 
                 $scope.checkBoxAuth = function() {
@@ -829,18 +822,6 @@ projectMigrationApp
             }
         ]);
 
-projectMigrationApp.controller('reportController', [
-    '$rootScope',
-    '$scope',
-    '$log',
-    '$q',
-    '$window',
-    function($rootScope, $scope, $log, $q, $window) {
-        $scope.reportDetails = JSON.parse(sessionStorage
-            .getItem('proj_migr_report'));
-    }
-]);
-
 projectMigrationApp.controller('projectMigrationControllerStatus', ['Status',
     '$rootScope', '$scope', '$log', '$q', '$window',
     function(Status, $rootScope, $scope, $log, $q, $window) {
@@ -852,5 +833,3 @@ projectMigrationApp.controller('projectMigrationControllerStatus', ['Status',
         }
     }
 ]);
-
-
