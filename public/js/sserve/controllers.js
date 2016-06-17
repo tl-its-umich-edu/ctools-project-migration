@@ -532,27 +532,44 @@ projectMigrationApp
 
         $scope.updateProjectListSettings = function(){
           var targetDoNotMove = _.where(
-            $scope.sourceProjects, {
-              selectedDoNotMove: true,
-            });
-            var targetDelete = _.where(
-              $scope.sourceProjects, {
-                deleteProject: true,
-              });
+          $scope.sourceProjects, {
+            selectedDoNotMove: true,
+          });
 
-              var targetDoNotMoveNames =[];
-              var targetDeleteNames =[];
+          var targetDelete = _.where(
+          $scope.sourceProjects, {
+            deleteProject: true,
+          });
 
-            _.each(targetDoNotMove, function(target){
-              targetDoNotMoveNames.push(target.site_id + ' / ' + target.tool_id);
-            });
-            _.each(targetDelete, function(target){
-              targetDeleteNames.push(target.site_name + ' (' + target.site_id + ')' );
-            });
-            //just dumping things into alerts for now
-            alert('Sites to be deleted:\n\n' + targetDeleteNames.join('\n\n'));
-            alert('Tools not to be moved:\n\n' + targetDoNotMoveNames.join('\n\n'));
+          var targetDoNotMoveNames =[];
+          var targetDeleteNames =[];
+
+          _.each(targetDoNotMove, function(target){
+            targetDoNotMoveNames.push(target.site_id + ' / ' + target.tool_id);
+          });
+          _.each(targetDelete, function(target){
+            targetDeleteNames.push(target.site_name + ' (' + target.site_id + ')' );
+          });
+          //just dumping things into alerts for now
+          alert('Sites to be deleted:\n\n' + targetDeleteNames.join('\n\n'));
+          alert('Tools not to be moved:\n\n' + targetDoNotMoveNames.join('\n\n'));
         };
+
+        $scope.updateProjectListCheck = function(){
+          var targetDoNotMove = _.where(
+          $scope.sourceProjects, {
+            selectedDoNotMove: true,
+          });
+          var targetDelete = _.where(
+          $scope.sourceProjects, {
+            deleteProject: true,
+          });
+          if(targetDelete.length || targetDoNotMove.length){
+            $scope.selectionIsMade = true;
+          } else {
+            $scope.selectionIsMade = false;
+          }
+        }
 
 
         /*

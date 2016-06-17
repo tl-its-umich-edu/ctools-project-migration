@@ -1,5 +1,5 @@
 <div style="text-align: right">
-  <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()">Save changes</button><br>
+  <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button><br>
   <br>
 </div>
 <div class="no-items" ng-show="loadingProjects">
@@ -26,7 +26,7 @@
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
             <div>
-              <br><input ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
+              <br><input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
               <div style="padding-left:17px">
                 <small>Flagged for deletion by so and so on such a date</small>
 
@@ -52,7 +52,7 @@
               </h5>
 							<input type="checkbox"
 								id="check{{project.site_id}}{{project.tool_id}}"
-								ng-model="project.selectedDoNotMove">
+								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
 							<label for="check{{project.site_id}}{{project.tool_id}}"
 								style="font-weight: normal">Do not move my {{project.tool_name}} to
               <span ng-if="project.tool_type==='sakai.resources'">Box</span>
