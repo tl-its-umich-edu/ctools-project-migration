@@ -27,6 +27,7 @@ projectMigrationApp
         $scope.migratedProjects = [];
         $scope.boxAuthorized = false;
         $scope.isAdminUser = false;
+        $scope.selectionIsMade = false;
         if($('#sserve-lite').length) {
           $scope.migratingActive=false;
         } else {
@@ -525,12 +526,41 @@ projectMigrationApp
           });
 
         /*
+        * shell handler for pdating a users project list with
+        * choices to have site deleted or not have tool exported
+        */
+
+        $scope.updateProjectListSettings = function(){
+          var targetDoNotMove = _.where(
+            $scope.sourceProjects, {
+              selectedDoNotMove: true,
+            });
+            var targetDelete = _.where(
+              $scope.sourceProjects, {
+                deleteProject: true,
+              });
+
+              var targetDoNotMoveNames =[];
+              var targetDeleteNames =[];
+
+            _.each(targetDoNotMove, function(target){
+              targetDoNotMoveNames.push(target.site_id + ' / ' + target.tool_id);
+            });
+            _.each(targetDelete, function(target){
+              targetDeleteNames.push(target.site_name + ' (' + target.site_id + ')' );
+            });
+            //just dumping things into alerts for now
+            alert('Sites to be deleted:\n\n' + targetDeleteNames.join('\n\n'));
+            alert('Tools not to be moved:\n\n' + targetDoNotMoveNames.join('\n\n'));
+        };
+
+
+        /*
          * handler for the "Proceed" button (tools are
          * selected, dependencies addressed, confirmation
          * displayed)
          */
-        $scope.startMigration = function(projectId,
-          siteName, destinationType) {
+        $scope.startMigration = function(projectId, siteName, destinationType) {
           var targetProjPos = $scope.sourceProjects
             .indexOf(_.findWhere(
               $scope.sourceProjects, {

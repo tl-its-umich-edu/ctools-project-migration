@@ -82,7 +82,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
       toolObj.destination_url= '',
       toolObj.tool= true,
       toolObj.tool_site_id= siteId + item.tools[0].id,
-      toolObj.hasContentItem = item.hasContentItem,
+      //toolObj.hasContentItem = item.hasContentItem
       toolColl.push(toolObj);
     }
 
@@ -103,7 +103,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
     notoolObj.start_time= '',
     notoolObj.end_time='',
     notoolObj.destination_type= '',
-    notoolObj.destination_url= ''
+    notoolObj.destination_url= '',
     toolColl.push(notoolObj);
   }
   data.data = toolColl;
