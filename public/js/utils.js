@@ -59,12 +59,20 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
     /*need to make this tool filtering more visible & maintainable
     maybe put it in app.js*/
     var toolObj = {};
+    var tool_name;
+    if(item.tools[0].toolId === 'sakai.resources'){
+      tool_name ='Resources';
+    }
+    else {
+      tool_name ='Email Archive';
+    }
 
-    if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources')) {
+
+    if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources' || item.tools[0].toolId === 'sakai.mailbox' )) {
       toolObj.migration_id= '',
       toolObj.site_id= siteId,
       toolObj.site_name= siteName,
-      toolObj.tool_name= 'Resources',
+      toolObj.tool_name= tool_name,
       toolObj.tool_type= item.tools[0].toolId,
       toolObj.tool_id= item.tools[0].id,
       toolObj.migrated_by= '',
@@ -74,7 +82,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
       toolObj.destination_url= '',
       toolObj.tool= true,
       toolObj.tool_site_id= siteId + item.tools[0].id,
-      toolObj.hasContentItem = item.hasContentItem,
+      //toolObj.hasContentItem = item.hasContentItem
       toolColl.push(toolObj);
     }
 
@@ -95,7 +103,7 @@ as the CPM feeds of /migrating and /migrations for ease of comparing the three
     notoolObj.start_time= '',
     notoolObj.end_time='',
     notoolObj.destination_type= '',
-    notoolObj.destination_url= ''
+    notoolObj.destination_url= '',
     toolColl.push(notoolObj);
   }
   data.data = toolColl;
