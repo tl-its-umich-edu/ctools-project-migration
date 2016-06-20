@@ -53,11 +53,13 @@ h3, h4.site-header {
 .muted {
 
 }
-
-#helpLink {
+#batch{
+  margin-right:10px
+}
+#batch, #helpLink {
 	padding:7px;margin-top: 7px;color:fff;border:1px solid transparent;
 }
-#helpLink:hover {
+#batch:hover, #helpLink:hover {
 	color:fff;
 	background: #0068cc
 }
