@@ -290,46 +290,10 @@ public class MigrationController {
 			try {
 				projectsString = restTemplate.getForObject(requestUrl,
 						String.class);
-
-				JSONArray ownerSitesJSONArray = new JSONArray();
-				try {
-					JSONObject sitesJSONObject = new JSONObject(projectsString);
-					// get site array
-					JSONArray sitesJSONArray = sitesJSONObject.getJSONArray("site_collection");
-					
-					// filter out those sites that current user has role "Owner" in it
-					for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); ++iSite) {
-						JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
-						String siteId = siteJSON.getString("id");
-						try
-						{
-							// get all site members
-							HashMap<String, String> userRoles = get_site_members(
-									request, siteId);
-							for (String userEid : userRoles.keySet()) {
-								String userRole = userRoles.get(userEid);
-								if (Utils.ROLE_OWNER.equals(userRole) && userEid.equals(currentUserId))
-								{
-									// keep the site JSON if current user has Owner role in this site
-									ownerSitesJSONArray.put(siteJSON);
-									break;
-								}
-							}
-						}
-						catch (Exception e)
-						{
-							// sometimes there is problem getting site member roles
-							// in this case, we will add the site json
-							// and document the exception
-							ownerSitesJSONArray.put(siteJSON);
-							log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
-						}
-					}
-					sitesJSONObject.put("site_collection", ownerSitesJSONArray);
-					projectsString = sitesJSONObject.toString();
-				} catch (JSONException e) {
-					log.error(this + " error parsing sites JSON value " + projectsString);
-				}
+				
+				// update the projectString by filtering based on site Owner role
+				projectsString = filterForSitesWithOwnerRole(request,
+						projectsString, currentUserId);
 			} catch (RestClientException e) {
 				errorMessage = e.getMessage();
 				log.error(requestUrl + errorMessage);
@@ -341,6 +305,57 @@ public class MigrationController {
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
 		return rv;
+	}
+
+	/**
+	 * retain only the site record where the current user has Owner role inside
+	 * @param request
+	 * @param projectsString
+	 * @param currentUserId
+	 * @return
+	 */
+	private String filterForSitesWithOwnerRole(HttpServletRequest request,
+			String projectsString, String currentUserId) {
+		JSONArray ownerSitesJSONArray = new JSONArray();
+		try {
+			JSONObject sitesJSONObject = new JSONObject(projectsString);
+			// get site array
+			JSONArray sitesJSONArray = sitesJSONObject.getJSONArray("site_collection");
+			
+			// filter out those sites that current user has role "Owner" in it
+			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); ++iSite) {
+				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
+				String siteId = siteJSON.getString("id");
+				try
+				{
+					// get all site members
+					HashMap<String, String> userRoles = get_site_members(
+							request, siteId);
+					for (String userEid : userRoles.keySet()) {
+						String userRole = userRoles.get(userEid);
+						if (Utils.ROLE_OWNER.equals(userRole) && userEid.equals(currentUserId))
+						{
+							// keep the site JSON if current user has Owner role in this site
+							ownerSitesJSONArray.put(siteJSON);
+							break;
+						}
+					}
+				}
+				catch (Exception e)
+				{
+					// sometimes there is problem getting site member roles
+					// in this case, we will add the site json
+					// and document the exception
+					ownerSitesJSONArray.put(siteJSON);
+					log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+				}
+			}
+			sitesJSONObject.put("site_collection", ownerSitesJSONArray);
+			projectsString = sitesJSONObject.toString();
+		} catch (JSONException e) {
+			log.error(this + " error parsing sites JSON value " + projectsString);
+		}
+		return projectsString;
 	}
 
 	/**
