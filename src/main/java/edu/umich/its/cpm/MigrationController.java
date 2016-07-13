@@ -271,9 +271,11 @@ public class MigrationController {
 		String errorMessage = "";
 		String requestUrl = "";
 
+		String currentUserId = Utils.getCurrentUserId(request, env);
+		
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
-				request, Utils.getCurrentUserId(request, env));
+				request, currentUserId);
 		if (sessionAttributes.containsKey("sessionId")) {
 			String sessionId = (String) sessionAttributes.get("sessionId");
 
@@ -288,6 +290,46 @@ public class MigrationController {
 			try {
 				projectsString = restTemplate.getForObject(requestUrl,
 						String.class);
+
+				JSONArray ownerSitesJSONArray = new JSONArray();
+				try {
+					JSONObject sitesJSONObject = new JSONObject(projectsString);
+					// get site array
+					JSONArray sitesJSONArray = sitesJSONObject.getJSONArray("site_collection");
+					
+					// filter out those sites that current user has role "Owner" in it
+					for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); ++iSite) {
+						JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
+						String siteId = siteJSON.getString("id");
+						try
+						{
+							// get all site members
+							HashMap<String, String> userRoles = get_site_members(
+									request, siteId);
+							for (String userEid : userRoles.keySet()) {
+								String userRole = userRoles.get(userEid);
+								if (Utils.ROLE_OWNER.equals(userRole) && userEid.equals(currentUserId))
+								{
+									// keep the site JSON if current user has Owner role in this site
+									ownerSitesJSONArray.put(siteJSON);
+									break;
+								}
+							}
+						}
+						catch (Exception e)
+						{
+							// sometimes there is problem getting site member roles
+							// in this case, we will add the site json
+							// and document the exception
+							ownerSitesJSONArray.put(siteJSON);
+							log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+						}
+					}
+					sitesJSONObject.put("site_collection", ownerSitesJSONArray);
+					projectsString = sitesJSONObject.toString();
+				} catch (JSONException e) {
+					log.error(this + " error parsing sites JSON value " + projectsString);
+				}
 			} catch (RestClientException e) {
 				errorMessage = e.getMessage();
 				log.error(requestUrl + errorMessage);
@@ -427,7 +469,6 @@ public class MigrationController {
 		requestUrl = env.getProperty("ctools.server.url")
 				+ "direct/membership/site/" + site_id + ".json?_sessionId="
 				+ sessionId;
-
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {
@@ -984,7 +1025,7 @@ public class MigrationController {
 		}
 		catch (Exception e)
 		{
-			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
+			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
 		}
 
 		// assign null values to batch id and name
@@ -1558,7 +1599,7 @@ public class MigrationController {
 			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
 			String requestUrl = env.getProperty("ctools.server.url")
 					+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
-			log.info(this + " get_user_sites " + requestUrl);
+			log.info(this + requestUrl);
 			try {
 				String siteJson = restTemplate.getForObject(requestUrl,
 						String.class);
