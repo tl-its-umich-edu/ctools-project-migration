@@ -107,6 +107,12 @@ public class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+	
+	// constant for session id
+	public static final String SESSION_ID = "sessionId";
+	
+	// constants for environment properties
+	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
 
 	/**
 	 * login into CTools and become user with sessionId
@@ -134,7 +140,7 @@ public class Utils {
 		// 1. create a session based on user id and password
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
-		String requestUrl = env.getProperty("ctools.server.url")
+		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 				+ "direct/session?_username=" + env.getProperty("username")
 				+ "&_password=" + env.getProperty("password");
 		try {
@@ -154,7 +160,7 @@ public class Utils {
 				// using
 				// username and password provided
 				log.info("Wrong user id or password. Cannot login to CTools "
-						+ env.getProperty("ctools.server.url"));
+						+ env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL));
 			} else {
 
 				// if status code is 201 login is successful. So reuse the
@@ -170,7 +176,7 @@ public class Utils {
 				try {
 					// the url should be in the format of
 					// "https://server/direct/session/SESSION_ID.json"
-					requestUrl = env.getProperty("ctools.server.url")
+					requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 							+ "direct/session/becomeuser/" + remoteUser
 							+ ".json?_sessionId=" + sessionId;
 					log.info(requestUrl);
@@ -192,7 +198,7 @@ public class Utils {
 				}
 
 				// populate the session related attributes
-				sessionAttributes.put("sessionId", sessionId);
+				sessionAttributes.put(SESSION_ID, sessionId);
 				sessionAttributes.put("httpContext", httpContext);
 			}
 		} catch (java.io.IOException e) {
