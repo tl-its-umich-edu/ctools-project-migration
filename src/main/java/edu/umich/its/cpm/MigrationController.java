@@ -107,6 +107,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
 public class MigrationController {
+	
+	private static final String JSON_ATTR_SITE_COLLECTION = "site_collection";
 
 	private static final String BOX_AUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\" style=\"background:#fff\"><h1 role=\"alert\">Authorized</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a onclick=\"window.parent.closeBoxAuthModal()\" href=\"#\">Close</a></p></div>";
 	private static final String BOX_UNAUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\"><h1 role=\"alert\">Unauthorized!</h1><p>You need to authorize Box.<a target=\"_top\" href=\"/\">Go back</a></p></div>";
@@ -125,11 +127,6 @@ public class MigrationController {
 
 	@Autowired
 	private MigrationInstanceService migrationInstanceService;
-
-	// WSDL operation
-	private static final String OPERATION_GET_CONTENT_DATA = "getContentData";
-	private static final String OPERTAION_GET_CONTENT_DATA_PARAM_SESSIONID = "sessionid";
-	private static final String OPERTAION_GET_CONTENT_DATA_PARAM_RESOURCEID = "resourceId";
 
 	/**
 	 * get all CTools sites where user have site.upd permission
@@ -168,7 +165,7 @@ public class MigrationController {
 			// insert the MyWorkspace json into the other-sites json
 			try {
 				JSONObject sitesJSONObject = new JSONObject(sitesJson);
-				sitesJSONObject.append("site_collection", new JSONObject(
+				sitesJSONObject.append(JSON_ATTR_SITE_COLLECTION, new JSONObject(
 						myworkspaceJson));
 				// get the updated sites json string with MyWorkspace info
 				// inserted
@@ -195,8 +192,8 @@ public class MigrationController {
 		String userEid = Utils.getCurrentUserId(request, env);
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
 				request, userEid);
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
@@ -205,7 +202,7 @@ public class MigrationController {
 			// format unavailable
 			// user MyWorkspace site ID could be two forms
 			// 1. try "~<user_id>" first
-			requestUrl = env.getProperty("ctools.server.url") + "direct/site/~"
+			requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL) + "direct/site/~"
 					+ userEid + ".json?_sessionId=" + sessionId;
 			log.info(this + " get_user_myworkspace_site_json " + requestUrl);
 			try {
@@ -224,7 +221,7 @@ public class MigrationController {
 					// "https://server/direct/user/<eid>.json?_sessionId=<sessionId>"
 					// Response Code Details: 200 plus data; 404 if not found,
 					// 406 if format unavailable
-					requestUrl = env.getProperty("ctools.server.url")
+					requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 							+ "direct/user/" + userEid + ".json?_sessionId="
 							+ sessionId;
 					log.info(this + " get_user_myworkspace_site_json "
@@ -236,7 +233,7 @@ public class MigrationController {
 								userEntity.getBody());
 						String userId = (String) userObject.get("id");
 						// use this userId to form user myworkspace id
-						requestUrl = env.getProperty("ctools.server.url")
+						requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 								+ "direct/site/~" + userId
 								+ ".json?_sessionId=" + sessionId;
 						log.info(this + " get_user_myworkspace_site_json "
@@ -271,23 +268,29 @@ public class MigrationController {
 		String errorMessage = "";
 		String requestUrl = "";
 
+		String currentUserId = Utils.getCurrentUserId(request, env);
+		
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
-				request, Utils.getCurrentUserId(request, env));
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+				request, currentUserId);
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 
 			// get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/withPerm/.json?permission=site.upd"
-			requestUrl = env.getProperty("ctools.server.url")
+			requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+ "direct/site/withPerm/.json?permission=site.upd&_sessionId="
 					+ sessionId;
 			log.info(this + " get_user_sites " + requestUrl);
 			try {
 				projectsString = restTemplate.getForObject(requestUrl,
 						String.class);
+				
+				// update the projectString by filtering based on site Owner role
+				projectsString = filterForSitesWithOwnerRole(request,
+						projectsString, currentUserId);
 			} catch (RestClientException e) {
 				errorMessage = e.getMessage();
 				log.error(requestUrl + errorMessage);
@@ -299,6 +302,65 @@ public class MigrationController {
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
 		return rv;
+	}
+
+	/**
+	 * retain only the site record where the current user has Owner role inside
+	 * @param request
+	 * @param projectsString
+	 * @param currentUserId
+	 * @return
+	 */
+	private String filterForSitesWithOwnerRole(HttpServletRequest request,
+			String projectsString, String currentUserId) {
+		JSONArray ownerSitesJSONArray = new JSONArray();
+		try {
+			JSONObject sitesJSONObject = new JSONObject(projectsString);
+			// get site array
+			JSONArray sitesJSONArray = sitesJSONObject.getJSONArray(JSON_ATTR_SITE_COLLECTION);
+			
+			// filter out those sites that current user has role "Owner" in it
+			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); ++iSite) {
+				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
+				String siteId = siteJSON.getString("id");
+				try
+				{
+					// get all site members
+					HashMap<String, String> userRoles = get_site_members(
+							request, siteId);
+					for (String userEid : userRoles.keySet()) {
+						String userRole = userRoles.get(userEid);
+						if (Utils.ROLE_OWNER.equals(userRole) && userEid.equals(currentUserId))
+						{
+							// keep the site JSON if current user has Owner role in this site
+							ownerSitesJSONArray.put(siteJSON);
+							break;
+						}
+					}
+				}
+				catch (RestClientException e)
+				{
+					// sometimes there is problem getting site member roles
+					// in this case, we will add the site json
+					// and document the exception
+					ownerSitesJSONArray.put(siteJSON);
+					log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+				}
+				catch (JSONException e)
+				{
+					// sometimes there is problem getting site member roles
+					// in this case, we will add the site json
+					// and document the exception
+					ownerSitesJSONArray.put(siteJSON);
+					log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+				}
+			}
+			sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, ownerSitesJSONArray);
+			projectsString = sitesJSONObject.toString();
+		} catch (JSONException e) {
+			log.error(this + " error parsing sites JSON value " + projectsString);
+		}
+		return projectsString;
 	}
 
 	/**
@@ -334,14 +396,14 @@ public class MigrationController {
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
 				request, Utils.getCurrentUserId(request, env));
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 
 			// get all pages inside site
 			// the url should be in the format of
 			// "https://server/direct/site/SITE_ID/pages.json"
 			RestTemplate restTemplate = new RestTemplate();
-			requestUrl = env.getProperty("ctools.server.url") + "direct/site/"
+			requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL) + "direct/site/"
 					+ site_id + "/pages.json?_sessionId=" + sessionId;
 
 			try {
@@ -403,7 +465,7 @@ public class MigrationController {
 	 */
 	private HashMap<String, String> get_site_members(
 			HttpServletRequest request, String site_id)
-			throws Exception {
+			throws RestClientException, JSONException {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
 		String membersString = "";
@@ -413,21 +475,20 @@ public class MigrationController {
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
 				request, Utils.getCurrentUserId(request, env));
-		if (!sessionAttributes.containsKey("sessionId")) {
+		if (!sessionAttributes.containsKey(Utils.SESSION_ID)) {
 			// exit if login_becomeuser call is not successful
 			return rv;
 		}
 
-		String sessionId = (String) sessionAttributes.get("sessionId");
+		String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 
 		// get all members inside site
 		// the url should be in the format of
 		// "https://server/direct/membership/site/SITE_ID.json"
 		RestTemplate restTemplate = new RestTemplate();
-		requestUrl = env.getProperty("ctools.server.url")
+		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 				+ "direct/membership/site/" + site_id + ".json?_sessionId="
 				+ sessionId;
-
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {
@@ -453,7 +514,7 @@ public class MigrationController {
 					}
 				}
 			}
-			catch (Exception e)
+			catch (JSONException e)
 			{
 				log.warn("error parsing member string:" + membersString + " for site " + site_id);
 				throw e;
@@ -491,7 +552,7 @@ public class MigrationController {
 						// found Resource tool
 						restTemplate = new RestTemplate();
 						String resourceToolRequestUrl = env
-								.getProperty("ctools.server.url")
+								.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 								+ "direct/content/site/"
 								+ site_id
 								+ ".json?_sessionId=" + sessionId;
@@ -982,9 +1043,13 @@ public class MigrationController {
 				}
 			}
 		}
-		catch (Exception e)
+		catch (RestClientException e)
 		{
-			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
+			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
+		}
+		catch (JSONException e)
+		{
+			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
 		}
 
 		// assign null values to batch id and name
@@ -1504,9 +1569,13 @@ public class MigrationController {
 							}
 						}
 					}
-					catch (Exception e)
+					catch (RestClientException e)
 					{
 						log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
+					}
+					catch (JSONException e)
+					{
+						log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
 					}
 
 					// now after all checks passed, we are ready for migration
@@ -1549,16 +1618,16 @@ public class MigrationController {
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
 				request, Utils.getCurrentUserId(request, env));
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 
 			// get all sites that user have permission site.upd
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-			String requestUrl = env.getProperty("ctools.server.url")
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
-			log.info(this + " get_user_sites " + requestUrl);
+			log.info(this + requestUrl);
 			try {
 				String siteJson = restTemplate.getForObject(requestUrl,
 						String.class);

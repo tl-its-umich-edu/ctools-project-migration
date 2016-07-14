@@ -97,8 +97,8 @@ public class MigrationTaskService {
 		List<MigrationFileItem> itemStatus = new ArrayList<MigrationFileItem>();
 
 		// login to CTools and get sessionId
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 			HttpContext httpContext = (HttpContext) sessionAttributes
 					.get("httpContext");
 
@@ -106,7 +106,7 @@ public class MigrationTaskService {
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/SITE_ID.json"
-			String requestUrl = env.getProperty("ctools.server.url")
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+ "direct/content/site/" + site_id + ".json?_sessionId="
 					+ sessionId;
 			String siteResourceJson = null;
@@ -510,8 +510,8 @@ public class MigrationTaskService {
 		}
 
 		// get sessionId
-		if (sessionAttributes.containsKey("sessionId")) {
-			String sessionId = (String) sessionAttributes.get("sessionId");
+		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 			HttpContext httpContext = (HttpContext) sessionAttributes
 					.get("httpContext");
 
@@ -519,7 +519,7 @@ public class MigrationTaskService {
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/SITE_ID.json"
-			String requestUrl = env.getProperty("ctools.server.url")
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+ "direct/content/site/" + siteId + ".json?_sessionId="
 					+ sessionId;
 			String siteResourceJson = null;
