@@ -50,6 +50,7 @@ import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URLDecoder;
 import java.util.Date;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -121,6 +122,12 @@ public class MigrationController {
 	
 	@Autowired
 	BoxAuthUserRepository uRepository;
+	
+	@Autowired
+	SiteDeleteChoiceRepository cRepository;
+	
+	@Autowired
+	SiteToolExemptRepository tRepository;
 
 	@Autowired
 	private Environment env;
@@ -1435,7 +1442,7 @@ public class MigrationController {
 	}
 
 	/**
-	 * TODO upload resource files into Box folder
+	 * upload resource files into Box folder
 	 * 
 	 * @return
 	 */
@@ -1639,5 +1646,218 @@ public class MigrationController {
 
 		}
 		return siteName;
+	}
+	
+	/******************* migtation choices ********************/
+	/**
+	 * save user input for site delete choices into database
+	 * 
+	 * @return
+	 */
+	@POST
+	@Produces("application/json")
+	@RequestMapping("/deleteSite")
+	@ResponseBody
+	public ResponseEntity<String> deleteSiteChoice(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		
+		HttpHeaders headers = new HttpHeaders();
+		
+		String userId = Utils.getCurrentUserId(request, env);
+		HashMap<String, String> rv = new HashMap<String, String>();
+
+		// we need to do series checks to make sure the migration request is
+		// valid
+		// 1. check if missing siteId
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String[] siteIds = parameterMap.get("siteId");
+		if (siteIds == null || siteIds.length == 0) {
+			String errorMessage = "deleteSiteChoice request missing required parameter: siteId";
+			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+		}
+		log.info("delete request for site " + siteIds);
+		
+		// 2. save the choices into database
+		StringBuffer errorMessages = new StringBuffer();
+		List<SiteDeleteChoice> cList = new ArrayList<SiteDeleteChoice>();
+		for (int i = 0; i < siteIds.length; i++)
+		{
+			// now for all sites, save the delete site choice into database
+			String siteId = siteIds[i];
+			SiteDeleteChoice c = new SiteDeleteChoice(siteId, userId, 
+							new java.sql.Timestamp(System.currentTimeMillis()));
+			try {
+				c = cRepository.save(c);
+				
+				// upon successful save
+				// add the record into the return JSON
+				cList.add(c);
+			} catch (Exception e) {
+				errorMessages.append("Exception in saving siteDeleteChoice " + c.toString() + " ");
+			}
+		}
+		
+		if (errorMessages.length() > 0)
+		{
+			// in case of error
+			log.error(errorMessages.toString());
+			return new ResponseEntity<String>(errorMessages.toString(), headers, HttpStatus.CONFLICT);
+		} else {
+			log.info(this + " Delete site choice saved ");
+			return new ResponseEntity<String>("Delete site choices saved.", headers,
+					HttpStatus.ACCEPTED);
+		}
+
+	}
+	
+	/**
+	 * GET: check if a site has been marked as "to be deleted": 
+	 * /isSiteToBeDeleted?siteId=<site_id> 
+	 * returns following JSON or empty set. 
+	 * {
+	 *  "siteId": <site_id>, 
+	 *  "userId": <user id who made the request>"
+	 *  "date": <unix timestamp of when it is marked to be deleted>
+	 *  }
+	 * 
+	 * @return
+	 */
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@RequestMapping("/isSiteToBeDeleted")
+	public Response isSiteToBeDeleted(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		
+		// 1. get the siteId request parameter
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String[] siteIds = parameterMap.get("siteId");
+		if (siteIds == null || siteIds.length != 1) {
+			String errorMessage = "isSiteToBeDeleted request missing or multiple required parameter: siteId";
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage).build();
+		}
+		String siteId = siteIds[0];
+		
+		// 2. get the siteDeleteChoice record from database for this site	
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(cRepository.findSiteDeleteChoiceForSite(siteId)).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Problem getting SiteDeleteChoice for " + siteId
+							+ ": " + e.getMessage()).build();
+		}
+
+	}
+	
+	/**
+	 * save user input for do-not-migrate
+	 * 
+	 * @return
+	 */
+	@POST
+	@Produces("application/json")
+	@RequestMapping("/doNotMigrateTool")
+	@ResponseBody
+	public ResponseEntity<String> doNotMigrateToolChoice(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		
+		HttpHeaders headers = new HttpHeaders();
+		
+		String userId = Utils.getCurrentUserId(request, env);
+		HashMap<String, String> rv = new HashMap<String, String>();
+
+		// we need to do series checks to make sure the migration request is
+		// valid
+		// 1. check if missing or more than one siteId
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String[] siteIds = parameterMap.get("siteId");
+		if (siteIds == null || siteIds.length != 1) {
+			String errorMessage = "doNotMigrateToolChoice request missing or multiple required parameter: siteId";
+			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+		}
+		// check if missing or more than one toolId
+		String[] toolIds = parameterMap.get("toolId");
+		if (toolIds == null || toolIds.length != 1) {
+			String errorMessage = "doNotMigrateToolChoice request missing or multiple required parameter: toolId";
+			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+		}
+		// the target site id and tool id
+		String siteId = siteIds[0];
+		String toolId = toolIds[0];
+		log.info("request migration for site " + siteId + " and toolId " + toolId);
+		
+		// 2. save the choices into database
+		StringBuffer errorMessages = new StringBuffer();
+		SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, userId, 
+							new java.sql.Timestamp(System.currentTimeMillis()));
+		try {
+			c = tRepository.save(c);
+		} catch (Exception e) {
+			errorMessages.append("Exception in saving siteToolExcemptChoice " + c.toString() + " ");
+		}
+		
+		if (errorMessages.length() > 0)
+		{
+			// in case of error
+			log.error(errorMessages.toString());
+			return new ResponseEntity<String>(errorMessages.toString(), headers, HttpStatus.CONFLICT);
+		} else {
+			log.info(this + " site tool delete exemption choice saved ");
+			return new ResponseEntity<String>("site tool delete exempt choice saved.", headers,
+					HttpStatus.ACCEPTED);
+		}
+
+	}
+	
+	/*GET
+	 * check if a tools within a site has been marked as "not migrate": 
+	 * /siteToolNotMigrate?siteId=<site_id>
+	 * returns following JSON or empty set: 
+	 * {
+	 * [ 
+	 * "siteId": <site_id>,
+	 * "toolId": <tool_id>, 
+	 * "user": <user id> 
+	 * "date": <unix timestap of when it is marked to be deleted> 
+	 * ],
+	 * [
+	 * "siteId": <site_id>,
+	 * "toold": <tool_id>,
+	 * "user": <user id>,
+	 * "date": <unix timestap of when it is marked to be deleted>
+	 * ]
+	 * }
+	 */
+	@GET
+	@Produces(MediaType.APPLICATION_JSON)
+	@RequestMapping("/siteToolNotMigrate")
+	public Response siteToolNotMigrate(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		
+		// 1. get the siteId request parameter
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String[] siteIds = parameterMap.get("siteId");
+		if (siteIds == null || siteIds.length != 1) {
+			String errorMessage = "siteToolNotMigrate request missing or multiple required parameter: siteId";
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage).build();
+		}
+		String siteId = siteIds[0];
+		
+		// 2. get the SiteToolExemptChoice record from database for this site	
+		try {
+			return Response.status(Response.Status.OK)
+					.entity(tRepository.findSiteToolExemptChoiceForSite(siteId)).build();
+		} catch (Exception e) {
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity("Problem getting SiteToolExemptionChoice for " + siteId
+							+ ": " + e.getMessage()).build();
+		}
+
 	}
 }
