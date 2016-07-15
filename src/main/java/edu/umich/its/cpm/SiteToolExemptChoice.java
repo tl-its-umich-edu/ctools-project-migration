@@ -81,7 +81,7 @@ public class SiteToolExemptChoice {
 	@Override
 	public String toString() {
 		String s = String
-				.format("SiteDeleteChoice[consentId=%s,"
+				.format("SiteDeleteChoice[exemptId=%s,"
 						+ "siteId=%s, "
 						+ "userId='%s',"
 						+ "consentTime='%s',"
