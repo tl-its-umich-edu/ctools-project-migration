@@ -983,7 +983,7 @@ public class MigrationTaskService {
 					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
-							log.debug(numBytes + " out of total bytes "
+							log.info(numBytes + " out of total bytes "
 									+ totalBytes + " and file size " + fileSize);
 						}
 					});

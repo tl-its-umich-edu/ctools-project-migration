@@ -119,6 +119,9 @@ public class MigrationController {
 	
 	@Autowired
 	BoxAuthUserRepository uRepository;
+	
+	@Autowired
+	SiteDeleteChoiceRepository cRepository;
 
 	@Autowired
 	private Environment env;
@@ -1570,5 +1573,69 @@ public class MigrationController {
 
 		}
 		return siteName;
+	}
+	
+	/******************* migtation choices ********************/
+	/**
+	 * save user input for site delete choices into database
+	 * 
+	 * @return
+	 */
+	@POST
+	@Produces("application/json")
+	@RequestMapping("/deleteSiteChoice")
+	@ResponseBody
+	public ResponseEntity<String> deleteSiteChoice(HttpServletRequest request,
+			HttpServletResponse response, UriComponentsBuilder ucb) {
+		
+		HttpHeaders headers = new HttpHeaders();
+		
+		String userId = Utils.getCurrentUserId(request, env);
+		HashMap<String, String> rv = new HashMap<String, String>();
+
+		// we need to do series checks to make sure the migration request is
+		// valid
+		// 1. check if missing site_id
+		Map<String, String[]> parameterMap = request.getParameterMap();
+		String siteId = parameterMap.get("site_id")[0];
+		if (siteId == null || siteId.isEmpty()) {
+			String errorMessage = "deleteSiteChoice request missing required parameter: site_id";
+			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+		}
+		log.info("request migration for site " + siteId);
+		// can accept multiple site ids concatenated with "+" sign
+		String[] siteIds = siteId.split("+");
+		
+		// 2. save the choices into database
+		StringBuffer errorMessages = new StringBuffer();
+		List<SiteDeleteChoice> cList = new ArrayList<SiteDeleteChoice>();
+		for (int i = 0; i < siteIds.length; i++)
+		{
+			// now for all sites, save the delete site choice into database
+			SiteDeleteChoice c = new SiteDeleteChoice(siteId, userId, 
+							new java.sql.Timestamp(System.currentTimeMillis()));
+			log.info("Save user site delete choice: " + c.toString());
+			try {
+				c = cRepository.save(c);
+				
+				// upon successful save
+				// add the record into the return JSON
+				cList.add(c);
+			} catch (Exception e) {
+				errorMessages.append("Exception in saving siteDeleteChoice " + c.toString() + " ");
+			}
+		}
+		
+		if (errorMessages.length() > 0)
+		{
+			// in case of error
+			log.error(errorMessages.toString());
+			return new ResponseEntity<String>(errorMessages.toString(), headers, HttpStatus.CONFLICT);
+		} else {
+			log.info(this + " Delete site choice saved ");
+			return new ResponseEntity<String>("Delete site choices saved.", headers,
+					HttpStatus.ACCEPTED);
+		}
+
 	}
 }
