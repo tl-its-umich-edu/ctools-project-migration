@@ -367,17 +367,33 @@ public class BoxUtils {
 				
 				// test the newly created object
 				// and watch for any BoxAPIException
-				rootFolder.getChildren();
-				
 				for (Info c : rootFolder.getChildren()) {
-					if (newBoxFolderName.equals(c.getName())) {
-						// folder already exist
-						newFolderInfo = (BoxFolder.Info) c;
+					if (newBoxFolderName.equals(c.getName()))
+					{
+						if (siteId.equals(c.getDescription())) {
+							// if the Box folder name matches site title, 
+							// AND Box folder description matches site id
+							// reuse the Box folder
+							newFolderInfo = (BoxFolder.Info) c;
+						}
+						else
+						{
+							// if only Box folder name matches site title
+							// but Box folder description does NOT match site id
+							// we need to create a new Box folder 
+							// and set the Box folder title as siteName_siteId
+							newFolderInfo = rootFolder.createFolder(newBoxFolderName + "_" + siteId);
+							BoxFolder newFolder = newFolderInfo.getResource();
+							newFolderInfo.setDescription(siteId);
+							newFolder.updateInfo(newFolderInfo);
+						}
+						break;
 					}
 				}
 
 				if (newFolderInfo == null) {
-					// no such folder yet, create the folder
+					// no there is no Box folder name match site title
+					// create the Box folder
 					newFolderInfo = rootFolder.createFolder(newBoxFolderName);
 					BoxFolder newFolder = newFolderInfo.getResource();
 					newFolderInfo.setDescription(siteId);
