@@ -113,6 +113,9 @@ public class Utils {
 	
 	// constants for environment properties
 	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
+	
+	// Strings for CTools MyWorkspace sites title
+	public static final String CTOOLS_MYWORKSPACE_TITLE="My Workspace";
 
 	/**
 	 * login into CTools and become user with sessionId
