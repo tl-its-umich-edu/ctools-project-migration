@@ -380,9 +380,17 @@ public class BoxUtils {
 						{
 							// if only Box folder name matches site title
 							// but Box folder description does NOT match site id
-							// we need to create a new Box folder 
-							// and set the Box folder title as siteName_siteId
-							newFolderInfo = rootFolder.createFolder(newBoxFolderName + "_" + siteId);
+							// we need to create a new Box folder
+							if (newBoxFolderName.equals(Utils.CTOOLS_MYWORKSPACE_TITLE))
+							{
+								// for MyWorkspace sites, attach uniqname to Box folder name
+								newFolderInfo = rootFolder.createFolder(newBoxFolderName + "_" + userId);
+							}
+							else
+							{
+								// for other type of sites, attach the site id to Box folder name
+								newFolderInfo = rootFolder.createFolder(newBoxFolderName + "_" + siteId);
+							}
 							BoxFolder newFolder = newFolderInfo.getResource();
 							newFolderInfo.setDescription(siteId);
 							newFolder.updateInfo(newFolderInfo);
