@@ -1,6 +1,65 @@
 'use strict';
 /* global projectMigrationApp, errorDisplay */
 
+projectMigrationApp.factory('ProjectsLite', function($http) {
+	return {
+		postDeleteSiteRequest : function(url) {
+			return $http.post(url, {
+				cache : false
+			}).then(function success(result) {
+				// filter everything course sites
+				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+				return result;
+			}, function error(result) {
+				errorDisplay(url, result.status, 'Unable to do X');
+				result.errors.failure = true;
+				return result;
+			});
+		},
+    doNotMigrateTool : function(url) {
+			return $http.post(url, {
+				cache : false
+			}).then(function success(result) {
+				// filter everything course sites
+				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+				return result;
+			}, function error(result) {
+				errorDisplay(url, result.status, 'Unable to do X');
+				result.errors.failure = true;
+				return result;
+			});
+		},
+    isSiteToBeDeleted : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(function success(result) {
+        // filter everything course sites
+        // returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+        return result;
+      }, function error(result) {
+        errorDisplay(url, result.status, 'Unable to do X');
+        result.errors.failure = true;
+        return result;
+      });
+    },
+    siteToolNotMigrate : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(function success(result) {
+        // filter everything course sites
+        // returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+        return result;
+      }, function error(result) {
+        errorDisplay(url, result.status, 'Unable to do X');
+        result.errors.failure = true;
+        return result;
+      });
+    }
+  };
+});
+
+
+
 /*
  * PROJECTS FACTORY - does the requests for the projects controller getProjects:
  * gets the projects the user has a specific role in getProject: for a given
@@ -270,5 +329,3 @@ projectMigrationApp.factory('focus', function($timeout, $window) {
     });
   };
 });
-
-
