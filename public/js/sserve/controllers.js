@@ -874,6 +874,17 @@ projectMigrationApp
             var siteDeleteURL = '/deleteSite?' + targetDeleteData.join('&');
             ProjectsLite.postDeleteSiteRequest(siteDeleteURL).then(
               function(result) {
+                if(result.data === 'Delete site choices saved.'){
+                  // find this site and add deleteStatus object to let user know
+                  _.each(targetDeleteData, function(targetSite){
+                    var targetSiteId = targetSite.split('=');
+                    var thisSite = _.findWhere($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
+                    thisSite.deleteStatus = {
+                      'userId':'You have',
+                      'consentTime': moment().valueOf()
+                    };
+                  });
+                }
               }
             );
           }
@@ -884,6 +895,14 @@ projectMigrationApp
               var donotMigrateUrl = '/doNotMigrateTool?' + toolNotToMigr;
               ProjectsLite.doNotMigrateTool(donotMigrateUrl).then(
                 function(result) {
+                  if(result.data ==='site tool delete exempt choice saved.') {
+                    // find this tool and add doNotMigrateStatus object to let user know
+                    var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolNotToMigr.split('=')[2]});
+                    thisTool.doNotMigrateStatus = {
+                      'userId':'You have',
+                      'consentTime': moment().valueOf()
+                    };
+                  }
                 }
               );
             });

@@ -31,7 +31,7 @@
                 <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
               </div>
               <div style="padding-left:17px" ng-show="project.deleteStatus">
-                <small>Flagged for deletion by {{project.deleteStatus.userId}} on {{project.deleteStatus.consentTime | date:'medium'}}</small>
+                <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
               </div>
             </div>
 					</div>
@@ -68,7 +68,7 @@
               <div ng-show="project.doNotMigrateStatus">
                 <p style="padding-left:17px">
                   <small>
-                  {{project.doNotMigrateStatus.userId}} requested this content not be migrated on {{project.doNotMigrateStatus.consentTime | date: medium}}
+                  {{project.doNotMigrateStatus.userId}} requested this content not be migrated on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
                   </small>
                 </p>
               </div>
