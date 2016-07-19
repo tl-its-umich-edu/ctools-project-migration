@@ -7,8 +7,6 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
 			return $http.post(url, {
 				cache : false
 			}).then(function success(result) {
-				// filter everything course sites
-				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
 				return result;
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to do X');
@@ -20,8 +18,6 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
 			return $http.post(url, {
 				cache : false
 			}).then(function success(result) {
-				// filter everything course sites
-				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
 				return result;
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to do X');

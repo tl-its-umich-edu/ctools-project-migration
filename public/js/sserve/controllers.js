@@ -1,6 +1,6 @@
 
 'use strict';
-/* global projectMigrationApp, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated */
+/* global projectMigrationApp, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus */
 
 /* MIGRATIONS CONTROLLER */
 projectMigrationApp
@@ -78,6 +78,11 @@ projectMigrationApp
         Projects.getProjects(projectsUrl).then(
           function(result) {
             $scope.sourceProjects = result;
+            // launch a decorator to query site status
+            // - only launched in sserve-lite view
+            if (!$scope.migratingActive) {
+              $scope.addSiteStatus();
+            }
             $scope.loadingProjects = false;
             $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
             $log.info(' - - - - GET /projects');
@@ -171,6 +176,7 @@ projectMigrationApp
                 'migrated');
             });
 
+
         // handler for a request for the tools of a given
         // project site
         $scope.getTools = function(projectId) {
@@ -182,6 +188,9 @@ projectMigrationApp
             .getProject(projectUrl)
             .then(
               function(result) {
+                if(!$scope.migratingActive && result.data) {
+                  result.data = $scope.doNotMigrateToolStatus(result.data);
+                }
                 var targetProjPos = $scope.sourceProjects
                   .indexOf(_
                     .findWhere(
@@ -829,50 +838,98 @@ projectMigrationApp
 
 
         /*
-         * shell handler for pdating a users project list with
-         * choices to have site deleted or not have tool exported
+         * handlers for posting 1) user acceptance that
+         * a site may be deleted and 2) user requests to not have
+         * certain tools migrated
          */
 
         $scope.updateProjectListSettings = function() {
-          var targetDoNotMove = _.where(
-            $scope.sourceProjects, {
-              selectedDoNotMove: true,
-            });
-
+          // get the sites that the user has
+          // marked as ok to be deleted
           var targetDelete = _.where(
             $scope.sourceProjects, {
               deleteProject: true,
             });
 
-          var targetDoNotMoveNames = [];
-          var targetDeleteNames = [];
+          // get the tools that have been
+          // selected for no migration
+          var targetDoNotMove = _.where(
+            $scope.sourceProjects, {
+              selectedDoNotMove: true,
+            });
 
-          _.each(targetDoNotMove, function(target) {
-            targetDoNotMoveNames.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id);
-          });
+          // initialize empty arrays
+          var targetDeleteData = [];
+          var targetDoNotMoveData = [];
+          // populate the arrays
           _.each(targetDelete, function(target) {
-            targetDeleteNames.push('siteId=' + target.site_id);
+            targetDeleteData.push('siteId=' + target.site_id);
           });
-
-          if(targetDeleteNames.length){
-            var siteDeleteURL = '/deleteSite?' + targetDeleteNames.join('&');
+          _.each(targetDoNotMove, function(target) {
+            targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id);
+          });
+          // if delete array has items
+          // post acceptance of deletion (params are a joined targetDeleteData array)
+          if(targetDeleteData.length){
+            var siteDeleteURL = '/deleteSite?' + targetDeleteData.join('&');
             ProjectsLite.postDeleteSiteRequest(siteDeleteURL).then(
               function(result) {
               }
             );
           }
-
-          if(targetDoNotMoveNames.length){
-            _.each(targetDoNotMoveNames, function(toolNotToMigr) {
-              // will require several posts
-              $log.info(toolNotToMigr);
-              $log.info('/doNotMigrateTool?' + toolNotToMigr);
+          // if do not migrated tool request has items
+          // as many posts as selected tools
+          if(targetDoNotMoveData.length){
+            _.each(targetDoNotMoveData, function(toolNotToMigr) {
+              var donotMigrateUrl = '/doNotMigrateTool?' + toolNotToMigr;
+              ProjectsLite.doNotMigrateTool(donotMigrateUrl).then(
+                function(result) {
+                }
+              );
             });
-
           }
-          //alert('Tools not to be moved:\n\n' + targetDoNotMoveNames.join('\n\n'));
+        };
+        // launched after sourceProjects has been added to the scope
+        // it decorates sourceProjects with the delete consent status
+        $scope.addSiteStatus = function(){
+          // request status from /isSiteToBeDeleted  endpoint for each site
+          _.each($scope.sourceProjects, function(site){
+            var getSiteInfoUrl = '/isSiteToBeDeleted?siteId=' + site.site_id;
+            ProjectsLite.isSiteToBeDeleted(getSiteInfoUrl).then(
+              function(result) {
+                 if (result.data.entity) {
+                   site.deleteStatus = result.data.entity;
+                 }
+              }
+            );
+          });
+        };
+        $scope.doNotMigrateToolStatus = function(data){
+          _.each(data, function(tool){
+            var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
+            ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
+              function(result) {
+                 if (result.data.entity) {
+                   tool.doNotMigrateStatus = result.data.entity[0];
+                 }
+              }
+            );
+          });
+        return data;
         };
 
+        // handler for finding out what status a site has.
+        $scope.getSiteInfo = function (projectId) {
+          var getSiteInfoUrl = '/isSiteToBeDeleted?siteId=' + projectId;
+          ProjectsLite.isSiteToBeDeleted(getSiteInfoUrl).then(
+            function(result) {
+              $log.info(result);
+            }
+          );
+        };
+
+        // on selection - if there is a selection
+        // enable button to post selections
         $scope.updateProjectListCheck = function() {
           var targetDoNotMove = _.where(
             $scope.sourceProjects, {
@@ -888,11 +945,7 @@ projectMigrationApp
             $scope.selectionIsMade = false;
           }
         };
-
-
-
       }
-
 
 
 
