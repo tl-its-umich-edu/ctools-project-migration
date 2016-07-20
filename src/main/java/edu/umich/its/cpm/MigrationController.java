@@ -327,7 +327,7 @@ public class MigrationController {
 			JSONArray sitesJSONArray = sitesJSONObject.getJSONArray(JSON_ATTR_SITE_COLLECTION);
 			
 			// filter out those sites that current user has role "Owner" in it
-			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); ++iSite) {
+			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); iSite++) {
 				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
 				String siteId = siteJSON.getString("id");
 				try
@@ -335,14 +335,11 @@ public class MigrationController {
 					// get all site members
 					HashMap<String, String> userRoles = get_site_members(
 							request, siteId);
-					for (String userEid : userRoles.keySet()) {
-						String userRole = userRoles.get(userEid);
-						if (Utils.ROLE_OWNER.equals(userRole) && userEid.equals(currentUserId))
-						{
-							// keep the site JSON if current user has Owner role in this site
-							ownerSitesJSONArray.put(siteJSON);
-							break;
-						}
+					String userRole = userRoles.get(currentUserId);
+					if (Utils.ROLE_OWNER.equals(userRole))
+					{
+						// keep the site JSON if current user has Owner role in this site
+						ownerSitesJSONArray.put(siteJSON);
 					}
 				}
 				catch (RestClientException e)
