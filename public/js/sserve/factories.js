@@ -9,7 +9,7 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
 			}).then(function success(result) {
 				return result;
 			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to do X');
+				errorDisplay(url, result.status, 'Unable to request that a site be deleted.');
 				result.errors.failure = true;
 				return result;
 			});
@@ -20,7 +20,7 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
 			}).then(function success(result) {
 				return result;
 			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to do X');
+				errorDisplay(url, result.status, 'Unable to request that a tool not be migrated.');
 				result.errors.failure = true;
 				return result;
 			});
@@ -33,7 +33,7 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
         // returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
         return result;
       }, function error(result) {
-        errorDisplay(url, result.status, 'Unable to do X');
+        errorDisplay(url, result.status, 'Unable to query if a site has a delete request associated with it. ');
         result.errors.failure = true;
         return result;
       });
@@ -46,7 +46,7 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
         // returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
         return result;
       }, function error(result) {
-        errorDisplay(url, result.status, 'Unable to do X');
+        errorDisplay(url, result.status, 'Unable to query if a tool has a do not migrate request associated with it.');
         result.errors.failure = true;
         return result;
       });
