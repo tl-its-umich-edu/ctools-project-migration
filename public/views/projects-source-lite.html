@@ -26,20 +26,26 @@
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
             <div>
-              <br><input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
-              <div style="padding-left:17px">
-                <small>Flagged for deletion by so and so on such a date</small>
-
+              <br>
+              <div ng-hide="project.deleteStatus">
+                <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
+              </div>
+              <div style="padding-left:17px" ng-show="project.deleteStatus">
+                <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
               </div>
             </div>
 					</div>
-					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+					<div class="col-md-2 col-lg-2 col-sm-2 col-xs-2">
 						<a ng-click="getTools(project.site_id)" href=""
 							ng-show="!project.stateHasTools && !project.migrating"> Get
 							tools <span class="sr-only">for site {{project.site_name}}</span>
 						</a>
           </div>
-
+          <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+            <a ng-click="getSiteInfo(project.site_id)" href="#" title="Get info for site {{project.site_name}}"><span class="sr-only">Get info for site {{project.site_name}}</span>
+              <i class="glyphicon glyphicon-info-sign"></i>
+            </a>
+          </div>
         </div>
 			</div>
 			<div class="x"
@@ -50,18 +56,25 @@
               <h5>
                 {{project.tool_name}}
               </h5>
-							<input type="checkbox"
-								id="check{{project.site_id}}{{project.tool_id}}"
-								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
-							<label for="check{{project.site_id}}{{project.tool_id}}"
-								style="font-weight: normal">Do not move my {{project.tool_name}} to
-              <span ng-if="project.tool_type==='sakai.resources'">Box</span>
-              <span ng-if="project.tool_type==='sakai.mailbox'">Google group</span</label>
+              <div ng-show="!project.doNotMigrateStatus">
+  							<input type="checkbox"
+  								id="check{{project.site_id}}{{project.tool_id}}"
+  								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
+  							<label for="check{{project.site_id}}{{project.tool_id}}"
+  								style="font-weight: normal">Do not move my {{project.tool_name}} to
+                <span ng-if="project.tool_type==='sakai.resources'">Box</span>
+                <span ng-if="project.tool_type==='sakai.mailbox'">Google group</span</label>
+              </div>
+              <div ng-show="project.doNotMigrateStatus">
+                <p style="padding-left:17px">
+                  <small>
+                  {{project.doNotMigrateStatus.userId}} requested this content not be migrated on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
+                  </small>
+                </p>
+              </div>
 						</div>
 					</div>
-          <p style="padding-left:17px">
-            <small>Opted out by so and so on such a date</small>
-          </p>
+
 					<div class="row noFocus"
 						id="toolSelDest{{project.tool_id}}" tabindex="-1">
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
