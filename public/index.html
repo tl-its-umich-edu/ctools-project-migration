@@ -11,8 +11,11 @@
 </head>
 
 <body ng-app="projectMigrationApp">
+  <div id="ie">
+    Internet Explorer users will be redirected to open this feature in a new window. If this does not happen automatically <a href="#" target="_blank">click here to open the new window.</a>
+  </div>
 	<div ng-controller="projectMigrationController" class="container-fluid"
-		style="padding: 0 20px">
+		style="padding: 0 20px" id="contentBody">
 		<nav role="navigation" class="navbar navbar-default"
 			style="background: #00274c">
 			<div class="container-fluid">
@@ -235,6 +238,21 @@
 	<script src="js/sserve/factories.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
 	<script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
+  <script type="text/javascript">
+  // needed to pop up IE in own window
+  $(document).ready(function() {
+    if (top.location === self.location) {
+      $('#contentBody').show();
+      $('#ie').hide();
+    }
+    if ($('#ie').is(':visible')) {
+      if (top.location !== self.location) {
+        window.open(location, '_blank', 'width=900, height=900');
+      }
+    }
+  });
+</script>
+
 </body>
 
 </html>
