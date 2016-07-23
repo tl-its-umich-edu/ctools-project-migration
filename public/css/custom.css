@@ -138,6 +138,28 @@ h3.panel-title small {
   font-weight:normal
 }
 
+#ie {
+      display: none
+    }
+/*for ie edge*/
+@supports (-ms-accelerator:true) {
+  #ie {
+    display: block
+  }
+  #contentBody {
+    display: none
+  }
+}
+/*for ie 9, 10, 11*/
+@media screen and (min-width:0\0) {
+  #ie {
+    display: block
+  }
+  #contentBody {
+    display: none
+  }
+}
+
 @media (max-width: 480px) {
 	.panel-heading {
 		background-color: #777 !important;
