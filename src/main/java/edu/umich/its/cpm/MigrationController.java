@@ -1504,8 +1504,33 @@ public class MigrationController {
 			for (String siteId : bulkUploadSiteIds) {
 				// for each site id, start the migration process
 				// associate it with the bulk id
+				
 				// 1. get site name
 				String siteName = getSiteName(request, siteId);
+				if (siteName == null)
+				{
+					// if the site id is invalid, and we cannot find the site
+					// generate an empty migration record with error and move on
+					
+					/* Timestamp start_time, Timestamp end_time,
+					String destination_type, String destination_url, String status*/
+					Migration migrationWithWrongSiteId = new Migration(bulkMigrationId, bulkMigrationName,
+							siteId, "default_site_name"/*site name*/,
+							"default_tool_id"/*tool id*/, "default_tool_name"/*tool name*/,
+							userId/*migrated by*/,
+							new java.sql.Timestamp(System.currentTimeMillis()), new java.sql.Timestamp(System.currentTimeMillis()),
+							Utils.MIGRATION_TYPE_BOX, "",
+							"Cannnot find a CTools site with the site id.");
+					try {
+						repository.save(migrationWithWrongSiteId);
+					} catch (IllegalArgumentException e) {
+						log.error("Exception " + migrationWithWrongSiteId.toString() + e.getMessage());
+					} catch (Exception e) {
+						log.error("Exception " + migrationWithWrongSiteId.toString() + e.getMessage());
+					}
+					break;
+				}
+				
 				String toolId = "";
 				String toolName = "";
 
@@ -1615,7 +1640,7 @@ public class MigrationController {
 	 * @return
 	 */
 	private String getSiteName(HttpServletRequest request, String siteId) {
-		String siteName = "";
+		String siteName = null;
 		// login to CTools and get sessionId
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env,
 				request, Utils.getCurrentUserId(request, env));
