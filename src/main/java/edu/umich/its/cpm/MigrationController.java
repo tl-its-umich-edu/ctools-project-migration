@@ -886,10 +886,7 @@ public class MigrationController {
 	@RequestMapping("/box/folders")
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
-
-		// get the current user id
-		String userId = Utils.getCurrentUserId(request, env);
-
+		
 		String boxClientId = BoxUtils.getBoxClientId(request, env);
 		String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
 		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
@@ -912,7 +909,7 @@ public class MigrationController {
 					remoteUserEmail, response, uRepository);
 		} else {
 			// get box folders json
-			return BoxUtils.getBoxFolders(userId, boxClientId, boxClientSecret, uRepository);
+			return BoxUtils.getBoxFolders(remoteUserEmail, boxClientId, boxClientSecret, uRepository);
 		}
 		return null;
 	}
