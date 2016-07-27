@@ -1528,7 +1528,7 @@ public class MigrationController {
 					} catch (Exception e) {
 						log.error("Exception " + migrationWithWrongSiteId.toString() + e.getMessage());
 					}
-					break;
+					continue;
 				}
 				
 				String toolId = "";
