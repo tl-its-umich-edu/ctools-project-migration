@@ -50,6 +50,7 @@ import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.config.TikaConfig;
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.util.StringUtils;
 
 @Configuration
 public class Utils {
@@ -58,7 +59,7 @@ public class Utils {
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
 	public static final String STATUS_ONGING = "onging";
-	
+
 	public static final String ROLE_OWNER = "Owner";
 	public static final String ROLE_ORGANIZER = "Organizer";
 	public static final String ROLE_MEMBER = "Member";
@@ -66,7 +67,7 @@ public class Utils {
 	public static final String ROLE_MAINTAINER = "maintainer";
 	public static final String ROLE_INSTRUCTOR = "Instructor";
 	public static final String ROLE_STUDENT = "student";
-	
+
 	public static final String COLLECTION_TYPE = "collection";
 
 	public static final String MIGRATION_TYPE_BOX = "box";
@@ -214,7 +215,7 @@ public class Utils {
 	/**
 	 * Checks first whether the JSONObject contains specified key value; If so,
 	 * return the String value associated with the key
-	 * 
+	 *
 	 * @param object
 	 * @param key
 	 * @return
@@ -229,7 +230,7 @@ public class Utils {
 
 	/**
 	 * return long value based on JSON string
-	 * 
+	 *
 	 * @param object
 	 * @param key
 	 * @return
@@ -248,7 +249,7 @@ public class Utils {
 	public static String getCurrentUserEmail(HttpServletRequest request, Environment env) {
 		String remoteUserEmail = Utils.getCurrentUserId(request, env);
 		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
-		
+
 		if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			// use admin account id instead
 			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
@@ -288,7 +289,7 @@ public class Utils {
 			Environment env) {
 		// get CoSign user first
 		String rvUser = getRemoteUser(request);
-		
+
 		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 		}*/
@@ -320,7 +321,7 @@ public class Utils {
 			log.debug("CoSign user=" + rvUser + " test user=" + testUser
 					+ " returned user=" + rvUser);
 		}
-		
+
 		return rvUser;
 
 	}
@@ -445,7 +446,7 @@ public class Utils {
 
 	/**
 	 * return true if the string value is not null or empty
-	 * 
+	 *
 	 * @param value
 	 * @return
 	 */
@@ -456,7 +457,7 @@ public class Utils {
 
 	/**
 	 * replace characters match the regular expression to "_"
-	 * 
+	 *
 	 * @param name
 	 * @return
 	 */
@@ -478,7 +479,7 @@ public class Utils {
 	 * If file extension is missing, look up the extension by file MIME type and
 	 * add extension if found; If file extension is still missing, append
 	 * ".html" for Web Link and citation type of resources
-	 * 
+	 *
 	 * @param type
 	 * @param fileName
 	 * @return
@@ -530,7 +531,7 @@ public class Utils {
 
 	/**
 	 * change folder path based on updated folder title
-	 * 
+	 *
 	 * @param folderNameUpdates
 	 * @param title
 	 * @param folderName
@@ -575,7 +576,7 @@ public class Utils {
 
 	/**
 	 * CTools Web Link content is exported as a html file, with the link inside
-	 * 
+	 *
 	 * @param fileName
 	 * @param fileUrl
 	 * @return
@@ -599,11 +600,11 @@ public class Utils {
 
 	/*
 	 * update the folder title in file name string
-	 * 
+	 *
 	 * @param fileName
-	 * 
+	 *
 	 * @param folderNameMap
-	 * 
+	 *
 	 * @return
 	 */
 	public static String updateFolderPathForFileName(String fileName,
@@ -614,11 +615,16 @@ public class Utils {
 		while (parentFolder != null) {
 			// checks for folder name updates in the path
 			// replace all old folder title with new title
-			if (folderNameMap.containsKey(parentFolder)) {
-				fileName = fileName.replace(parentFolder,
-						folderNameMap.get(parentFolder));
-				break;
-			}
+            if (folderNameMap.containsKey(parentFolder)) {
+                // if the folder name have / in it then we are not zipping the file with original name instead the folder
+                // name will contain _ in it
+                if (!(StringUtils.countOccurrencesOf(folderNameMap.get(parentFolder), "/") > 1)) {
+                    fileName = fileName.replace(parentFolder,
+                            folderNameMap.get(parentFolder));
+                }
+
+                break;
+            }
 
 			// get the next parent folder
 			// remove the trailing "/"
@@ -636,7 +642,7 @@ public class Utils {
 		}
 		return fileName;
 	}
-	
+
 	/**
 	 * check whether the given type is of URL MIME type
 	 * @param type

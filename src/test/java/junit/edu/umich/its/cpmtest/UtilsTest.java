@@ -159,9 +159,9 @@ public class UtilsTest extends TestCase {
 		
 		// now test the file name change
 		// 1. there is a folder name change inside the file path
-		String fileName = Utils.updateFolderPathForFileName("changed_folder_name/subfolder_1/test.pdf", folderNamesMap);
-		assertEquals(fileName, "new_changed_folder_name/new_subfolder_1/test.pdf");
-		
+		String fileName = Utils.updateFolderPathForFileName("changed_folder_name/test.pdf", folderNamesMap);
+		assertEquals(fileName, "new_changed_folder_name/test.pdf");
+
 		// 2. there is NO folder name change inside the file path
 		fileName = Utils.updateFolderPathForFileName("unchanged_folder_name/subfolder_1//test.pdf", folderNamesMap);
 		assertEquals(fileName, "unchanged_folder_name/subfolder_1//test.pdf");
