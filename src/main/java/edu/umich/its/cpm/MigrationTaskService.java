@@ -36,6 +36,7 @@ import javax.ws.rs.core.Response;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.scheduling.annotation.AsyncResult;
 import org.springframework.stereotype.Service;
+import org.springframework.util.StringUtils;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
 
@@ -272,7 +273,11 @@ public class MigrationTaskService {
 						folderNameMap = Utils.updateFolderNameMap(
 								folderNameMap, title, folderName);
 						if (folderNameMap.containsKey(folderName)) {
-							folderName = folderNameMap.get(folderName);
+							// if the folder name have / in it then we are not zipping the file with original name instead the folder
+							// name will contain _ in it. As having the / will have cause the zip library creating inner folders
+							if (!(StringUtils.countOccurrencesOf(folderNameMap.get(folderName), "/") > 1)) {
+								folderName = folderNameMap.get(folderName);
+							}
 						}
 
 						log.info("download folder " + folderName);
