@@ -117,6 +117,9 @@ public class Utils {
 	
 	// Strings for CTools MyWorkspace sites title
 	public static final String CTOOLS_MYWORKSPACE_TITLE="My Workspace";
+	
+	// error message of no CTools site with id
+	public static final String NO_CTOOLS_SITE="Cannnot find a CTools site with the site id";
 
 	/**
 	 * login into CTools and become user with sessionId

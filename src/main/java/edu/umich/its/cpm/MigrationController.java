@@ -1345,7 +1345,21 @@ public class MigrationController {
 				String siteId = m.getSite_id();
 				String siteStatus = Utils.STATUS_SUCCESS;
 				String siteStatusString = m.getStatus();
-				if (siteStatusString != null)
+				
+				if (siteStatusString == null)
+				{
+					siteMap.put("id", siteId);
+					siteMap.put("name", m.getSite_name());
+					siteMap.put("status", Utils.STATUS_ONGING);
+					ongoing = true;
+				}
+				else if (siteStatusString.equals(Utils.NO_CTOOLS_SITE))
+				{
+					siteMap.put("id", siteId);
+					siteMap.put("name", m.getSite_name());
+					siteMap.put("status", Utils.NO_CTOOLS_SITE);
+				}
+				else
 				{
 					JSONObject siteStatusJson = new JSONObject(siteStatusString);
 					// look the tools attribute and find resource tool
@@ -1367,13 +1381,6 @@ public class MigrationController {
 					siteMap.put("id", siteId);
 					siteMap.put("name", m.getSite_name());
 					siteMap.put("status", siteStatus);
-				}
-				else
-				{
-					siteMap.put("id", siteId);
-					siteMap.put("name", m.getSite_name());
-					siteMap.put("status", Utils.STATUS_ONGING);
-					ongoing = true;
 				}
 				
 				// add this site into sites list
@@ -1515,12 +1522,12 @@ public class MigrationController {
 					/* Timestamp start_time, Timestamp end_time,
 					String destination_type, String destination_url, String status*/
 					Migration migrationWithWrongSiteId = new Migration(bulkMigrationId, bulkMigrationName,
-							siteId, "default_site_name"/*site name*/,
+							siteId, Utils.NO_CTOOLS_SITE + " " + siteId/*site name*/,
 							"default_tool_id"/*tool id*/, "default_tool_name"/*tool name*/,
 							userId/*migrated by*/,
 							new java.sql.Timestamp(System.currentTimeMillis()), new java.sql.Timestamp(System.currentTimeMillis()),
 							Utils.MIGRATION_TYPE_BOX, "",
-							"Cannnot find a CTools site with the site id.");
+							Utils.NO_CTOOLS_SITE);
 					try {
 						repository.save(migrationWithWrongSiteId);
 					} catch (IllegalArgumentException e) {
