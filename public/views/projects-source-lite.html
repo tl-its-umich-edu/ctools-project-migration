@@ -60,6 +60,13 @@
                 <span ng-if="project.tool_type==='sakai.resources'">Box</span>
                 <span ng-if="project.tool_type==='sakai.mailbox'">Google group</span</label>
               </div>
+              <div ng-show="project.lastMigratedStatus">
+                <p style="padding-left:17px">
+                  <small>
+                    Last migrated by {{project.lastMigratedStatus.migratedBy}} to {{project.lastMigratedStatus.migratedHow}} on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}}
+                  </small>
+                </p>
+              </div>
               <div ng-show="project.doNotMigrateStatus">
                 <p style="padding-left:17px">
                   <small>
