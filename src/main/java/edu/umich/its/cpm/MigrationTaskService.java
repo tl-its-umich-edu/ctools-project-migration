@@ -722,6 +722,10 @@ public class MigrationTaskService {
 
 			}
 
+			// exclude the root folder level in the status report
+			if (i == 0)
+				continue;
+			
 			// the status of file upload to Box
 			MigrationFileItem item = new MigrationFileItem(contentUrl, title,
 					itemStatus.toString());

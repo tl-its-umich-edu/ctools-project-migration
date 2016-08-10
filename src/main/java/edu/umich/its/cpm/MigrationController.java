@@ -1357,7 +1357,8 @@ public class MigrationController {
 				{
 					siteMap.put("id", siteId);
 					siteMap.put("name", m.getSite_name());
-					siteMap.put("status", Utils.NO_CTOOLS_SITE);
+					siteMap.put("status", Utils.STATUS_FAILURE);
+					errorSiteCount++;
 				}
 				else
 				{
