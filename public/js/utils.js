@@ -142,6 +142,7 @@ var prepareReport = function (data){
 
 var transformMigrated = function(result) {
   _.each(result.data.entity, function(migrated){
+    migrated.migrated_by = migrated.migrated_by.split(',')[0];
     if (migrated.destination_url){
       var destination_urlArr = migrated.destination_url.split('/');
       if(destination_urlArr.length > 7) {
@@ -152,9 +153,9 @@ var transformMigrated = function(result) {
         migrated.destination_folder =null;
       }
     }
-  })
+  });
   return result;
-}
+};
 
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);

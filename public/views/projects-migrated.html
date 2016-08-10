@@ -35,6 +35,7 @@
 				  </span>
 
 				 <span ng-show="migratedProject.destination_url===null">Exported to {{migratedProject.destination_type}}</span>
+         <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
 				</div>
         <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
           <small ng-show="migratedProject.status.data.counts.failures !==0" class="export-fail">
