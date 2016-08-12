@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Report details</title>
+  <link rel="stylesheet" href="vendors/bootstrap/bootstrap.min.css">
+  <link rel="stylesheet" href="css/custom.css">
+  <link rel="stylesheet" href="css/files.css">
+</head>
+
+<body ng-app="projectMigrationApp">
+  <div ng-controller="reportController" class="container" style="padding:20px">
+    <div class="row">
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16">
+        <h3>{{reportDetails.title}}. <small>Items exported: {{reportDetails.data.items.length}}</small></h3>
+      </div>
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16" style="text-align:right">
+        <button ng-show="!showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Show paths</button>
+        <button ng-show="showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Hide paths</button>
+      </div>
+    </div>
+    <br>
+    <div ng-class="reportDetails.data.counts.successes.length ? 'alert alert-info' : 'alert alert-warning'">{{reportDetails.status}} - successes: {{reportDetails.data.counts.successes}}, errors: {{reportDetails.data.counts.failures}}</div>
+    <ul class="list-group container">
+      <li class="list-group-item" ng-repeat="item in reportDetails.data.items">
+        <div class="row">
+          <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle">
+            <span class="file-icon {{item.file_name | getExtension}}" style="vertical-align: middle;"></span>
+            <span ng-show="showPaths" style="vertical-align: middle;">{{item.path}}</span>
+            <span ng-hide="showPaths" style="vertical-align: middle;">{{item.file_name}}</span>
+          </div>
+          <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+            <span ng-show="item.status_code==='success'" class="glyphicon glyphicon-ok" aria-hidden="true" style="vertical-align: middle"></span>
+            <span ng-show="item.status_code==='fail'" class="glyphicon glyphicon-info-sign" aria-hidden="true" style="vertical-align: middle;color:#c00"></span>
+          </div>
+        </div>
+        <div class="row" ng-show="item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1">
+          <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:50px">
+          <small>{{item.status}}</small>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
+  <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular-animate.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/underscore/underscore-min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/moment/moment.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/app.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/controllers.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/factories.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
+</body>
+
+</html>

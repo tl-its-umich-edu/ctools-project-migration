@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 
 <head>
 <meta charset="utf-8">
@@ -74,8 +74,8 @@
                       <div class="alert alert-danger" ng-show="uploadStartedMessage.status!==202">{{uploadStartedMessage.data}}</div>
                     </div>
                     <button type="reset" name="reset-file-input"
-										class="btn btn-link">Reset</button>
-                    <button class="btn btn-primary btn-xs" ng-click="bulkUpload()"
+										class="btn btn-default"><strong>Reset</strong></button>
+                    <button class="btn btn-primary" ng-click="bulkUpload()"
 										name="process-file-input">Process</button>
                     <div class="spinner" ng-show="bulkUploadInProcess"></div>
                   </div>
@@ -93,9 +93,9 @@
 								<div class="form-group pull-right">
 									<div class="spinner" style="display: none"></div>
 									<button type="reset" name="reset-direct-input"
-										class="btn btn-link">Reset</button>
+										class="btn btn-default">Reset</button>
 									<button type="button" name="process-direct-input"
-										class="process-direct-input btn btn-primary">Process</button>
+										class="process-direct-input btn btn-default">Process</button>
 								</div>
 							</form>
 						</div>
