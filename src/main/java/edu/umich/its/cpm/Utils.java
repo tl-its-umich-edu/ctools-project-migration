@@ -73,6 +73,7 @@ public class Utils {
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
+	public static final String MIME_TYPE_ZIP = "application/zip";
 
 	public static final String MIGRATION_STATUS = "status";
 	public static final String MIGRATION_DATA = "data";

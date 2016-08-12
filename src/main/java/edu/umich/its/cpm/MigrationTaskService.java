@@ -127,7 +127,7 @@ public class MigrationTaskService {
 				// the browser to show a dialog that will let user
 				// choose what action will he do to the sent content.
 				//
-				response.setContentType("application/zip");
+				response.setContentType(Utils.MIME_TYPE_ZIP);
 				String zipFileName = site_id + "_content.zip";
 				response.setHeader("Content-Disposition",
 						"attachment;filename=\"" + zipFileName + "\"");
@@ -401,7 +401,13 @@ public class MigrationTaskService {
 					} catch (java.net.MalformedURLException e) {
 						// return status with error message
 						zipFileStatus
-								.append("Link "
+								.append(e.getMessage() + "Link "
+										+ title
+										+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+					} catch (IOException e) {
+						// return status with error message
+						zipFileStatus
+								.append(e.getMessage() + "Link "
 										+ title
 										+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
 					}
@@ -1160,7 +1166,7 @@ public class MigrationTaskService {
 				// the browser to show a dialog that will let user
 				// choose what action will he do to the sent content.
 				//
-				response.setContentType("application/zip");
+				response.setContentType(Utils.MIME_TYPE_ZIP);
 				String zipFileName = site_id + "_mailarchive.zip";
 				response.setHeader("Content-Disposition",
 						"attachment;filename=\"" + zipFileName + "\"");
