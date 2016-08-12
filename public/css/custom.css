@@ -141,6 +141,21 @@ h3.panel-title small {
   font-weight:normal
 }
 
+a[role="tab"] {
+  font-weight: bold;
+  font-size: 110%;
+  color:#000;
+}
+
+.alert {
+  color:#000
+}
+a {
+  color: #004e99
+}
+.btn-primary {
+  background: #004e99
+}
 #ie {
       display: none
     }
