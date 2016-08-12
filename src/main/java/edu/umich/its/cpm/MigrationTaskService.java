@@ -1329,6 +1329,16 @@ public class MigrationTaskService {
 
 			ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MESSAGE_FILE_NAME);
 			out.putNextEntry(fileEntry);
+			
+			// output message header info
+			JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
+			for (int iHeader = 0; iHeader<headers.length(); iHeader++)
+			{
+				String header = headers.getString(iHeader) + "\r\n";
+				out.write(header.getBytes());
+			}
+			out.write("\r\n".getBytes());
+			// output message body
 			out.write(messageContent.getBytes());
 			
 
