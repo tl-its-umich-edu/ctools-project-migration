@@ -72,6 +72,8 @@ public class Utils {
 
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
+	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
+	public static final String MIME_TYPE_ZIP = "application/zip";
 
 	public static final String MIGRATION_STATUS = "status";
 	public static final String MIGRATION_DATA = "data";
@@ -120,6 +122,21 @@ public class Utils {
 	
 	// error message of no CTools site with id
 	public static final String NO_CTOOLS_SITE="Cannnot find a CTools site with the site id";
+	
+	// MailArchive message JSON prefixes
+	public static final String JSON_ATTR_MAILARCHIVE_COLLECTION = "mailarchive_collection";
+	public static final String JSON_ATTR_MAIL_HEADERS = "headers";
+	public static final String JSON_ATTR_MAIL_DATE = "Date: ";
+	public static final String JSON_ATTR_MAIL_FROM = "From: ";
+	public static final String JSON_ATTR_MAIL_SUBJECT = "Subject: ";
+	public static final String JSON_ATTR_MAIL_BODY = "body";
+	public static final String JSON_ATTR_MAIL_MESSAGE = "message";
+	public static final String JSON_ATTR_MAIL_ATTACHMENTS = "attachments";
+	public static final String JSON_ATTR_MAIL_TYPE = "type";
+	public static final String JSON_ATTR_MAIL_NAME = "name";
+	public static final String JSON_ATTR_MAIL_URL = "url";
+	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
+	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
 
 	/**
 	 * login into CTools and become user with sessionId

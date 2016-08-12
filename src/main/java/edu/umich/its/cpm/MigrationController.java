@@ -845,6 +845,13 @@ public class MigrationController {
 					migrationInstanceService.createUploadBoxInstance(env,
 							request, response, remoteUser, sessionAttributes,
 							siteId, boxFolderId, migrationId, repository);
+				} else if (Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP.equals(target)) {
+					// call asynchronous method for zip file download
+					log.info("start to call MailArchive zip migration asynch for siteId="
+							+ siteId + " tooId=" + toolId);
+					migrationInstanceService.createDownloadMailArchiveZipInstance(env,
+							request, response, remoteUser, sessionAttributes,
+							siteId, migrationId, repository);
 				}
 			} catch (java.lang.InterruptedException e) {
 				log.error(e.getMessage() + " migration error for user "
@@ -1886,5 +1893,31 @@ public class MigrationController {
 							+ ": " + e.getMessage()).build();
 		}
 
+	}
+	
+	/**************** zip download of Mail Archive content ***************/
+	/**
+	 * insert a new record of Migration
+	 * 
+	 * @param request
+	 */
+
+	@GET
+	@Produces("application/zip")
+	@RequestMapping(value = "/migrationMailArchiveZip")
+	@ResponseBody
+	public void migrationMailArchiveZip(HttpServletRequest request,
+			HttpServletResponse response) {
+
+		// zip download
+		HashMap<String, String> callStatus = migration_call(request, response,
+				Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP, Utils.getCurrentUserId(request, env));
+		if (callStatus.containsKey("errorMessage")) {
+			log.info(this + " migrationMailArchiveZip call error message="
+					+ callStatus.get("errorMessage"));
+		} else if (callStatus.containsKey("migrationId")) {
+			log.info(this + " migrationMailArchiveZip call migration started id="
+					+ callStatus.get("migrationId"));
+		}
 	}
 }

@@ -114,11 +114,22 @@ public class MigrationInstanceService {
 	public void createDownloadZipInstance(Environment env, HttpServletRequest request,
 			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
 		StopWatch stopWatch = new StopWatch();
+		stopWatch.start();
+		log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
+		
+		migrationTaskService.downloadZippedFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
+		stopWatch.stop();
+		log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
+	}
+	
+	public void createDownloadMailArchiveZipInstance(Environment env, HttpServletRequest request,
+			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
+		StopWatch stopWatch = new StopWatch();
         stopWatch.start();
         log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
 		
         // async call
-		migrationTaskService.downloadZippedFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
+		migrationTaskService.downloadMailArchiveZipFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
 		stopWatch.stop();
         log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
 		
