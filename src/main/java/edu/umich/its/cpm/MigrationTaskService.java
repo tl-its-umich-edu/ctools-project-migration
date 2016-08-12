@@ -1352,8 +1352,10 @@ public class MigrationTaskService {
 		} catch (java.net.MalformedURLException e) {
 			// return status with error message
 			messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+		} catch (IOException e) {
+			// return status with error message
+			messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
 		}
-		
 		return messageStatus;
 	}
 
