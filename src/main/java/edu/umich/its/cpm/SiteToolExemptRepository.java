@@ -33,8 +33,8 @@ public interface SiteToolExemptRepository extends CrudRepository<SiteToolExemptC
 	 * @param siteId
 	 * @return
 	 */
-	@Query("SELECT c FROM SiteToolExemptChoice c WHERE c.siteId = ?#{[0]}")
-	List<SiteToolExemptChoice> findSiteToolExemptChoiceForSite(String siteId);
+	@Query("SELECT c FROM SiteToolExemptChoice c WHERE c.siteId = ?#{[0]} and c.toolId = ?#{[1]}")
+	List<SiteToolExemptChoice> findSiteToolExemptChoiceForSite(String siteId, String toolId);
 	
 	/************** delete *************/
 	
