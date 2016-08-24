@@ -28,18 +28,20 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - User is admin: ' + result.data);
       });
     });
-    // whether the current user authorized app to Box or not
-    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
-    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-      if (result.data === 'true') {
-        $scope.boxAuthorized = true;
-      } else {
-        $scope.boxAuthorized = false;
-      }
-      // $scope.boxAuthorized ===
-      // result.data;
-      $log.info(' - - - - User authorized to Box: ' + result.data);
-    });
+    if($scope.migratingActive) {
+      // whether the current user authorized app to Box or not
+      var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+      Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+        if (result.data === 'true') {
+          $scope.boxAuthorized = true;
+        } else {
+          $scope.boxAuthorized = false;
+        }
+        // $scope.boxAuthorized ===
+        // result.data;
+        $log.info(' - - - - User authorized to Box: ' + result.data);
+      });
+    }
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
     Projects.getProjects(projectsUrl).then(function(result) {
