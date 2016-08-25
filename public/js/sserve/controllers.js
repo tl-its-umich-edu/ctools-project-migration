@@ -311,6 +311,17 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         appElement.scope().checkBoxAuth();
       });
     });
+    $scope.startMigrationEmail = function(projectId,siteName, destinationType) {
+      var migrationUrl ='/?????';
+      $log.warn('Posting request for ' + destinationType + ' for the email archive of ' + siteName + ' (' + projectId + ')');
+      $log.warn('REST endpoint - still not created, abort');
+      // ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+      //   $log.info(' - - - - POST ' + migrationUrl);
+      //   $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
+      // });
+    };
+
+
     // handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
     $scope.startMigration = function(projectId,siteName, destinationType) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));

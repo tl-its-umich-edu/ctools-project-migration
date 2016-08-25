@@ -160,3 +160,7 @@ var transformMigrated = function(result) {
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
 };
+
+var errorDisplayBulk = function(result){
+  alert('Asked for: ' + result.data.path + '\n\nGot a: ' + result.data.status + ' ' + result.data.error + ' - ' + result.data.exception + '\n\nSo: ' + result.data.custom_message);
+};
