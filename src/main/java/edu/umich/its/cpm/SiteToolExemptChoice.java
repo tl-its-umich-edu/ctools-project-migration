@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -25,6 +26,7 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
  */
 
 @Entity
+@Table(name = "SITE_TOOL_EXEMPT_CHOICE")
 public class SiteToolExemptChoice {
 
 	private static final Logger log = LoggerFactory.getLogger(SiteToolExemptChoice.class);
@@ -33,7 +35,7 @@ public class SiteToolExemptChoice {
 	 * Primary key field
 	 */
 	@Id
-	@Column(name = "EXEMPT_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_TOOL_EXEMPT_CHOICE")
+	@Column(name = "EXEMPT_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String exemptId;
@@ -41,7 +43,7 @@ public class SiteToolExemptChoice {
 	/**
 	 * CTools site id
 	 */
-	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_TOOL_EXEMPT_CHOICE")
+	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String siteId;
@@ -49,7 +51,7 @@ public class SiteToolExemptChoice {
 	/**
 	 * CTools tool id
 	 */
-	@Column(name = "TOOL_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_TOOL_EXEMPT_CHOICE")
+	@Column(name = "TOOL_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String toolId;
@@ -57,12 +59,12 @@ public class SiteToolExemptChoice {
 	/**
 	 * User id - who made the choice
 	 */
-	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_TOOL_EXEMPT_CHOICE")
+	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String userId;
 
-	@Column(name = "CONSENT_TIME", columnDefinition = "TIMESTAMP NOT NULL", table = "SITE_TOOL_EXEMPT_CHOICE")
+	@Column(name = "CONSENT_TIME", columnDefinition = "TIMESTAMP NOT NULL")
 	@Getter
 	@Setter
 	private Timestamp consentTime;
