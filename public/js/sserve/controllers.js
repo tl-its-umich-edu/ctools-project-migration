@@ -311,14 +311,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         appElement.scope().checkBoxAuth();
       });
     });
-    $scope.startMigrationEmail = function(projectId,siteName, destinationType) {
-      var migrationUrl ='/?????';
-      $log.warn('Posting request for ' + destinationType + ' for the email archive of ' + siteName + ' (' + projectId + ')');
-      $log.warn('REST endpoint - still not created, abort');
-      // ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
-      //   $log.info(' - - - - POST ' + migrationUrl);
-      //   $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
-      // });
+    $scope.startMigrationEmail = function(project, destinationType) {
+
+      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=mailarchivezip';
+      $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
+      ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+        $log.warn(result);
+      });
     };
 
 

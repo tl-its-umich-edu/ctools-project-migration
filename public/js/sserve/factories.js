@@ -1,7 +1,7 @@
 'use strict';
 /* global projectMigrationApp, errorDisplay */
 
-projectMigrationApp.factory('ProjectsLite', function($http) {
+projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $http) {
 	return {
 		postDeleteSiteRequest : function(url) {
 			return $http.post(url, {
@@ -52,15 +52,28 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
       });
     },
     startMigrationEmail: function(url) {
-      return $http.post(url, {
-        cache : false
-      }).then(function success(result) {
-        return result;
-      }, function error(result) {
-        errorDisplay(url, result.status, 'Unable to download an email archive');
-        result.errors.failure = true;
-        return result;
-      });
+      var defer = $q.defer();
+
+			$timeout(function() {
+				$window.location = url;
+			}, 1000).then(function() {
+				defer.resolve('success');
+			}, function() {
+				defer.reject('error');
+			});
+			return defer.promise;
+		//}
+
+
+      // return $http.post(url, {
+      //   cache : false
+      // }).then(function success(result) {
+      //   return result;
+      // }, function error(result) {
+      //   errorDisplay(url, result.status, 'Unable to download an email archive');
+      //   result.errors.failure = true;
+      //   return result;
+      // });
     }
   };
 });
