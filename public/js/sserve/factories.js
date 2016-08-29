@@ -50,6 +50,17 @@ projectMigrationApp.factory('ProjectsLite', function($http) {
         result.errors.failure = true;
         return result;
       });
+    },
+    startMigrationEmail: function(url) {
+      return $http.post(url, {
+        cache : false
+      }).then(function success(result) {
+        return result;
+      }, function error(result) {
+        errorDisplay(url, result.status, 'Unable to download an email archive');
+        result.errors.failure = true;
+        return result;
+      });
     }
   };
 });

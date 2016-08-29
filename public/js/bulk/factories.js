@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, angular, errorDisplay */
+/* global projectMigrationApp, angular, errorDisplay, errorDisplayBulk */
 
 //Bulk upload FACTORY - upload to bulk process
 projectMigrationApp.factory('BulkUpload', function($http, $log) {
@@ -19,9 +19,11 @@ projectMigrationApp.factory('BulkUpload', function($http, $log) {
           return result;
         },
         function error(result) {
-          errorDisplay(result.status,
-            'Unable to post new migration');
+          errorDisplay(result.status,'Unable to post new migration');
           result.errors.failure = true;
+          result.data.custom_message = 'Unable to post new batch migration';
+          errorDisplayBulk(result);
+          result.errors = true;
           return result;
         });
     },

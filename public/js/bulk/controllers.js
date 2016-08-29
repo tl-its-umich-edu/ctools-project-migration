@@ -5,35 +5,41 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
   function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload) {
 
     $scope.bulkUpload = function() {
-      //$log.info($scope.upload.name);
-      if(!$scope.bulkUploadFile || !$scope.upload.name){
-        $('#bulkUploadFileContainer').find('.form-group').addClass("has-error");
+      $('.has-error').removeClass('has-error');
+      if(!$scope.bulkUploadFile || !$scope.upload.name || !$scope.uploadSource){
+        if(!$scope.bulkUploadFile) {
+          $('.bulkUploadFile').addClass('has-error');
+        }
+        if(!$scope.upload){
+          $('.bulkUploadName').addClass('has-error');
+        }
+        if(!$scope.uploadSource){
+          $('.uploadSource').addClass('has-error');
+        }
       }
       else {
-        var file = $scope.bulkUploadFile;
-        var name = $scope.upload.name;
-        $log.info(name);
-        $scope.bulkUploadInProcess = true;
-        var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-        BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
-          $scope.bulkUploadInProcess = false;
-          $log.info('hhh after ' + bulkUploadUrl);
-          // Reset form
-          $scope.upload.name ='';
-          $scope.bulkUploadFile ='';
-          $('#upload')[0].reset();
-          //notify user
-
-          $scope.uploadStarted = true;
-          $scope.uploadStartedMessage=response;
-          $timeout(function() {
-            $scope.uploadStarted = false;
-            $('a[href="#ongoing"]').trigger('click');
-            $scope.getOngoingList();
-          }, 3000);
-
-
-        });
+        if($scope.uploadSource==='resources'){
+          var file = $scope.bulkUploadFile;
+          var name = $scope.upload.name;
+          $log.info(name);
+          $scope.bulkUploadInProcess = true;
+          var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
+          BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
+            $scope.bulkUploadInProcess = false;
+            // Reset form
+            $scope.upload.name ='';
+            $scope.bulkUploadFile ='';
+            $('#upload')[0].reset();
+            $timeout(function() {
+              $scope.uploadStarted = false;
+              $('a[href="#ongoing"]').trigger('click');
+              $scope.getOngoingList();
+            }, 3000);
+          });
+        } else {
+          // proceed with email things
+          $log.warn('processing batch email');
+        }
       }
     };
 

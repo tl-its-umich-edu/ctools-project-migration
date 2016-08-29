@@ -61,9 +61,10 @@
                   <div id="bulkUploadFileContainer">
                     <div class="form-group">
                       <label for="bulkUploadName">Batch name (required)</label>
-                      <input type="text" id="bulkUploadName" class="form-control" name="name" ng-model="upload.name" value="">
+                      <span class="pull-right uploadSource"> Migrate: <input id="resourcesChoice" ng-model="uploadSource" type="radio" name="uploadType" value="resources"> <label for="resourcesChoice">Resources</label>  <input id="emailChoice" ng-model="uploadSource" type="radio" name="uploadType" value="email"> <label for="emailChoice">Email</label> </span>
+                      <span class="bulkUploadName"><input type="text" id="bulkUploadName" class="form-control" name="name" ng-model="upload.name" value=""></span>
                     </div>
-                    <div class="form-group">
+                    <div class="form-group bulkUploadFile">
                       <label for="bulkUploadFile">File (required)</label>
                       <input type="file" id="bulkUploadFile" file-model="bulkUploadFile">
                     </div>
