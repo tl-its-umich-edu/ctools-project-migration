@@ -312,12 +312,16 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       });
     });
     $scope.startMigrationEmail = function(project, destinationType) {
+      project.processing = true;
 
-      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=mailarchivezip';
+      $timeout(function() {
+        project.processing = false;
+      }, 10000);
+
+      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
       $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
-      ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
-        $log.warn(result);
-      });
+       ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+       });
     };
 
 
