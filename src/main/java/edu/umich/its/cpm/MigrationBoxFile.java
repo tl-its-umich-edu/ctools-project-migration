@@ -12,12 +12,15 @@ import javax.persistence.GeneratedValue;
 import javax.persistence.SequenceGenerator;
 import javax.persistence.Id;
 import javax.persistence.GenerationType;
+import javax.persistence.Table;
 
 import lombok.Getter;
 import lombok.Setter;
 
 import com.fasterxml.jackson.annotation.JsonRawValue;
 
+
+@Table(name = "MIGRATION_BOX_FILE")
 @Entity
 public class MigrationBoxFile {
 
@@ -29,7 +32,7 @@ public class MigrationBoxFile {
 	 * 
 	 */
 	@Id
-	@Column(name = "ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String id;
@@ -37,7 +40,7 @@ public class MigrationBoxFile {
 	/**
 	 * a foreign key to the migration table
 	 */
-	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String migration_id;
@@ -45,7 +48,7 @@ public class MigrationBoxFile {
 	/**
 	 * user who started the migration
 	 */
-	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String user_id;
@@ -53,7 +56,7 @@ public class MigrationBoxFile {
 	/**
 	 * the target Box folder id
 	 */
-	@Column(name = "BOX_FOLDER_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "BOX_FOLDER_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String box_folder_id;
@@ -61,7 +64,7 @@ public class MigrationBoxFile {
 	/**
 	 * the file type
 	 */
-	@Column(name = "TYPE", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "TYPE", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String type;
@@ -69,7 +72,7 @@ public class MigrationBoxFile {
 	/**
 	 * the file title
 	 */
-	@Column(name = "TITLE", columnDefinition = "VARCHAR(256) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "TITLE", columnDefinition = "VARCHAR(256) NOT NULL")
 	@Getter
 	@Setter
 	private String title;
@@ -77,7 +80,7 @@ public class MigrationBoxFile {
 	/**
 	 * the CTools web link resource url
 	 */
-	@Column(name = "WEB_LINK_URL", columnDefinition = "VARCHAR(2000)", table = "MIGRATION_BOX_FILE")
+	@Column(name = "WEB_LINK_URL", columnDefinition = "VARCHAR(2000)")
 	@Getter
 	@Setter
 	private String web_link_url;
@@ -85,7 +88,7 @@ public class MigrationBoxFile {
 	/**
 	 * the CTools file access_url
 	 */
-	@Column(name = "FILE_ACCESS_URL", columnDefinition = "VARCHAR(2000) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "FILE_ACCESS_URL", columnDefinition = "VARCHAR(2000) NOT NULL")
 	@Getter
 	@Setter
 	private String file_access_url;
@@ -93,7 +96,7 @@ public class MigrationBoxFile {
 	/**
 	 * the CTools file description
 	 */
-	@Column(name = "DESCRIPTION", columnDefinition = "VARCHAR(2000)", table = "MIGRATION_BOX_FILE")
+	@Column(name = "DESCRIPTION", columnDefinition = "VARCHAR(2000)")
 	@Getter
 	@Setter
 	private String description;
@@ -101,7 +104,7 @@ public class MigrationBoxFile {
 	/**
 	 * the file creator
 	 */
-	@Column(name = "AUTHOR", columnDefinition = "VARCHAR(256) NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "AUTHOR", columnDefinition = "VARCHAR(256) NOT NULL")
 	@Getter
 	@Setter
 	private String author;
@@ -109,7 +112,7 @@ public class MigrationBoxFile {
 	/**
 	 * the CTools file description
 	 */
-	@Column(name = "COPYRIGHT_ALERT", columnDefinition = "VARCHAR(2000)", table = "MIGRATION_BOX_FILE")
+	@Column(name = "COPYRIGHT_ALERT", columnDefinition = "VARCHAR(2000)")
 	@Getter
 	@Setter
 	private String copyright_alert;
@@ -117,22 +120,22 @@ public class MigrationBoxFile {
 	/**
 	 * the CTools file size
 	 */
-	@Column(name = "FILE_SIZE", columnDefinition = "NUMBER(10)", table = "MIGRATION_BOX_FILE")
+	@Column(name = "FILE_SIZE", columnDefinition = "NUMBER(10)")
 	@Getter
 	@Setter
 	private long file_size;
 
-	@Column(name = "START_TIME", columnDefinition = "TIMESTAMP NOT NULL", table = "MIGRATION_BOX_FILE")
+	@Column(name = "START_TIME", columnDefinition = "TIMESTAMP NOT NULL")
 	@Getter
 	@Setter
 	private Timestamp start_time;
 
-	@Column(name = "END_TIME", columnDefinition = "TIMESTAMP", table = "MIGRATION_BOX_FILE")
+	@Column(name = "END_TIME", columnDefinition = "TIMESTAMP")
 	@Getter
 	@Setter
 	private Timestamp end_time;
 
-	@Column(name = "STATUS", columnDefinition = "LOB", table = "MIGRATION_BOX_FILE")
+	@Column(name = "STATUS", columnDefinition = "LOB")
 	@Getter
 	@Setter
 	@JsonRawValue
