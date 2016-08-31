@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,6 +20,7 @@ import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 
 @Entity
+@Table(name = "BOX_AUTH_USER")
 public class BoxAuthUser {
 
 	private static final Logger log = LoggerFactory.getLogger(BoxAuthUser.class);
@@ -28,7 +30,7 @@ public class BoxAuthUser {
 	 * the CoSign user id
 	 */
 	@Id
-	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "BOX_AUTH_USER")
+	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String userId;
@@ -42,7 +44,7 @@ public class BoxAuthUser {
 	 * and confirm it in the response to prevent CSRF attacks to your users.
 	 * null for self-migrated (non-batch) site migration
 	 */
-	@Column(name = "STATE", columnDefinition = "VARCHAR(99)", table = "BOX_AUTH_USER")
+	@Column(name = "STATE", columnDefinition = "VARCHAR(99)")
 	@Getter
 	@Setter
 	private String state;
@@ -55,12 +57,12 @@ public class BoxAuthUser {
 	 * Every time you get a new access_token by using a refresh_token, 
 	 * Box reset your timer for the 60 day period and hand you a new refresh_token. 
 	 */
-	@Column(name = "ACCESS_TOKEN", columnDefinition = "VARCHAR(99) NOT NULL", table = "BOX_AUTH_USER")
+	@Column(name = "ACCESS_TOKEN", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String accessToken;
 
-	@Column(name = "REFRESH_TOKEN", columnDefinition = "VARCHAR(99) NOT NULL", table = "BOX_AUTH_USER")
+	@Column(name = "REFRESH_TOKEN", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String refreshToken;

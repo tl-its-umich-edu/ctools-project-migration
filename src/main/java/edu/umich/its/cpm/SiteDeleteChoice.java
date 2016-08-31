@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -26,6 +27,7 @@ import com.fasterxml.jackson.annotation.JsonRawValue;
  */
 
 @Entity
+@Table(name = "SITE_DELETE_CHOICE")
 public class SiteDeleteChoice {
 
 	private static final Logger log = LoggerFactory.getLogger(SiteDeleteChoice.class);
@@ -35,7 +37,7 @@ public class SiteDeleteChoice {
 	 * the CTools site id
 	 */
 	@Id
-	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_DELETE_CHOICE")
+	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String siteId;
@@ -43,12 +45,12 @@ public class SiteDeleteChoice {
 	/**
 	 * User id - who made the choice
 	 */
-	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "SITE_DELETE_CHOICE")
+	@Column(name = "USER_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String userId;
 
-	@Column(name = "CONSENT_TIME", columnDefinition = "TIMESTAMP NOT NULL", table = "SITE_DELETE_CHOICE")
+	@Column(name = "CONSENT_TIME", columnDefinition = "TIMESTAMP NOT NULL")
 	@Getter
 	@Setter
 	private Timestamp consentTime;
