@@ -6,6 +6,7 @@ import org.slf4j.LoggerFactory;
 import java.sql.Timestamp;
 import java.util.UUID;
 
+import javax.persistence.Table;
 import javax.persistence.Column;
 import javax.persistence.Entity;
 import javax.persistence.GeneratedValue;
@@ -19,6 +20,7 @@ import lombok.Setter;
 import com.fasterxml.jackson.annotation.JsonRawValue;
 
 @Entity
+@Table(name = "MIGRATION")
 public class Migration {
 
 	private static final Logger log = LoggerFactory.getLogger(Migration.class);
@@ -28,7 +30,7 @@ public class Migration {
 	 * a migration is for a single tool (i.e. Resources tool) in a single CTools site
 	 */
 	@Id
-	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "MIGRATION_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String migration_id;
@@ -37,7 +39,7 @@ public class Migration {
 	 * bulk migration id 
 	 * null for self-migrated (non-batch) site migration
 	 */
-	@Column(name = "BULK_MIGRATION_ID", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
+	@Column(name = "BULK_MIGRATION_ID", columnDefinition = "VARCHAR(99)")
 	@Getter
 	@Setter
 	private String bulk_migration_id;
@@ -45,57 +47,57 @@ public class Migration {
 	/**
 	 * user entered name for a bulk migration process
 	 */
-	@Column(name = "BULK_MIGRATION_NAME", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
+	@Column(name = "BULK_MIGRATION_NAME", columnDefinition = "VARCHAR(99)")
 	@Getter
 	@Setter
 	private String bulk_migration_name;
 
-	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "SITE_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String site_id;
 
-	@Column(name = "SITE_NAME", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "SITE_NAME", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String site_name;
 
-	@Column(name = "TOOL_NAME", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "TOOL_NAME", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String tool_name;
 
-	@Column(name = "TOOL_ID", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "TOOL_ID", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String tool_id;
 
-	@Column(name = "MIGRATED_BY", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "MIGRATED_BY", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String migrated_by;
 
-	@Column(name = "START_TIME", columnDefinition = "TIMESTAMP NOT NULL", table = "MIGRATION")
+	@Column(name = "START_TIME", columnDefinition = "TIMESTAMP NOT NULL")
 	@Getter
 	@Setter
 	private Timestamp start_time;
 
-	@Column(name = "END_TIME", columnDefinition = "TIMESTAMP", table = "MIGRATION")
+	@Column(name = "END_TIME", columnDefinition = "TIMESTAMP")
 	@Getter
 	@Setter
 	private Timestamp end_time;
 
-	@Column(name = "DESTINATION_TYPE", columnDefinition = "VARCHAR(99) NOT NULL", table = "MIGRATION")
+	@Column(name = "DESTINATION_TYPE", columnDefinition = "VARCHAR(99) NOT NULL")
 	@Getter
 	@Setter
 	private String destination_type;
 
-	@Column(name = "DESTINATION_URL", columnDefinition = "VARCHAR(99)", table = "MIGRATION")
+	@Column(name = "DESTINATION_URL", columnDefinition = "VARCHAR(99)")
 	@Getter
 	@Setter
 	private String destination_url;
 
-	@Column(name = "STATUS", columnDefinition = "LOB", table = "MIGRATION")
+	@Column(name = "STATUS", columnDefinition = "LOB")
 	@Getter
 	@Setter
 	@JsonRawValue
