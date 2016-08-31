@@ -49,4 +49,22 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 * "mvn clean verify" will run the JMeter script for default profile, according to settings in pom.xml
 * Allow people from certain MCommunity Group specify end user id in the tool URL. Please refer to application_template.properties file for the configuration settings.
 
+## Unit Testing Email Archive Messages
+ Testing each Email message is returned as RFC822 format for Email Archive migration to the Google Groups.
+     The `EmailFormatter.java`class takes a single email message in the string json format. 
+     The EmailFormatter class can give various email formats like rfc822 complaint format, Mbox format etc. For RFC822 email
+     format generation takes all the headers provided by ctools and pruning headers that contains `content-type`. For email attachments,
+     ctools is providing attachment link instead of Base64 encoded string. So we are extracting the content from the attachment
+     and encode the content to base64. We are actually getting the base64 encoding using java mail service. We using the java
+     mail service for generating the email text and appending the existing header from ctools with email text from 
+     mail services. The pruning of email headers from ctools containing `content-type` is done as these headers are created 
+     when generating the email text from  mail service so if having then they will be like duplicate headers and email messages
+     will not be imported to Google groups.
+ 
+* under `/src/test/java` add the values for ctools url/password/username so could access the email messages from the Ctools.
+* Sample Email messages are added under `/src/test/java` as `message.json` or `message_1.json` used for the junit testing.
+  For more example of email message go to https://ctqa.dsc.umich.edu/direct/mailarchive/describe and access the message
+* `EmailFormatterTest.java` has various test associated so that a valid RFC822 email message is returned. Simlarly
+   `AttachmentHandlerTest.java` has test related to email attachment content.
+
 
