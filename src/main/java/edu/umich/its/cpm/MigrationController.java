@@ -1951,8 +1951,8 @@ public class MigrationController {
 	public Response siteToolNotMigrate(HttpServletRequest request,
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 		
-		// 1. get the siteId request parameter
 		Map<String, String[]> parameterMap = request.getParameterMap();
+		// 1. get the siteId request parameter
 		String[] siteIds = parameterMap.get("siteId");
 		if (siteIds == null || siteIds.length != 1) {
 			String errorMessage = "siteToolNotMigrate request missing or multiple required parameter: siteId";
@@ -1961,16 +1961,25 @@ public class MigrationController {
 					.entity(errorMessage).build();
 		}
 		String siteId = siteIds[0];
+		// 2. get the tool id request parameter
+		String[] toolIds = parameterMap.get("toolId");
+		if (toolIds == null || toolIds.length != 1) {
+			String errorMessage = "siteToolNotMigrate request missing or multiple required parameter: toolId";
+			return Response
+					.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage).build();
+		}
+		String toolId = toolIds[0];
 		
-		// 2. get the SiteToolExemptChoice record from database for this site	
+		// 3. get the SiteToolExemptChoice record from database for this site	
 		try {
 			return Response.status(Response.Status.OK)
-					.entity(tRepository.findSiteToolExemptChoiceForSite(siteId)).build();
+					.entity(tRepository.findSiteToolExemptChoiceForSite(siteId, toolId)).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Problem getting SiteToolExemptionChoice for " + siteId
-							+ ": " + e.getMessage()).build();
+					.entity("Problem getting SiteToolExemptionChoice for site id = " + siteId
+							+ " and toolId = " + ": " + e.getMessage()).build();
 		}
 
 	}

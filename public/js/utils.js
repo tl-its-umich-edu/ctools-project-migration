@@ -126,17 +126,25 @@ var prepareReport = function (data){
   var fails = [];
   var succs = [];
   // remove the site folder
-  var data = data.slice(1, data.length)
+  var data = data.slice(1, data.length);
+
   $.each(data, function(i, item){
-    if(item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1 && item.status !=='') {
-      item.status_code="fail";
-      fails.push('fail');
+    if(item.status){
+      if(item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1 && item.status !=='') {
+        item.status_code="fail";
+        fails.push('fail');
+      }
+      else {
+        item.status_code="success";
+        succs.push('suc');
+      }
     }
     else {
-      item.status_code="success";
+      item.status_code="unknown";
       succs.push('suc');
     }
   });
+
   return {'counts': {'successes': succs.length, 'failures':fails.length}, 'items': data};
 };
 
@@ -159,4 +167,8 @@ var transformMigrated = function(result) {
 
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
+};
+
+var errorDisplayBulk = function(result){
+  alert('Asked for: ' + result.data.path + '\n\nGot a: ' + result.data.status + ' ' + result.data.error + ' - ' + result.data.exception + '\n\nSo: ' + result.data.custom_message);
 };

@@ -28,18 +28,20 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - User is admin: ' + result.data);
       });
     });
-    // whether the current user authorized app to Box or not
-    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
-    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-      if (result.data === 'true') {
-        $scope.boxAuthorized = true;
-      } else {
-        $scope.boxAuthorized = false;
-      }
-      // $scope.boxAuthorized ===
-      // result.data;
-      $log.info(' - - - - User authorized to Box: ' + result.data);
-    });
+    if($scope.migratingActive) {
+      // whether the current user authorized app to Box or not
+      var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+      Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+        if (result.data === 'true') {
+          $scope.boxAuthorized = true;
+        } else {
+          $scope.boxAuthorized = false;
+        }
+        // $scope.boxAuthorized ===
+        // result.data;
+        $log.info(' - - - - User authorized to Box: ' + result.data);
+      });
+    }
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
     Projects.getProjects(projectsUrl).then(function(result) {
@@ -309,6 +311,20 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         appElement.scope().checkBoxAuth();
       });
     });
+    $scope.startMigrationEmail = function(project, destinationType) {
+      project.processing = true;
+
+      $timeout(function() {
+        project.processing = false;
+      }, 10000);
+
+      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
+      $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
+       ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+       });
+    };
+
+
     // handler for the "Proceed" button (tools are selected, dependencies addressed, confirmation displayed)
     $scope.startMigration = function(projectId,siteName, destinationType) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
