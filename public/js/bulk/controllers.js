@@ -24,7 +24,8 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
           $scope.bulkUploadInProcess = true;
           var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
           $log.info('POST: ' + bulkUploadUrl + ' called: ' + name + ' Source: ' + source);
-          BulkUpload.bulkUpload(file, name, bulkUploadUrl, 'resources').then(function(response) {
+          $log.info(file, name, bulkUploadUrl, source);
+          BulkUpload.bulkUpload(file, name, bulkUploadUrl, source).then(function(response) {
             $scope.bulkUploadInProcess = false;
             // Reset form
             $scope.upload.name ='';
