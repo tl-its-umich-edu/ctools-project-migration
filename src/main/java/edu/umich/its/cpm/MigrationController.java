@@ -71,12 +71,14 @@ import org.springframework.web.client.RestTemplate;
 import org.springframework.web.client.RestClientException;
 import org.springframework.context.annotation.PropertySource;
 import org.springframework.web.context.request.async.DeferredResult;
+import org.springframework.util.StopWatch;
 import org.springframework.util.concurrent.ListenableFuture;
 import org.springframework.util.concurrent.ListenableFutureCallback;
 import org.springframework.web.util.UriComponentsBuilder;
 import org.springframework.web.multipart.MultipartHttpServletRequest;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.multipart.MultipartException;
+import org.springframework.util.StopWatch;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -128,6 +130,9 @@ public class MigrationController {
 	
 	@Autowired
 	SiteToolExemptRepository tRepository;
+	
+	@Autowired
+	MigrationTaskService migrationTaskService;
 
 	@Autowired
 	private Environment env;
@@ -807,44 +812,115 @@ public class MigrationController {
 
 			Migration migration = (Migration) saveMigration.get("migration");
 			String migrationId = migration.getMigration_id();
-			try {
-				HashMap<String, Object> sessionAttributes = Utils
-						.login_becomeuser(env, request, remoteUser);
+			HashMap<String, Object> sessionAttributes = Utils
+					.login_becomeuser(env, request, remoteUser);
 
-				// call asynchronous method for zip file download
-				String migrationStatus = null;
-				if (Utils.MIGRATION_TYPE_ZIP.equals(target)) {
-					// call asynchronous method for zip file download
-					log.info("start to call zip migration asynch for siteId="
-							+ siteId + " tooId=" + toolId);
-					migrationInstanceService.createDownloadZipInstance(env,
-							request, response, remoteUser, sessionAttributes,
-							siteId, migrationId, repository);
-				} else if (Utils.MIGRATION_TYPE_BOX.equals(target)) {
-					// call asynchronous method for Box file upload
-					log.info("start to call Box migration asynch for siteId="
-							+ siteId + " tooId=" + toolId);
-					migrationInstanceService.createUploadBoxInstance(env,
-							request, response, remoteUser, sessionAttributes,
-							siteId, boxFolderId, migrationId, repository);
-				} else if (Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP.equals(target)) {
-					// call asynchronous method for zip file download
-					log.info("start to call MailArchive zip migration asynch for siteId="
-							+ siteId + " tooId=" + toolId);
-					migrationInstanceService.createDownloadMailArchiveZipInstance(env,
-							request, response, remoteUser, sessionAttributes,
-							siteId, migrationId, repository);
+			// call asynchronous method for zip file download
+			String migrationStatus = null;
+			if (Utils.MIGRATION_TYPE_ZIP.equals(target)) {
+				// call zip file download for site resource
+				log.info("start to call zip migration for siteId="
+						+ siteId + " tooId=" + toolId);
+				StopWatch stopWatch = new StopWatch();
+				stopWatch.start();
+				log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
+				
+				migrationTaskService.downloadZippedFile(env, request, response, remoteUser, sessionAttributes, siteId, migrationId, repository);
+				stopWatch.stop();
+				log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
+			} else if (Utils.MIGRATION_TYPE_BOX.equals(target)) {
+				// call asynchronous method for Box file upload
+				log.info("start to call Box migration asynch for siteId="
+						+ siteId + " tooId=" + toolId);
+				
+				StringBuffer boxMigrationStatus = new StringBuffer();
+				
+				// need to create all folders first
+				// get box client id and secret
+				String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
+				String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
+				String boxClientRedirectUrl = env.getProperty(Utils.BOX_CLIENT_REDIRECT_URL);
+				String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
+				// need to have all Box app configurations
+				if (boxClientId == null || boxClientSecret == null) {
+					String boxClientIdError = "Missing Box integration parameters (Box client id, client secret)";
+					log.error(boxClientIdError);
+					boxMigrationStatus.append(boxClientIdError + Utils.LINE_BREAK);
 				}
-			} catch (java.lang.InterruptedException e) {
-				log.error(e.getMessage() + " migration error for user "
-						+ remoteUser + " and site=" + siteId + " target="
-						+ target);
+				
+				String remoteUserEmail = Utils.getUserEmailFromUserId(remoteUser);
+
+				if (siteId == null || boxFolderId == null) {
+					String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
+					log.error(boxFolderIdError);
+					boxMigrationStatus.append(boxFolderIdError + Utils.LINE_BREAK);
+				}
+
+				// get sessionId
+				if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+					String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+					HttpContext httpContext = (HttpContext) sessionAttributes
+							.get("httpContext");
+
+					// 3. get the site resource list
+					RestTemplate restTemplate = new RestTemplate();
+					// the url should be in the format of
+					// "https://server/direct/site/SITE_ID.json"
+					String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+							+ "direct/content/site/" + siteId + ".json?_sessionId="
+							+ sessionId;
+					String siteResourceJson = null;
+					try {
+						siteResourceJson = restTemplate.getForObject(requestUrl,
+								String.class);
+						 migrationTaskService.boxUploadSiteContent(migrationId, httpContext, remoteUserEmail,
+								sessionId, siteResourceJson, boxFolderId);
+
+					} catch (RestClientException e) {
+						String errorMessage = "Cannot find site by siteId: " + siteId
+								+ " " + e.getMessage();
+						Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
+								.type(MediaType.TEXT_PLAIN).build();
+						log.error(errorMessage);
+						boxMigrationStatus.append(errorMessage + Utils.LINE_BREAK);
+					} catch (Exception e) {
+						String errorMessage = "Migration status for " + siteId + " "
+								+ e.getClass().getName();
+						Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+								.entity(errorMessage).type(MediaType.TEXT_PLAIN)
+								.build();
+
+						log.error("uploadToBox ", e);
+						boxMigrationStatus.append(errorMessage + Utils.LINE_BREAK);
+					}
+
+					String uploadFinished = "Finished upload site content for site "
+							+ siteId;
+					log.info(uploadFinished);
+					boxMigrationStatus.append(uploadFinished + Utils.LINE_BREAK);
+				} else {
+					String errorBecomeUser = "Problem become user to " + remoteUser;
+					log.error(errorBecomeUser);
+					boxMigrationStatus.append(errorBecomeUser + Utils.LINE_BREAK);
+				}
+
+			} else if (Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP.equals(target)) {
+				// call zip file download for mail achive
+				log.info("start to call MailArchive zip migration for siteId="
+						+ siteId + " tooId=" + toolId);
+				StopWatch stopWatch = new StopWatch();
+		        stopWatch.start();
+		        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
+				
+				migrationTaskService.downloadMailArchiveZipFile(env, request, response, remoteUser, sessionAttributes, siteId, migrationId, repository);
+				stopWatch.stop();
+		        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
 			}
 			rv.put("migrationId", migrationId);
 			return rv;
 		}
 	}
-
+	
 	/**
 	 * generate output for JSON_ready input value
 	 */
@@ -875,9 +951,10 @@ public class MigrationController {
 	@RequestMapping("/box/folders")
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
-		
-		String boxClientId = BoxUtils.getBoxClientId(request, env);
-		String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
+		// get CoSign user id
+		String userId = Utils.getRemoteUser(request);
+		String boxClientId = BoxUtils.getBoxClientId(userId);
+		String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
 		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
 
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
@@ -912,6 +989,7 @@ public class MigrationController {
 	public String boxAuthenticate(HttpServletRequest request,
 			HttpServletResponse response) {
 		// normal user authorize to Box
+
 		return boxAuthorization(request, response);
 	}
 
@@ -960,9 +1038,9 @@ public class MigrationController {
 			// get the authCode,
 			// and get access token and refresh token subsequently
 			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
-
-			String boxClientId = BoxUtils.getBoxClientId(request, env);
-			String boxClientSecret = BoxUtils.getBoxClientSecret(request, env);
+			String userId = Utils.getRemoteUser(request);
+			String boxClientId = BoxUtils.getBoxClientId(userId);
+			String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
 					boxClientSecret, boxTokenUrl, uRepository);
 
@@ -1212,7 +1290,9 @@ public class MigrationController {
 	private String boxAuthorization(HttpServletRequest request,
 			HttpServletResponse response) {
 		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
-		String boxClientId = BoxUtils.getBoxClientId(request, env);
+		// get CoSign user id
+		String userId = Utils.getRemoteUser(request);
+		String boxClientId = BoxUtils.getBoxClientId(userId);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
 				env);
@@ -1552,9 +1632,9 @@ public class MigrationController {
 				}
 
 				// 3. get box folder id
-				String boxAdminClientId = BoxUtils.getBoxClientId(request, env);
-				String boxAdminClientSecret = BoxUtils.getBoxClientSecret(
-						request, env);
+				String remoteUserId = Utils.getRemoteUser(request);
+				String boxAdminClientId = BoxUtils.getBoxClientId(remoteUserId);
+				String boxAdminClientSecret = BoxUtils.getBoxClientSecret(remoteUserId);
 				String boxSiteFolderName = "CTools - " + siteName;
 
 				Info boxFolder = null;

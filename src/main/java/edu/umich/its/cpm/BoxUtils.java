@@ -21,12 +21,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.URL;
 
+import org.springframework.stereotype.Component;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.annotation.PropertySource;
 import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestTemplate;
@@ -48,6 +50,7 @@ import com.box.sdk.BoxItem.Info;
 import com.box.sdk.BoxUser;
 
 import edu.umich.its.cpm.MigrationInstanceService.MigrationFields;
+import edu.umich.its.cpm.MigrationBoxFileRepository;
 import edu.umich.its.cpm.BoxAuthUserRepository;
 import edu.umich.its.cpm.BoxAuthUser;
 
@@ -63,6 +66,7 @@ import org.apache.http.HttpEntity;
 import org.apache.http.util.EntityUtils;
 import org.apache.http.StatusLine;
 import org.apache.http.HttpStatus;
+import org.springframework.context.EnvironmentAware;
 
 /**
  * provides util functions for accessing Box APIs
@@ -70,7 +74,9 @@ import org.apache.http.HttpStatus;
  * @author zqian
  *
  */
-public class BoxUtils {
+@Component
+@PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
+public class BoxUtils implements EnvironmentAware {
 
 	private static final int MAX_DEPTH = 0;
 
@@ -79,48 +85,14 @@ public class BoxUtils {
 	// the state variable used in OAuth process 
 	// to associate Box returned tokens with right OAuth requester  
 	private static final String STATE = "state";
+	
+	private static Environment env;
 
-	// HashMap, indexed by user id, holds queue for Box migration tasks
-	private static HashMap<String, LinkedList<MigrationFields>> userBoxMigrationRequests = new HashMap<String, LinkedList<MigrationFields>>();
-
-	@Autowired
-	private Environment env;
-
-	/**
-	 * get Box migration request for all users
-	 */
-	public static HashMap<String, LinkedList<MigrationFields>> getBoxMigrationRequests() {
-		// return all
-		return userBoxMigrationRequests;
-	}
-
-	/**
-	 * get Box migration request list for given user
-	 */
-	public static LinkedList<MigrationFields> getBoxMigrationRequestForUser(
-			String userId) {
-		LinkedList<MigrationFields> requests = null;
-		if (userBoxMigrationRequests.containsKey(userId)) {
-			// if the request exists for given user
-			requests = userBoxMigrationRequests.get(userId);
-		}
-		return requests;
-	}
-
-	/**
-	 * set Box migration request list for given user
-	 */
-	public static synchronized void setBoxMigrationRequestForUser(
-			String userId, LinkedList<MigrationFields> requests) {
-		if (requests.size() == 0) {
-			// if the request list is empty, remove the user entry altogether
-			userBoxMigrationRequests.remove(userId);
-		} else {
-			// set the new requests value
-			userBoxMigrationRequests.put(userId, requests);
-		}
-	}
-
+    @Override
+    public void setEnvironment(final Environment environment) {
+        this.env = environment;
+    }
+    
 	/**
 	 * get Box refresh token for given user
 	 */
@@ -228,8 +200,7 @@ public class BoxUtils {
 	 * get the authCode as embedded from Box callback response
 	 */
 	public static String getAuthCodeFromBoxCallback(HttpServletRequest request,
-			String boxClientId, String boxClientSecret, String boxTokenUrl,
-			BoxAuthUserRepository repository) {
+			String boxClientId, String boxClientSecret, String boxTokenUrl, BoxAuthUserRepository repository) {
 		// get the code String from Box authorization callback
 		String authCode = null;
 		String state = null;
@@ -333,8 +304,7 @@ public class BoxUtils {
 	public static List<HashMap<String, String>> getBoxFolders(String userId,
 			String boxClientId, String boxClientSecret, BoxAuthUserRepository repository) {
 
-		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
-				boxClientSecret, repository);
+		BoxAPIConnection api = getBoxAPIConnection(userId, repository);
 		if (api != null) {
 
 			// get the root Box folder
@@ -357,8 +327,7 @@ public class BoxUtils {
 			String newBoxFolderName, String siteId, BoxAuthUserRepository repository) {
 		BoxFolder.Info newFolderInfo = null;
 
-		BoxAPIConnection api = getBoxAPIConnection(userId, boxClientId,
-				boxClientSecret, repository);
+		BoxAPIConnection api = getBoxAPIConnection(userId, repository);
 		if (api != null) {
 			BoxFolder rootFolder = null;
 			try {
@@ -540,15 +509,13 @@ public class BoxUtils {
 	/**
 	 * get the Box Client ID based on user role
 	 * 
-	 * @param request
-	 * @param env
+	 * @param userId
 	 * @return
 	 */
-	public static String getBoxClientId(HttpServletRequest request,
-			Environment env) {
+	public static String getBoxClientId(String userId) {
 		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
 		
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+		if (Utils.isCurrentUserCPMAdmin(userId, env)) {
 			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
 		}
 		return boxClientId;
@@ -557,15 +524,13 @@ public class BoxUtils {
 	/**
 	 * get the Box Client secret based on user role
 	 * 
-	 * @param request
-	 * @param env
+	 * @param userId
 	 * @return
 	 */
-	public static String getBoxClientSecret(HttpServletRequest request,
-			Environment env) {
+	public static String getBoxClientSecret(String userId) {
 		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
 
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+		if (Utils.isCurrentUserCPMAdmin(userId, env)) {
 			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
 		}
 		return boxClientSecret;
@@ -595,8 +560,7 @@ public class BoxUtils {
 	public static void addCollaboration(String boxAdminId, String userEmail,
 			String role, String folderId, String boxClientId,
 			String boxClientSecret, BoxAuthUserRepository repository) {
-		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, boxClientId,
-				boxClientSecret, repository);
+		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, repository);
 		
 		BoxFolder folder = null;
 		
@@ -652,8 +616,9 @@ public class BoxUtils {
 	 * @param boxAccessToken
 	 * @param boxRefreshToken
 	 */
-	public static BoxAPIConnection getBoxAPIConnection(String userId,
-			String boxClientId, String boxClientSecret, BoxAuthUserRepository repository) {
+	public static BoxAPIConnection getBoxAPIConnection(String userId, BoxAuthUserRepository repository) {
+		String boxClientId = getBoxClientId(userId);
+		String boxClientSecret = getBoxClientSecret(userId);
 		
 		String boxAccessToken = repository.findBoxAuthUserAccessToken(userId);
 		String boxRefreshToken = repository.findBoxAuthUserRefreshToken(userId);

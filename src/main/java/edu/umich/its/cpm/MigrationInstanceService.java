@@ -1,5 +1,6 @@
 package edu.umich.its.cpm;
 
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -12,13 +13,13 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.Iterator;
+import java.sql.Timestamp;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
-import org.springframework.util.StopWatch;
 
 @Service
 @Component
@@ -32,13 +33,19 @@ public class MigrationInstanceService {
 	
 	@Autowired
 	private BoxAuthUserRepository uRepository;
+
+	@Autowired
+	private MigrationBoxFileRepository fRepository;
+	
+	@Autowired
+	private MigrationRepository mRepository;
 	
 	@Async
 	public void runProcessingThread() throws InterruptedException {
 		
 		log.info("Box Migration Processing thread is running");
 		
-		List<Future<HashMap<String, String>>> futureList = new ArrayList<Future<HashMap<String, String>>>();
+		List<Future<String>> futureList = new ArrayList<Future<String>>();
 
 		while (true)
 		{
@@ -47,92 +54,96 @@ public class MigrationInstanceService {
 			Thread.sleep(5000L);
 	        
 			// looping through
-			HashMap<String, LinkedList<MigrationFields>> boxMigrationRequests = BoxUtils.getBoxMigrationRequests();
-			Iterator<String> iUserIds = boxMigrationRequests.keySet().iterator();
-			while (iUserIds.hasNext())
+			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
+			// process with the Box upload request
+			for(MigrationBoxFile bFile : bFiles)
 			{
-				String userId = iUserIds.next();
-				// get the migration request queue belongs to the user
-				LinkedList<MigrationFields> lList = boxMigrationRequests.get(userId);
+				// mark the file as processed
+				fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
 				
-				MigrationFields mFields = lList.get(0);
-				if (!mFields.getProcessed())
-				{
-					log.info("Box migration request processing user " + userId + " request queue length=" + lList.size());
-					
-					try
-					{
-						// if the first request for the user is not processed yet
-						// process with the Box upload request
-						futureList.add( migrationTaskService.uploadToBox(mFields.getEnv(), mFields.getRequest(), mFields.getResponse(), mFields.getUserId(), mFields.getSessionAttributes(), mFields.getSiteId(), mFields.getBoxFolderId(), mFields.getMigrationId(), mFields.getRepository(), uRepository));
-						
-						// mark this request as being processed
-						mFields.setProcessed(true);
-						lList.set(0, mFields);
-						BoxUtils.setBoxMigrationRequestForUser(userId, lList);
-					}
-					catch (java.lang.InterruptedException e)
-					{
-						log.error("Error processing Box upload request from user " + userId + " for site " + mFields.getSiteId() + e.getMessage());
-					}
-				}	// if
-			}	// while
+				futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
+						bFile.getUser_id(), bFile.getType(),
+						bFile.getBox_folder_id(), bFile.getTitle(),
+						bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
+						bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size()));
+			}
+			
 		    
-			boxMigrationRequests = BoxUtils.getBoxMigrationRequests();
 			// get a cloned list, in case we need to remove the finished async tasks from the original list
-			List<Future<HashMap<String, String>>> futureListClone = new ArrayList<Future<HashMap<String, String>>>();
+			List<Future<String>> futureListClone = new ArrayList<Future<String>>();
 			futureListClone.addAll(futureList);
 			
-			for (Future<HashMap<String, String>> future : futureListClone) {
+			for (Future<String> future : futureListClone) {
 				try {
 					// get the status of asynchronize processed Box upload request
 					if (future.isDone())
 					{
-						HashMap<String, String> rv = future.get();
-						log.debug("***** future return userId=" + rv.get("userId") + " siteId=" + rv.get("siteId") + " status=" + rv.get(Utils.MIGRATION_STATUS));
-						
-						// if the request is finished/processed, remove it from the queue
-						String userId = rv.get("userId");
-						LinkedList<MigrationFields> userMigrationRequests = boxMigrationRequests.get(userId);
-						userMigrationRequests.remove();
-						
-						BoxUtils.setBoxMigrationRequestForUser(userId, userMigrationRequests);
-						
 						// finished, remove the task from the future list queue
 						futureList.remove(future);
 					}
-				} catch (java.util.concurrent.ExecutionException e)
-				{
-					log.error(this + ":createUploadBoxInstance ", e);
 				} catch (Exception e) {
-					log.error(this + ":createUploadBoxInstance ", e);
+					log.error("runProcessingThread " + e.getMessage());
 				}
-			} 
+			}
+			
+			// if all itemized migration finishes, 
+			// update the parent migration record for status and end time
+			updateMigrationStatusAndEndTime();
 		}
 	}
-	
-	public void createDownloadZipInstance(Environment env, HttpServletRequest request,
-			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
-		StopWatch stopWatch = new StopWatch();
-		stopWatch.start();
-		log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
-		
-		migrationTaskService.downloadZippedFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
-		stopWatch.stop();
-		log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
-	}
-	
-	public void createDownloadMailArchiveZipInstance(Environment env, HttpServletRequest request,
-			HttpServletResponse response, String userId, HashMap<String, Object> sessionAttributes, String siteId, String migrationId, MigrationRepository repository) throws InterruptedException {
-		StopWatch stopWatch = new StopWatch();
-        stopWatch.start();
-        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip");
-		
-        // async call
-		migrationTaskService.downloadMailArchiveZipFile(env, request, response, userId, sessionAttributes, siteId, migrationId, repository);
-		stopWatch.stop();
-        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
-		
+
+	/**
+	 * check to see whether all itemized migration finishes, 
+	 * so that the parent record can be updated
+	 */
+	private void updateMigrationStatusAndEndTime() {
+		// this is a task to iterate through the non-finished site migration record
+		// check whether all child items has been migrated
+		// if so, set the end time of the site migration, and set the aggregated status
+		List<Migration> allOngoingMigrations = mRepository.findMigrating();
+		for (Migration migration : allOngoingMigrations)
+		{
+			String mId = migration.getMigration_id();
+			int allItemCount = fRepository.getMigrationBoxFileCountForMigration(mId);
+			int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
+			if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+			{
+				// all the items within the migration is finished
+				// update the end time of the parent record
+				Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
+				mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+				
+				// update the status of the parent record
+				List<MigrationBoxFile> mFileList = fRepository.getAllItemStatusForMigration(mId);
+				// parse the string into JSON object
+				List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+				int itemStatusFailureCount = 0;
+				for(MigrationBoxFile mFile : mFileList)
+				{
+					String status = mFile.getStatus();
+					MigrationFileItem item = new MigrationFileItem(
+							mFile.getFile_access_url(), 
+							mFile.getTitle(), 
+							status);
+					itemStatusList.add(item);
+					
+					if (status.indexOf("Box upload successful for file") == -1)
+					{
+						// if there is error, status message won't have String "Box upload successful for file"
+						itemStatusFailureCount++;
+					}
+				}
+				
+				// the HashMap object holds itemized status information
+				HashMap<String, Object> statusMap = new HashMap<String, Object>();
+				statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+				statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+				// update the status and end_time of migration record
+				migrationTaskService.setMigrationEndTimeAndStatus(mId, mRepository, new JSONObject(statusMap));
+				
+			}
+		}
 	}
 
 	/*************** Box Migration ********************/
@@ -141,15 +152,6 @@ public class MigrationInstanceService {
 		
 		MigrationFields mFields = new MigrationFields(env, request, response, userId, sessionAttributes, siteId, boxFolderId, migrationId, repository);
 		
-		LinkedList<MigrationFields> userBoxMigrationRequests = BoxUtils.getBoxMigrationRequestForUser(userId);
-		if (userBoxMigrationRequests == null)
-		{
-			// if there is no migration queue for this user yet, init a new queue, and add the request
-			userBoxMigrationRequests = new LinkedList<MigrationFields>();
-		}
-		userBoxMigrationRequests.add(mFields);
-		BoxUtils.setBoxMigrationRequestForUser(userId, userBoxMigrationRequests);
-        
         return Utils.STATUS_SUCCESS;
 	}
 	
