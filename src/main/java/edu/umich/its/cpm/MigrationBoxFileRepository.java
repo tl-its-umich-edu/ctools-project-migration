@@ -15,7 +15,7 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	 *
 	 * @return 1 if database connection works as expected
 	 */
-	@Query("SELECT count(*) from Migration")
+	@Query("SELECT count(*) from MigrationBoxFile")
 	public int validate();
 
 	/**
@@ -27,7 +27,8 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	
 	/**
 	 * set start time for given migration Box file record
-	 * @return
+	 * @param id
+	 * @param t
 	 */
 	@Transactional
 	@Modifying(clearAutomatically = false)
@@ -36,7 +37,8 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	
 	/**
 	 * set end time for given migration Box file record
-	 * @return
+	 * @param id
+	 * @param t
 	 */
 	@Transactional
 	@Modifying(clearAutomatically = false)
@@ -44,8 +46,9 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	public void setMigrationBoxFileEndTime(String id, Timestamp t);
 	
 	/**
-	 * set end time for given migration Box file record
-	 * @return
+	 * set status for given migration Box file record
+	 * @param id
+	 * @param status
 	 */
 	@Transactional
 	@Modifying(clearAutomatically = false)
@@ -53,15 +56,17 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	public void setMigrationBoxFileStatus(String id, String status);
 	
 	/**
-	 * select all box file item for certain migration record
+	 * select all box file items for certain migration record
 	 * @param migrationId
+	 * @return
 	 */
 	@Query("select count(*) from MigrationBoxFile bFile where bFile.migration_id= ?#{[0]}")
 	public int getMigrationBoxFileCountForMigration(String migrationId);
 	
 	/**
-	 * select all finished box file item for certain migration record
+	 * select all finished box file items for certain migration record
 	 * @param migrationId
+	 * @return
 	 */
 	@Query("select count(*) from MigrationBoxFile bFile where bFile.migration_id= ?#{[0]} and bFile.end_time is not null")
 	public int getFinishedMigrationBoxFileCountForMigration(String migrationId);
@@ -69,6 +74,7 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	/**
 	 * select the last item migration time for given migration
 	 * @param migrationId
+	 * @return
 	 */
 	@Query("SELECT MAX(bFile.end_time) FROM MigrationBoxFile bFile where bFile.migration_id= ?#{[0]}")
 	public Timestamp getLastItemEndTimeForMigration(String migrationId);
@@ -76,6 +82,7 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 	/**
 	 * select all item status for given migration
 	 * @param migrationId
+	 * @return
 	 */
 	@Query("SELECT bFile FROM MigrationBoxFile bFile WHERE bFile.migration_id= ?#{[0]} order by bFile.start_time asc")
 	public List<MigrationBoxFile> getAllItemStatusForMigration(String migrationId);

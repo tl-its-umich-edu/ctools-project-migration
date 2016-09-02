@@ -70,8 +70,11 @@ public class Utils {
 
 	public static final String COLLECTION_TYPE = "collection";
 
+	public static final String MIGRATION_TOOL_RESOURCE = "sakai.resources";
+	public static final String MIGRATION_TOOL_EMAILARCHIVE = "sakai.mailbox";
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
+	public static final String MIGRATION_TYPE_GOOGLE = "google";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
@@ -90,6 +93,7 @@ public class Utils {
 	public static final String BOX_ADMIN_CLIENT_ID = "box_admin_client_id";
 	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
 	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
+
 
 	public static final String SERVER_URL = "server_url";
 
@@ -140,6 +144,9 @@ public class Utils {
 	public static final String JSON_ATTR_MAIL_URL = "url";
 	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
 	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
+	
+	// the max parallel processing thread for migrations
+	public static final int MAX_PARALLEL_THREADS_NUM = 20;
 
 	/**
 	 * login into CTools and become user with sessionId

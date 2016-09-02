@@ -38,6 +38,9 @@ public class MigrationInstanceService {
 	private MigrationBoxFileRepository fRepository;
 	
 	@Autowired
+	private MigrationEmailMessageRepository eRepository;
+	
+	@Autowired
 	private MigrationRepository mRepository;
 	
 	@Async
@@ -53,19 +56,37 @@ public class MigrationInstanceService {
 			// delay for 5 seconds
 			Thread.sleep(5000L);
 	        
-			// looping through
+			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
 			// process with the Box upload request
 			for(MigrationBoxFile bFile : bFiles)
-			{
-				// mark the file as processed
-				fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
-				
-				futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
-						bFile.getUser_id(), bFile.getType(),
-						bFile.getBox_folder_id(), bFile.getTitle(),
-						bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
-						bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size()));
+			{	
+				if (futureList.size() < Utils.MAX_PARALLEL_THREADS_NUM)
+				{
+					// mark the file as processed
+					fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
+					
+					futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
+							bFile.getUser_id(), bFile.getType(),
+							bFile.getBox_folder_id(), bFile.getTitle(),
+							bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
+							bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size()));
+				}
+			}
+			
+			// looping through resource request
+			List<MigrationEmailMessage> messages = eRepository.findNextNewMigrationEmailMessage();
+			// process with the message upload request
+			for(MigrationEmailMessage message : messages)
+			{	
+				if (futureList.size() < Utils.MAX_PARALLEL_THREADS_NUM )
+				{
+					// mark the file as processed
+					eRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
+					
+					//call to microservice to upload message to Google Groups
+					futureList.add(migrationTaskService.uploadMessageToGoogleGroup(message));
+				}
 			}
 			
 		    
