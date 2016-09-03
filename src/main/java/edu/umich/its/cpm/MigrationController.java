@@ -1702,18 +1702,22 @@ public class MigrationController {
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName) {
 		
-		//TODO call Google Group microservice for group creation
+		//call Google Group microservice for group creation
 		// and get the group group id, and group name
 		JSONObject googleGroupSettings = migrationTaskService.getGoogleGroupSettings(request, siteId);
 		String googleGroupId = googleGroupSettings.getString("id");
-		String googleGroupName = googleGroupSettings.getString("name"); 
+		String googleGroupName = googleGroupSettings.getString("name");
 		
-		// start the migration of site messages into Google Groups
+		// 1. add site members to Google Group membership
+		String membershipStatus = migrationTaskService.updateGroupMembershipFromSite(request, siteId);
+		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
+		
+		// 2. save the site migration record
 		HashMap<String, Object> saveBulkMigration  = saveBulkGoogleMigrationRecord(bulkMigrationId, bulkMigrationName, siteId,
 			siteName, toolId, toolName,
 			googleGroupId, googleGroupName, userId);
 		
-		// delegate the actual message migrations to async calls
+		// 3. delegate the actual message migrations to async calls
 		// Concatenating all site owners' names together with 
 		HashMap<String, String> status = migrationTaskService.processAddEmailMessages(
 				request, response, Utils.MIGRATION_TYPE_GOOGLE, userId,
@@ -1731,7 +1735,20 @@ public class MigrationController {
 		}
 		
 	}
-
+	
+	/**
+	 * 
+	 * @param sessionId
+	 * @param request
+	 * @param response
+	 * @param userId
+	 * @param bulkMigrationName
+	 * @param bulkMigrationId
+	 * @param siteId
+	 * @param siteName
+	 * @param toolId
+	 * @param toolName
+	 */
 	private void handleBulkResourceBoxMigration(String sessionId,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,

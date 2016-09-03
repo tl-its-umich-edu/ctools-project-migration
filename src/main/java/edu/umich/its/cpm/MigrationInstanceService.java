@@ -114,7 +114,7 @@ public class MigrationInstanceService {
 	}
 
 	/**
-	 * check to see whether all itemized migration finishes, 
+	 * check to see whether all itemized Box migration finishes, 
 	 * so that the parent record can be updated
 	 */
 	private void updateMigrationStatusAndEndTime() {
@@ -125,45 +125,113 @@ public class MigrationInstanceService {
 		for (Migration migration : allOngoingMigrations)
 		{
 			String mId = migration.getMigration_id();
-			int allItemCount = fRepository.getMigrationBoxFileCountForMigration(mId);
-			int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
-			if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+			String destination_type = migration.getDestination_type();
+			if (Utils.MIGRATION_TYPE_BOX.equals(destination_type))
 			{
-				// all the items within the migration is finished
-				// update the end time of the parent record
-				Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
-				mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
-				
-				// update the status of the parent record
-				List<MigrationBoxFile> mFileList = fRepository.getAllItemStatusForMigration(mId);
-				// parse the string into JSON object
-				List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
-				int itemStatusFailureCount = 0;
-				for(MigrationBoxFile mFile : mFileList)
-				{
-					String status = mFile.getStatus();
-					MigrationFileItem item = new MigrationFileItem(
-							mFile.getFile_access_url(), 
-							mFile.getTitle(), 
-							status);
-					itemStatusList.add(item);
-					
-					if (status.indexOf("Box upload successful for file") == -1)
-					{
-						// if there is error, status message won't have String "Box upload successful for file"
-						itemStatusFailureCount++;
-					}
-				}
-				
-				// the HashMap object holds itemized status information
-				HashMap<String, Object> statusMap = new HashMap<String, Object>();
-				statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-				statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
-
-				// update the status and end_time of migration record
-				migrationTaskService.setMigrationEndTimeAndStatus(mId, mRepository, new JSONObject(statusMap));
-				
+				// for Box file migration
+				updateBoxMigrationTimeAndStatus(mId);
 			}
+			else if (Utils.MIGRATION_TYPE_GOOGLE.equals(destination_type))
+			{
+				// for Google Groups email migration	
+				updateMessageMigrationTimeAndStatus(mId);
+			}
+		}
+	}
+
+	/**
+	 * if all resource items within the migration is finished
+	 * update the migration end time with the last end time of items
+	 * update the migration status with the aggregation of item status
+	 * @param mId
+	 */
+	private void updateBoxMigrationTimeAndStatus(String mId) {
+		int allItemCount = fRepository.getMigrationBoxFileCountForMigration(mId);
+		int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
+		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+		{
+			// all the items within the migration is finished
+			// update the end time of the parent record
+			Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
+			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+			
+			// update the status of the parent record
+			List<MigrationBoxFile> mFileList = fRepository.getAllItemStatusForMigration(mId);
+			// parse the string into JSON object
+			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+			int itemStatusFailureCount = 0;
+			for(MigrationBoxFile mFile : mFileList)
+			{
+				String status = mFile.getStatus();
+				MigrationFileItem item = new MigrationFileItem(
+						mFile.getFile_access_url(), 
+						mFile.getTitle(), 
+						status);
+				itemStatusList.add(item);
+				
+				if (status.indexOf("Box upload successful for file") == -1)
+				{
+					// if there is error, status message won't have String "Box upload successful for file"
+					itemStatusFailureCount++;
+				}
+			}
+			
+			// the HashMap object holds itemized status information
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+			// update the status of migration record
+			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			
+		}
+	}
+	
+	/**
+	 * if all message items within the migration is finished
+	 * update the migration end time with the last end time of items
+	 * update the migration status with the aggregation of item status
+	 * @param mId
+	 */
+	private void updateMessageMigrationTimeAndStatus(String mId) {
+		int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
+		int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
+		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+		{
+			// all the items within the migration is finished
+			// update the end time of the parent record
+			Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
+			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+			
+			// update the status of the parent record
+			List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
+			// parse the string into JSON object
+			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+			int itemStatusFailureCount = 0;
+			for(MigrationEmailMessage mMessage : mMessageList)
+			{
+				String status = mMessage.getStatus();
+				MigrationFileItem item = new MigrationFileItem(
+						mMessage.getMessage_id(), 
+						"", 
+						status);
+				itemStatusList.add(item);
+				
+				if (status.indexOf("Box upload successful for file") == -1)
+				{
+					// if there is error, status message won't have String "Box upload successful for file"
+					itemStatusFailureCount++;
+				}
+			}
+			
+			// the HashMap object holds itemized status information
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+			// update the status of migration record
+			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			
 		}
 	}
 

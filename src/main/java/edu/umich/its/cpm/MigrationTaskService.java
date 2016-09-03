@@ -1513,6 +1513,18 @@ public class MigrationTaskService {
 	}
 	
 	/**
+	 * TODO
+	 * get CTools site members into Google Group membership
+	 * @param request
+	 * @param siteId
+	 * @return
+	 */
+	public String updateGroupMembershipFromSite(HttpServletRequest request, String siteId)
+	{
+		return "";
+	}
+	
+	/**
 	 * migrate email content to Group Group using microservice
 	 * @param message
 	 * @return
