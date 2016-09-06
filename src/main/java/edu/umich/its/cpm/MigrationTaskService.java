@@ -1,9 +1,13 @@
 package edu.umich.its.cpm;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -887,13 +891,14 @@ public class MigrationTaskService {
 	 * @param fileAuthor
 	 * @param fileCopyrightAlert
 	 * @param fileSize
+	 * @param sectionId
 	 * @return
 	 */
 	@Async
 	protected Future<String> uploadBoxFile(String id, String userId, String type, String boxFolderId, String fileName,
 			String webLinkUrl, String fileAccessUrl, String fileDescription,
 			String fileAuthor, String fileCopyrightAlert, 
-			final long fileSize) {
+			final long fileSize, HttpContext httpContext) {
 		
 		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
 		
@@ -907,20 +912,19 @@ public class MigrationTaskService {
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
-
 		// create httpclient
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		InputStream content = null;
-
+		
 		try {
 			// get file content from /access url
 			HttpGet getRequest = new HttpGet(fileAccessUrl);
 			getRequest.setHeader("Content-Type",
 					"application/x-www-form-urlencoded");
-			HttpResponse r = httpClient.execute(getRequest);
-			//HttpResponse r = httpClient.execute(getRequest, httpContext);
+			HttpResponse r = httpClient.execute(getRequest, httpContext);
+			
 			content = r.getEntity().getContent();
-
+			
 			if (Utils.isOfURLMIMEType(type)) {
 				try {
 					// special handling of Web Links resources
@@ -945,14 +949,14 @@ public class MigrationTaskService {
 		// exit if content stream is null
 		if (content == null)
 			return null;
-
-		int length = 0;
-		byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE];
+		
 		BufferedInputStream bContent = null;
 		try {
 
 			bContent = new BufferedInputStream(content);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
+			log.info("upload file size " + fileSize + " to folder " + folder.getID());
+			
 			BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 					Utils.sanitizeName(type, fileName),
 					fileSize, new ProgressListener() {
@@ -962,7 +966,7 @@ public class MigrationTaskService {
 									+ totalBytes);
 						}
 					});
-
+			
 			// get the BoxFile object, get BoxFile.Info object, set description,
 			// and commit change
 			BoxFile newFile = newFileInfo.getResource();
@@ -991,13 +995,13 @@ public class MigrationTaskService {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
 					+ fileName
 					+ " with content and length "
-					+ data.length
+					+ fileSize
 					+ iException;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + Utils.LINE_BREAK);
 		} catch (Exception e) {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
-					+ fileName + " with content and length " + data.length + e;
+					+ fileName + " with content and length " + fileSize + e;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + Utils.LINE_BREAK);
 		} finally {

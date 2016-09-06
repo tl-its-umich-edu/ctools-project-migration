@@ -18,6 +18,7 @@ import java.sql.Timestamp;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.protocol.HttpContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
@@ -43,10 +44,39 @@ public class MigrationInstanceService {
 	@Autowired
 	private MigrationRepository mRepository;
 	
+	@Autowired
+	private Environment env;
+	
+	/**
+	 * check the setting of parallel processing thread number
+	 * @return
+	 */
+	private int getMaxParallelThreadNum()
+	{
+		if (env.getProperty(Utils.MAX_PARALLEL_THREADS_PROP) != null)
+		{
+			try
+			{
+				// return the setting in property file
+				return Integer.parseInt(env.getProperty(Utils.MAX_PARALLEL_THREADS_PROP));
+			}
+			catch (NumberFormatException e)
+			{
+				// log error and return default value
+				log.error(Utils.MAX_PARALLEL_THREADS_PROP + " property should have integer value. ");
+				return Utils.MAX_PARALLEL_THREADS_NUM;
+			}
+		}
+		// return default value
+		return Utils.MAX_PARALLEL_THREADS_NUM;
+	}
+	
 	@Async
 	public void runProcessingThread() throws InterruptedException {
 		
 		log.info("Box Migration Processing thread is running");
+		
+		int threadNum = getMaxParallelThreadNum();
 		
 		List<Future<String>> futureList = new ArrayList<Future<String>>();
 
@@ -58,19 +88,25 @@ public class MigrationInstanceService {
 	        
 			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
-			// process with the Box upload request
-			for(MigrationBoxFile bFile : bFiles)
-			{	
-				if (futureList.size() < Utils.MAX_PARALLEL_THREADS_NUM)
-				{
-					// mark the file as processed
-					fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
-					
-					futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
-							bFile.getUser_id(), bFile.getType(),
-							bFile.getBox_folder_id(), bFile.getTitle(),
-							bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
-							bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size()));
+			if (bFiles != null && bFiles.size() > 0)
+			{
+				// get right HttpContext object
+				HttpContext httpContext = Utils.login_become_admin(env);
+				
+				// process with the Box upload request
+				for(MigrationBoxFile bFile : bFiles)
+				{	
+					if (futureList.size() < threadNum)
+					{
+						// mark the file as processed
+						fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
+						
+						futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
+								bFile.getUser_id(), bFile.getType(),
+								bFile.getBox_folder_id(), bFile.getTitle(),
+								bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
+								bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size(), httpContext));
+					}
 				}
 			}
 			
@@ -79,7 +115,7 @@ public class MigrationInstanceService {
 			// process with the message upload request
 			for(MigrationEmailMessage message : messages)
 			{	
-				if (futureList.size() < Utils.MAX_PARALLEL_THREADS_NUM )
+				if (futureList.size() < threadNum )
 				{
 					// mark the file as processed
 					eRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
