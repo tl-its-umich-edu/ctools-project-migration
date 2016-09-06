@@ -18,13 +18,14 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
         }
       }
       else {
-        if($scope.uploadSource==='resources'){
           var file = $scope.bulkUploadFile;
           var name = $scope.upload.name;
-          $log.info(name);
+          var source = $scope.uploadSource;
           $scope.bulkUploadInProcess = true;
           var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-          BulkUpload.bulkUpload(file, name, bulkUploadUrl).then(function(response) {
+          $log.info('POST: ' + bulkUploadUrl + ' called: ' + name + ' Source: ' + source);
+          $log.info(file, name, bulkUploadUrl, source);
+          BulkUpload.bulkUpload(file, name, bulkUploadUrl, source).then(function(response) {
             $scope.bulkUploadInProcess = false;
             // Reset form
             $scope.upload.name ='';
@@ -36,10 +37,6 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
               $scope.getOngoingList();
             }, 3000);
           });
-        } else {
-          // proceed with email things
-          $log.warn('processing batch email');
-        }
       }
     };
 

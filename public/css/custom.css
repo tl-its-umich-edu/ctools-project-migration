@@ -56,6 +56,11 @@ h3, h4.site-header {
 .muted {
 
 }
+
+.specialLink a {
+  text-decoration: underline
+}
+
 #batch{
   margin-right:10px
 }
