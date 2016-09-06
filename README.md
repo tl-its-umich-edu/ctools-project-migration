@@ -49,6 +49,9 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 * "mvn clean verify" will run the JMeter script for default profile, according to settings in pom.xml
 * Allow people from certain MCommunity Group specify end user id in the tool URL. Please refer to application_template.properties file for the configuration settings.
 
+## JUnit Test
+* By Default the Junit test are skipped when issue `mvn package` command inorder to run the build including Junit test do `mvn package -DskipTests=false`
+
 ## Unit Testing Email Archive Messages
  Testing each Email message is returned as RFC822 format for Email Archive migration to the Google Groups.
      The `EmailFormatter.java`class takes a single email message in the string json format. 

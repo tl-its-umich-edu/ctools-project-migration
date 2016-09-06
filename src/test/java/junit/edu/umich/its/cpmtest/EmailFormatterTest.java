@@ -66,8 +66,7 @@ public class EmailFormatterTest extends TestCase {
                 assertEquals("text/plain", attachmentData.get(0));
                 assertEquals("email_msg.txt", attachmentData.get(1));
                 assertEquals("https://ctdevsearch.dsc.umich.edu/access/content/attachment/03f0e860-5d58-45a6-9226-bbcde27830c2/_anon_/dad9cffd-7aec-4896-83f5-23a4b2acacc3/email_msg.txt", attachmentData.get(2));
-            } else
-                System.out.println("The Attachment Id's in \"message.json\" and in the \"testAttachment()\" is different. Hence the passing test");
+            }
         }
     }
 
@@ -103,7 +102,7 @@ public class EmailFormatterTest extends TestCase {
         expected.append("VGhpcyBpcyBhIHRlc3Qu");expected.append("\r\n");
         expected.append("--XXX--");
         String emailText = formatter.rfc822Format();
-        System.out.println(emailText);
+//        System.out.println(emailText);
         assertEquals(expected.toString(), replaceTheBoundaryValue(emailText));
     }
 
