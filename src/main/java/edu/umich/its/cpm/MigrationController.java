@@ -1680,7 +1680,7 @@ public class MigrationController {
 				{
 					// bulk migration of email archive messages into Google Groups
 					log.info(" for email archives");
-					handleBulkMessageGoogleMigration(
+					handleBulkMessageGoogleMigration(sessionId,
 							request, response, userId, bulkMigrationName,
 							bulkMigrationId, siteId, siteName, toolId, toolName);
 				}
@@ -1697,19 +1697,19 @@ public class MigrationController {
 				HttpStatus.ACCEPTED);
 	}
 	
-	private void handleBulkMessageGoogleMigration(
+	private void handleBulkMessageGoogleMigration(String sessionId,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName) {
 		
 		//call Google Group microservice for group creation
 		// and get the group group id, and group name
-		JSONObject googleGroupSettings = migrationTaskService.getGoogleGroupSettings(request, siteId);
+		JSONObject googleGroupSettings = migrationTaskService.createGoogleGroupForSite(siteId, sessionId);
 		String googleGroupId = googleGroupSettings.getString("id");
 		String googleGroupName = googleGroupSettings.getString("name");
 		
 		// 1. add site members to Google Group membership
-		String membershipStatus = migrationTaskService.updateGroupMembershipFromSite(request, siteId);
+		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(siteId, sessionId);
 		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
 		
 		// 2. save the site migration record

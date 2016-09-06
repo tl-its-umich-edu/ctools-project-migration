@@ -1503,11 +1503,11 @@ public class MigrationTaskService {
 	/**
 	 * TODO
 	 * call GG microservice to get Group Groups settings for given site id
-	 * @param request
 	 * @param siteId
+	 * @param sessionId
 	 * @return
 	 */
-	public JSONObject getGoogleGroupSettings(HttpServletRequest request, String siteId)
+	public JSONObject createGoogleGroupForSite(String siteId, String sessionId)
 	{
 		JSONObject emailSettings = new JSONObject();
 		emailSettings.put("id", "some_id");
@@ -1519,11 +1519,11 @@ public class MigrationTaskService {
 	/**
 	 * TODO
 	 * get CTools site members into Google Group membership
-	 * @param request
 	 * @param siteId
+	 * @param sessionId
 	 * @return
 	 */
-	public String updateGroupMembershipFromSite(HttpServletRequest request, String siteId)
+	public String updateGoogleGroupMembershipFromSite(String siteId, String sessionId)
 	{
 		return "";
 	}
