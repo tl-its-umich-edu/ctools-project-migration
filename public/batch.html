@@ -40,6 +40,18 @@
 		</div>
 	</nav>
 	<div class="container-fluid" ng-controller="projectMigrationBatchController">
+    <div class="row">
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
+      </div>
+      <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
+        <a ng-show="!boxAuthorized" class="btn btn-primary" href=""
+          data-toggle="modal" data-target="#boxAuthModal">Authorize App
+          to Box</a> <a ng-show="boxAuthorized" class="btn btn-primary" href=""
+          data-toggle="modal" data-target="#boxLogoutModal">Unauthorize
+          App from Box</a>
+      </div>
+
+    </div>
 		<div class="row">
 			<div class="col-xs-12 col-sm-12 col-md-6 col-lg-6">
 				<div class="panel panel-default">
@@ -272,7 +284,42 @@
   </div>
 
 
-
+  <div class="modal fade" id="boxAuthModal" tabindex="-1" role="dialog"
+  	aria-labelledby="boxAuthModalLabel">
+  	<div class="modal-dialog" role="document">
+  		<div class="modal-content">
+  			<div class="modal-body" id="boxIFrameContainer">
+  				<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize"
+  					frameborder="0"></iframe>
+  			</div>
+  		</div>
+  	</div>
+  </div>
+  <!-- Box Logout Modal -->
+  <div class="modal fade" id="boxLogoutModal" tabindex="-1" role="dialog"
+  	aria-labelledby="boxLogoutModalLabel">
+  	<div class="modal-dialog" role="document">
+  		<div class="modal-content">
+  			<div class="modal-header">
+  				<button type="button" class="close" data-dismiss="modal"
+  					aria-label="Close">
+  					<span aria-hidden="true">&times;</span>
+  				</button>
+  				<h4 class="modal-title" id="myModalLabel">Unauthorize Box
+  					Access</h4>
+  			</div>
+  			<div class="modal-body">Are you sure you want to unauthorize
+  				this app to access your Box account?</div>
+  			<div class="modal-footer">
+  				<button type="button" id ="boxUnauthorize" class="btn btn-primary"
+            data-dismiss="modal"
+  					ng-click="boxUnauthorize()">Unauthorize</button>
+  				<button type="button" class="btn btn-link" data-dismiss="modal"
+  					style="color: #005bb2">Cancel</button>
+  			</div>
+  		</div>
+  	</div>
+  </div>
 
 	<script type="text/javascript"
 		src="vendors/jquery/jquery-1.11.0.min.js"></script>
