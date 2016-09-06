@@ -15,6 +15,24 @@ destination_url VARCHAR(99),
 status CLOB,
 PRIMARY KEY (MIGRATION_ID));
 
+create table migration_box_file (
+id	VARCHAR(99)    NOT NULL,
+migration_id VARCHAR(99) NOT NULL,
+user_id VARCHAR(99) NOT NULL,
+box_folder_id VARCHAR(99) NOT NULL,
+type VARCHAR(99) NOT NULL,
+title VARCHAR(256) NOT NULL,
+web_link_url VARCHAR(2000),
+file_access_url VARCHAR(2000) NOT NULL,
+description VARCHAR(2000),
+author VARCHAR(2000) NOT NULL,
+copyright_alert VARCHAR(2000),
+file_size number(10) NOT NULL,
+start_time TIMESTAMP,
+end_time TIMESTAMP,
+status CLOB,
+PRIMARY KEY (id));
+
 -- create table box_auth_user
 create table box_auth_user (
 user_id VARCHAR(99) NOT NULL,

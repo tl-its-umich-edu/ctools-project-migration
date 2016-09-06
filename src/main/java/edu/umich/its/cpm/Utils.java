@@ -75,6 +75,7 @@ public class Utils {
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
+	public static final String MIGRATION_FILENAME = "file_name";
 	public static final String MIGRATION_STATUS = "status";
 	public static final String MIGRATION_DATA = "data";
 
@@ -106,6 +107,8 @@ public class Utils {
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
 	public static final String EXTENSION_SEPARATOR = ".";
+	
+	public static final String LINE_BREAK = "\n";
 
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
@@ -360,11 +363,22 @@ public class Utils {
 		return ldapAuthorizationVerification(propLdapServerUrl,
 				propAdminMCommGroup, remoteUser);
 	}
+	
+	/*
+	 * check whether the current user is in cpm admin MCommunity group based on
+	 * ldap group membership
+	 */
+	public static boolean isCurrentUserCPMAdmin(String userId, Environment env) {
+		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
+		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
+		return ldapAuthorizationVerification(propLdapServerUrl,
+				propAdminMCommGroup, userId);
+	}
 
 	/*
 	 * get CoSign user
 	 */
-	private static String getRemoteUser(HttpServletRequest request) {
+	public static String getRemoteUser(HttpServletRequest request) {
 		return request.getRemoteUser();
 	}
 
