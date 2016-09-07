@@ -1,9 +1,13 @@
 package edu.umich.its.cpm;
 
 import org.apache.http.HttpResponse;
+import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
+import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -19,6 +23,7 @@ import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
 import java.net.URLDecoder;
+import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -56,6 +61,9 @@ public class MigrationTaskService {
 	
 	@Autowired
 	MigrationBoxFileRepository fRepository;
+	
+	@Autowired
+	MigrationEmailMessageRepository mRepository;
 	
 	@Autowired
 	private Environment env;
@@ -851,7 +859,7 @@ public class MigrationTaskService {
 				} else {
 					// insert records into database
 					// ready for multi-thread processing 
-					log.info("&&&&&& time to insert file record folder id=" + boxFolderIdStack.peek() );
+					log.info(" time to insert file record folder id=" + boxFolderIdStack.peek() );
 					MigrationBoxFile mFile = new MigrationBoxFile(migrationId, userId, boxFolderIdStack.peek(),
 							type, title, webLinkUrl,
 							contentAccessUrl, description, author,
@@ -871,13 +879,29 @@ public class MigrationTaskService {
 	}
 
 	/**
-	 * upload files to Box
+	 * upload file to Box
+	 * @param bFile
+	 * @param httpContext
+	 * @return
 	 */
 	@Async
-	protected Future<String> uploadBoxFile(String id, String userId, String type, String boxFolderId, String fileName,
-			String webLinkUrl, String fileAccessUrl, String fileDescription,
-			String fileAuthor, String fileCopyrightAlert, 
-			final long fileSize) {
+	protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext) {
+		
+		// get all bFile params
+		String id = bFile.getId();
+		String userId = bFile.getUser_id();
+		String type = bFile.getType();
+		String boxFolderId = bFile.getBox_folder_id();
+		String fileName = bFile.getTitle();
+		
+		String webLinkUrl = bFile.getWeb_link_url();
+		String fileAccessUrl = bFile.getFile_access_url();
+		String fileDescription = bFile.getDescription();
+		String fileAuthor = bFile.getAuthor();
+		String fileCopyrightAlert = bFile.getCopyright_alert();
+		final long fileSize = bFile.getFile_size();
+		
+		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
 		
 		// status string
 		StringBuffer status = new StringBuffer();
@@ -889,20 +913,19 @@ public class MigrationTaskService {
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
-
 		// create httpclient
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		InputStream content = null;
-
+		
 		try {
 			// get file content from /access url
 			HttpGet getRequest = new HttpGet(fileAccessUrl);
 			getRequest.setHeader("Content-Type",
 					"application/x-www-form-urlencoded");
-			HttpResponse r = httpClient.execute(getRequest);
-			//HttpResponse r = httpClient.execute(getRequest, httpContext);
+			HttpResponse r = httpClient.execute(getRequest, httpContext);
+			
 			content = r.getEntity().getContent();
-
+			
 			if (Utils.isOfURLMIMEType(type)) {
 				try {
 					// special handling of Web Links resources
@@ -927,25 +950,24 @@ public class MigrationTaskService {
 		// exit if content stream is null
 		if (content == null)
 			return null;
-
-		int length = 0;
-		byte data[] = new byte[STREAM_BUFFER_CHAR_SIZE];
+		
 		BufferedInputStream bContent = null;
 		try {
 
 			bContent = new BufferedInputStream(content);
-			BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
 			BoxFolder folder = new BoxFolder(api, boxFolderId);
+			log.info("upload file size " + fileSize + " to folder " + folder.getID());
+			
 			BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 					Utils.sanitizeName(type, fileName),
-					STREAM_BUFFER_CHAR_SIZE, new ProgressListener() {
+					fileSize, new ProgressListener() {
 						public void onProgressChanged(long numBytes,
 								long totalBytes) {
 							log.info(numBytes + " out of total bytes "
-									+ totalBytes + " and file size " + fileSize);
+									+ totalBytes);
 						}
 					});
-
+			
 			// get the BoxFile object, get BoxFile.Info object, set description,
 			// and commit change
 			BoxFile newFile = newFileInfo.getResource();
@@ -974,13 +996,13 @@ public class MigrationTaskService {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
 					+ fileName
 					+ " with content and length "
-					+ data.length
+					+ fileSize
 					+ iException;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + Utils.LINE_BREAK);
 		} catch (Exception e) {
 			String ilExceptionString = "problem creating BufferedInputStream for file "
-					+ fileName + " with content and length " + data.length + e;
+					+ fileName + " with content and length " + fileSize + e;
 			log.warn(ilExceptionString);
 			status.append(ilExceptionString + Utils.LINE_BREAK);
 		} finally {
@@ -1388,7 +1410,152 @@ public class MigrationTaskService {
 		return rv;
 	}
 	
+	public HashMap<String, String> processAddEmailMessages(
+			HttpServletRequest request, HttpServletResponse response,
+			String target, String remoteUser, HashMap<String, String> rv,
+			String googleGroupId, String siteId, String toolId,
+			HashMap<String, Object> saveMigration) {
+		if (!saveMigration.containsKey("migration")) {
+			// no new Migration record created
+			rv.put("errorMessage", "Cannot create migration records for user "
+					+ remoteUser + " and site=" + siteId);
+			return rv;
+		} 
+
+		Migration migration = (Migration) saveMigration.get("migration");
+		String migrationId = migration.getMigration_id();
+		
+		// get session
+		HashMap<String, Object> sessionAttributes = Utils
+				.login_becomeuser(env, request, remoteUser);
+		if (sessionAttributes == null || !sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			rv.put("errorMessage", "Cannot create become user "
+					+ remoteUser + " and site=" + siteId);
+			return rv;
+		}
+		
+		String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+
+		// get all mail channels inside the site
+		RestTemplate restTemplate = new RestTemplate();
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/mailarchive/siteChannels/" + siteId + ".json?_sessionId="
+				+ sessionId;
+		JSONObject channelsJSON = null;
+		channelsJSON = new JSONObject(restTemplate.getForObject(requestUrl,
+				String.class));
+		
+		if (!channelsJSON.has(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION))
+		{
+			rv.put("errorMessage", "Cannot get mail archive information for site=" + siteId);
+			return rv;
+		}
+		
+		JSONArray channels = channelsJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
+		for (int iChannel = 0; iChannel < channels.length(); iChannel++) {
+			JSONObject channel = channels.getJSONObject(iChannel);
+			String channelId = channel.getString("data");
+			channelId = channelId.substring(("/mailarchive/channel/" + siteId + "/").length());
+			String channelName = channel.getString("displayTitle");
+			
+			// get all email messages in the channel
+			requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+					+ "direct/mailarchive/channelMessages/" + siteId + "/" + channelId + ".json?_sessionId="
+					+ sessionId;
+			JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
+					String.class));
+			JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
+			for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
+				JSONObject message = messages.getJSONObject(iMessage);
+				String messageId = message.getString("id");
+				// construct the MigrationEmailMessage object
+				MigrationEmailMessage mMessage = new MigrationEmailMessage(
+						messageId, migrationId, 
+						remoteUser, googleGroupId,
+						message.toString(), null,
+						null, null);
+				try
+				{
+					mRepository.save(mMessage);
+				}
+				catch (Exception e)
+				{
+					log.error("Problem saving the MigrationEmailMessage " + messageId + " with GoogleGroupId " + googleGroupId + " into database ");
+				}
+					
+				
+			}
+		}
+		return rv;
+	}
 	
+	/**
+	 * TODO
+	 * call GG microservice to upload message content
+	 * @param googleGroup
+	 * @param rcf822Email
+	 * @return
+	 */
+	private String addEmailToGoogleGroup(String googleGroup, String rcf822Email)
+	{
+		return "success";
+	}
+	
+	/**
+	 * TODO
+	 * call GG microservice to get Group Groups settings for given site id
+	 * @param siteId
+	 * @param sessionId
+	 * @return
+	 */
+	public JSONObject createGoogleGroupForSite(String siteId, String sessionId)
+	{
+		JSONObject emailSettings = new JSONObject();
+		emailSettings.put("id", "some_id");
+		emailSettings.put("name", "some_name");
+		
+		return emailSettings;
+	}
+	
+	/**
+	 * TODO
+	 * get CTools site members into Google Group membership
+	 * @param siteId
+	 * @param sessionId
+	 * @return
+	 */
+	public String updateGoogleGroupMembershipFromSite(String siteId, String sessionId)
+	{
+		return "";
+	}
+	
+	/**
+	 * migrate email content to Group Group using microservice
+	 * @param message
+	 * @return
+	 */
+	@Async
+	protected Future<String> uploadMessageToGoogleGroup(MigrationEmailMessage message) {
+		
+		// status string
+		String status = "";
+		
+		String googleGroupId = message.getGoogle_group_id();
+
+		String messageId = message.getMessage_id();
+		log.info("begin to upload message " + messageId  + " to Google Group id = " + googleGroupId);
+		
+		// TODO need to call email RFC822 formatter once it is ready
+		String emailContent = message.getJson();
+		status = addEmailToGoogleGroup(googleGroupId, emailContent);
+		
+		// update the status and end time for file item
+		mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
+		mRepository.setMigrationMessageStatus(messageId, status);
+		
+		return new AsyncResult<String>(status);
+	}
+
 
 
 }

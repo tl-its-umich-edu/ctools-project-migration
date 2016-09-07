@@ -33,6 +33,17 @@ end_time TIMESTAMP,
 status CLOB,
 PRIMARY KEY (id));
 
+create table migration_email_message (
+message_id	VARCHAR(99)    NOT NULL,
+migration_id VARCHAR(99) NOT NULL,
+user_id VARCHAR(99) NOT NULL,
+google_group_id VARCHAR(99) NOT NULL,
+json CLOB NOT NULL,
+start_time TIMESTAMP,
+end_time TIMESTAMP,
+status CLOB,
+PRIMARY KEY (message_id));
+
 -- create table box_auth_user
 create table box_auth_user (
 user_id VARCHAR(99) NOT NULL,

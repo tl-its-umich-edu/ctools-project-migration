@@ -70,8 +70,11 @@ public class Utils {
 
 	public static final String COLLECTION_TYPE = "collection";
 
+	public static final String MIGRATION_TOOL_RESOURCE = "sakai.resources";
+	public static final String MIGRATION_TOOL_EMAILARCHIVE = "sakai.mailbox";
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
+	public static final String MIGRATION_TYPE_GOOGLE_GROUP = "google";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
@@ -90,6 +93,7 @@ public class Utils {
 	public static final String BOX_ADMIN_CLIENT_ID = "box_admin_client_id";
 	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
 	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
+
 
 	public static final String SERVER_URL = "server_url";
 
@@ -140,6 +144,10 @@ public class Utils {
 	public static final String JSON_ATTR_MAIL_URL = "url";
 	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
 	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
+	
+	// the max parallel processing thread for migrations
+	public static final String MAX_PARALLEL_THREADS_PROP = "max_parallel_threads_prop";
+	public static final int MAX_PARALLEL_THREADS_NUM = 20;
 
 	/**
 	 * login into CTools and become user with sessionId
@@ -232,6 +240,68 @@ public class Utils {
 			log.error(requestUrl + e.getMessage());
 		}
 
+		return sessionAttributes;
+	}
+	
+	/**
+	 * login into CTools and become user with sessionId
+	 */
+	protected static HashMap<String, Object> login_become_admin(Environment env) {
+		// return the session related attributes after successful login call
+		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
+
+		// session id after login
+		String sessionId = "";
+
+		// create httpclient
+		HttpClient httpClient = HttpClientBuilder.create().build();
+
+		// store cookies in context, retain the session information
+		CookieStore cookieStore = new BasicCookieStore();
+		HttpContext httpContext = new BasicHttpContext();
+		httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+		// here is the CTools integration prior to CoSign integration ( read
+		// session user information from configuration file)
+		// 1. create a session based on user id and password
+		// the url should be in the format of
+		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
+		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/session?_username=" + env.getProperty("username")
+				+ "&_password=" + env.getProperty("password");
+		try {
+			HttpPost postRequest = new HttpPost(requestUrl);
+			postRequest.setHeader("Content-Type",
+					"application/x-www-form-urlencoded");
+			HttpResponse response = httpClient
+					.execute(postRequest, httpContext);
+
+			// get the status code
+			int status = response.getStatusLine().getStatusCode();
+
+			if (status != 201) {
+				// if status code is not 201, there is a problem with the
+				// request.
+				// return error if a new CTools session could not be created
+				// using username and password provided
+				log.info("Wrong user id or password. Cannot login to CTools "
+						+ env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL));
+			} else {
+
+				// if status code is 201 login is successful. So reuse the
+				// httpContext for next requests.
+				// get the session id
+				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
+				log.info("successfully logged in as user "
+						+ env.getProperty("username") + " with sessionId = "
+						+ sessionId);
+			}
+		} catch (java.io.IOException e) {
+			log.error(requestUrl + e.getMessage());
+		}
+
+		sessionAttributes.put("sessionId", sessionId);
+		sessionAttributes.put("httpContext", httpContext);
 		return sessionAttributes;
 	}
 
