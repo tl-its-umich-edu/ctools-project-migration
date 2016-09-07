@@ -880,25 +880,26 @@ public class MigrationTaskService {
 
 	/**
 	 * upload file to Box
-	 * @param id
-	 * @param userId
-	 * @param type
-	 * @param boxFolderId
-	 * @param fileName
-	 * @param webLinkUrl
-	 * @param fileAccessUrl
-	 * @param fileDescription
-	 * @param fileAuthor
-	 * @param fileCopyrightAlert
-	 * @param fileSize
-	 * @param sectionId
+	 * @param bFile
+	 * @param httpContext
 	 * @return
 	 */
 	@Async
-	protected Future<String> uploadBoxFile(String id, String userId, String type, String boxFolderId, String fileName,
-			String webLinkUrl, String fileAccessUrl, String fileDescription,
-			String fileAuthor, String fileCopyrightAlert, 
-			final long fileSize, HttpContext httpContext) {
+	protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext) {
+		
+		// get all bFile params
+		String id = bFile.getId();
+		String userId = bFile.getUser_id();
+		String type = bFile.getType();
+		String boxFolderId = bFile.getBox_folder_id();
+		String fileName = bFile.getTitle();
+		
+		String webLinkUrl = bFile.getWeb_link_url();
+		String fileAccessUrl = bFile.getFile_access_url();
+		String fileDescription = bFile.getDescription();
+		String fileAuthor = bFile.getAuthor();
+		String fileCopyrightAlert = bFile.getCopyright_alert();
+		final long fileSize = bFile.getFile_size();
 		
 		BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
 		

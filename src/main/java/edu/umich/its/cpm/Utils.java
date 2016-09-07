@@ -74,7 +74,7 @@ public class Utils {
 	public static final String MIGRATION_TOOL_EMAILARCHIVE = "sakai.mailbox";
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
-	public static final String MIGRATION_TYPE_GOOGLE = "google";
+	public static final String MIGRATION_TYPE_GOOGLE_GROUP = "google";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
@@ -246,7 +246,7 @@ public class Utils {
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	protected static HttpContext login_become_admin(Environment env) {
+	protected static HashMap<String, Object> login_become_admin(Environment env) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
@@ -300,7 +300,9 @@ public class Utils {
 			log.error(requestUrl + e.getMessage());
 		}
 
-		return httpContext;
+		sessionAttributes.put("sessionId", sessionId);
+		sessionAttributes.put("httpContext", httpContext);
+		return sessionAttributes;
 	}
 
 	/**

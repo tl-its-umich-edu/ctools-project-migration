@@ -5,9 +5,24 @@ import java.sql.Timestamp;
 
 import org.springframework.data.repository.CrudRepository;
 import org.springframework.data.jpa.repository.Query;
+
+import javax.persistence.EntityManager;
+import javax.persistence.NamedNativeQuery;
+import javax.persistence.NamedNativeQueries;
+import javax.persistence.PersistenceContext;
+
 import org.springframework.data.jpa.repository.Modifying;
 import org.springframework.transaction.annotation.Transactional;
 
+@NamedNativeQueries({
+	@NamedNativeQuery(
+    		name	=   "findFirstNewMigrationEmailMessage",
+    		query   =   "SELECT * FROM " + 
+                        "(SELECT message_id, row_number() " +
+                        "OVER (PARTITION BY migration_id order by message_id) as rownumber FROM migration_email_message) " + 
+                        "where rownumber = 1"
+    )
+})
 public interface MigrationEmailMessageRepository extends CrudRepository<MigrationEmailMessage, String> {
 	/**
 	 * validate the database connection
@@ -16,13 +31,16 @@ public interface MigrationEmailMessageRepository extends CrudRepository<Migratio
 	 */
 	@Query("SELECT count(*) from MigrationEmailMessage")
 	public int validate();
-
-	/**
-	 * Finds next unprocessed message migration request
-	 * @return
-	 */
-	@Query("SELECT message FROM MigrationEmailMessage message WHERE message.start_time is null order by message.migration_id desc")
-	public List<MigrationEmailMessage> findNextNewMigrationEmailMessage();
+	
+	@Query(value = "select * from migration_email_message " +
+			"where message_id in " +
+			"(SELECT message_id FROM " + 
+            "(SELECT message_id, row_number() " +
+            "OVER (PARTITION BY migration_id order by message_id) as rownumber " + 
+            "FROM migration_email_message " + 
+            "where start_time is null) " + 
+            "where rownumber = 1)", nativeQuery = true)
+	public List<MigrationEmailMessage> getFirstNewMessagePerSite();
 	
 	/**
 	 * set the start time for message migration

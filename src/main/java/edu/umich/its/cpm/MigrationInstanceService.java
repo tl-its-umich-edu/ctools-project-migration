@@ -64,7 +64,7 @@ public class MigrationInstanceService {
 			{
 				// log error and return default value
 				log.error(Utils.MAX_PARALLEL_THREADS_PROP + " property should have integer value. ");
-				return Utils.MAX_PARALLEL_THREADS_NUM;
+				return 0;
 			}
 		}
 		// return default value
@@ -72,13 +72,17 @@ public class MigrationInstanceService {
 	}
 	
 	@Async
-	public void runProcessingThread() throws InterruptedException {
+	public void runProcessingThreads() throws InterruptedException {
 		
 		log.info("Box Migration Processing thread is running");
 		
 		int threadNum = getMaxParallelThreadNum();
 		
-		List<Future<String>> futureList = new ArrayList<Future<String>>();
+		// future list for Box migration tasks
+		List<Future<String>> futureBoxList = new ArrayList<Future<String>>();
+		
+		// future list for Google Groups migration tasks
+		List<Future<String>> futureGoogleGroupList = new ArrayList<Future<String>>();
 
 		while (true)
 		{
@@ -86,66 +90,74 @@ public class MigrationInstanceService {
 			// delay for 5 seconds
 			Thread.sleep(5000L);
 	        
+			/*********** Box migration tasks ***********/
 			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
 			if (bFiles != null && bFiles.size() > 0)
 			{
 				// get right HttpContext object
-				HttpContext httpContext = Utils.login_become_admin(env);
+				HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
 				
 				// process with the Box upload request
 				for(MigrationBoxFile bFile : bFiles)
 				{	
-					if (futureList.size() < threadNum)
+					if (futureBoxList.size() < threadNum)
 					{
-						// mark the file as processed
+						// mark the file as being processed
 						fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
 						
-						futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
-								bFile.getUser_id(), bFile.getType(),
-								bFile.getBox_folder_id(), bFile.getTitle(),
-								bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
-								bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size(), httpContext));
+						futureBoxList.add( migrationTaskService.uploadBoxFile(bFile, httpContext));
 					}
 				}
 			}
+
+		    // remove finished Box migration task from future list
+			trimFutureListRemoveFinishedTask(futureBoxList);
 			
-			// looping through resource request
-			List<MigrationEmailMessage> messages = eRepository.findNextNewMigrationEmailMessage();
+			/*********** Google Groups migration tasks ***********/
+			// looping through email request
+			List<MigrationEmailMessage> messages = eRepository.getFirstNewMessagePerSite();
 			// process with the message upload request
 			for(MigrationEmailMessage message : messages)
 			{	
-				if (futureList.size() < threadNum )
+				if (futureGoogleGroupList.size() < threadNum )
 				{
-					// mark the file as processed
+					// mark the file as being processed
 					eRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 					
 					//call to microservice to upload message to Google Groups
-					futureList.add(migrationTaskService.uploadMessageToGoogleGroup(message));
+					futureGoogleGroupList.add(migrationTaskService.uploadMessageToGoogleGroup(message));
 				}
 			}
 			
-		    
-			// get a cloned list, in case we need to remove the finished async tasks from the original list
-			List<Future<String>> futureListClone = new ArrayList<Future<String>>();
-			futureListClone.addAll(futureList);
+		    // remove finished Google Groups migration task from future list
+			trimFutureListRemoveFinishedTask(futureGoogleGroupList);
 			
-			for (Future<String> future : futureListClone) {
-				try {
-					// get the status of asynchronize processed Box upload request
-					if (future.isDone())
-					{
-						// finished, remove the task from the future list queue
-						futureList.remove(future);
-					}
-				} catch (Exception e) {
-					log.error("runProcessingThread " + e.getMessage());
-				}
-			}
-			
+			/*********** update parent migration status for both Box and Google Groups migration request ***********/
 			// if all itemized migration finishes, 
 			// update the parent migration record for status and end time
 			updateMigrationStatusAndEndTime();
+		}
+	}
+
+	private void trimFutureListRemoveFinishedTask(
+			List<Future<String>> futureList) {
+		// get a cloned list, in case we need to remove the finished async tasks from the original list
+		List<Future<String>> futureListClone = new ArrayList<Future<String>>();
+		futureListClone.addAll(futureList);
+		
+		for (Future<String> future : futureListClone) {
+			try {
+				// get the status of asynchronize processed Box upload request
+				if (future.isDone())
+				{
+					// finished, remove the task from the future list queue
+					futureList.remove(future);
+				}
+			} catch (Exception e) {
+				log.error("problem removing item from future list " + e.getMessage());
+			}
 		}
 	}
 
@@ -167,7 +179,7 @@ public class MigrationInstanceService {
 				// for Box file migration
 				updateBoxMigrationTimeAndStatus(mId);
 			}
-			else if (Utils.MIGRATION_TYPE_GOOGLE.equals(destination_type))
+			else if (Utils.MIGRATION_TYPE_GOOGLE_GROUP.equals(destination_type))
 			{
 				// for Google Groups email migration	
 				updateMessageMigrationTimeAndStatus(mId);
@@ -176,7 +188,7 @@ public class MigrationInstanceService {
 	}
 
 	/**
-	 * if all resource items within the migration is finished
+	 * if all box migration resource items within the migration is finished
 	 * update the migration end time with the last end time of items
 	 * update the migration status with the aggregation of item status
 	 * @param mId
@@ -224,7 +236,7 @@ public class MigrationInstanceService {
 	}
 	
 	/**
-	 * if all message items within the migration is finished
+	 * if all email migration items within the migration is finished
 	 * update the migration end time with the last end time of items
 	 * update the migration status with the aggregation of item status
 	 * @param mId

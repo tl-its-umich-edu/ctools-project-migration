@@ -815,8 +815,8 @@ public class MigrationController {
 			HashMap<String, Object> sessionAttributes = Utils
 					.login_becomeuser(env, request, remoteUser);
 
-			// call asynchronous method for zip file download
-			String migrationStatus = null;
+			StringBuffer boxMigrationErrors = new StringBuffer();
+			
 			if (Utils.MIGRATION_TYPE_ZIP.equals(target)) {
 				// call zip file download for site resource
 				log.info("start to call zip migration for siteId="
@@ -833,8 +833,6 @@ public class MigrationController {
 				log.info("start to call Box migration asynch for siteId="
 						+ siteId + " tooId=" + toolId);
 				
-				StringBuffer boxMigrationStatus = new StringBuffer();
-				
 				// need to create all folders first
 				// get box client id and secret
 				String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
@@ -845,7 +843,7 @@ public class MigrationController {
 				if (boxClientId == null || boxClientSecret == null) {
 					String boxClientIdError = "Missing Box integration parameters (Box client id, client secret)";
 					log.error(boxClientIdError);
-					boxMigrationStatus.append(boxClientIdError + Utils.LINE_BREAK);
+					boxMigrationErrors.append(boxClientIdError + Utils.LINE_BREAK);
 				}
 				
 				String remoteUserEmail = Utils.getUserEmailFromUserId(remoteUser);
@@ -853,7 +851,7 @@ public class MigrationController {
 				if (siteId == null || boxFolderId == null) {
 					String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
 					log.error(boxFolderIdError);
-					boxMigrationStatus.append(boxFolderIdError + Utils.LINE_BREAK);
+					boxMigrationErrors.append(boxFolderIdError + Utils.LINE_BREAK);
 				}
 
 				// get sessionId
@@ -882,7 +880,7 @@ public class MigrationController {
 						Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 								.type(MediaType.TEXT_PLAIN).build();
 						log.error(errorMessage);
-						boxMigrationStatus.append(errorMessage + Utils.LINE_BREAK);
+						boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
 					} catch (Exception e) {
 						String errorMessage = "Migration status for " + siteId + " "
 								+ e.getClass().getName();
@@ -891,17 +889,17 @@ public class MigrationController {
 								.build();
 
 						log.error("uploadToBox ", e);
-						boxMigrationStatus.append(errorMessage + Utils.LINE_BREAK);
+						boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
 					}
 
 					String uploadFinished = "Finished upload site content for site "
 							+ siteId;
 					log.info(uploadFinished);
-					boxMigrationStatus.append(uploadFinished + Utils.LINE_BREAK);
+					rv.put("status", uploadFinished + Utils.LINE_BREAK);
 				} else {
 					String errorBecomeUser = "Problem become user to " + remoteUser;
 					log.error(errorBecomeUser);
-					boxMigrationStatus.append(errorBecomeUser + Utils.LINE_BREAK);
+					boxMigrationErrors.append(errorBecomeUser + Utils.LINE_BREAK);
 				}
 
 			} else if (Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP.equals(target)) {
@@ -916,6 +914,7 @@ public class MigrationController {
 				stopWatch.stop();
 		        log.info("Migration task started: siteId=" + siteId + " migation id=" + migrationId + " target=zip " + stopWatch.prettyPrint());
 			}
+			rv.put("errorMessage", boxMigrationErrors.toString());
 			rv.put("migrationId", migrationId);
 			return rv;
 		}
@@ -1116,7 +1115,7 @@ public class MigrationController {
 		}
 		catch (JSONException e)
 		{
-			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
+			log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
 		}
 
 		// assign null values to batch id and name
@@ -1181,8 +1180,7 @@ public class MigrationController {
 
 		// status message
 		StringBuffer status = new StringBuffer();
-
-		String destinationType = Utils.MIGRATION_TYPE_GOOGLE;
+		
 		String targetUrl = "";
 		// the format of folder path in box
 		// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
@@ -1195,7 +1193,7 @@ public class MigrationController {
 		
 		// create new migration record
 		rv = newMigrationRecord(status, bulkMigrationId, bulkMigrationName,
-				siteId, siteName, toolId, toolName, destinationType, userId,
+				siteId, siteName, toolId, toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId,
 				targetUrl);
 
 		return rv;
@@ -1718,9 +1716,8 @@ public class MigrationController {
 			googleGroupId, googleGroupName, userId);
 		
 		// 3. delegate the actual message migrations to async calls
-		// Concatenating all site owners' names together with 
 		HashMap<String, String> status = migrationTaskService.processAddEmailMessages(
-				request, response, Utils.MIGRATION_TYPE_GOOGLE, userId,
+				request, response, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId,
 				new HashMap<String, String>(), googleGroupId, siteId,
 				toolId, saveBulkMigration);
 		
@@ -1774,30 +1771,30 @@ public class MigrationController {
 			String boxFolderName = boxFolder.getName();
 
 			// add site members to Box folder as collaborators
-			HashMap<String, String> userRoles = get_site_members(siteId, sessionId);
-			for (String userEid : userRoles.keySet()) {
-				String userRole = userRoles.get(userEid);
-				String userEmail = Utils.getUserEmailFromUserId(userEid);
-				try
-				{
+			try
+			{
+				HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
+				for (String userEid : userRolesMap.keySet()) {
+					String userRole = userRolesMap.get(userEid);
+					String userEmail = Utils.getUserEmailFromUserId(userEid);
+
 					BoxUtils.addCollaboration(
 							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 							userEmail, userRole, boxFolderId,
 							boxAdminClientId, boxAdminClientSecret, uRepository);
+					if (Utils.ROLE_OWNER.equals(userRole))
+					{
+						allSiteOwners.append(",").append(userEmail);
+					}
 				}
-				catch (RestClientException e)
-				{
-					log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
-				}
-				catch (JSONException e)
-				{
-					log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());
-					allSiteOwners.append(",").append(userEmail);
-				}
-				if (Utils.ROLE_OWNER.equals(userRole))
-				{
-					allSiteOwners.append(",").append(userEmail);
-				}
+			}
+			catch (RestClientException e)
+			{
+				log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
+			}
+			catch (JSONException e)
+			{
+				log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
 			}
 			
 			// now after all checks passed, we are ready for migration
@@ -1808,7 +1805,6 @@ public class MigrationController {
 					boxFolderName, allSiteOwners.toString());
 
 			// delegate the actual content migrations to async calls
-			// Concatenating all site owners' names together with 
 			HashMap<String, String> status = createMigrationBoxTask(
 					request, response, Utils.MIGRATION_TYPE_BOX, userId,
 					new HashMap<String, String>(), boxFolderId, siteId,
