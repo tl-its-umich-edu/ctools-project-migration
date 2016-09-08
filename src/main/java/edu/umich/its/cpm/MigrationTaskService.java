@@ -907,9 +907,10 @@ public class MigrationTaskService {
 		StringBuffer status = new StringBuffer();
 
 		log.info("begin to upload file " + fileName + " to box folder "
-				+ boxFolderId);
-
-		log.info("*** " + fileAccessUrl);
+				+ boxFolderId + " " + fileAccessUrl);
+		
+		// mark the file as being processed
+		fRepository.setMigrationBoxFileStartTime(id, new Timestamp(System.currentTimeMillis()));
 
 		// record zip status
 		StringBuffer zipFileStatus = new StringBuffer();
@@ -1545,13 +1546,35 @@ public class MigrationTaskService {
 		String messageId = message.getMessage_id();
 		log.info("begin to upload message " + messageId  + " to Google Group id = " + googleGroupId);
 		
-		// TODO need to call email RFC822 formatter once it is ready
+		// use EmailFormatter to get RFC822 complaint email content
 		String emailContent = message.getJson();
-		status = addEmailToGoogleGroup(googleGroupId, emailContent);
+		HttpServletRequest request = null;
+		AttachmentHandler attachmentHandler = new AttachmentHandler(request);
+		try
+		{
+			EmailFormatter formatter = new EmailFormatter(emailContent, attachmentHandler);
+			
+			String emailText = formatter.getEmailText();
+			
+			// mark the file as being processed
+		    mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
+		
+			// process the message
+			status = addEmailToGoogleGroup(googleGroupId, emailText);
 		
 		// update the status and end time for file item
-		mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
-		mRepository.setMigrationMessageStatus(messageId, status);
+			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
+			mRepository.setMigrationMessageStatus(messageId, status);
+		}
+		catch (IOException exception)
+		{
+			String errorString = "IOException from EmailFormatter for message id " + messageId + " " + exception.getMessage();
+		log.error(errorString);
+		
+		// update the status and end time for file item
+			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
+			mRepository.setMigrationMessageStatus(messageId, errorString);
+		}
 		
 		return new AsyncResult<String>(status);
 	}
