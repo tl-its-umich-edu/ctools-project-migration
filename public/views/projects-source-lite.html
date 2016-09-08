@@ -25,15 +25,6 @@
 							<small class="bigSmall" ng-show="project.last_migrated">last
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
-            <div>
-              <br>
-              <div ng-hide="project.deleteStatus">
-                <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
-              </div>
-              <div style="padding-left:17px" ng-show="project.deleteStatus">
-                <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
-              </div>
-            </div>
 					</div>
 					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 						<a ng-click="getTools(project.site_id)" href=""
@@ -41,6 +32,21 @@
 							content <span class="sr-only">for site {{project.site_name}}</span>
 						</a>
           </div>
+        </div>
+        <br>
+        <div class="row">
+          <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+            <div ng-hide="project.deleteStatus">
+              <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
+            </div>
+            <div  ng-show="project.deleteStatus">
+              <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
+            </div>
+          </div>
+          <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+            <small><a ng-show="project.deleteStatus" ng-click="unFlagSiteDeletion(project)" href=""><i class="glyphicon glyphicon-remove"></i> Remove flag <span class="sr-only"> for deleting {{project.site_name}}</span></a></small>
+          </div>
+
         </div>
 			</div>
 			<div class="x"

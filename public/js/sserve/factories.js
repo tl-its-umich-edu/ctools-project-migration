@@ -51,6 +51,17 @@ projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $htt
         return result;
       });
     },
+    unFlagSiteDeletion: function(url){
+      return $http.post(url, {
+				cache : false
+			}).then(function success(result) {
+				return result;
+			}, function error(result) {
+				errorDisplay(url, result.status, 'Unable to request that a tool not be migrated.');
+				result.errors.failure = true;
+				return result;
+			});
+    },
     startMigrationEmail: function(url) {
       var defer = $q.defer();
 
