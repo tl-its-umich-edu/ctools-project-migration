@@ -104,9 +104,6 @@ public class MigrationInstanceService {
 				{	
 					if (futureBoxList.size() < threadNum)
 					{
-						// mark the file as being processed
-						fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
-						
 						futureBoxList.add( migrationTaskService.uploadBoxFile(bFile, httpContext));
 					}
 				}
@@ -123,9 +120,6 @@ public class MigrationInstanceService {
 			{	
 				if (futureGoogleGroupList.size() < threadNum )
 				{
-					// mark the file as being processed
-					eRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
-					
 					//call to microservice to upload message to Google Groups
 					futureGoogleGroupList.add(migrationTaskService.uploadMessageToGoogleGroup(message));
 				}
