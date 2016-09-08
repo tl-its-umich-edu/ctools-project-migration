@@ -1550,11 +1550,13 @@ public class MigrationTaskService {
 		String emailContent = message.getJson();
 		HttpServletRequest request = null;
 		AttachmentHandler attachmentHandler = new AttachmentHandler(request);
+		attachmentHandler.setEnv(env);
+		
 		try
 		{
 			EmailFormatter formatter = new EmailFormatter(emailContent, attachmentHandler);
 			
-			String emailText = formatter.getEmailText();
+			String emailText = formatter.rfc822Format();
 			
 			// mark the file as being processed
 		    mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
@@ -1562,16 +1564,16 @@ public class MigrationTaskService {
 			// process the message
 			status = addEmailToGoogleGroup(googleGroupId, emailText);
 		
-		// update the status and end time for file item
+			// update the status and end time for file item
 			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
 			mRepository.setMigrationMessageStatus(messageId, status);
 		}
 		catch (IOException exception)
 		{
 			String errorString = "IOException from EmailFormatter for message id " + messageId + " " + exception.getMessage();
-		log.error(errorString);
-		
-		// update the status and end time for file item
+			log.error(errorString);
+			
+			// update the status and end time for file item
 			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
 			mRepository.setMigrationMessageStatus(messageId, errorString);
 		}
