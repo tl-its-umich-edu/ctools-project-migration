@@ -57,7 +57,7 @@ projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $htt
 			}).then(function success(result) {
 				return result;
 			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to request that a tool not be migrated.');
+				errorDisplay(url, result.status, 'Unable to remove a flag that a site be deleted.');
 				result.errors.failure = true;
 				return result;
 			});
