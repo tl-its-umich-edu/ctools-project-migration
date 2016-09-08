@@ -517,8 +517,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
 
     $scope.unFlagSiteDeletion = function(project){
       $log.info('Unflagging project site deletion for ' + project.site_name);
-      var unFlagSiteDeleteURL = '/unFlagSiteDelete/'  + project.site_id;
-      ProjectsLite.postDeleteSiteRequest(unFlagSiteDeleteURL).then(
+      var unFlagSiteDeleteURL = '/unFlagDeleteSite?siteId='  + project.site_id;
+      ProjectsLite.unFlagSiteDeletion(unFlagSiteDeleteURL).then(
         function(result) {
           if(result.data === 'Whatever the data says'){
             // find this site and remove deleteStatus object to let user know
