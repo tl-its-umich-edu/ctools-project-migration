@@ -1,10 +1,9 @@
 package junit.edu.umich.its.cpmtest;
 
-import static org.junit.Assert.*;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 import java.util.HashMap;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
 
 import org.junit.After;
 import org.junit.AfterClass;
@@ -14,7 +13,6 @@ import org.junit.Test;
 
 //import junit.framework.TestCase;
 import edu.umich.its.cpm.Utils;
-import junit.framework.TestCase;
 
 //public class UtilsTest extends TestCase {
 public class UtilsTest {

@@ -253,19 +253,10 @@ class Utils {
 		return sessionAttributes;
 	}
 	
-//<<<<<<< Updated upstream
 	/**
-	 * login into CTools and become user with sessionId
+	 * login into CTools and become admin user with sessionId
 	 */
 	protected static HashMap<String, Object> login_become_admin(Environment env) {
-//=======
-
-	
-	/**
-	 * login into CTools and become user with sessionId
-	 */
-//	protected static HttpContext login_become_admin(Environment env) {
-//>>>>>>> Stashed changes
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
@@ -319,14 +310,9 @@ class Utils {
 			log.error(requestUrl + e.getMessage());
 		}
 
-//<<<<<<< Updated upstream
 		sessionAttributes.put("sessionId", sessionId);
 		sessionAttributes.put("httpContext", httpContext);
 		return sessionAttributes;
-//=======
-//		httpContext.setAttribute("ctoolsSessionId", sessionId);
-//		return httpContext;
-//>>>>>>> Stashed changes
 	}
 
 	/**
@@ -360,34 +346,6 @@ class Utils {
 		return rv;
 	}
 
-	/**
-	 * construct the user email address
-	 */
-//	public static String getCurrentUserEmail.XXX(HttpServletRequest request, Environment env) {
-//		String remoteUserEmail = Utils.getCurrentUserId(request, env);
-//		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
-//
-//		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-//			// use admin account id instead
-//			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-//			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
-//		}
-//		//remoteUserEmail = getUserEmailFromUserId(remoteUserEmail,env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX));
-//		remoteUserEmail = getUserEmailFromUserId(remoteUserEmail);
-//		return remoteUserEmail;
-//	}
-
-//	static public String getUserEmailFromUserId(String userEmail,String default_member_email_suffix) {
-//		if (userEmail.indexOf(EMAIL_AT) == -1) {
-//			// if the userEmail value is not of email format
-//			// then it is the uniqname of umich user
-//			// we need to attach "@umich.edu" to it to make it a full email
-//			// address
-//			//userEmail = userEmail + EMAIL_AT_UMICH;
-//			userEmail = userEmail + default_member_email_suffix;
-//		}
-//		return userEmail;
-//	}
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
 	private static final String ALLOW_USER_URLOVERRIDE = "allow.testUser.urlOverride";
