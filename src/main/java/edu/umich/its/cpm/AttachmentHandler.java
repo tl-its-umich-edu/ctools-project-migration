@@ -40,10 +40,11 @@ public class AttachmentHandler {
     public byte[] getAttachmentContent(String attachmentUrl) {
 
         byte[] attachmentContent = null;
-        String currentUserId = Utils.getCurrentUserId(request, env);
-        HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, currentUserId);
+        
+        HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+        
         if(sessionAttributes.isEmpty()){
-            log.error("Logging into Ctools failed for the user: "+currentUserId);
+        	log.error("Logging into Ctools failed for the admin user.");
             return attachmentContent;
         }
         String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);

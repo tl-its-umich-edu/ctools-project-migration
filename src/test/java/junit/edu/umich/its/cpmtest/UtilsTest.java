@@ -12,10 +12,12 @@ import org.junit.Before;
 import org.junit.BeforeClass;
 import org.junit.Test;
 
-import junit.framework.TestCase;
+//import junit.framework.TestCase;
 import edu.umich.its.cpm.Utils;
+import junit.framework.TestCase;
 
-public class UtilsTest extends TestCase {
+//public class UtilsTest extends TestCase {
+public class UtilsTest {
 
 	@BeforeClass
 	public static void setUpBeforeClass() throws Exception {

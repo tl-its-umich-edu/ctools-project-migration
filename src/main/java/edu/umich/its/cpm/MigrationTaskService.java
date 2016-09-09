@@ -27,6 +27,7 @@ import java.sql.Timestamp;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -54,7 +55,7 @@ import com.box.sdk.ProgressListener;
 
 @Service
 @Component
-public class MigrationTaskService {
+class MigrationTaskService {
 	
 	@Autowired
 	BoxAuthUserRepository uRepository;
@@ -93,6 +94,14 @@ public class MigrationTaskService {
 	// use the decimal version of GB here, smaller than the binary version
 	private static final long MAX_CONTENT_SIZE_FOR_BOX = 5L * 1024 * 1024 * 1024;
 
+	// TODO: map the ctools to google roles
+	private static final HashMap<String,String> MemberRoleMap = new HashMap<String,String>() {
+		private static final long serialVersionUID = -8839396373117387837L;
+	{
+		put("Member","MEMBER");
+		put("Owner","OWNER");
+	}};
+	
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationTaskService.class);
 
@@ -1497,11 +1506,134 @@ public class MigrationTaskService {
 	 * @param rcf822Email
 	 * @return
 	 */
-	private String addEmailToGoogleGroup(String googleGroup, String rcf822Email)
-	{
-		return "success";
-	}
+//	private String addEmailToGoogleGroup(String googleGroup, String rcf822Email)
+//	{
+//		return "success";
+//	}
+//	
+		String  addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
+			String ggb_server = env.getProperty(Utils.GGB_SERVER_NAME);
+			log.info("addEmailToGoogleGroup: group: {}",googleGroup);
+			log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
+			GGBApiWrapper ggb = new GGBApiWrapper(ggb_server,null);
+			//String archive_url = "/groups/"+EMAIL_INSERT_TEST_GROUP+"/messages";
+			String archive_url = "/groups/"+googleGroup+"/messages";
+			String response = ggb.post_request(archive_url,rcf822Email);
+			
+			return response;
+		}
+		
+		
+		// Get the json version of the site info.
+		protected JSONObject getSiteInfoJson(String sessionId, String siteId) {
+			
+			log.debug("enter getSiteInfoJson: "+siteId);
+
+			// get the site info from ctools
+			JSONObject siteJSONObject = null;
+
+				// get site info for site as json.
+				RestTemplate restTemplate = new RestTemplate();
+				// the url should be in the format of
+				// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
+				String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+						+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+				log.info("siteInfo url: " + requestUrl);
+				try {
+					String siteJson = restTemplate.getForObject(requestUrl,
+							String.class);
+					siteJSONObject = new JSONObject(siteJson);
+				} catch (RestClientException e) {
+					log.error(requestUrl + e.getMessage());
+					// Don't hide the error.
+					throw e;
+				}
+			return siteJSONObject;
+		}
+		
+		/////////////////
+		// Get the information required to setup the Google Group from CTools.
+		
+		// The group email address might come from various sources.
+		public JSONObject getCToolsGroupInfoJson(String sessionId,
+				String siteId, String group_email) {
+			JSONObject siteJSONObject = getSiteInfoJson(sessionId,siteId);
+			JSONObject group_info = new JSONObject();
+
+			// include for tracking purposes.
+			group_info.put("site_id",siteId);
+			group_info.put("title", siteJSONObject.getString("title"));
+			group_info.put("group_email",group_email);
+			group_info.put("description", siteJSONObject.getString("description"));
+
+			log.debug(String.format("group_info: [%s]",group_info.toString()));
+
+			return group_info;
+		}
+
+		// Get the new email prefix from the old one used in the archive.
+		public JSONObject getCToolsGroupInfoJson(String sessionId,String siteId) {
+			return getCToolsGroupInfoJson(sessionId,siteId,getArchiveEmail(sessionId,siteId));
+		}
 	
+		// test url
+		//https://ctdevsearch.dsc.umich.edu/direct/mailarchive/siteMessages/22b5d237-0a22-4995-a4b1-d5022dd90a86.json
+		// Get the new Google email address based on the email name available in the archive.
+		protected String getArchiveEmail(String sessionId, String siteId) {
+			//String suffix = env.getProperty("group.email.suffix") != null ? env.getProperty("group.email.suffix") : "";
+			RestTemplate restTemplate = new RestTemplate();
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+					+"/direct/mailarchive/siteMessages/"+siteId+".json?_sessionId=" + sessionId;
+					//+ "direct/mailarchive/" + siteId + ".json?_sessionId=" + sessionId;
+			String archiveJson = null;
+			try {
+				 archiveJson = restTemplate.getForObject(requestUrl,String.class);
+			} catch (RestClientException e) {
+				log.error(requestUrl + e.getMessage());
+				// Don't hide the error.
+				throw e;
+			}
+			
+			String archiveEmail = extractArchiveEmailName(archiveJson);
+			String suffix = env.getProperty(Utils.GGB_GOOGLE_GROUP_DOMAIN);
+			if (suffix == null) {
+				log.warn("no google suffix provided. Property name is: {}",Utils.GGB_GOOGLE_GROUP_DOMAIN);
+				suffix = "";
+			}
+			String group_name = archiveEmail+"@"+suffix;
+			log.info("from extractArchiveEmailName: {} ",archiveEmail);
+
+			return group_name;
+		}
+		
+		// Breakout the email name used in CTools for this archive.
+		protected String extractArchiveEmailName(String emailArchive) {
+			JSONObject jo = new JSONObject(emailArchive);
+			JSONArray ja = jo.getJSONArray("mailarchive_collection");
+			JSONArray firstHeaders = (JSONArray) ((JSONObject)ja.get(0)).get("headers");
+
+			int myJsonArraySize = firstHeaders.length();
+			String archive_email_name = null;
+
+			for (int i = 0; i < myJsonArraySize && archive_email_name == null; i++) {
+				String header  = (String) firstHeaders.get(i);
+				//log.info("eAEN: cnt: {} header: {}",i,header);
+				
+				if (! header.startsWith("To: ")) {
+					continue;
+				}
+				
+				log.debug("aAEN: To header: {}",header);
+				int at_index = header.indexOf("@");
+				int to_index = header.indexOf("To: ");
+				archive_email_name = header.substring(to_index+4,at_index);
+				log.debug("aAEN: archive_email_name: {}",archive_email_name);
+				break;
+			}
+			log.debug("eAEN: returning: {}",archive_email_name);
+			return archive_email_name;
+		}
+		
 	/**
 	 * TODO
 	 * call GG microservice to get Group Groups settings for given site id
@@ -1509,15 +1641,77 @@ public class MigrationTaskService {
 	 * @param sessionId
 	 * @return
 	 */
-	public JSONObject createGoogleGroupForSite(String siteId, String sessionId)
-	{
-		JSONObject emailSettings = new JSONObject();
-		emailSettings.put("id", "some_id");
-		emailSettings.put("name", "some_name");
+//	public JSONObject createGoogleGroupForSite(String siteId, String sessionId)
+//	{
+//		JSONObject emailSettings = new JSONObject();
+//		emailSettings.put("id", "some_id");
+//		emailSettings.put("name", "some_name");
+//		
+//		return emailSettings;
+//	}
 		
-		return emailSettings;
-	}
-	
+		public JSONObject createGoogleGroupForSite(String siteId, String sessionId) {
+			return addGroupInformationToGoogle( sessionId,  siteId);
+		}
+		
+		
+		//protected void addGroupInformationToGoogle(String sessionId, HttpServletResponse response, String siteId) {
+		protected JSONObject addGroupInformationToGoogle(String sessionId, String siteId) {
+			String server = env.getProperty(Utils.GGB_SERVER_NAME);
+
+			JSONObject googleGroupSettings = getGoogleGroupSettings(sessionId, siteId);
+			
+			GGBApiWrapper ggb = new GGBApiWrapper(server,null);
+			String url = String.format("/groups/%s",googleGroupSettings.getString("email"));
+			HttpResponse ggb_response = ggb.put_request(url, googleGroupSettings.toString());
+			// TODO: error checking.
+			log.warn("check for errors");
+			log.debug("group add ggb_response: {} ",ggb_response.toString());
+			
+			return googleGroupSettings;
+			
+//			// TODO: what is proper return value?
+//			JSON_response(response, googleGroupSettings.toString(),
+//					"Problem with getting group info information for "+siteId+".",
+//					"/test/migrate/mailarchive/google/{siteId}");
+		}
+
+		
+		protected JSONObject getGoogleGroupSettings(String sessionId, String siteId) {
+			// get group information for this site and update Google
+			JSONObject group_info = getCToolsGroupInfoJson(sessionId,siteId);
+			
+			log.debug(String.format("migration: group info: [%s]",group_info.toString()));
+			
+			JSONObject googleGroupSettings = createGoogleGroupJson(group_info);
+			return googleGroupSettings;
+		}
+		
+		// create the json that will create a group
+		protected JSONObject createGoogleGroupJson(JSONObject group_info) {
+			log.warn("createGoogleGroupJson: HACK, GROUP INFO IS NOT YET CORRECT.");
+			
+			String google_group_domain = env.getProperty(Utils.GGB_GOOGLE_GROUP_DOMAIN);
+			log.debug("createGoogleGroupJson: {}",group_info.toString());
+			
+			JSONObject googleGroupJson = new JSONObject();
+			googleGroupJson.put("email", group_info.get("group_email"));
+			googleGroupJson.put("name", group_info.get("title"));
+			googleGroupJson.put("description", formatDescription((String)group_info.get("description")));
+			log.debug("ggbjson: "+googleGroupJson.toString());
+			
+			return googleGroupJson;
+		}
+		
+		// Make description fit Google standards.
+		protected String formatDescription(String description) {
+			final int MAX_LENGTH=300;
+			String formatted_string = null;
+			formatted_string = description.substring(0, Math.min(description.length(), MAX_LENGTH));
+			formatted_string = "DUMMY DESCRIPTION FROM formatDescription";
+			return formatted_string;
+		}
+
 	/**
 	 * TODO
 	 * get CTools site members into Google Group membership
@@ -1525,11 +1719,85 @@ public class MigrationTaskService {
 	 * @param sessionId
 	 * @return
 	 */
-	public String updateGoogleGroupMembershipFromSite(String siteId, String sessionId)
-	{
-		return "";
-	}
-	
+		
+		// map the CTools role to the google role
+		public String findGoogleRole(String role) {
+			String default_role = "UNKNOWN";
+			String goole_role = MemberRoleMap.get(role);
+			return (goole_role != null) ? goole_role : default_role; 
+		}
+		
+		// change members list to one suitable for inserting into google.
+		public List<List<String>> memberPropertiesList(HashMap<String,String> members,String defaultEmailSuffix) {
+			log.debug("members: {}",members);
+			
+			List<List<String>> edited_members = new ArrayList<List<String>>();
+			for (Map.Entry<String, String> entry : members.entrySet()) {
+			    String user = entry.getKey();
+			    String role = entry.getValue();
+			    log.debug("members: member: {} role: {}",user,role);
+			    List<String> pair = new ArrayList<String>();
+			    if (user.indexOf("@") == -1) {
+			    	user = user + "@"+defaultEmailSuffix;
+			    }
+			    pair.add(user);
+			    pair.add(findGoogleRole(role));
+			    edited_members.add(pair);    
+			}
+			log.debug("edited_members: {}",edited_members);
+			return edited_members;
+		}
+		
+		
+		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
+			//HashMap<String, String> members = get_site_members(sessionId, siteId);
+			log.debug("uGM: members "+members.toString());
+			
+			//ArrayList<String> membersEmail = memberEmailList(members,UMICH_EMAIL_SUFFIX);
+			List<List<String>> membersProperties = memberPropertiesList(members,env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX));
+			
+			log.debug("Add members for site: "+siteId);
+			log.debug("members for site: "+siteId+" "+membersProperties);
+			
+			JSONObject ggs = getGoogleGroupSettings(sessionId,  siteId);
+			
+			addMembersToGroup(ggs.getString("email"),membersProperties);
+			
+			return null;
+		}
+		
+		// TODO: proper return value.
+		String addMembersToGroup(String group_id,List<List<String>> membersProperties) {
+			
+			for (List<String> user : membersProperties) {
+			    log.debug("group: {} user: {} role: {}",group_id,user.get(0),user.get(1));
+			    addMemberToGroup(group_id,user.get(0),user.get(1));
+			}
+			
+			return "MAYBE";
+		}
+		
+		
+		String addMemberToGroup(String group_id, String member_email, String member_role) {
+			// TODO: use only one instance of ggb.
+			// TODO: proper return value.
+			String server = env.getProperty(Utils.GGB_SERVER_NAME);
+			GGBApiWrapper ggb = new GGBApiWrapper(server,null);
+			String new_member_url = String.format("/groups/%s/members/%s",group_id,member_email);
+
+			JSONObject jo = new JSONObject();
+			jo.put("email",member_email);
+			jo.put("role",member_role);
+
+			HttpResponse response = ggb.put_request(new_member_url,jo.toString());
+			return "MAYBE";
+		}
+		
+//	public String updateGoogleGroupMembershipFromSite(String siteId, String sessionId)
+//	{
+//		return "";
+//	}
+//	
 	/**
 	 * migrate email content to Group Group using microservice
 	 * @param message
@@ -1552,6 +1820,7 @@ public class MigrationTaskService {
 		AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 		attachmentHandler.setEnv(env);
 		
+		// Try only once and record the resulting status in the database.
 		try
 		{
 			EmailFormatter formatter = new EmailFormatter(emailContent, attachmentHandler);
@@ -1563,21 +1832,35 @@ public class MigrationTaskService {
 		
 			// process the message
 			status = addEmailToGoogleGroup(googleGroupId, emailText);
+			log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}",status,googleGroupId);
 		
-			// update the status and end time for file item
-			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
-			mRepository.setMigrationMessageStatus(messageId, status);
+//			// update the status and end time for file item
+//			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
+//			mRepository.setMigrationMessageStatus(messageId, status);
 		}
 		catch (IOException exception)
 		{
 			String errorString = "IOException from EmailFormatter for message id " + messageId + " " + exception.getMessage();
 			log.error(errorString);
-			
+			status = errorString;
+//			// update the status and end time for file item
+//			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
+//			mRepository.setMigrationMessageStatus(messageId, errorString);
+		}
+		catch (Exception e) {
+			String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
+					e.getMessage(),messageId);
+					//e.getMessage(),e.getStackTrace());
+			log.error(msg);
+			status = msg;
+		}
+		finally {
 			// update the status and end time for file item
 			mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
-			mRepository.setMigrationMessageStatus(messageId, errorString);
+			mRepository.setMigrationMessageStatus(messageId, status);
 		}
 		
+		log.debug("uploadMessageToGoogleGroup: return");
 		return new AsyncResult<String>(status);
 	}
 

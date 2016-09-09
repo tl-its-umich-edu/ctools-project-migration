@@ -2,22 +2,27 @@ package edu.umich.its.cpm;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
+import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HTTP;
 import org.apache.http.protocol.HttpContext;
@@ -29,20 +34,6 @@ import org.springframework.core.env.Environment;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.client.RestClientException;
 import org.springframework.web.client.RestTemplate;
-
-//import javax.servlet.http.HttpServletRequest;
-//import org.apache.http.HttpResponse;
-//import org.apache.http.client.CookieStore;
-//import org.apache.http.client.HttpClient;
-//import org.apache.http.client.methods.HttpGet;
-//import org.apache.http.client.methods.HttpPost;
-//import org.apache.http.client.protocol.HttpClientContext;
-//import org.apache.http.impl.client.BasicCookieStore;
-//import org.apache.http.impl.client.HttpClientBuilder;
-//import org.apache.http.protocol.BasicHttpContext;
-//import org.apache.http.protocol.HttpContext;
-//import org.apache.http.util.EntityUtils;
-//import org.springframework.core.env.Environment;
 
 /*
  * Class to allow configuring calls to a web api that returns JSON.  It is configured with a 
@@ -98,6 +89,7 @@ public class GGBApiWrapper {
 
 	// take a url, make a single call, return a json result.
 	protected JSONObject do_one_get_request(String url) {
+		log.debug("one_get_request: url: {}",url);
 		RestTemplate restTemplate = new RestTemplate();
 		ResponseEntity<String> value = restTemplate.getForEntity(url, String.class);
 		JSONObject valueObject = null;
@@ -115,52 +107,66 @@ public class GGBApiWrapper {
 
 	public String post_request(String url, String body){
 		HttpResponse response = runPost(create_complete_url(url),body);
+		log.debug("post_request: {}",formatBodyInfo(url,body));
 
 		if (response == null) {
 			// lower level should report the url and body
 			log.warn("post_response (log) got null response");
-			System.out.println("post_response got null response");
+			//System.out.println("post_response got null response");
 			return null;
 		}
 
 		int status = response.getStatusLine().getStatusCode();
-		log.warn("post_request status: "+status);
-		System.out.println("post_request status: "+status);
+		//log.warn("post_request status: "+status);
+		//System.out.println("post_request status: "+status);
 		if (status != HttpStatus.SC_OK) {
-			System.out.println("post_request bad status: ");
+			log.warn("post_request bad status: "+status);
+			//System.out.println("post_request bad status: ");
 			return null;
 		}
 
 		try {
 			return EntityUtils.toString(response.getEntity(),"UTF-8");
-		} catch (ParseException | IOException e) {
+		} catch (ParseException e) {
 			log.warn("post_request exception: url: "+url+" body: "+body+" exception: "+e);
-			System.out.println("post_request exception: url: "+url+" body: "+body+" exception: "+e);
+			//System.out.println("post_request exception: url: "+url+" body: "+body+" exception: "+e);
 			return null;
-		}
+		} catch ( IOException e) {
+		log.warn("post_request exception: url: "+url+" body: "+body+" exception: "+e);
+		//System.out.println("post_request exception: url: "+url+" body: "+body+" exception: "+e);
+		return null;
+	}
+//} catch (ParseException | IOException e) {
+//	log.warn("post_request exception: url: "+url+" body: "+body+" exception: "+e);
+//	//System.out.println("post_request exception: url: "+url+" body: "+body+" exception: "+e);
+//	return null;
+//}
 	}
 
+
+	
 	// run a post command with this url and body
 	protected HttpResponse runPost (String url,String body) {
+		
+		log.debug("runPost: {}",String.format("url: [%s] body: [%s]", url,body.toString()));
 		HttpPost postRequest = new HttpPost(url);
-		//postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
+		
 		postRequest.setHeader("Content-Type", "text/plain");
-
 		postRequest.setEntity((HttpEntity) new StringEntity(body,ContentType.TEXT_PLAIN));
 
 		HttpResponse response = null;
 
 		// if error log it and return null
-		System.out.println("runPost: "+formatPostInfo(url, body));
-		System.out.println("runPost: entity: "+postRequest.toString());
+		//System.out.println("runPost: "+formatPostInfo(url, body));
+		//System.out.println("runPost: entity: "+postRequest.toString());
 
 		try {
 			response = httpClient.execute(postRequest);
-			System.out.println("post response: "+response);
+			//System.out.println("post response: "+response);
 		} catch (IOException e) {
-			System.out.println("Exception for post request :"+formatPostInfo(url,body));
-			System.out.println("exception: "+e);
-			System.out.println("stacktrace: ");
+			log.warn("Exception for post request :"+formatBodyInfo(url,body));
+			log.warn("exception: "+e);
+			log.warn("stacktrace: ");
 			e.printStackTrace();
 			return null;
 		}
@@ -169,6 +175,7 @@ public class GGBApiWrapper {
 		int status = response.getStatusLine().getStatusCode();
 		String reason = response.getStatusLine().getReasonPhrase();
 		System.out.println("runPost: reason: "+reason);
+		log.debug("runPost: reason: "+reason);
 
 		if (status != HttpStatus.SC_CREATED) {
 			// if status code is not 201, there is a problem with the
@@ -180,140 +187,103 @@ public class GGBApiWrapper {
 		return response;
 	}
 
-	private String formatPostInfo(String url, String body) {
-		return String.format("post data for: url: [%s] body: [%s]",url,body);
+	public HttpResponse put_request(String url, String body) {
+		log.debug("put_request: {}",formatBodyInfo(url,body));
+		HttpResponse response = runPut(create_complete_url(url),body);
+		log.debug("put_request_response: {}",response.toString());
+		return response;
+	}
+	
+//	 List<NameValuePair> params = new ArrayList<NameValuePair>();
+//	    params.add(new BasicNameValuePair("username", "John"));
+//	    params.add(new BasicNameValuePair("password", "pass"));
+//	    httpPost.setEntity(new UrlEncodedFormEntity(params));
+	
+	// run a put command with this url and body
+	protected HttpResponse runPut (String url,String body) {
+		
+		JSONObject jo = new JSONObject(body);
+		//System.out.println("runPut: jo: "+jo.toString());
+		log.debug("runPut: jo: {}",jo.toString());
+		
+		//for(int i = 0; i<jobject.names().length(); i++){
+		//    Log.v(TAG, "key = " + jobject.names().getString(i) + " value = " + jobject.get(jobject.names().getString(i)));
+		//}
+		
+		List<NameValuePair> params = new ArrayList<NameValuePair>();
+		for(int i = 0; i<jo.names().length(); i++){
+		    System.out.println("name: "+jo.names().getString(i)+" value="+jo.get(jo.names().getString(i)));
+		    params.add(new BasicNameValuePair(jo.names().getString(i),(String) jo.get(jo.names().getString(i))));
+		}
+		
+		// body is parameters
+		//List<NameValuePair> params = new ArrayList<NameValuePair>();
+		
+		
+		log.debug("ggb: runPut: {}",formatBodyInfo(url,body));
+		System.out.println("runPut: "+formatBodyInfo(url,body));
+		HttpPut putRequest = new HttpPut(url);
+
+		//postRequest.setHeader("Content-Type", "text/plain");
+		//postRequest.setEntity((HttpEntity) new StringEntity(body,ContentType.TEXT_PLAIN));
+		
+		//putRequest.setHeader("Content-Type", "text/plain");
+		//putRequest.setHeader("Content-Type", "application/json");
+		//putRequest.setEntity((HttpEntity) new StringEntity(body,ContentType.TEXT_PLAIN));
+		//stringEntity.setContentType("application/json")
+		//StringEntity stringEntity= new StringEntity(body,"UTF-8");
+		//stringEntity.setContentType("application/json");
+		//putRequest.setEntity((HttpEntity) new StringEntity(body,"UTF-8"));
+		//putRequest.setEntity((HttpEntity) stringEntity);
+		try {
+			putRequest.setEntity(new UrlEncodedFormEntity(params));
+		} catch (UnsupportedEncodingException e1) {
+			// TODO Auto-generated catch block
+			e1.printStackTrace();
+		}
+
+		HttpResponse response = null;
+
+		// if error log it and return null
+		//System.out.println("runPost: "+formatPostInfo(url, body));
+		//System.out.println("runPost: entity: "+postRequest.toString());
+
+		try {
+			response = httpClient.execute(putRequest);
+			System.out.println("put response: "+response);
+			System.out.println("response: "+response.getStatusLine().getReasonPhrase());
+
+		} catch (IOException e) {
+			log.warn("Exception for put request :"+formatBodyInfo(url,body));
+			log.warn("exception: "+e);
+			log.warn("stacktrace: ");
+			log.warn(e.getStackTrace().toString());
+			e.printStackTrace();
+			return null;
+		}
+
+		// check the status code
+		int status = response.getStatusLine().getStatusCode();
+		String reason = response.getStatusLine().getReasonPhrase();
+		System.out.println("runPut: reason: "+reason);
+		log.debug("runPut: reason: "+reason);
+
+		if (status != HttpStatus.SC_CREATED) {
+			// if status code is not 201, there is a problem with the
+			// request.
+			log.warn("Can not run put request for: url: "+url+"body: "+body);
+		}
+
+		// have a response so return it for the caller to deal with.
+		return response;
+	}
+	
+	private String formatBodyInfo(String url, String body) {
+		return String.format("url/body data for: url: [%s] body: [%s]",url,body);
 	}
 
 	// ///////////////// possible methods
 	// process_link_header
-
-
-	// asks get query
-	//	requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-	//			+ "direct/user/" + userEid + ".json?_sessionId="
-	//			+ sessionId;
-	//	log.info(this + " get_user_myworkspace_site_json "
-	//			+ requestUrl);
-	//	ResponseEntity<String> userEntity = restTemplate
-	//			.getForEntity(requestUrl, String.class);
-	//	if (userEntity.getStatusCode().is2xxSuccessful()) {
-	//		JSONObject userObject = new JSONObject(
-	//				userEntity.getBody());
-	//		String userId = (String) userObject.get("id");
-	//		// use this userId to form user myworkspace id
-	//		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-	//				+ "direct/site/~" + userId
-	//				+ ".json?_sessionId=" + sessionId;
-	//		log.info(this + " get_user_myworkspace_site_json "
-	//				+ requestUrl);
-	//		ResponseEntity<String> siteEntity = restTemplate
-	//				.getForEntity(requestUrl, String.class);
-	//		if (siteEntity.getStatusCode().is2xxSuccessful()) {
-	//			// now we find the user MyWorkspace site
-	//			siteJson = siteEntity.getBody();
-	//		}
-	//	}
-	//} catch (RestClientException e2) {
-	//	log.error(this + requestUrl + e2.getMessage());
-	//}
-	//}
-
-
-	//////// sample code that deals with ctools login.
-
-
-
-	// public static HashMap<String, Object> login_becomeuser(Environment env,
-	// HttpServletRequest request, String remoteUser) {
-	// // return the session related attributes after successful login call
-	// HashMap<String, Object> sessionAttributes = new HashMap<String,
-	// Object>();
-	//
-	// // session id after login
-	// String sessionId = "";
-	//
-	// // create httpclient
-	// HttpClient httpClient = HttpClientBuilder.create().build();
-	//
-	// // store cookies in context, retain the session information
-	// CookieStore cookieStore = new BasicCookieStore();
-	// HttpContext httpContext = new BasicHttpContext();
-	// httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
-	//
-	// log.info("remote user is " + remoteUser);
-	//
-	// // here is the CTools integration prior to CoSign integration ( read
-	// // session user information from configuration file)
-	// // 1. create a session based on user id and password
-	// // the url should be in the format of
-	// // "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
-	// String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-	// + "direct/session?_username=" + env.getProperty("username")
-	// + "&_password=" + env.getProperty("password");
-	// try {
-	// HttpPost postRequest = new HttpPost(requestUrl);
-	// postRequest.setHeader("Content-Type",
-	// "application/x-www-form-urlencoded");
-	// HttpResponse response = httpClient
-	// .execute(postRequest, httpContext);
-	//
-	// // get the status code
-	// int status = response.getStatusLine().getStatusCode();
-	//
-	// if (status != 201) {
-	// // if status code is not 201, there is a problem with the
-	// // request.
-	// // return error if a new CTools session could not be created
-	// // using
-	// // username and password provided
-	// log.info("Wrong user id or password. Cannot login to CTools "
-	// + env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL));
-	// } else {
-	//
-	// // if status code is 201 login is successful. So reuse the
-	// // httpContext for next requests.
-	// // get the session id
-	// sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
-	// log.info("successfully logged in as user "
-	// + env.getProperty("username") + " with sessionId = "
-	// + sessionId);
-	//
-	// // 2. become the user based on REMOTE_USER setting after CoSign
-	// // integration
-	// try {
-	// // the url should be in the format of
-	// // "https://server/direct/session/SESSION_ID.json"
-	// requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-	// + "direct/session/becomeuser/" + remoteUser
-	// + ".json?_sessionId=" + sessionId;
-	// log.info(requestUrl);
-	//
-	// HttpGet getRequest = new HttpGet(requestUrl);
-	// getRequest.setHeader("Content-Type",
-	// "application/x-www-form-urlencoded");
-	// HttpResponse r = httpClient
-	// .execute(getRequest, httpContext);
-	//
-	// String resultString = EntityUtils.toString(r.getEntity(),
-	// "UTF-8");
-	// log.info(resultString);
-	// } catch (java.io.IOException e) {
-	// log.error(requestUrl + e.getMessage());
-	//
-	// // nullify sessionId if become user call is not successful
-	// sessionId = null;
-	// }
-	//
-	// // populate the session related attributes
-	// sessionAttributes.put(SESSION_ID, sessionId);
-	// sessionAttributes.put("httpContext", httpContext);
-	// }
-	// } catch (java.io.IOException e) {
-	// log.error(requestUrl + e.getMessage());
-	// }
-	//
-	// return sessionAttributes;
-	// }
 
 	protected HashMap ggb_auth_setup(HashMap<String, Object> authInfo) {
 		// create httpclient
@@ -333,117 +303,4 @@ public class GGBApiWrapper {
 		return authInfo;
 	}
 
-
-
-
-	protected boolean ctools_auth_login(HashMap<String, Object> authInfo) {
-		// String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-		String authRequestUrl = authInfo.get("baseUrl") + "/session?_username=" + authInfo.get("username")
-		+ "&_password=" + authInfo.get("password");
-		HttpClient httpClient = (HttpClient) authInfo.get("httpClient");
-		HttpContext httpContext = (HttpContext) authInfo.get("httpContext");
-
-		authInfo.put("sessionId", null);
-
-		String requestUrl = null;
-
-		HttpResponse response = null;
-
-		// login as admin
-		try {
-			HttpPost postRequest = new HttpPost(authRequestUrl);
-			postRequest.setHeader("Content-Type", "application/x-www-form-urlencoded");
-			response = httpClient.execute(postRequest, httpContext);
-			//HttpResponse response = httpClient.execute(postRequest, httpContext);
-
-			// get the status code
-			int status = response.getStatusLine().getStatusCode();
-
-			if (status != 201) {
-				// if status code is not 201, there is a problem with the
-				// request.
-				// return error if a new CTools session could not be created
-				// using
-				// username and password provided
-				log.warn("Wrong user id or password. Cannot login to CTools " + "server: " + authInfo.get("baseUrl")
-				+ "username: " + authInfo.get("username"));
-				return false;
-			}
-		} catch (java.io.IOException e) {
-			log.error(requestUrl + e.getMessage());
-			// nullify sessionId if become user call is not successful
-			authInfo.put("sessionId", null);
-			//} finally {
-			//	log.debug("outer finally");
-		}
-
-		// if status code is 201 login is successful. So reuse the
-		// httpContext for next requests.
-		// get the session id
-		try {
-			authInfo.put("sessionId", EntityUtils.toString(response.getEntity(), "UTF-8"));
-		} catch (ParseException e1) {
-			log.error("ParseError: ",e1);
-			return false;
-		} catch (IOException e1) {
-			log.error("IOException: ",e1);
-			return false;
-		}
-
-
-		log.info("successfully logged in as user " + authInfo.get("username") + " with sessionId = "
-				+ authInfo.get("sessionId"));
-
-		// 2. become the user based on REMOTE_USER setting after CoSign
-		// integration
-		// the url should be in the format of
-		// "https://server/direct/session/SESSION_ID.json"
-		String sessionRequestUrl = authInfo.get("baseUrl") + "direct/session/becomeuser/"
-				+ authInfo.get("remoteUser") + ".json?_sessionId=" + authInfo.get("sessionId");
-		log.info(sessionRequestUrl);
-
-		HttpGet getRequest = new HttpGet(requestUrl);
-		getRequest.setHeader("Content-Type",
-				"application/x-www-form-urlencoded");
-
-		try {
-			// the url should be in the format of
-			// "https://server/direct/session/SESSION_ID.json"
-			// requestUrl = authInfo.get("baseUrl")
-			// + "direct/session/becomeuser/" + authInfo.get("remoteUser")
-			// + ".json?_sessionId=" + authInfo.get("sessionId");
-			// log.info(requestUrl);
-
-			//HttpGet getRequest = new HttpGet(requestUrl);
-			//			getRequest.setHeader("Content-Type",
-			//					"application/x-www-form-urlencoded");
-			HttpResponse r = httpClient
-					.execute(getRequest, httpContext);
-
-			String resultString = EntityUtils.toString(r.getEntity(),
-					"UTF-8");
-			log.info(resultString);
-		} catch (java.io.IOException e) {
-			log.error(requestUrl + e.getMessage());
-
-			// nullify sessionId if become user call is not successful
-			authInfo.put("sessionId", null);
-		}
-		// finally {
-		// log.debug("HOWDY");
-		// }
-
-		// }
-
-		// populate the session related attributes
-		// sessionAttributes.put(SESSION_ID, sessionId);
-		// sessionAttributes.put("httpContext", httpContext);
-		// }
-		// } catch (java.io.IOException e) {
-		// log.error(requestUrl + e.getMessage());
-		// }
-
-		// }
-		return false;
-	}
 }

@@ -26,7 +26,7 @@ import org.slf4j.LoggerFactory;
  *
  */
 @Component
-public class StatusPingEndpoint implements Endpoint<String>{
+class StatusPingEndpoint implements Endpoint<String>{
 
 	private static ServletContext servletContext = null;
 
