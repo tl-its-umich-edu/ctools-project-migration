@@ -1,8 +1,73 @@
 'use strict';
 /* global projectMigrationApp, validateBulkRequest, $*/
 
-projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload',
-  function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload) {
+projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload', 'Projects',
+
+  function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload, Projects) {
+    $scope.boxAuthorized = false;
+
+    // whether the current user authorized app to Box or not
+    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+      if (result.data === 'true') {
+        $scope.boxAuthorized = true;
+      } else {
+        $scope.boxAuthorized = false;
+      }
+      // $scope.boxAuthorized ===
+      // result.data;
+      $log.info(' - - - - User authorized to Box: ' + result.data);
+    });
+
+    // handler for a request for user Box account authentication/authorization
+    $scope.boxAuthorize = function() {
+      $log.info('---- in boxAuthorize ');
+      // get the box folder info if it has not been
+      // gotten yet
+      if (!$scope.boxAuthorized) {
+        $log.info(' - - - - GET /box/authorize');
+        var boxUrl = '/box/authorize';
+        Projects.boxAuthorize(boxUrl).then(function(result) {
+          $scope.boxAuthorizeHtml = result.data;
+          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+          $log.info(' - - - - GET /box/authorize');
+        });
+      }
+    };
+
+    // on dismiss box auth modal, launch a function to check if box auth
+    $(document).on('hidden.bs.modal','#boxAuthModal',function() {
+      $('body').removeClass('modal-open');
+      $('.modal-backdrop').remove();
+      Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+        if (result.data === 'true') {
+          $scope.boxAuthorized = true;
+        } else {
+          $scope.boxAuthorized = false;
+        }
+        // $scope.boxAuthorized ===
+        // result.data;
+        $log.info(' - - - - User authorized to Box: ' + result.data);
+      });
+    });
+
+
+    // remove user authentication information from server memory, user need to re-authenticate in the future to access their box account
+    $('#boxUnauthorize').click(function() {
+      var boxUrl = '/box/unauthorize';
+      Projects.boxUnauthorize(boxUrl).then(function(result) {
+        $scope.boxAuthorized = false;
+        $('#boxIFrame').remove();
+        $('#boxIFrameContainer').append('<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize" frameborder="0"></iframe>');
+        // current user un-authorize
+        // the app from accessing
+        // Box
+        $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
+        $log.info(' - - - - GET /box/unauthorize');
+      });
+    });
+
+
 
     $scope.bulkUpload = function() {
       $('.has-error').removeClass('has-error');
