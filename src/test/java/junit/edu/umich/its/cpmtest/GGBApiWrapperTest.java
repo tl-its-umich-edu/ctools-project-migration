@@ -27,14 +27,17 @@ public class GGBApiWrapperTest {
 
 	String TEST_DOMAIN="discussions-dev.its.umich.edu";
 	String EMAIL_INSERT_TEST_GROUP="ggb-test-group-insert@discussions-dev.its.umich.edu";
-	String server = "http://localhost:9100";
+	//String server = "http://localhost:9100";
+	//String server = "https://one.durango.ctools.org/service";
+	//String server = "https://one.durango.ctools.org";
+	String server = "http://six.durango.ctools.org/service";
 
 	String create_test_email(String group_id, String from_name, String from_email) {
 		Long now = Instant.now().getEpochSecond();
 		String message_id = String.format("%d-%s",now,group_id);
 		//		//message_date = now.strftime '%a, %d %b %Y %T %z'
 		String message_date = new MailDateFormat().format(new Date());
-		System.out.println("message_date: "+message_date.toString());
+		//System.out.println("message_date: "+message_date.toString());
 
 		StringBuilder mail= new StringBuilder();
 
@@ -87,7 +90,7 @@ public class GGBApiWrapperTest {
 
 	@Test
 	public void do_one_get_request_status_url() {
-		String server = "https://one.durango.ctools.org";
+		//String server = "https://one.durango.ctools.org";
 		GGBApiWrapper ggb = new GGBApiWrapper(server,null);
 		String request_url = "/status";
 		String new_url = ggb.create_complete_url(request_url);
@@ -97,8 +100,10 @@ public class GGBApiWrapperTest {
 	@Test
 	public void do_one_get_status_get() {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,null);
+		//String request_url = "/status.json";
 		String request_url = "/status";
 		JSONObject jo = ggb.get_request(request_url);
+		log.debug("do_one_status_get: response: {}",jo.toString());
 		String ping_url = (String) jo.get("ping");
 
 		assertThat("ping_url is plausible",ping_url,containsString("/status/ping.json"));
@@ -109,8 +114,11 @@ public class GGBApiWrapperTest {
 		//		setupSSL();
 		GGBApiWrapper ggb = new GGBApiWrapper(server,null);
 		String archive_url = "/groups/"+EMAIL_INSERT_TEST_GROUP+"/messages";
+		//String archive_url = "/"+EMAIL_INSERT_TEST_GROUP+"/messages";
 		String test_email = create_test_email(EMAIL_INSERT_TEST_GROUP,"Dave Haines","dlhaines@umich.edu");
+		log.debug("do_one_post_email: {}",archive_url);
 		String response = ggb.post_request(archive_url,test_email);
+		log.debug("do_one_post_email: {}",response.toString());
 		assertTrue("got a response: ",response.length() > 0);
 	}
 
@@ -128,6 +136,7 @@ public class GGBApiWrapperTest {
 		jo.put("name","Kitchen Sinker");
 
 		HttpResponse response = ggb.put_request(new_group_url,jo.toString());
+		//System.out.println("do_one_put_group: "+response.toString());
 		assertTrue("got a response: ",response != null);
 	}
 	

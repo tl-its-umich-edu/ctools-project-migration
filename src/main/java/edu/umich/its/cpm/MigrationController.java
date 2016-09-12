@@ -477,7 +477,6 @@ public class MigrationController {
 				+ "direct/membership/site/" + site_id + ".json?_sessionId="
 				+ sessionId;
 		log.debug("get_site_members: url:[{}] ",requestUrl);
-		System.out.println(String.format("get_site_members: url:[%s] ",requestUrl));
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {

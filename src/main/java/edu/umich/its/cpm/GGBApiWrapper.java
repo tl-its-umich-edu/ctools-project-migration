@@ -2,6 +2,11 @@ package edu.umich.its.cpm;
 
 import java.io.IOException;
 import java.io.UnsupportedEncodingException;
+import java.security.KeyManagementException;
+import java.security.KeyStoreException;
+import java.security.NoSuchAlgorithmException;
+import java.security.cert.CertificateException;
+import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -17,13 +22,19 @@ import org.apache.http.client.entity.UrlEncodedFormEntity;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
+import org.apache.http.conn.ssl.NoopHostnameVerifier;
+//import org.apache.http.conn.ssl.SSLContextBuilder;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
+import org.apache.http.impl.client.HttpClients;
+import org.apache.http.impl.client.LaxRedirectStrategy;
 import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import org.apache.http.ssl.SSLContextBuilder;
+import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -59,13 +70,39 @@ public class GGBApiWrapper {
 
 	// First pass will only implement room to configure an instance GGBApi with 
 	// (null) authinfo.
-
-	@SuppressWarnings("rawtypes")
+	
+	// Create lousy trust strategy for testing.
+	public TrustStrategy trusting(){  
+		return new TrustStrategy() {
+			@Override
+			public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
+				return true;
+			}
+		};
+	}
+		 
+	@SuppressWarnings({ "rawtypes", "deprecation" })
 	public GGBApiWrapper(String baseUrl, HashMap authInfo) {
 		super();
 		this.baseUrl = baseUrl;
 		this.authInfo = authInfo;
-		this.httpClient = HttpClientBuilder.create().build();
+		try {
+			log.error("ignoring ssl!!!!");
+			this.httpClient = HttpClients.custom()
+					.setSSLHostnameVerifier(new NoopHostnameVerifier())
+					.setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, trusting()).build())
+					.setRedirectStrategy(new LaxRedirectStrategy())
+					.build();
+		} catch (KeyManagementException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (NoSuchAlgorithmException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (KeyStoreException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
 		this.httpContext = new BasicHttpContext();
 		this.cookieStore = new BasicCookieStore();
 		this.httpContext.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);
@@ -74,10 +111,11 @@ public class GGBApiWrapper {
 	// Take an URL and get the data back make calls to do_request to get
 	// external data.
 
-	// Deal with any multiple call issues: e.g. authentication, page links,
-	// throttling.
+	// This method with deal with any multiple call issues: e.g. authentication, page links,
+	// throttling.  It calls do_one_get_request to actually do the calls.
 
 	public JSONObject get_request(String url) {
+		// TODO: Multiple call request handing not yet implemented.
 		log.warn("Multiple call request handing not yet implemented.");
 		return do_one_get_request(create_complete_url(url));
 	}
@@ -98,7 +136,9 @@ public class GGBApiWrapper {
 
 	// Make a partial url from a request into a full url based on the url prefix.
 	public String create_complete_url(String url) {
-		return baseUrl+url;
+		String completeUrl = baseUrl+url;
+		log.info("complete_url: {}",completeUrl);
+		return completeUrl;
 	}
 
 	// Do a post request
@@ -181,7 +221,7 @@ public class GGBApiWrapper {
 
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
 		for(int i = 0; i<jo.names().length(); i++){
-			System.out.println("name: "+jo.names().getString(i)+" value="+jo.get(jo.names().getString(i)));
+			log.debug("name: "+jo.names().getString(i)+" value="+jo.get(jo.names().getString(i)));
 			params.add(new BasicNameValuePair(jo.names().getString(i),(String) jo.get(jo.names().getString(i))));
 		}
 
