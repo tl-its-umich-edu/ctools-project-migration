@@ -1850,6 +1850,12 @@ public class MigrationController {
 	/******************* migtation choices ********************/
 	/**
 	 * save user input for site delete choices into database
+	 *  
+	 * 1. to not migrate a tool:
+	 * /deleteSite?siteId=<site_id>&toolId=<tool_id>
+	 * 
+	 * 2. to reset the previous setting:
+	 * /deleteSite?siteId=<site_id>&toolId=<tool_id>&reset=true
 	 * 
 	 * @return
 	 */
@@ -1864,35 +1870,64 @@ public class MigrationController {
 		
 		String userId = Utils.getCurrentUserId(request, env);
 		HashMap<String, String> rv = new HashMap<String, String>();
-
-		// we need to do series checks to make sure the migration request is
-		// valid
+		
+		StringBuffer errorMessages = new StringBuffer();
+		
+		// we need to do series checks to make sure the migration request is valid
 		// 1. check if missing siteId
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String[] siteIds = parameterMap.get("siteId");
 		if (siteIds == null || siteIds.length == 0) {
-			String errorMessage = "deleteSiteChoice request missing required parameter: siteId";
-			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+			errorMessages.append("deleteSiteChoice request missing required parameter: siteId");
 		}
-		log.info("delete request for site " + siteIds);
 		
-		// 2. save the choices into database
-		StringBuffer errorMessages = new StringBuffer();
+		// 2. get the reset param if there is any
+		boolean reset = false;
+		String[] resetParam = parameterMap.get("reset");
+		if (resetParam != null) { 
+			if (resetParam.length != 1) {
+				errorMessages.append("deleteSiteChoice request has multiple value for parameter: reset");
+			}
+			else
+			{
+				if (!"true".equals(resetParam[0]))
+				{
+					errorMessages.append("deleteSiteChoice request has wrong value " + resetParam[0] + " for parameter: reset");
+				}
+				else
+				{
+					reset = true;
+				}
+			}
+		}
+				
+		if (errorMessages.length() > 0) {
+			return new ResponseEntity<String>(errorMessages.toString(), headers, HttpStatus.BAD_REQUEST);
+		}
+		
 		List<SiteDeleteChoice> cList = new ArrayList<SiteDeleteChoice>();
 		for (int i = 0; i < siteIds.length; i++)
 		{
 			// now for all sites, save the delete site choice into database
 			String siteId = siteIds[i];
-			SiteDeleteChoice c = new SiteDeleteChoice(siteId, userId, 
-							new java.sql.Timestamp(System.currentTimeMillis()));
 			try {
-				c = cRepository.save(c);
-				
-				// upon successful save
-				// add the record into the return JSON
-				cList.add(c);
+				if (reset) {
+					// remove the tool exempt record from database
+					cRepository.deleteSiteDeleteChoice(siteId);
+				}
+				else {
+					// save the choices into database  
+					SiteDeleteChoice c = new SiteDeleteChoice(siteId, userId, 
+							new java.sql.Timestamp(System.currentTimeMillis()));
+
+					c = cRepository.save(c);
+					
+					// upon successful save
+					// add the record into the return JSON
+					cList.add(c);
+				}
 			} catch (Exception e) {
-				errorMessages.append("Exception in saving siteDeleteChoice " + c.toString() + " ");
+				errorMessages.append("Exception in saving siteDeleteChoice siteId=" + siteId + " " + e.getMessage());
 			}
 		}
 		
@@ -1954,6 +1989,13 @@ public class MigrationController {
 	/**
 	 * save user input for do-not-migrate
 	 * 
+	 * 1. to not migrate a tool:
+	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>
+	 * 
+	 * 2. to reset the previous setting:
+	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>&reset=true
+	 * 
+	 * 
 	 * @return
 	 */
 	@POST
@@ -1968,34 +2010,65 @@ public class MigrationController {
 		String userId = Utils.getCurrentUserId(request, env);
 		HashMap<String, String> rv = new HashMap<String, String>();
 
-		// we need to do series checks to make sure the migration request is
-		// valid
-		// 1. check if missing or more than one siteId
+		StringBuffer errorMessages = new StringBuffer();
+		
+		// we need to do series checks to make sure the migration request is valid
+		// 1. check if missing or more than one params for siteId, or toolId
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String[] siteIds = parameterMap.get("siteId");
 		if (siteIds == null || siteIds.length != 1) {
-			String errorMessage = "doNotMigrateToolChoice request missing or multiple required parameter: siteId";
-			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: siteId");
 		}
 		// check if missing or more than one toolId
 		String[] toolIds = parameterMap.get("toolId");
 		if (toolIds == null || toolIds.length != 1) {
-			String errorMessage = "doNotMigrateToolChoice request missing or multiple required parameter: toolId";
-			return new ResponseEntity<String>(errorMessage, headers, HttpStatus.BAD_REQUEST);
+			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: toolId");
 		}
+		
+		// get the reset param if there is any
+		boolean reset = false;
+		String[] resetParam = parameterMap.get("reset");
+		if (resetParam != null) { 
+			if (resetParam.length != 1) {
+				errorMessages.append("doNotMigrateToolChoice request has multiple value for parameter: reset");
+			}
+			else
+			{
+				if (!"true".equals(resetParam[0]))
+				{
+					errorMessages.append("doNotMigrateToolChoice request has wrong value " + resetParam[0] + " for parameter: reset");
+				}
+				else
+				{
+					reset = true;
+				}
+			}
+		}
+		
+		if (errorMessages.length() > 0)
+		{
+			// return if there is error in call parameters
+			return new ResponseEntity<String>(errorMessages.toString(), headers, HttpStatus.BAD_REQUEST);
+		}
+		
 		// the target site id and tool id
 		String siteId = siteIds[0];
 		String toolId = toolIds[0];
 		log.info("request migration for site " + siteId + " and toolId " + toolId);
 		
-		// 2. save the choices into database
-		StringBuffer errorMessages = new StringBuffer();
-		SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, userId, 
-							new java.sql.Timestamp(System.currentTimeMillis()));
 		try {
-			c = tRepository.save(c);
+			if (reset) {
+				// remove the tool exempt record from database
+				tRepository.deleteSiteToolExemptChoice(siteId, toolId);
+			}
+			else {
+				// save the choices into database
+				SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, userId, 
+						new java.sql.Timestamp(System.currentTimeMillis()));
+					c = tRepository.save(c);
+			}
 		} catch (Exception e) {
-			errorMessages.append("Exception in saving siteToolExcemptChoice " + c.toString() + " ");
+			errorMessages.append("Exception in saving siteToolExcemptChoice siteId = " + siteId + " toolId=" + toolId  + " " + e.getMessage());
 		}
 		
 		if (errorMessages.length() > 0)
