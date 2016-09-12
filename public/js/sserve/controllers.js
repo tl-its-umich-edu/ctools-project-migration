@@ -517,7 +517,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
 
     $scope.unFlagSiteDeletion = function(project){
       $log.info('Unflagging project site deletion for ' + project.site_name);
-      var unFlagSiteDeleteURL = '/unFlagDeleteSite?siteId='  + project.site_id;
+      var unFlagSiteDeleteURL = 'deleteSite?siteId='  + project.site_id +'&reset=true';
       ProjectsLite.unFlagSiteDeletion(unFlagSiteDeleteURL).then(
         function(result) {
           if(result.data === 'Whatever the data says'){
