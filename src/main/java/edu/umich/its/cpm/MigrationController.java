@@ -1849,7 +1849,7 @@ public class MigrationController {
 			// if the userEmail value is not of email format
 			// then it is the uniqname of umich user
 			// we need to attach a suffix to it to make it a full email address
-			userEmail = userEmail + default_member_email_suffix;
+			userEmail = userEmail + Utils.EMAIL_AT + default_member_email_suffix;
 		}
 		return userEmail;
 	}
