@@ -528,6 +528,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         }
       );
     };
+
+     // handler for removing a flag that tool not be migrated
+     $scope.unFlagDoNotMigrate = function(project){
+       $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
+       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&reset=true';
+       ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
+         function(result) {
+           if(result.data === 'site tool delete exempt choice saved.'){
+             var thisTool = _.findWhere($scope.sourceProjects, {tool_id: project.tool_id});
+             thisTool.doNotMigrateStatus = null;
+           }
+         }
+       );
+     };
+
     // handlers for posting 1) user acceptance that a site may be deleted and 2) user requests to not have certain tools migrated
     $scope.updateProjectListSettings = function() {
       // get the sites that the user has
