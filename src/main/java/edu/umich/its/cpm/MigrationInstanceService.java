@@ -18,12 +18,13 @@ import java.sql.Timestamp;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.protocol.HttpContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
 
 @Service
 @Component
-public class MigrationInstanceService {
+class MigrationInstanceService {
 	
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationInstanceService.class);
@@ -38,14 +39,50 @@ public class MigrationInstanceService {
 	private MigrationBoxFileRepository fRepository;
 	
 	@Autowired
+	private MigrationEmailMessageRepository eRepository;
+	
+	@Autowired
 	private MigrationRepository mRepository;
 	
+	@Autowired
+	private Environment env;
+	
+	/**
+	 * check the setting of parallel processing thread number
+	 * @return
+	 */
+	private int getMaxParallelThreadNum()
+	{
+		if (env.getProperty(Utils.MAX_PARALLEL_THREADS_PROP) != null)
+		{
+			try
+			{
+				// return the setting in property file
+				return Integer.parseInt(env.getProperty(Utils.MAX_PARALLEL_THREADS_PROP));
+			}
+			catch (NumberFormatException e)
+			{
+				// log error and return default value
+				log.error(Utils.MAX_PARALLEL_THREADS_PROP + " property should have integer value. ");
+				return 0;
+			}
+		}
+		// return default value
+		return Utils.MAX_PARALLEL_THREADS_NUM;
+	}
+	
 	@Async
-	public void runProcessingThread() throws InterruptedException {
+	public void runProcessingThreads() throws InterruptedException {
 		
 		log.info("Box Migration Processing thread is running");
 		
-		List<Future<String>> futureList = new ArrayList<Future<String>>();
+		int threadNum = getMaxParallelThreadNum();
+		
+		// future list for Box migration tasks
+		List<Future<String>> futureBoxList = new ArrayList<Future<String>>();
+		
+		// future list for Google Groups migration tasks
+		List<Future<String>> futureGoogleGroupList = new ArrayList<Future<String>>();
 
 		while (true)
 		{
@@ -53,47 +90,73 @@ public class MigrationInstanceService {
 			// delay for 5 seconds
 			Thread.sleep(5000L);
 	        
-			// looping through
+			/*********** Box migration tasks ***********/
+			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
-			// process with the Box upload request
-			for(MigrationBoxFile bFile : bFiles)
+			if (bFiles != null && bFiles.size() > 0)
 			{
-				// mark the file as processed
-				fRepository.setMigrationBoxFileStartTime(bFile.getId(), new Timestamp(System.currentTimeMillis()));
+				// get right HttpContext object
+				HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
 				
-				futureList.add( migrationTaskService.uploadBoxFile(bFile.getId(),
-						bFile.getUser_id(), bFile.getType(),
-						bFile.getBox_folder_id(), bFile.getTitle(),
-						bFile.getWeb_link_url(), bFile.getFile_access_url(), bFile.getDescription(),
-						bFile.getAuthor(), bFile.getCopyright_alert(), bFile.getFile_size()));
-			}
-			
-		    
-			// get a cloned list, in case we need to remove the finished async tasks from the original list
-			List<Future<String>> futureListClone = new ArrayList<Future<String>>();
-			futureListClone.addAll(futureList);
-			
-			for (Future<String> future : futureListClone) {
-				try {
-					// get the status of asynchronize processed Box upload request
-					if (future.isDone())
+				// process with the Box upload request
+				for(MigrationBoxFile bFile : bFiles)
+				{	
+					if (futureBoxList.size() < threadNum)
 					{
-						// finished, remove the task from the future list queue
-						futureList.remove(future);
+						futureBoxList.add( migrationTaskService.uploadBoxFile(bFile, httpContext));
 					}
-				} catch (Exception e) {
-					log.error("runProcessingThread " + e.getMessage());
+				}
+			}
+
+		    // remove finished Box migration task from future list
+			trimFutureListRemoveFinishedTask(futureBoxList);
+			
+			/*********** Google Groups migration tasks ***********/
+			// looping through email request
+			List<MigrationEmailMessage> messages = eRepository.getFirstNewMessagePerSite();
+			// process with the message upload request
+			for(MigrationEmailMessage message : messages)
+			{	
+				if (futureGoogleGroupList.size() < threadNum )
+				{
+					//call to microservice to upload message to Google Groups
+					futureGoogleGroupList.add(migrationTaskService.uploadMessageToGoogleGroup(message));
 				}
 			}
 			
+		    // remove finished Google Groups migration task from future list
+			trimFutureListRemoveFinishedTask(futureGoogleGroupList);
+			
+			/*********** update parent migration status for both Box and Google Groups migration request ***********/
 			// if all itemized migration finishes, 
 			// update the parent migration record for status and end time
 			updateMigrationStatusAndEndTime();
 		}
 	}
 
+	private void trimFutureListRemoveFinishedTask(
+			List<Future<String>> futureList) {
+		// get a cloned list, in case we need to remove the finished async tasks from the original list
+		List<Future<String>> futureListClone = new ArrayList<Future<String>>();
+		futureListClone.addAll(futureList);
+		
+		for (Future<String> future : futureListClone) {
+			try {
+				// get the status of asynchronize processed Box upload request
+				if (future.isDone())
+				{
+					// finished, remove the task from the future list queue
+					futureList.remove(future);
+				}
+			} catch (Exception e) {
+				log.error("problem removing item from future list " + e.getMessage());
+			}
+		}
+	}
+
 	/**
-	 * check to see whether all itemized migration finishes, 
+	 * check to see whether all itemized Box migration finishes, 
 	 * so that the parent record can be updated
 	 */
 	private void updateMigrationStatusAndEndTime() {
@@ -104,45 +167,113 @@ public class MigrationInstanceService {
 		for (Migration migration : allOngoingMigrations)
 		{
 			String mId = migration.getMigration_id();
-			int allItemCount = fRepository.getMigrationBoxFileCountForMigration(mId);
-			int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
-			if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+			String destination_type = migration.getDestination_type();
+			if (Utils.MIGRATION_TYPE_BOX.equals(destination_type))
 			{
-				// all the items within the migration is finished
-				// update the end time of the parent record
-				Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
-				mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
-				
-				// update the status of the parent record
-				List<MigrationBoxFile> mFileList = fRepository.getAllItemStatusForMigration(mId);
-				// parse the string into JSON object
-				List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
-				int itemStatusFailureCount = 0;
-				for(MigrationBoxFile mFile : mFileList)
-				{
-					String status = mFile.getStatus();
-					MigrationFileItem item = new MigrationFileItem(
-							mFile.getFile_access_url(), 
-							mFile.getTitle(), 
-							status);
-					itemStatusList.add(item);
-					
-					if (status.indexOf("Box upload successful for file") == -1)
-					{
-						// if there is error, status message won't have String "Box upload successful for file"
-						itemStatusFailureCount++;
-					}
-				}
-				
-				// the HashMap object holds itemized status information
-				HashMap<String, Object> statusMap = new HashMap<String, Object>();
-				statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-				statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
-
-				// update the status and end_time of migration record
-				migrationTaskService.setMigrationEndTimeAndStatus(mId, mRepository, new JSONObject(statusMap));
-				
+				// for Box file migration
+				updateBoxMigrationTimeAndStatus(mId);
 			}
+			else if (Utils.MIGRATION_TYPE_GOOGLE_GROUP.equals(destination_type))
+			{
+				// for Google Groups email migration	
+				updateMessageMigrationTimeAndStatus(mId);
+			}
+		}
+	}
+
+	/**
+	 * if all box migration resource items within the migration is finished
+	 * update the migration end time with the last end time of items
+	 * update the migration status with the aggregation of item status
+	 * @param mId
+	 */
+	private void updateBoxMigrationTimeAndStatus(String mId) {
+		int allItemCount = fRepository.getMigrationBoxFileCountForMigration(mId);
+		int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
+		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+		{
+			// all the items within the migration is finished
+			// update the end time of the parent record
+			Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
+			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+			
+			// update the status of the parent record
+			List<MigrationBoxFile> mFileList = fRepository.getAllItemStatusForMigration(mId);
+			// parse the string into JSON object
+			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+			int itemStatusFailureCount = 0;
+			for(MigrationBoxFile mFile : mFileList)
+			{
+				String status = mFile.getStatus();
+				MigrationFileItem item = new MigrationFileItem(
+						mFile.getFile_access_url(), 
+						mFile.getTitle(), 
+						status);
+				itemStatusList.add(item);
+				
+				if (status.indexOf("Box upload successful for file") == -1)
+				{
+					// if there is error, status message won't have String "Box upload successful for file"
+					itemStatusFailureCount++;
+				}
+			}
+			
+			// the HashMap object holds itemized status information
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+			// update the status of migration record
+			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			
+		}
+	}
+	
+	/**
+	 * if all email migration items within the migration is finished
+	 * update the migration end time with the last end time of items
+	 * update the migration status with the aggregation of item status
+	 * @param mId
+	 */
+	private void updateMessageMigrationTimeAndStatus(String mId) {
+		int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
+		int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
+		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+		{
+			// all the items within the migration is finished
+			// update the end time of the parent record
+			Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
+			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+			
+			// update the status of the parent record
+			List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
+			// parse the string into JSON object
+			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+			int itemStatusFailureCount = 0;
+			for(MigrationEmailMessage mMessage : mMessageList)
+			{
+				String status = mMessage.getStatus();
+				MigrationFileItem item = new MigrationFileItem(
+						mMessage.getMessage_id(), 
+						"", 
+						status);
+				itemStatusList.add(item);
+				
+				if (status.indexOf("Box upload successful for file") == -1)
+				{
+					// if there is error, status message won't have String "Box upload successful for file"
+					itemStatusFailureCount++;
+				}
+			}
+			
+			// the HashMap object holds itemized status information
+			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+			// update the status of migration record
+			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			
 		}
 	}
 

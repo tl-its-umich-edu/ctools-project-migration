@@ -53,7 +53,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.util.StringUtils;
 
 @Configuration
-public class Utils {
+public 
+class Utils {
+	
+	// for local testing
+	public static final String TEST_REMOTEUSER = "test.remoteuser";
 
 	// migration status string
 	public static final String STATUS_SUCCESS = "success";
@@ -70,8 +74,11 @@ public class Utils {
 
 	public static final String COLLECTION_TYPE = "collection";
 
+	public static final String MIGRATION_TOOL_RESOURCE = "sakai.resources";
+	public static final String MIGRATION_TOOL_EMAILARCHIVE = "sakai.mailbox";
 	public static final String MIGRATION_TYPE_BOX = "box";
 	public static final String MIGRATION_TYPE_ZIP = "zip";
+	public static final String MIGRATION_TYPE_GOOGLE_GROUP = "google";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
 	public static final String MIME_TYPE_ZIP = "application/zip";
 
@@ -91,6 +98,7 @@ public class Utils {
 	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
 	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
 
+
 	public static final String SERVER_URL = "server_url";
 
 	// CTools resource type strings
@@ -101,8 +109,9 @@ public class Utils {
 	public static final String HTML_FILE_EXTENSION = ".html";
 
 	// the at sign used in email address
-	private static final String EMAIL_AT = "@";
-	private static final String EMAIL_AT_UMICH = "@umich.edu";
+	static final String EMAIL_AT = "@";
+	static final String DEFAULT_EMAIL_MEMBER_SUFFIX = "default.email.member.suffix";
+	//private static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
@@ -113,6 +122,7 @@ public class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
 	
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -140,7 +150,14 @@ public class Utils {
 	public static final String JSON_ATTR_MAIL_URL = "url";
 	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
 	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
+	
+	// the max parallel processing thread for migrations
+	public static final String MAX_PARALLEL_THREADS_PROP = "max_parallel_threads_prop";
+	public static final int MAX_PARALLEL_THREADS_NUM = 20;
 
+	// Google connection property names
+	public static final String GGB_SERVER_NAME = "ggb.server";
+	public static final String GGB_GOOGLE_GROUP_DOMAIN = "ggb.google.group.domain";	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
@@ -170,6 +187,7 @@ public class Utils {
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 				+ "direct/session?_username=" + env.getProperty("username")
 				+ "&_password=" + env.getProperty("password");
+		log.debug("ctools user url: {}",requestUrl);
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
 			postRequest.setHeader("Content-Type",
@@ -206,7 +224,7 @@ public class Utils {
 					requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 							+ "direct/session/becomeuser/" + remoteUser
 							+ ".json?_sessionId=" + sessionId;
-					log.info(requestUrl);
+					log.info("becomeuser url: {}",requestUrl);
 
 					HttpGet getRequest = new HttpGet(requestUrl);
 					getRequest.setHeader("Content-Type",
@@ -218,7 +236,7 @@ public class Utils {
 							"UTF-8");
 					log.info(resultString);
 				} catch (java.io.IOException e) {
-					log.error(requestUrl + e.getMessage());
+					log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
 
 					// nullify sessionId if become user call is not successful
 					sessionId = null;
@@ -232,6 +250,68 @@ public class Utils {
 			log.error(requestUrl + e.getMessage());
 		}
 
+		return sessionAttributes;
+	}
+	
+	/**
+	 * login into CTools and become admin user with sessionId
+	 */
+	protected static HashMap<String, Object> login_become_admin(Environment env) {
+		// return the session related attributes after successful login call
+		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
+
+		// session id after login
+		String sessionId = "";
+
+		// create httpclient
+		HttpClient httpClient = HttpClientBuilder.create().build();
+
+		// store cookies in context, retain the session information
+		CookieStore cookieStore = new BasicCookieStore();
+		HttpContext httpContext = new BasicHttpContext();
+		httpContext.setAttribute(HttpClientContext.COOKIE_STORE, cookieStore);
+
+		// here is the CTools integration prior to CoSign integration ( read
+		// session user information from configuration file)
+		// 1. create a session based on user id and password
+		// the url should be in the format of
+		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
+		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/session?_username=" + env.getProperty("username")
+				+ "&_password=" + env.getProperty("password");
+		try {
+			HttpPost postRequest = new HttpPost(requestUrl);
+			postRequest.setHeader("Content-Type",
+					"application/x-www-form-urlencoded");
+			HttpResponse response = httpClient
+					.execute(postRequest, httpContext);
+
+			// get the status code
+			int status = response.getStatusLine().getStatusCode();
+
+			if (status != 201) {
+				// if status code is not 201, there is a problem with the
+				// request.
+				// return error if a new CTools session could not be created
+				// using username and password provided
+				log.info("Wrong user id or password. Cannot login to CTools "
+						+ env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL));
+			} else {
+
+				// if status code is 201 login is successful. So reuse the
+				// httpContext for next requests.
+				// get the session id
+				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
+				log.info("successfully logged in as user "
+						+ env.getProperty("username") + " with sessionId = "
+						+ sessionId);
+			}
+		} catch (java.io.IOException e) {
+			log.error(requestUrl + e.getMessage());
+		}
+
+		sessionAttributes.put("sessionId", sessionId);
+		sessionAttributes.put("httpContext", httpContext);
 		return sessionAttributes;
 	}
 
@@ -266,35 +346,9 @@ public class Utils {
 		return rv;
 	}
 
-	/**
-	 * construct the user email address
-	 */
-	public static String getCurrentUserEmail(HttpServletRequest request, Environment env) {
-		String remoteUserEmail = Utils.getCurrentUserId(request, env);
-		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
-
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			// use admin account id instead
-			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
-		}
-		remoteUserEmail = getUserEmailFromUserId(remoteUserEmail);
-		return remoteUserEmail;
-	}
-
-	static public String getUserEmailFromUserId(String userEmail) {
-		if (userEmail.indexOf(EMAIL_AT) == -1) {
-			// if the userEmail value is not of email format
-			// then it is the uniqname of umich user
-			// we need to attach "@umich.edu" to it to make it a full email
-			// address
-			userEmail = userEmail + EMAIL_AT_UMICH;
-		}
-		return userEmail;
-	}
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
-	private static final String ALLOW_TESTUSER_URLOVERRIDE = "allow.testUser.urlOverride";
+	private static final String ALLOW_USER_URLOVERRIDE = "allow.testUser.urlOverride";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
@@ -311,7 +365,7 @@ public class Utils {
 	public static String getCurrentUserId(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String rvUser = getRemoteUser(request);
+		String rvUser = getRemoteUser(request,env);
 
 		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
@@ -319,7 +373,7 @@ public class Utils {
 
 		// get the environment setting, default to "false"
 		String allowTestUserUrlOverride = env.getProperty(
-				ALLOW_TESTUSER_URLOVERRIDE, Boolean.FALSE.toString());
+				ALLOW_USER_URLOVERRIDE, Boolean.FALSE.toString());
 		if (hasValue(allowTestUserUrlOverride)
 				&& Boolean.valueOf(allowTestUserUrlOverride)
 				&& request.getParameter(TEST_USER) != null) {
@@ -356,7 +410,7 @@ public class Utils {
 	public static boolean isCurrentUserCPMAdmin(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String remoteUser = getRemoteUser(request);
+		String remoteUser = getRemoteUser(request,env);
 
 		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
 		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
@@ -378,8 +432,13 @@ public class Utils {
 	/*
 	 * get CoSign user
 	 */
-	public static String getRemoteUser(HttpServletRequest request) {
-		return request.getRemoteUser();
+	public static String getRemoteUser(HttpServletRequest request, Environment env) {
+		String propertyRemoteUser = env.getProperty(TEST_REMOTEUSER);
+		String remoteUser = request.getRemoteUser();
+		if (remoteUser == null || remoteUser.length() == 0) {
+			remoteUser = propertyRemoteUser;		
+		}
+		return remoteUser;
 	}
 
 	/*

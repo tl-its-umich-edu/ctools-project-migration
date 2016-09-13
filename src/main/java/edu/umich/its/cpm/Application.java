@@ -30,12 +30,12 @@ public class Application extends SpringBootServletInitializer {
 	public void startMigrationProcessingThread() {
 
 		try {
-			migrationInstanceService.runProcessingThread();
+			migrationInstanceService.runProcessingThreads();
 			log.info(this + " startMigrationProcessingThread started.");
 		} catch (InterruptedException e) {
 			//TODO put the error in UI eventually
 			log.error(this
-					+ " error starting migrationInstanceService.runProcessingThread() "
+					+ " error starting migrationInstanceService.runProcessingThreads() "
 					+ e.getMessage());
 		}
 	}
