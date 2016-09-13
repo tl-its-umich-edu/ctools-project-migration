@@ -520,7 +520,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var unFlagSiteDeleteURL = 'deleteSite?siteId='  + project.site_id +'&reset=true';
       ProjectsLite.unFlagSiteDeletion(unFlagSiteDeleteURL).then(
         function(result) {
-          if(result.data === 'Whatever the data says'){
+          if(result.data === 'Delete site choices saved.'){
             // find this site and remove deleteStatus object to let user know
             var thisSite = _.findWhere($scope.sourceProjects, {site_id: project.site_id});
             thisSite.deleteStatus = null;
