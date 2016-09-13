@@ -514,6 +514,20 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         });
       }
     };
+
+    $scope.unFlagSiteDeletion = function(project){
+      $log.info('Unflagging project site deletion for ' + project.site_name);
+      var unFlagSiteDeleteURL = 'deleteSite?siteId='  + project.site_id +'&reset=true';
+      ProjectsLite.unFlagSiteDeletion(unFlagSiteDeleteURL).then(
+        function(result) {
+          if(result.data === 'Delete site choices saved.'){
+            // find this site and remove deleteStatus object to let user know
+            var thisSite = _.findWhere($scope.sourceProjects, {site_id: project.site_id});
+            thisSite.deleteStatus = null;
+          }
+        }
+      );
+    };
     // handlers for posting 1) user acceptance that a site may be deleted and 2) user requests to not have certain tools migrated
     $scope.updateProjectListSettings = function() {
       // get the sites that the user has
