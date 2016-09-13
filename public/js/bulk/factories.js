@@ -47,3 +47,69 @@ projectMigrationApp.factory('BulkUpload', function($http, $log) {
     }
   };
 });
+
+projectMigrationApp.factory('Projects', function($http) {
+	return {
+		boxAuthorize: function(url) {
+			return $http.get(url, {
+				cache : false
+			}).then(
+					function success(result) {
+						// forward the data - let the controller deal with it
+						return result;
+					},
+					function error(result) {
+						errorDisplay(url, result.status,
+								'Unable to authorize into Box');
+						result.errors.failure = true;
+						return result;
+					});
+		},
+		boxUnauthorize : function(url) {
+			return $http.get(url, {
+				cache : false
+			}).then(
+					function success(result) {
+						// forward the data - let the controller deal with it
+						return result;
+					},
+					function error(result) {
+						errorDisplay(url, result.status,
+								'Unable to unauthorize user from Box.');
+						result.errors.failure = true;
+						return result;
+					});
+		},
+		checkBoxAuthorized : function(url) {
+			return $http.get(url, {
+				cache : false
+			}).then(
+					function success(result) {
+						// forward the data - let the controller deal with it
+						return result;
+					},
+					function error(result) {
+						errorDisplay(url, result.status,
+								'Unable to check user authentication info with Box.');
+						result.errors.failure = true;
+						return result;
+					});
+		},
+    checkIsAdminUser : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(
+          function success(result) {
+            // forward the data - let the controller deal with it
+            return result;
+          },
+          function error(result) {
+            errorDisplay(url, result.status,
+                'Unable to check if user is an admin.');
+            return result;
+          });
+    }
+
+
+	};
+});

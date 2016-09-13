@@ -38,11 +38,16 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 * run 'mvn spring-boot:run'. This will compile the code and start embedded tomcat server.
 * http://localhost:8080/health returns server status
 * http://localhost:8080/ is the landing page of the project migration tool
+TALK ABOUT mvn clean
+TALK ABOUT setting port explicitly
+
 
 ## Deploy as war file:
 * run 'mvn package' to generate ctools-project-migration-VERSION.war file, in /target folder
 * rename the war file as ctools-project-migration.war and copy into tomcat/webapps folder
-* access the tool via https://SERVER:PORT/ctools-project-migration/ 
+* access the tool via https://SERVER:PORT/ctools-project-migration/
+* The server port can be changed by specifying a port explicitly in
+  application.properties.  E.g. server.port = 8090
 
 ## Testing with JMeter
 * JMeter scripts are included, which can be run from either JMeter UI or from maven
