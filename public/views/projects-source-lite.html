@@ -80,6 +80,7 @@
                   <span ng-if="project.tool_type==='sakai.resources'"> this content not be moved to Box</span>
                   <span ng-if="project.tool_type==='sakai.mailbox'"> this email archive not be moved to Google Groups</span> on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
                   </small>
+                  <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request?</a>
                 </p>
               </div>
 						</div>
