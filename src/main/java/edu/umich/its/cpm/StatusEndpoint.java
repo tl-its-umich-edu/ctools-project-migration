@@ -26,7 +26,7 @@ import org.json.JSONObject;
  */
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @Component
-public class StatusEndpoint implements Endpoint<String>, ServletContextAware{
+class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 
 	private static ServletContext servletContext = null;
 	

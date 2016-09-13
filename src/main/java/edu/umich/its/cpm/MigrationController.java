@@ -43,6 +43,7 @@ import javax.inject.Inject;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
+import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.UUID;
@@ -60,6 +61,7 @@ import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -99,6 +101,8 @@ import javax.servlet.ServletOutputStream;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
+
+//import static org.junit.Assert.assertTrue;
 
 import java.io.*;
 import java.util.zip.ZipEntry;
@@ -443,6 +447,7 @@ public class MigrationController {
 
 	private String getUserSessionId(HttpServletRequest request) {
 		String userEid = Utils.getCurrentUserId(request, env);
+		log.debug("gUSI: userEid: {}",userEid);
 		HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, request, userEid);
 		if (!sessionAttributes.containsKey(Utils.SESSION_ID)) {
 			// exit if the session attributes does not contain session_id
@@ -459,7 +464,7 @@ public class MigrationController {
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_site_members(String site_id, String sessionId)
+	private HashMap<String, String> get_site_members(String sessionId, String site_id)
 			throws RestClientException, JSONException {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
@@ -467,13 +472,11 @@ public class MigrationController {
 		String errorMessage = "";
 		String requestUrl = "";
 		
-		// get all members inside site
-		// the url should be in the format of
-		// "https://server/direct/membership/site/SITE_ID.json"
 		RestTemplate restTemplate = new RestTemplate();
 		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 				+ "direct/membership/site/" + site_id + ".json?_sessionId="
 				+ sessionId;
+		log.debug("get_site_members: url:[{}] ",requestUrl);
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {
@@ -751,7 +754,7 @@ public class MigrationController {
 		List<Migration> migratingSiteTools = repository
 				.findMigrating(remoteUser);
 		for (Migration m : migratingSiteTools) {
-			log.info("migrating reord " + m.getSite_id() + " tool id=" + toolId
+			log.info("migrating record " + m.getSite_id() + " tool id=" + toolId
 					+ "user id=" + remoteUser);
 			if (siteId.equals(m.getSite_id()) && toolId.equals(m.getTool_id())) {
 				// still on-going migration
@@ -846,7 +849,8 @@ public class MigrationController {
 					boxMigrationErrors.append(boxClientIdError + Utils.LINE_BREAK);
 				}
 				
-				String remoteUserEmail = Utils.getUserEmailFromUserId(remoteUser);
+				//String remoteUserEmail = Utils.getUserEmailFromUserId(remoteUser);
+				String remoteUserEmail = getUserEmailFromUserId(remoteUser);
 
 				if (siteId == null || boxFolderId == null) {
 					String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
@@ -951,10 +955,11 @@ public class MigrationController {
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
 		// get CoSign user id
-		String userId = Utils.getRemoteUser(request);
+		String userId = Utils.getRemoteUser(request,env);
 		String boxClientId = BoxUtils.getBoxClientId(userId);
 		String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
-		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
+		//String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
+		String remoteUserEmail = getCurrentUserEmail(request, env);
 
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
@@ -979,6 +984,21 @@ public class MigrationController {
 		return null;
 	}
 
+	public String getCurrentUserEmail(HttpServletRequest request, Environment env) {
+		String remoteUserEmail = Utils.getCurrentUserId(request, env);
+		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
+
+		if (Utils.isCurrentUserCPMAdmin(request, env)) {
+			// use admin account id instead
+			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
+		}
+		//remoteUserEmail = getUserEmailFromUserId(remoteUserEmail,env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX));
+		remoteUserEmail = getUserEmailFromUserId(remoteUserEmail);
+		return remoteUserEmail;
+	}
+
+
 	/**
 	 * User authenticates into the Box account
 	 * 
@@ -1002,13 +1022,13 @@ public class MigrationController {
 			HttpServletResponse response) {
 
 		// get the current user email
-		String userEmail = Utils.getCurrentUserEmail(request, env);
+		String userEmail = getCurrentUserEmail(request, env);
 
 		// the return string
 		String rv = "";
 
 		// check whether the user authentication token is store in memory
-		if (uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) == null) {
+		if (uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) == null) {
 			rv = "Cannot find user's Box authentication info. ";
 		} else {
 			uRepository.deleteBoxAuthUserAccessToken(userEmail);
@@ -1030,14 +1050,14 @@ public class MigrationController {
 	@RequestMapping("/authorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public String getBoxAuthzTokens(HttpServletRequest request) {
-		String userEmail = Utils.getCurrentUserEmail(request, env);
+		String userEmail = getCurrentUserEmail(request, env);
 		String rv = uRepository.findBoxAuthUserAccessToken(userEmail);
 
 		if (rv == null) {
 			// get the authCode,
 			// and get access token and refresh token subsequently
 			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
-			String userId = Utils.getRemoteUser(request);
+			String userId = Utils.getRemoteUser(request,env);
 			String boxClientId = BoxUtils.getBoxClientId(userId);
 			String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
@@ -1053,7 +1073,7 @@ public class MigrationController {
 	@RequestMapping("/box/checkAuthorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
-		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(Utils.getCurrentUserEmail(request, env)) != null);
+		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) != null);
 	}
 
 	/**
@@ -1094,14 +1114,15 @@ public class MigrationController {
 		}
 		
 		// include the current user as site owner first
-		StringBuffer allSiteOwners = new StringBuffer(Utils.getUserEmailFromUserId(userId));
+		StringBuffer allSiteOwners = new StringBuffer(getUserEmailFromUserId(userId));
 		try
 		{
 			// add site members to migration
 			HashMap<String, String> userRoles = get_site_members(siteId, sessionId);
 			for (String userEid : userRoles.keySet()) {
 				String userRole = userRoles.get(userEid);
-				String userEmail = Utils.getUserEmailFromUserId(userEid);
+				//String userEmail = Utils.getUserEmailFromUserId(userEid);
+				String userEmail = getUserEmailFromUserId(userEid);
 				
 				if (Utils.ROLE_OWNER.equals(userRole))
 				{
@@ -1221,9 +1242,7 @@ public class MigrationController {
 		HashMap<String, Object> rv = new HashMap<String, Object>();
 		Migration m = new Migration(batch_id, batch_name, siteId, siteName,
 				toolId, toolName, userId, new java.sql.Timestamp(
-						System.currentTimeMillis()), // start
-														// time is
-														// now
+						System.currentTimeMillis()), // start time is now
 				null, destinationType, targetUrl, "" /* status */);
 
 		Migration newMigration = null;
@@ -1234,8 +1253,8 @@ public class MigrationController {
 				.append(" tool_id=").append(toolId).append(" tool_name=")
 				.append(toolName).append(" migrated_by=").append(userId)
 				.append(" destination_type=").append(destinationType)
+		.append(" \n ");
 
-				.append(" \n ");
 		log.info(insertMigrationDetails.toString());
 		try {
 			newMigration = repository.save(m);
@@ -1322,9 +1341,9 @@ public class MigrationController {
 	 */
 	private String boxAuthorization(HttpServletRequest request,
 			HttpServletResponse response) {
-		String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
+		String remoteUserEmail = getCurrentUserEmail(request, env);
 		// get CoSign user id
-		String userId = Utils.getRemoteUser(request);
+		String userId = Utils.getRemoteUser(request,env);
 		String boxClientId = BoxUtils.getBoxClientId(userId);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
@@ -1700,14 +1719,15 @@ public class MigrationController {
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName) {
 		
-		//call Google Group microservice for group creation
+		// Create and populate group up front.  Migrate messages async.
+		// call Umich Google Group microservice for group creation
 		// and get the group group id, and group name
-		JSONObject googleGroupSettings = migrationTaskService.createGoogleGroupForSite(siteId, sessionId);
-		String googleGroupId = googleGroupSettings.getString("id");
+		JSONObject googleGroupSettings = (JSONObject) migrationTaskService.createGoogleGroupForSite(sessionId,siteId);
+		String googleGroupId = googleGroupSettings.getString("email");
 		String googleGroupName = googleGroupSettings.getString("name");
 		
 		// 1. add site members to Google Group membership
-		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(siteId, sessionId);
+		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(sessionId,siteId));
 		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
 		
 		// 2. save the site migration record
@@ -1752,7 +1772,7 @@ public class MigrationController {
 			String siteId, String siteName, String toolId, String toolName) {
 
 		// get box folder id
-		String remoteUserId = Utils.getRemoteUser(request);
+		String remoteUserId = Utils.getRemoteUser(request,env);
 		String boxAdminClientId = BoxUtils.getBoxClientId(remoteUserId);
 		String boxAdminClientSecret = BoxUtils.getBoxClientSecret(remoteUserId);
 		String boxSiteFolderName = "CTools - " + siteName;
@@ -1776,7 +1796,8 @@ public class MigrationController {
 				HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
 				for (String userEid : userRolesMap.keySet()) {
 					String userRole = userRolesMap.get(userEid);
-					String userEmail = Utils.getUserEmailFromUserId(userEid);
+					//String userEmail = Utils.getUserEmailFromUserId(userEid);
+					String userEmail = getUserEmailFromUserId(userEid);
 
 					BoxUtils.addCollaboration(
 							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
@@ -1821,11 +1842,20 @@ public class MigrationController {
 		}
 	}
 
+	public String getUserEmailFromUserId(String userEmail) {
+		if (userEmail.indexOf(Utils.EMAIL_AT) == -1) {
+			String default_member_email_suffix = env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX);
+			// if the userEmail value is not of email format
+			// then it is the uniqname of umich user
+			// we need to attach a suffix to it to make it a full email address
+			userEmail = userEmail + Utils.EMAIL_AT + default_member_email_suffix;
+		}
+		return userEmail;
+	}
+
 	/**
-	 * use CTools entity feed to get site name based on site id
+	 * use CTools entity feed to get site information based on site id
 	 * 
-	 * @param request
-	 * @return
 	 */
 	private String getSiteName(String siteId, String sessionId) {
 		String siteName = null;
@@ -1847,7 +1877,45 @@ public class MigrationController {
 		return siteName;
 	}
 	
-	/******************* migtation choices ********************/
+	// TODO: test adding /test name space for ad-hoc testing of individual methods.
+
+	//////////////
+	// add exception handler for when upstream servers don't have a useful response.
+	// TODO: move / generalize the exception handler?
+	@ExceptionHandler(org.springframework.web.client.HttpServerErrorException.class)
+	void handleServerError(HttpServletResponse response) throws IOException {
+		log.debug("in exception handler: "+response.getStatus());
+		response.sendError(HttpStatus.BAD_GATEWAY.value(),"Upstream server failed to respond correctly");
+	}
+
+	// Get the json version of the site info.
+	protected JSONObject getSiteInfoJson(String sessionId, String siteId) {
+
+		log.debug("enter getSiteInfoJson: "+siteId);
+
+		// get the site info from ctools
+		JSONObject siteJSONObject = null;
+
+		// get site info for site as json.
+		RestTemplate restTemplate = new RestTemplate();
+		// the url should be in the format of
+		// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+		log.info("siteInfo url: " + requestUrl);
+		try {
+			String siteJson = restTemplate.getForObject(requestUrl,
+					String.class);
+			siteJSONObject = new JSONObject(siteJson);
+		} catch (RestClientException e) {
+			log.error(requestUrl + e.getMessage());
+			// Don't hide the error.
+			throw e;
+		}
+		return siteJSONObject;
+	}
+
+	/******************* migration choices ********************/
 	/**
 	 * save user input for site delete choices into database
 	 *  
@@ -2142,6 +2210,21 @@ public class MigrationController {
 
 	}
 	
+	/*********** start mail archive google migration ***********/
+
+	// add a specific email to the Google group.
+	String  addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
+		String ggb_server = env.getProperty(Utils.GGB_SERVER_NAME);
+		log.info("addEmailToGoogleGroup: group: {}",googleGroup);
+		log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
+		GGBApiWrapper ggb = new GGBApiWrapper(ggb_server,null);
+		String archive_url = "/groups/"+googleGroup+"/messages";
+		String response = ggb.post_request(archive_url,rcf822Email);
+
+		return response;
+	}
+
+
 	/**************** zip download of Mail Archive content ***************/
 	/**
 	 * insert a new record of Migration

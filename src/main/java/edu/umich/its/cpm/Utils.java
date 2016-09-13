@@ -53,7 +53,11 @@ import org.apache.commons.io.FilenameUtils;
 import org.springframework.util.StringUtils;
 
 @Configuration
-public class Utils {
+public 
+class Utils {
+	
+	// for local testing
+	public static final String TEST_REMOTEUSER = "test.remoteuser";
 
 	// migration status string
 	public static final String STATUS_SUCCESS = "success";
@@ -105,8 +109,9 @@ public class Utils {
 	public static final String HTML_FILE_EXTENSION = ".html";
 
 	// the at sign used in email address
-	private static final String EMAIL_AT = "@";
-	private static final String EMAIL_AT_UMICH = "@umich.edu";
+	static final String EMAIL_AT = "@";
+	static final String DEFAULT_EMAIL_MEMBER_SUFFIX = "default.email.member.suffix";
+	//private static final String EMAIL_AT_UMICH = "@umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
@@ -117,6 +122,7 @@ public class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
 	
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -149,6 +155,9 @@ public class Utils {
 	public static final String MAX_PARALLEL_THREADS_PROP = "max_parallel_threads_prop";
 	public static final int MAX_PARALLEL_THREADS_NUM = 20;
 
+	// Google connection property names
+	public static final String GGB_SERVER_NAME = "ggb.server";
+	public static final String GGB_GOOGLE_GROUP_DOMAIN = "ggb.google.group.domain";	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
@@ -178,6 +187,7 @@ public class Utils {
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 				+ "direct/session?_username=" + env.getProperty("username")
 				+ "&_password=" + env.getProperty("password");
+		log.debug("ctools user url: {}",requestUrl);
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
 			postRequest.setHeader("Content-Type",
@@ -214,7 +224,7 @@ public class Utils {
 					requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
 							+ "direct/session/becomeuser/" + remoteUser
 							+ ".json?_sessionId=" + sessionId;
-					log.info(requestUrl);
+					log.info("becomeuser url: {}",requestUrl);
 
 					HttpGet getRequest = new HttpGet(requestUrl);
 					getRequest.setHeader("Content-Type",
@@ -226,7 +236,7 @@ public class Utils {
 							"UTF-8");
 					log.info(resultString);
 				} catch (java.io.IOException e) {
-					log.error(requestUrl + e.getMessage());
+					log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
 
 					// nullify sessionId if become user call is not successful
 					sessionId = null;
@@ -244,7 +254,7 @@ public class Utils {
 	}
 	
 	/**
-	 * login into CTools and become user with sessionId
+	 * login into CTools and become admin user with sessionId
 	 */
 	protected static HashMap<String, Object> login_become_admin(Environment env) {
 		// return the session related attributes after successful login call
@@ -336,35 +346,9 @@ public class Utils {
 		return rv;
 	}
 
-	/**
-	 * construct the user email address
-	 */
-	public static String getCurrentUserEmail(HttpServletRequest request, Environment env) {
-		String remoteUserEmail = Utils.getCurrentUserId(request, env);
-		log.info("getCurrentUserEmail currentUserId=" + remoteUserEmail);
-
-		if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			// use admin account id instead
-			remoteUserEmail = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-			log.info("getCurrentUserEmail currentUserCPMAdmin=" + remoteUserEmail);
-		}
-		remoteUserEmail = getUserEmailFromUserId(remoteUserEmail);
-		return remoteUserEmail;
-	}
-
-	static public String getUserEmailFromUserId(String userEmail) {
-		if (userEmail.indexOf(EMAIL_AT) == -1) {
-			// if the userEmail value is not of email format
-			// then it is the uniqname of umich user
-			// we need to attach "@umich.edu" to it to make it a full email
-			// address
-			userEmail = userEmail + EMAIL_AT_UMICH;
-		}
-		return userEmail;
-	}
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
-	private static final String ALLOW_TESTUSER_URLOVERRIDE = "allow.testUser.urlOverride";
+	private static final String ALLOW_USER_URLOVERRIDE = "allow.testUser.urlOverride";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
@@ -381,7 +365,7 @@ public class Utils {
 	public static String getCurrentUserId(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String rvUser = getRemoteUser(request);
+		String rvUser = getRemoteUser(request,env);
 
 		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
 			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
@@ -389,7 +373,7 @@ public class Utils {
 
 		// get the environment setting, default to "false"
 		String allowTestUserUrlOverride = env.getProperty(
-				ALLOW_TESTUSER_URLOVERRIDE, Boolean.FALSE.toString());
+				ALLOW_USER_URLOVERRIDE, Boolean.FALSE.toString());
 		if (hasValue(allowTestUserUrlOverride)
 				&& Boolean.valueOf(allowTestUserUrlOverride)
 				&& request.getParameter(TEST_USER) != null) {
@@ -426,7 +410,7 @@ public class Utils {
 	public static boolean isCurrentUserCPMAdmin(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String remoteUser = getRemoteUser(request);
+		String remoteUser = getRemoteUser(request,env);
 
 		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
 		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
@@ -448,8 +432,13 @@ public class Utils {
 	/*
 	 * get CoSign user
 	 */
-	public static String getRemoteUser(HttpServletRequest request) {
-		return request.getRemoteUser();
+	public static String getRemoteUser(HttpServletRequest request, Environment env) {
+		String propertyRemoteUser = env.getProperty(TEST_REMOTEUSER);
+		String remoteUser = request.getRemoteUser();
+		if (remoteUser == null || remoteUser.length() == 0) {
+			remoteUser = propertyRemoteUser;		
+		}
+		return remoteUser;
 	}
 
 	/*
