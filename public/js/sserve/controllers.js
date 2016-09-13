@@ -517,10 +517,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     // handler for removing a flag that tool not be migrated
     $scope.unFlagDoNotMigrate = function(project){
       $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
-       var unFlagDoNotMigrateURL = '/unFlagDoNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id;
+       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&reset=true';
        ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
         function(result) {
-          if(result.data === 'Whatever the data says'){
+          if(result.data === 'site tool delete exempt choice saved.'){
             var thisTool = _.findWhere($scope.sourceProjects, {tool_id: project.tool_id});
             thisTool.doNotMigrateStatus = null;
           }
