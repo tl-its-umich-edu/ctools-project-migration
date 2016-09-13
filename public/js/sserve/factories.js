@@ -53,14 +53,14 @@ projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $htt
     },
     unFlagSiteDeletion: function(url){
       return $http.post(url, {
-				cache : false
-			}).then(function success(result) {
-				return result;
-			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to remove a flag that a site be deleted.');
-				result.errors.failure = true;
-				return result;
-			});
+        cache : false
+      }).then(function success(result) {
+        return result;
+      }, function error(result) {
+        errorDisplay(url, result.status, 'Unable to remove a flag that a site be deleted.');
+        result.errors.failure = true;
+        return result;
+      });
     },
     startMigrationEmail: function(url) {
       var defer = $q.defer();
