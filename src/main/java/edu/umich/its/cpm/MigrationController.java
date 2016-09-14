@@ -464,7 +464,7 @@ public class MigrationController {
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_site_members(String sessionId, String site_id)
+	private HashMap<String, String> get_site_members(String site_id, String sessionId)
 			throws RestClientException, JSONException {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
