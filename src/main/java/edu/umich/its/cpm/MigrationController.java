@@ -1727,7 +1727,7 @@ public class MigrationController {
 		String googleGroupName = googleGroupSettings.getString("name");
 		
 		// 1. add site members to Google Group membership
-		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(sessionId,siteId));
+		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(siteId,sessionId));
 		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
 		
 		// 2. save the site migration record
