@@ -199,7 +199,7 @@ public class GGBApiWrapper {
 		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
 			// if status code is not 201, there is a problem with the
 			// request.
-			log.warn("Can not run post request for: status: {} url: {} body: {}",status,url,body);
+			log.warn("Can not run POST request for: status: {} url: {} body: {}",status,url,body);
 		}
 
 		// have a response so return it for the caller to deal with.
@@ -255,7 +255,7 @@ public class GGBApiWrapper {
 		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
 			// if status code is not 201, there is a problem with the
 			// request.
-			log.warn("Can not run post request status: {} for: url: {} body: {}",status,url,body);
+			log.warn("Can not run PUT request for: status: {} url: {} body: {}",status,url,body);
 		}
 
 		// have a response so return it for the caller to deal with.
