@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, validateBulkRequest, $*/
+/* global projectMigrationApp, validateBulkRequest, $, moment, document*/
 
 projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload', 'Projects',
 
@@ -14,8 +14,6 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       } else {
         $scope.boxAuthorized = false;
       }
-      // $scope.boxAuthorized ===
-      // result.data;
       $log.info(' - - - - User authorized to Box: ' + result.data);
     });
 
@@ -71,7 +69,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
 
     $scope.bulkUpload = function() {
       $('.has-error').removeClass('has-error');
-      if(!$scope.bulkUploadFile || !$scope.upload.name || !$scope.uploadSource){
+      if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource){
         if(!$scope.bulkUploadFile) {
           $('.bulkUploadFile').addClass('has-error');
         }
