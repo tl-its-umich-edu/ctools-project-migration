@@ -196,10 +196,10 @@ public class GGBApiWrapper {
 		String reason = response.getStatusLine().getReasonPhrase();
 		log.debug("runPost: reason: "+reason);
 
-		if (status != HttpStatus.SC_CREATED) {
+		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
 			// if status code is not 201, there is a problem with the
 			// request.
-			log.warn("Can not run post request for: url: "+url+"body: "+body);
+			log.warn("Can not run post request for: status: {} url: {} body: {}",status,url,body);
 		}
 
 		// have a response so return it for the caller to deal with.
@@ -250,12 +250,12 @@ public class GGBApiWrapper {
 		// check the status code
 		int status = response.getStatusLine().getStatusCode();
 		String reason = response.getStatusLine().getReasonPhrase();
-		log.debug("runPut: reason: "+reason);
+		log.debug("runPut: status: {} reason: {}",status,reason);
 
-		if (status != HttpStatus.SC_CREATED) {
+		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
 			// if status code is not 201, there is a problem with the
 			// request.
-			log.warn("Can not run put request for: url: "+url+"body: "+body);
+			log.warn("Can not run post request status: {} for: url: {} body: {}",status,url,body);
 		}
 
 		// have a response so return it for the caller to deal with.
