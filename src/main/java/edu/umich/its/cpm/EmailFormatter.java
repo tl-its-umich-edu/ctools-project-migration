@@ -5,8 +5,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.core.env.Environment;
 
 import javax.activation.DataHandler;
 import javax.mail.BodyPart;
@@ -19,6 +17,8 @@ import javax.mail.internet.MimeMultipart;
 import javax.mail.util.ByteArrayDataSource;
 import java.io.ByteArrayOutputStream;
 import java.io.IOException;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
 import java.util.*;
 
 /**
@@ -26,12 +26,14 @@ import java.util.*;
  */
 public class EmailFormatter {
     private static final Logger log = LoggerFactory.getLogger(EmailFormatter.class);
+    public static final String FROM_WITH_COLON = "From:";
+    public static final String DATE_WITH_COLON = "Date:";
+    public static final String NEW_LINE = "\r\n";
+    public static final String BOUNDARY = "boundary=";
+    public static final String FROM = "From ";
     public AttachmentHandler attachmentHandler;
 
     private String emailMessage;
-
-    @Autowired
-    private Environment env;
 
     Map<String, Object> messageMap = null;
 
@@ -43,15 +45,81 @@ public class EmailFormatter {
     }
 
     public String rfc822Format() {
-        StringBuilder emailInRFCFormat = new StringBuilder();
         ArrayList<String> headers = prunedHeadersWithoutContentType();
+        return getFormattedEmailText(headers).toString();
+    }
+
+    /*
+      Mbox Format standard is defined by RFC4155 document and extends RFC2822 Standard.
+      Mbox format email messages file must start like "From doe@eg.edu Wed Aug 24 14:04:47 2016" and
+      each message is separated by blank line
+     */
+    public String mboxFormat() {
+        ArrayList<String> headers = mboxFormatHeaders();
+        return getMboxFormattedEmailText(headers);
+    }
+
+    private StringBuilder getFormattedEmailText(ArrayList<String> headers) {
+        StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
-            emailInRFCFormat.append(header);
-            emailInRFCFormat.append("\r\n");
+            emailFormat.append(header);
+            emailFormat.append(NEW_LINE);
         }
         String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
-        emailInRFCFormat.append(bodyAndAttachment);
-        return emailInRFCFormat.toString();
+        emailFormat.append(bodyAndAttachment);
+        emailFormat.append(NEW_LINE);
+        return emailFormat;
+    }
+
+    private String getMboxFormattedEmailText(ArrayList<String> headers) {
+        StringBuilder emailFormat = new StringBuilder();
+        for (String header : headers) {
+            emailFormat.append(header);
+            emailFormat.append(NEW_LINE);
+        }
+        String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
+        ArrayList<String> pureBodyText = mboxBodyFormatting(bodyAndAttachment);
+        String[] split = bodyAndAttachment.split(NEW_LINE);
+        List<String> formattedBodyAndAttachment = Arrays.asList(split);
+        for (int i=0;i<4;i++) {
+            pureBodyText.add(i,formattedBodyAndAttachment.get(i));
+        }
+
+        for(int i=0; i<pureBodyText.size();i++){
+            formattedBodyAndAttachment.set(i,pureBodyText.get(i));
+        }
+        for (String format: formattedBodyAndAttachment) {
+            emailFormat.append(format);
+            emailFormat.append(NEW_LINE);
+        }
+        return emailFormat.toString() ;
+    }
+
+    public ArrayList<String> mboxBodyFormatting(String bodyAndAttachment) {
+        String[] split = bodyAndAttachment.split(NEW_LINE);
+        String boundaryValue = null;
+        for (String boyd : split) {
+            // boundary="----=_Part_0_1537051719.1473704631686"
+            if (boyd.contains(BOUNDARY)) {
+                boyd = boyd.trim();
+                boundaryValue = boyd.substring(boyd.indexOf(BOUNDARY) + 10, boyd.length() - 1);
+                //as per RFC822 standard -- is prefixed for starting of Boundary
+                boundaryValue = "--" + boundaryValue;
+                break;
+            }
+        }
+        String textBetweenBoundaryValues = subStringFrom(bodyAndAttachment, boundaryValue);
+        String pureBodyText = subStringInBetween(textBetweenBoundaryValues, boundaryValue);
+        String[] bodyTextSplit = pureBodyText.split(NEW_LINE);
+        ArrayList<String> modifiedSplit = new ArrayList<String>();
+        for (String body : bodyTextSplit) {
+            if (body.startsWith(FROM)) {
+                body = body.replaceFirst(FROM,">From ");
+            }
+            modifiedSplit.add(body);
+        }
+
+        return modifiedSplit;
     }
 
     public String getBody() {
@@ -62,6 +130,7 @@ public class EmailFormatter {
         ArrayList<String> headers = (ArrayList<String>) messageMap.get("headers");
         return headers;
     }
+
     //we are taking out all the headers that  contains "content-type" as these are again created again with
     // getEmailText() call
     public ArrayList<String> prunedHeadersWithoutContentType() {
@@ -72,6 +141,53 @@ public class EmailFormatter {
             }
         }
         return prunedHeaders;
+    }
+
+    public ArrayList<String> mboxFormatHeaders() {
+        ArrayList<String> headers = prunedHeadersWithoutContentType();
+        String startingHeader = mboxStartingHeader(headers);
+        headers.add(0, startingHeader);
+        return headers;
+    }
+
+    public String mboxStartingHeader(ArrayList<String> headers) {
+        String from = null;
+        String date = null;
+        StringBuilder startingHeader = new StringBuilder();
+        for (String header : headers) {
+            // From: Jane Doe <jdoe@umich.edu>
+            if (header.startsWith(FROM_WITH_COLON)) {
+                from = header.split(FROM_WITH_COLON)[1].trim();
+                if (from.indexOf('<') != -1) {
+                    from = from.substring(from.indexOf('<') + 1, from.indexOf('>'));
+                }
+            }
+//             Date: Wed, 24 Aug 2016 10:04:47 -0400
+            if (header.startsWith(DATE_WITH_COLON)) {
+                String dateTemp = header.split(DATE_WITH_COLON)[1].trim();
+                try {
+                    DateFormat localTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+                    Date localDateAndTime = localTimeFormat.parse(dateTemp);
+                    long epochTime = localDateAndTime.getTime();
+                    DateFormat ascTimePattern = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+                    ascTimePattern.setTimeZone(TimeZone.getTimeZone("UTC"));
+                    // Wed Aug 24 14:04:47 2016
+                    date = ascTimePattern.format(new Date(epochTime));
+                } catch (java.text.ParseException e) {
+                    log.error("Error occurred while paring the Date: "+dateTemp+ " due to" + e.getMessage());
+                }
+
+            }
+
+            if (date == null) {
+                DateFormat formatter = new SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy");
+                Date now = new Date();
+                date = formatter.format(now);
+            }
+
+        }
+        return startingHeader.append("From").append(" ").append(from).append(" ").append(date).toString();
+
     }
 
     public HashMap<String, ArrayList<String>> getAttachments() {
@@ -105,7 +221,7 @@ public class EmailFormatter {
             //Body of the email
             BodyPart msgBodyPart = new MimeBodyPart();
             String body = getBody();
-            if(!body.isEmpty()) {
+            if (!body.isEmpty()) {
                 msgBodyPart.setContent(body, "text/plain; charset=UTF-8");
                 multipart.addBodyPart(msgBodyPart);
             }
@@ -135,7 +251,7 @@ public class EmailFormatter {
             emailText = output.toString();
 
         } catch (MessagingException e) {
-            log.error("Error occurred while generating the email stream" +e.getMessage());
+            log.error("Error occurred while generating the email stream" + e.getMessage());
 
         } catch (IOException ioe) {
             log.error("Error occurred while process writing the Mime message as stream" + ioe.getMessage());
@@ -157,5 +273,11 @@ public class EmailFormatter {
         return emailText.substring(posA);
     }
 
+    public String subStringInBetween(String emailText, String chopper) {
+        String emailTextSubstring = emailText.substring(chopper.length());
+        int i = emailTextSubstring.indexOf(chopper);
+        String text = emailTextSubstring.substring(0, i);
+        return text.trim();
+    }
 
 }
