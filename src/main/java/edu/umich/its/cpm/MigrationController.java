@@ -464,7 +464,7 @@ public class MigrationController {
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_site_members(String sessionId, String site_id)
+	private HashMap<String, String> get_site_members(String site_id, String sessionId)
 			throws RestClientException, JSONException {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
@@ -480,13 +480,20 @@ public class MigrationController {
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
 		} catch (RestClientException e) {
-			errorMessage = "Cannot find site members by siteId: " + site_id
-					+ " " + e.getMessage();
-			log.error(errorMessage);
-			throw e;
+			if (site_id.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX))
+			{
+				return getMyWorkspaceSiteMember(sessionId, site_id);
+			}
+			else
+			{
+				errorMessage = "Cannot find site members by siteId: " + site_id
+						+ " " + e.getMessage();
+				log.error(errorMessage);
+				throw e;
+			}
 		}
 
-		if (membersString != null) {
+		if (membersString != null && membersString.length() > 0) {
 			try
 			{
 				JSONObject sJSON = new JSONObject(membersString);
@@ -509,6 +516,40 @@ public class MigrationController {
 			}
 		}
 
+		return rv;
+	}
+
+	private HashMap<String, String> getMyWorkspaceSiteMember(String sessionId, String site_id)
+		throws RestClientException {
+		
+		HashMap<String, String> rv = new HashMap<String, String>();
+		
+		// for MyWorkspace site, there is problem getting membership information
+		// we have to decipher the user information from the user id
+		String userId = site_id.substring(1);
+		
+		RestTemplate restTemplate = new RestTemplate();
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/user/" + userId + ".json?_sessionId="
+				+ sessionId;
+		log.info("get user info: ",requestUrl);
+		// found user
+		String userString = "";
+		try {
+			userString = restTemplate.getForObject(requestUrl, String.class);
+			JSONObject userObject = new JSONObject(userString);
+			String userEid = userObject.getString("eid");
+			// user have maintainer role inside their MyWorkspace site
+			// which is comparable to the Owner role in project site
+			String userRole = Utils.ROLE_OWNER;
+			rv.put(userEid, userRole);
+		} catch (RestClientException ee) {
+			String errorMessage = "Cannot find user by user id=: " + userId
+					+ " " + ee.getMessage();
+			log.error(errorMessage);
+			throw ee;
+		}
+		log.info("result of getting user string " + userString);
 		return rv;
 	}
 
@@ -1113,6 +1154,26 @@ public class MigrationController {
 			}
 		}
 		
+		String allSiteOwners = getAllSiteUsersWithOwnerOrMaintainerRole(
+				sessionId, siteId, userId);
+
+		// assign null values to batch id and name
+		// create new migration record
+		rv = newMigrationRecord(status, null, null, siteId, siteName, toolId,
+				toolName, destinationType, allSiteOwners, targetUrl);
+
+		return rv;
+	}
+
+	/**
+	 * concatenate all site Owner users, and maintainer users for MyWorkspace sites
+	 * @param sessionId
+	 * @param siteId
+	 * @param userId
+	 * @return
+	 */
+	private String getAllSiteUsersWithOwnerOrMaintainerRole(
+			String sessionId, String siteId, String userId) {
 		// include the current user as site owner first
 		StringBuffer allSiteOwners = new StringBuffer(getUserEmailFromUserId(userId));
 		try
@@ -1126,7 +1187,16 @@ public class MigrationController {
 				
 				if (Utils.ROLE_OWNER.equals(userRole))
 				{
+					// add Owner role user
 					allSiteOwners.append(",").append(userEmail);
+				}
+				else if (siteId.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX))
+				{
+					// myworkspace site, add maintainer role user
+					if (Utils.ROLE_MAINTAINER.equals(userRole))
+					{
+						allSiteOwners.append(",").append(userEmail);
+					}
 				}
 			}
 		}
@@ -1138,13 +1208,7 @@ public class MigrationController {
 		{
 			log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
 		}
-
-		// assign null values to batch id and name
-		// create new migration record
-		rv = newMigrationRecord(status, null, null, siteId, siteName, toolId,
-				toolName, destinationType, allSiteOwners.toString(), targetUrl);
-
-		return rv;
+		return allSiteOwners.toString();
 	}
 
 	/**
@@ -1727,7 +1791,7 @@ public class MigrationController {
 		String googleGroupName = googleGroupSettings.getString("name");
 		
 		// 1. add site members to Google Group membership
-		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(sessionId,siteId));
+		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(siteId, sessionId));
 		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
 		
 		// 2. save the site migration record
@@ -1844,7 +1908,7 @@ public class MigrationController {
 
 	public String getUserEmailFromUserId(String userEmail) {
 		if (userEmail.indexOf(Utils.EMAIL_AT) == -1) {
-			String default_member_email_suffix = env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX);
+			String default_member_email_suffix = Utils.DEFAULT_EMAIL_MEMBER_SUFFIX;
 			// if the userEmail value is not of email format
 			// then it is the uniqname of umich user
 			// we need to attach a suffix to it to make it a full email address
