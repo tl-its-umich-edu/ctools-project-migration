@@ -84,7 +84,10 @@ class Utils {
 	public static final String MIGRATION_TYPE_ZIP = "zip";
 	public static final String MIGRATION_TYPE_GOOGLE_GROUP = "google";
 	public static final String MIGRATION_MAILARCHIVE_TYPE_ZIP = "mailarchive_zip";
+       public static final String MIGRATION_MAILARCHIVE_TYPE_MBOX = "mailarchivezip_mbox";
 	public static final String MIME_TYPE_ZIP = "application/zip";
+	public static final String MAILARCHIVEZIP = "mailarchivezip";
+       public static final String MAILARCHIVEMBOX = "mailarchivembox";
 
 	public static final String MIGRATION_FILENAME = "file_name";
 	public static final String MIGRATION_STATUS = "status";
@@ -119,14 +122,15 @@ class Utils {
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character
 	public static final String EXTENSION_SEPARATOR = ".";
-	
+
 	public static final String LINE_BREAK = "\n";
 
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
+       public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
 
-	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+       private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
-	
+
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
 	
@@ -153,7 +157,8 @@ class Utils {
 	public static final String JSON_ATTR_MAIL_URL = "url";
 	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
 	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
-	
+	public static final String MAIL_MBOX_MESSAGE_FILE_NAME = "message.mbox";
+
 	// the max parallel processing thread for migrations
 	public static final String MAX_PARALLEL_THREADS_PROP = "max_parallel_threads_prop";
 	public static final int MAX_PARALLEL_THREADS_NUM = 20;
@@ -748,4 +753,19 @@ class Utils {
 	{
 		return CTOOLS_RESOURCE_TYPE_URL.equalsIgnoreCase(type);
 	}
+
+    public static boolean isItMailArchiveZip(String destination_type) {
+        return destination_type.equals(MAILARCHIVEZIP);
+    }
+
+    public static boolean isItMailArchiveMbox(String destination_type) {
+        return destination_type.equals(MAILARCHIVEMBOX);
+    }
+
+
+
+
+
+
+
 }

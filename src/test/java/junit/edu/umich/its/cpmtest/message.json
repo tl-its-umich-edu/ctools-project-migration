@@ -23,7 +23,7 @@
     "X-Received: by 10.157.4.79 with SMTP id 73mr2560093otc.29.1472047487817; Wed, 24 Aug 2016 07:04:47 -0700 (PDT)",
     "MIME-Version: 1.0",
     "Received: by 10.202.86.196 with HTTP; Wed, 24 Aug 2016 07:04:47 -0700 (PDT)",
-    "From: Pushyami Gundala <pushyami@umich.edu>",
+    "From: Jane Doe <jdoe@umich.edu>",
     "Date: Wed, 24 Aug 2016 10:04:47 -0400",
     "Message-ID: <CAF8WsuqBzODBcc5-d_6yEgoyQhi13+bpLHjMNWP=g088YR=-5w@mail.gmail.com>",
     "Subject: I figured it out",
