@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mappings</title>
+  <link rel="stylesheet" href="vendors/bootstrap/bootstrap.min.css">
+</head>
+
+<body ng-app="projectMigrationApp">
+
+  <div ng-controller="mappingsController" class="container" style="padding:20px"  data-ng-init="getMappings();method='umich'">
+        <h3>CPM Mappings: {{method}} methods</h3>
+      <br>
+        <input type="radio" name="method" ng-model=
+        "method" value="umich" id="umich"> <label for="umich">umich </label> <input type="radio" name="method" ng-model=
+        "method" value="springframework" id="springframework"> <label for="springframework">springframework</label>
+        <br><br>
+
+    <ul class="list-group container">
+      <li class="list-group-item" ng-repeat="(key, value) in mappingsList"  ng-show="value.method.indexOf(method)!==-1">
+        <p>
+          <strong>{{key}}</strong>
+        </p>
+        <div class="well">
+          <p>
+            <strong>Bean:</strong><br>{{value.bean}}
+          </p>
+          <p ng-show="value.method" style="overflow:hidden">
+            <strong>Method:</strong><br><span style="word-wrap: break-word;"></span>{{value.method}}
+          </p>
+        </div>
+
+
+          </div>
+          <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+          </div>
+        </div>
+        <div class="row" ng-show="item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1">
+          <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:50px">
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
+  <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular-animate.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/underscore/underscore-min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/moment/moment.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/app.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/controllers.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/factories.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
+</body>
+
+</html>
