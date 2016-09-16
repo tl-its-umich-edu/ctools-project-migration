@@ -566,7 +566,7 @@ class Utils {
 		}
 
 		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[\\\\:\\/]");
+		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<]");
 		Matcher m = p.matcher(name);
 		name = m.replaceAll("_");
 

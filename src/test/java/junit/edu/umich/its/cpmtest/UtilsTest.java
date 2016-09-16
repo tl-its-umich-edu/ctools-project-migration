@@ -43,7 +43,10 @@ public class UtilsTest {
 		
 		// escape : 
 		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test : folder"), "test _ folder");
-		
+
+		//escape > <
+		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "> test < folder"), "_ test _ folder");
+
 		// URL as name
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
 				"http://www.npr.org/"), "http___www.npr.org_.html");
