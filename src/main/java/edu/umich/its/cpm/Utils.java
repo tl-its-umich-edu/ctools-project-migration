@@ -104,7 +104,8 @@ class Utils {
 	public static final String BOX_ADMIN_CLIENT_ID = "box_admin_client_id";
 	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
 	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
-
+	public static final String BOX_ID = "id";
+	public static final String BOX_SECRET = "secret";
 
 	public static final String SERVER_URL = "server_url";
 

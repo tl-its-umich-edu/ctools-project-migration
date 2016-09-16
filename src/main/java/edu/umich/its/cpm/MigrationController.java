@@ -487,7 +487,7 @@ public class MigrationController {
 			else
 			{
 				errorMessage = "Cannot find site members by siteId: " + site_id
-						+ " " + e.getMessage();
+						+ " url=" + requestUrl + " " + e.getMessage();
 				log.error(errorMessage);
 				throw e;
 			}
@@ -996,8 +996,8 @@ public class MigrationController {
 			HttpServletRequest request, HttpServletResponse response) {
 		// get CoSign user id
 		String userId = Utils.getRemoteUser(request,env);
-		String boxClientId = BoxUtils.getBoxClientId(userId);
-		String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
+		String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
+		String boxClientSecret = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_SECRET);
 		//String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
 		String remoteUserEmail = getCurrentUserEmail(request, env);
 
@@ -1098,8 +1098,8 @@ public class MigrationController {
 			// and get access token and refresh token subsequently
 			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
 			String userId = Utils.getRemoteUser(request,env);
-			String boxClientId = BoxUtils.getBoxClientId(userId);
-			String boxClientSecret = BoxUtils.getBoxClientSecret(userId);
+			String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
+			String boxClientSecret = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_SECRET);
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
 					boxClientSecret, boxTokenUrl, uRepository);
 
@@ -1407,7 +1407,7 @@ public class MigrationController {
 		String remoteUserEmail = getCurrentUserEmail(request, env);
 		// get CoSign user id
 		String userId = Utils.getRemoteUser(request,env);
-		String boxClientId = BoxUtils.getBoxClientId(userId);
+		String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
 				env);
@@ -1836,8 +1836,8 @@ public class MigrationController {
 
 		// get box folder id
 		String remoteUserId = Utils.getRemoteUser(request,env);
-		String boxAdminClientId = BoxUtils.getBoxClientId(remoteUserId);
-		String boxAdminClientSecret = BoxUtils.getBoxClientSecret(remoteUserId);
+		String boxAdminClientId = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_ID);
+		String boxAdminClientSecret = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_SECRET);
 		String boxSiteFolderName = "CTools - " + siteName;
 		
 		Info boxFolder = BoxUtils.createNewFolderAtRootLevel(userId,
