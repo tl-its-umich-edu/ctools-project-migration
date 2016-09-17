@@ -1628,14 +1628,11 @@ class MigrationTaskService {
 		/////////////////
 		// Get the information required to setup the Google Group from CTools.
 
-		// try optString(String key, String defaultValue) {
-
 		// The group email address might come from various sources.
 		public JSONObject getCToolsGroupInfoJson(String sessionId,
 				String siteId, String group_email) {
 			JSONObject siteJSONObject = getSiteInfoJson(sessionId,siteId);
 			return create_group_info_object(siteId, group_email, siteJSONObject);
-			//			return group_info;
 		}
 
 		static	protected JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
