@@ -55,6 +55,7 @@ import com.box.sdk.ProgressListener;
 
 @Service
 @Component
+public
 class MigrationTaskService {
 
 	@Autowired
@@ -1635,7 +1636,7 @@ class MigrationTaskService {
 			return create_group_info_object(siteId, group_email, siteJSONObject);
 		}
 
-		static	protected JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
+		public static JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
 			JSONObject group_info = new JSONObject();
 
 			// include site id for tracking purposes.

@@ -1,4 +1,4 @@
-package edu.umich.its.cpm;
+package junit.edu.umich.its.cpmtest;
 
 import static org.junit.Assert.*;
 
@@ -6,6 +6,9 @@ import org.json.JSONObject;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
+
+import edu.umich.its.cpm.MigrationTaskService;
+//import edu.umich.its.cpm.GGBApiWrapper;
 
 public class MigrationTaskServiceTest {
 
