@@ -8,12 +8,11 @@ import org.junit.Before;
 import org.junit.Test;
 
 import edu.umich.its.cpm.MigrationTaskService;
-//import edu.umich.its.cpm.GGBApiWrapper;
 
 public class MigrationTaskServiceTest {
 
 	JSONObject jo = null;
-	
+
 	@Before
 	public void setUp() throws Exception {
 		jo = new JSONObject();
@@ -23,7 +22,19 @@ public class MigrationTaskServiceTest {
 	@After
 	public void tearDown() throws Exception {
 	}
-	
+
+	@Test
+	public void test_ExtractEmailSimple() {
+		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: HOWDY@HARVARD.edu");
+		assertEquals("simple email","HOWDY",email_addr);
+	}
+
+	@Test
+	public void test_ExtractEmailWithGreaterThan() {
+		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: <HOWDY@HARVARD.edu");
+		assertEquals("email with leading <","HOWDY",email_addr);
+	}
+
 	@Test
 	public void test_create_group_info_object_missing_value() {
 		JSONObject gio = MigrationTaskService.create_group_info_object("INSITE", "ABBA", jo);

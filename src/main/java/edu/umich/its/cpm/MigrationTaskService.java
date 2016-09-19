@@ -1701,12 +1701,20 @@ class MigrationTaskService {
 				}
 				// Pull out the email name used by the old archive.
 				log.debug("aAEN: To header: {}",header);
-				int at_index = header.indexOf("@");
-				int to_index = header.indexOf("To: ");
-				archive_email_name = header.substring(to_index+4,at_index);
+				archive_email_name = extractEmailFromToHeader(header);
 				break;
 			}
 			log.debug("eAEN: returning: {}",archive_email_name);
+			return archive_email_name;
+		}
+
+		static public String extractEmailFromToHeader(String header) {
+			String archive_email_name;
+			// Need to remove this if present.
+			header = header.replace("<","");
+			int at_index = header.indexOf("@");
+			int to_index = header.indexOf("To: ");
+			archive_email_name = header.substring(to_index+4,at_index);
 			return archive_email_name;
 		}
 
