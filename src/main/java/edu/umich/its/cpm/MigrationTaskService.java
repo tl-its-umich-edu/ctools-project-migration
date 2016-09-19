@@ -1812,7 +1812,7 @@ class MigrationTaskService {
 		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
 
 			log.debug("process members for site: "+siteId);
-			List<List<String>> membersProperties = memberPropertiesList(members,env.getProperty(Utils.DEFAULT_EMAIL_MEMBER_SUFFIX));
+			List<List<String>> membersProperties = memberPropertiesList(members,Utils.DEFAULT_EMAIL_MEMBER_SUFFIX);
 			log.debug("found members for site: "+siteId+" "+membersProperties);
 
 			JSONObject ggs = getGoogleGroupSettings(sessionId,  siteId);
