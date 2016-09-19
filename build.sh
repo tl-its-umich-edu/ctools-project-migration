@@ -38,11 +38,11 @@ ARTIFACT_DIRECTORY=artifact/artifact
 WEBAPPNAME=${WEBAPPNAME_value}
 WARFILENAME=ROOT
 IMAGE_INSTALL_TYPE=war
-echo "BUILD: \${BUILD}"
+echo "BUILD: \\${BUILD}"
 echo "build:"
-echo \${BUILD}
+echo \\${BUILD}
 echo "after build:"
-IMAGE_NAME=${WEBAPPNAME_value}.${BUILD}.war
+IMAGE_NAME=${WEBAPPNAME_value}.\\${BUILD}.war
 #######################
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
