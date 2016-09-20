@@ -33,8 +33,8 @@ function writeEnvironmentVariables {
 # Environment variables for installation of this build.
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 JOBNAME=${JOB_NAME:-LOCAL}
-#BUILD=${BUILD_NUMBER:-imaginary}
-BUILD=${BUILD_value}
+BUILD=${BUILD_NUMBER:-imaginary}
+#BUILD=${BUILD_value}
 ARTIFACT_DIRECTORY=artifact/artifact
 #TIMESTAMP=${TIMESTAMP_value}
 #VERSION=ctools-project-migration
