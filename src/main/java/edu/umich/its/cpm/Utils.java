@@ -64,6 +64,10 @@ class Utils {
 	public static final String STATUS_FAILURE = "failure";
 	public static final String STATUS_ONGING = "onging";
 
+	public static final String CTOOLS_SITE_TYPE_PROJECT = "project";
+	public static final String CTOOLS_SITE_TYPE_MYWORKSPACE = "myworkspace";
+	public static final String CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX = "~";
+	
 	public static final String ROLE_OWNER = "Owner";
 	public static final String ROLE_ORGANIZER = "Organizer";
 	public static final String ROLE_MEMBER = "Member";
@@ -100,7 +104,8 @@ class Utils {
 	public static final String BOX_ADMIN_CLIENT_ID = "box_admin_client_id";
 	public static final String BOX_ADMIN_CLIENT_SECRET = "box_admin_client_secret";
 	public static final String BOX_ADMIN_ACCOUNT_ID = "box_admin_account_id";
-
+	public static final String BOX_ID = "id";
+	public static final String BOX_SECRET = "secret";
 
 	public static final String SERVER_URL = "server_url";
 
@@ -113,8 +118,7 @@ class Utils {
 
 	// the at sign used in email address
 	static final String EMAIL_AT = "@";
-	static final String DEFAULT_EMAIL_MEMBER_SUFFIX = "default.email.member.suffix";
-	//private static final String EMAIL_AT_UMICH = "@umich.edu";
+	static final String DEFAULT_EMAIL_MEMBER_SUFFIX = "umich.edu";
 	// the path separator
 	public static final String PATH_SEPARATOR = "/";
 	// the extension character

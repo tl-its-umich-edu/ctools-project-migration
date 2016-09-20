@@ -55,6 +55,7 @@ import com.box.sdk.ProgressListener;
 
 @Service
 @Component
+public
 class MigrationTaskService {
 
 	@Autowired
@@ -155,14 +156,14 @@ class MigrationTaskService {
 
 					ZipOutputStream out = new ZipOutputStream(
 							response.getOutputStream());
-                    String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
-                    if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
-                        // set compression level to high by default
-                        out.setLevel(9);
-                        log.error("The property \"zip.compression.level\" is not set");
-                    } else {
-                        out.setLevel(Integer.parseInt(compressionLevel.trim()));
-                    }
+					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
+						// set compression level to high by default
+						out.setLevel(9);
+						log.error("The property \"zip.compression.level\" is not set");
+					} else {
+						out.setLevel(Integer.parseInt(compressionLevel.trim()));
+					}
 
 					// prepare zip entry for site content objects
 					itemStatus = zipSiteContent(httpContext, siteResourceJson,
@@ -1132,92 +1133,92 @@ class MigrationTaskService {
 				HttpServletResponse response, String userId,
 				HashMap<String, Object> sessionAttributes, String site_id,
 				String migrationId, MigrationRepository repository) {
-            // hold download status
+			// hold download status
 
-            JSONObject downloadStatus = new JSONObject();
+			JSONObject downloadStatus = new JSONObject();
 
-            // login to CTools and get sessionId
-            if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
-                String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
-                HttpContext httpContext = (HttpContext) sessionAttributes
-                        .get("httpContext");
-                Map<String, String[]> parameterMap = request.getParameterMap();
-                String destination_type = parameterMap.get("destination_type")[0];
-                try {
-                    //
-                    // Sends the response back to the user / browser. The
-                    // content for zip file type is "application/zip". We
-                    // also set the content disposition as attachment for
-                    // the browser to show a dialog that will let user
-                    // choose what action will he do to the sent content.
-                    //
-                    response.setContentType(Utils.MIME_TYPE_ZIP);
-                    String zipFileName = null;
-                    if (Utils.isItMailArchiveZip(destination_type)) {
-                        zipFileName = site_id + "_mailarchive.zip";
-                        log.info("*** This is Mail Archive Zip Download ***");
-                    } else if (Utils.isItMailArchiveMbox(destination_type)) {
-                        zipFileName = site_id + "_mailarchivembox.zip";
-                        log.info("*** This is Mail Archive (Mbox) Zip Download ***");
-                    }
-                    response.setHeader("Content-Disposition",
-                            "attachment;filename=\"" + zipFileName + "\"");
+			// login to CTools and get sessionId
+			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
+				String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+				HttpContext httpContext = (HttpContext) sessionAttributes
+						.get("httpContext");
+				Map<String, String[]> parameterMap = request.getParameterMap();
+				String destination_type = parameterMap.get("destination_type")[0];
+				try {
+					//
+					// Sends the response back to the user / browser. The
+					// content for zip file type is "application/zip". We
+					// also set the content disposition as attachment for
+					// the browser to show a dialog that will let user
+					// choose what action will he do to the sent content.
+					//
+					response.setContentType(Utils.MIME_TYPE_ZIP);
+					String zipFileName = null;
+					if (Utils.isItMailArchiveZip(destination_type)) {
+						zipFileName = site_id + "_mailarchive.zip";
+						log.info("*** This is Mail Archive Zip Download ***");
+					} else if (Utils.isItMailArchiveMbox(destination_type)) {
+						zipFileName = site_id + "_mailarchivembox.zip";
+						log.info("*** This is Mail Archive (Mbox) Zip Download ***");
+					}
+					response.setHeader("Content-Disposition",
+							"attachment;filename=\"" + zipFileName + "\"");
 
-                    ZipOutputStream out = new ZipOutputStream(
-                            response.getOutputStream());
-                    String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
-                    if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
-                        // set compression level to high by default
-                        out.setLevel(9);
-                        log.error("The property \"zip.compression.level\" is not set");
-                    } else {
-                        out.setLevel(Integer.parseInt(compressionLevel.trim()));
-                    }
+					ZipOutputStream out = new ZipOutputStream(
+							response.getOutputStream());
+					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
+						// set compression level to high by default
+						out.setLevel(9);
+						log.error("The property \"zip.compression.level\" is not set");
+					} else {
+						out.setLevel(Integer.parseInt(compressionLevel.trim()));
+					}
 
-                    log.info("Starting mail archive download for site " + site_id);
-                    downloadStatus = getMailArchiveZipContent(env, site_id, downloadStatus,
-                            sessionId, httpContext, out, request);
+					log.info("Starting mail archive download for site " + site_id);
+					downloadStatus = getMailArchiveZipContent(env, site_id, downloadStatus,
+							sessionId, httpContext, out, request);
 
-                    out.flush();
-                    out.close();
-                    log.info("Finished mail archive download for site " + site_id);
+					out.flush();
+					out.close();
+					log.info("Finished mail archive download for site " + site_id);
 
 
-                } catch (RestClientException e) {
-                    String errorMessage = Utils.STATUS_FAILURE + " Cannot find site by siteId: " + site_id
-                            + " " + e.getMessage();
-                    Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
-                            .type(MediaType.TEXT_PLAIN).build();
-                    log.error(errorMessage);
-                    downloadStatus.put("status", errorMessage);
-                } catch (IOException e) {
-                    String errorMessage = Utils.STATUS_FAILURE + " Problem getting mail archive zip file for "
-                            + site_id + " " + e.getMessage();
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(errorMessage).type(MediaType.TEXT_PLAIN)
-                            .build();
-                    log.error(errorMessage);
-                    downloadStatus.put("status", errorMessage);
+				} catch (RestClientException e) {
+					String errorMessage = Utils.STATUS_FAILURE + " Cannot find site by siteId: " + site_id
+							+ " " + e.getMessage();
+					Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
+					.type(MediaType.TEXT_PLAIN).build();
+					log.error(errorMessage);
+					downloadStatus.put("status", errorMessage);
+				} catch (IOException e) {
+					String errorMessage = Utils.STATUS_FAILURE + " Problem getting mail archive zip file for "
+							+ site_id + " " + e.getMessage();
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
+					.build();
+					log.error(errorMessage);
+					downloadStatus.put("status", errorMessage);
 
-                } catch (Exception e) {
-                    String errorMessage = Utils.STATUS_FAILURE + " Migration status for " + site_id + " "
-                            + e.getClass().getName();
-                    Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-                            .entity(errorMessage).type(MediaType.TEXT_PLAIN)
-                            .build();
-                    log.error("downloadMailArchiveZipFile ", e);
-                    downloadStatus.put("status", errorMessage);
-                }
-            } else {
-                String userError = "Cannot become user " + userId;
-                log.error(userError);
-                downloadStatus.put("status", userError);
-            }
+				} catch (Exception e) {
+					String errorMessage = Utils.STATUS_FAILURE + " Migration status for " + site_id + " "
+							+ e.getClass().getName();
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
+					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
+					.build();
+					log.error("downloadMailArchiveZipFile ", e);
+					downloadStatus.put("status", errorMessage);
+				}
+			} else {
+				String userError = "Cannot become user " + userId;
+				log.error(userError);
+				downloadStatus.put("status", userError);
+			}
 
-            // update the status and end_time of migration record
-            setMigrationEndTimeAndStatus(migrationId, repository, downloadStatus);
+			// update the status and end_time of migration record
+			setMigrationEndTimeAndStatus(migrationId, repository, downloadStatus);
 
-            return;
+			return;
 		}
 
 		/**
@@ -1235,110 +1236,110 @@ class MigrationTaskService {
 				JSONObject downloadStatus, String sessionId,
 				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request) throws IOException {
 
-            JSONArray messagesStatus = new JSONArray();
+			JSONArray messagesStatus = new JSONArray();
 
-            // get all mail channels inside the site
-            RestTemplate restTemplate = new RestTemplate();
-            String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-                    + "direct/mailarchive/siteChannels/" + site_id + ".json?_sessionId="
-                    + sessionId;
-            JSONObject channelsJSON = null;
-            channelsJSON = new JSONObject(restTemplate.getForObject(requestUrl,
-                    String.class));
+			// get all mail channels inside the site
+			RestTemplate restTemplate = new RestTemplate();
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+					+ "direct/mailarchive/siteChannels/" + site_id + ".json?_sessionId="
+					+ sessionId;
+			JSONObject channelsJSON = null;
+			channelsJSON = new JSONObject(restTemplate.getForObject(requestUrl,
+					String.class));
 
-            if (!channelsJSON.has(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION))
-            {
-                return downloadStatus;
-            }
+			if (!channelsJSON.has(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION))
+			{
+				return downloadStatus;
+			}
 
-            JSONArray channels = channelsJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
+			JSONArray channels = channelsJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
 
-            boolean folderForChannels = false;
-            if (channels.length() > 1)
-            {
-                // if the site have more than one MailArchive channel
-                // create zip folder for each channel
-                folderForChannels = true;
-            }
-            for (int iChannel = 0; iChannel < channels.length(); iChannel++) {
-                JSONObject channel = channels.getJSONObject(iChannel);
-                String channelId = channel.getString("data");
-                channelId = channelId.substring(("/mailarchive/channel/" + site_id + "/").length());
-                String channelName = channel.getString("displayTitle");
+			boolean folderForChannels = false;
+			if (channels.length() > 1)
+			{
+				// if the site have more than one MailArchive channel
+				// create zip folder for each channel
+				folderForChannels = true;
+			}
+			for (int iChannel = 0; iChannel < channels.length(); iChannel++) {
+				JSONObject channel = channels.getJSONObject(iChannel);
+				String channelId = channel.getString("data");
+				channelId = channelId.substring(("/mailarchive/channel/" + site_id + "/").length());
+				String channelName = channel.getString("displayTitle");
 
-                if (folderForChannels)
-                {
-                    ZipEntry folderEntry = new ZipEntry(channelName + "/");
-                    try {
-                        out.putNextEntry(folderEntry);
-                    } catch (IOException e) {
-                        String ioError = "downloadMailArchiveZipFile: problem adding zip folder for MailArchive channel "
-                                + channelName + " " + e;
-                        log.error(ioError);
-                    }
-                }
+				if (folderForChannels)
+				{
+					ZipEntry folderEntry = new ZipEntry(channelName + "/");
+					try {
+						out.putNextEntry(folderEntry);
+					} catch (IOException e) {
+						String ioError = "downloadMailArchiveZipFile: problem adding zip folder for MailArchive channel "
+								+ channelName + " " + e;
+						log.error(ioError);
+					}
+				}
 
-                // get all email messages in the channel
-                requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-                        + "direct/mailarchive/channelMessages/" + site_id + "/" + channelId + ".json?_sessionId="
-                        + sessionId;
-                JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
-                        String.class));
-                JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
-                Map<String, String[]> parameterMap = request.getParameterMap();
-                String destination_type = parameterMap.get("destination_type")[0];
-                JSONObject messageStatus = new JSONObject();
+				// get all email messages in the channel
+				requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+						+ "direct/mailarchive/channelMessages/" + site_id + "/" + channelId + ".json?_sessionId="
+						+ sessionId;
+				JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
+						String.class));
+				JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
+				Map<String, String[]> parameterMap = request.getParameterMap();
+				String destination_type = parameterMap.get("destination_type")[0];
+				JSONObject messageStatus = new JSONObject();
 
-            if (Utils.isItMailArchiveZip(destination_type)) {
-                for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
-                    JSONObject message = messages.getJSONObject(iMessage);
+				if (Utils.isItMailArchiveZip(destination_type)) {
+					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
+						JSONObject message = messages.getJSONObject(iMessage);
 
-                        // create file for each message
-                        String messageFolderName = getMailArchiveMessageFolderName(message, channelName, folderForChannels);
+						// create file for each message
+						String messageFolderName = getMailArchiveMessageFolderName(message, channelName, folderForChannels);
 
-                        messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
+						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
 
-                        // 1. write the message file
-                        messageStatus = handleMailArchiveMessage(out, message, messageFolderName,
-                                messageStatus);
+						// 1. write the message file
+						messageStatus = handleMailArchiveMessage(out, message, messageFolderName,
+								messageStatus);
 
-                        // 2. get attachments, if any
-                        messageStatus = handleMailArchiveMessageAttachments(
-                                sessionId, httpContext, out, message, messageFolderName, messageStatus);
+						// 2. get attachments, if any
+						messageStatus = handleMailArchiveMessageAttachments(
+								sessionId, httpContext, out, message, messageFolderName, messageStatus);
 
-                    messagesStatus.put(messageStatus);
-                }
-            } else if (Utils.isItMailArchiveMbox(destination_type)) {
-                String messageFolderName = getMailArchiveMboxMessageFolderName(site_id, channelName, folderForChannels);
-                StringBuilder msgBundle = new StringBuilder();
-                for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
-                    JSONObject message = messages.getJSONObject(iMessage);
-                    String emailMessage = message.toString();
-                    AttachmentHandler attachmentHandler = new AttachmentHandler(request);
-                    attachmentHandler.setEnv(env);
-                    EmailFormatter emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
-                    String mboxMessage = emailFormatter.mboxFormat();
-                    msgBundle.append(mboxMessage);
-                    msgBundle.append("\r\n");
+						messagesStatus.put(messageStatus);
+					}
+				} else if (Utils.isItMailArchiveMbox(destination_type)) {
+					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id, channelName, folderForChannels);
+					StringBuilder msgBundle = new StringBuilder();
+					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
+						JSONObject message = messages.getJSONObject(iMessage);
+						String emailMessage = message.toString();
+						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
+						attachmentHandler.setEnv(env);
+						EmailFormatter emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
+						String mboxMessage = emailFormatter.mboxFormat();
+						msgBundle.append(mboxMessage);
+						msgBundle.append("\r\n");
 
-                    messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
-                    messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
+						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
+						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
 
-                    messagesStatus.put(messageStatus);
+						messagesStatus.put(messageStatus);
 
-                }
+					}
 
-                messageStatus = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
-                        messageStatus);
-                messagesStatus.put(messageStatus);
+					messageStatus = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
+							messageStatus);
+					messagesStatus.put(messageStatus);
 
-            }
-            }
+				}
+			}
 
-            downloadStatus.put(Utils.MIGRATION_DATA, messagesStatus);
-            downloadStatus.put(Utils.MIGRATION_STATUS, messagesStatus.toString().contains(Utils.STATUS_FAILURE)? Utils.STATUS_FAILURE: Utils.STATUS_SUCCESS);
+			downloadStatus.put(Utils.MIGRATION_DATA, messagesStatus);
+			downloadStatus.put(Utils.MIGRATION_STATUS, messagesStatus.toString().contains(Utils.STATUS_FAILURE)? Utils.STATUS_FAILURE: Utils.STATUS_SUCCESS);
 
-            return downloadStatus;
+			return downloadStatus;
 		}
 
 		/**
@@ -1383,29 +1384,29 @@ class MigrationTaskService {
 			return messageStatus;
 		}
 
-        private JSONObject handleMailArchiveMboxMessage(ZipOutputStream out,
-                                                        String message, String messageFolderName,
-                                                        JSONObject messageStatus) throws IOException {
-            try {
-                // get the html file content first
+		private JSONObject handleMailArchiveMboxMessage(ZipOutputStream out,
+				String message, String messageFolderName,
+				JSONObject messageStatus) throws IOException {
+			try {
+				// get the html file content first
 
-                ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
-                out.putNextEntry(fileEntry);
+				ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
+				out.putNextEntry(fileEntry);
 
-                // output message body
-                out.write(message.getBytes());
+				// output message body
+				out.write(message.getBytes());
 
 
-                messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
-            } catch (java.net.MalformedURLException e) {
-                // return status with error message
-                messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
-            } catch (IOException e) {
-                // return status with error message
-                messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
-            }
-            return messageStatus;
-        }
+				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
+			} catch (java.net.MalformedURLException e) {
+				// return status with error message
+				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+			} catch (IOException e) {
+				// return status with error message
+				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+			}
+			return messageStatus;
+		}
 
 		/**
 		 * put mail message attachments into zip
@@ -1458,7 +1459,10 @@ class MigrationTaskService {
 			JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
 			String subject = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT);
 			String sender = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_FROM);
-			String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
+            		if (sender.indexOf('<') != -1) {
+                		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
+            		}
+            		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
 
 			// create file for each message
 			String messageFolderName = "";
@@ -1466,21 +1470,21 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + " " + subject+ " "+date) + "/";
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + " " + sender+ " "+date+ " "+subject) + "/";
 
 			return messageFolderName;
 		}
 
-        private String getMailArchiveMboxMessageFolderName(String site_id, String channelName, boolean folderForChannels) {
-            // get message information from header
-            String messageFolderName = "";
-            if (folderForChannels) {
-                messageFolderName = channelName + Utils.PATH_SEPARATOR;
-            }
-            messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + site_id) + "/";
+		private String getMailArchiveMboxMessageFolderName(String site_id, String channelName, boolean folderForChannels) {
+			// get message information from header
+			String messageFolderName = "";
+			if (folderForChannels) {
+				messageFolderName = channelName + Utils.PATH_SEPARATOR;
+			}
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + site_id) + "/";
 
-            return messageFolderName;
-        }
+			return messageFolderName;
+		}
 
 		/**
 		 * get mail message info from header
@@ -1632,16 +1636,19 @@ class MigrationTaskService {
 		public JSONObject getCToolsGroupInfoJson(String sessionId,
 				String siteId, String group_email) {
 			JSONObject siteJSONObject = getSiteInfoJson(sessionId,siteId);
+			return create_group_info_object(siteId, group_email, siteJSONObject);
+		}
+
+		public static JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
 			JSONObject group_info = new JSONObject();
 
-			// include for tracking purposes.
+			// include site id for tracking purposes.
 			group_info.put("site_id",siteId);
-			group_info.put("title", siteJSONObject.getString("title"));
+			group_info.put("title", siteJSONObject.optString("title",""));
 			group_info.put("group_email",group_email);
-			group_info.put("description", siteJSONObject.getString("description"));
+			group_info.put("description", siteJSONObject.optString("description",""));
 
 			log.debug(String.format("group_info: [%s]",group_info.toString()));
-
 			return group_info;
 		}
 
@@ -1697,12 +1704,20 @@ class MigrationTaskService {
 				}
 				// Pull out the email name used by the old archive.
 				log.debug("aAEN: To header: {}",header);
-				int at_index = header.indexOf("@");
-				int to_index = header.indexOf("To: ");
-				archive_email_name = header.substring(to_index+4,at_index);
+				archive_email_name = extractEmailFromToHeader(header);
 				break;
 			}
 			log.debug("eAEN: returning: {}",archive_email_name);
+			return archive_email_name;
+		}
+
+		static public String extractEmailFromToHeader(String header) {
+			String archive_email_name;
+			// Need to remove this if present.
+			header = header.replace("<","");
+			int at_index = header.indexOf("@");
+			int to_index = header.indexOf("To: ");
+			archive_email_name = header.substring(to_index+4,at_index);
 			return archive_email_name;
 		}
 

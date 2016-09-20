@@ -507,33 +507,37 @@ public class BoxUtils implements EnvironmentAware {
 	}
 
 	/**
-	 * get the Box Client ID based on user role
-	 * 
+	 * get the Box Client ID or secret based on user role
 	 * @param userId
+	 * @param forParam
 	 * @return
 	 */
-	public static String getBoxClientId(String userId) {
-		String boxClientId = env.getProperty(Utils.BOX_CLIENT_ID);
+	public static String getBoxClientIdOrSecret(String userId, String forParam) {
+		String rv = "";
 		
-		if (Utils.isCurrentUserCPMAdmin(userId, env)) {
-			boxClientId = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+		// is current user a Box Admin user?
+		boolean isAdminUser = Utils.isCurrentUserCPMAdmin(userId, env) || env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID).equals(userId);
+			
+		if (Utils.BOX_ID.equals(forParam))
+		{
+			// return id
+			if (isAdminUser)
+				// return admin Box id
+				rv = env.getProperty(Utils.BOX_ADMIN_CLIENT_ID);
+			else
+				// return Box id
+				rv = env.getProperty(Utils.BOX_CLIENT_ID);
 		}
-		return boxClientId;
-	}
-
-	/**
-	 * get the Box Client secret based on user role
-	 * 
-	 * @param userId
-	 * @return
-	 */
-	public static String getBoxClientSecret(String userId) {
-		String boxClientSecret = env.getProperty(Utils.BOX_CLIENT_SECRET);
-
-		if (Utils.isCurrentUserCPMAdmin(userId, env)) {
-			boxClientSecret = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+		else if (Utils.BOX_SECRET.equals(forParam))
+		{
+			if (isAdminUser)
+				// return admin Box secret
+				rv = env.getProperty(Utils.BOX_ADMIN_CLIENT_SECRET);
+			else
+				// return Box secret
+				rv = env.getProperty(Utils.BOX_CLIENT_SECRET);
 		}
-		return boxClientSecret;
+		return rv;
 	}
 
 	/**
@@ -617,8 +621,8 @@ public class BoxUtils implements EnvironmentAware {
 	 * @param boxRefreshToken
 	 */
 	public static BoxAPIConnection getBoxAPIConnection(String userId, BoxAuthUserRepository repository) {
-		String boxClientId = getBoxClientId(userId);
-		String boxClientSecret = getBoxClientSecret(userId);
+		String boxClientId = getBoxClientIdOrSecret(userId, Utils.BOX_ID);
+		String boxClientSecret = getBoxClientIdOrSecret(userId, Utils.BOX_SECRET);
 		
 		String boxAccessToken = repository.findBoxAuthUserAccessToken(userId);
 		String boxRefreshToken = repository.findBoxAuthUserRefreshToken(userId);
@@ -626,6 +630,14 @@ public class BoxUtils implements EnvironmentAware {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
+			if (api.needsRefresh())
+			{
+				// box access token is valid for one hour
+				// box refresh token is valid for 60 days, but can only be used for one time
+				log.info("refreshed box access token and refresh token");
+				repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
+				repository.setBoxAuthUserRefreshToken(api.getRefreshToken(), userId);
+			}
 			api.setAutoRefresh(false);
 			
 			return api;
