@@ -31,7 +31,7 @@ function writeEnvironmentVariables {
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build.
-WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job/
+WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 JOBNAME=${JOB_NAME:-LOCAL}
 #BUILD=${BUILD_NUMBER:-imaginary}
 BUILD=${BUILD_value}
@@ -48,7 +48,7 @@ echo \\${BUILD}
 echo "after build:"
 #echo IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
 #######################
-ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD_value}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
+ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
 EOF`
     echo "${vars}"
