@@ -34,6 +34,7 @@ function writeEnvironmentVariables {
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build.
+##### VALUES SET AT BUILD TIME.
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 ARTIFACT_DIRECTORY=artifact/artifact
 IMAGE_INSTALL_TYPE=war
@@ -42,13 +43,8 @@ WEBAPPNAME=${WEBAPPNAME_value}
 VERSION=${WEBAPPNAME_value}
 WARFILENAME=ROOT
 BUILD=${BUILD_NUMBER:-imaginary}
-
-
-
-
-IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
-IMAGE_NAME_2=\\\${WEBAPPNAME}.\\\${BUILD}.war
-#######################
+##### VALUES SET AT INSTALL TIME.
+IMAGE_NAME=\\\${WEBAPPNAME}.\\\${BUILD}.war
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
 EOF`
