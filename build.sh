@@ -25,20 +25,29 @@ mv target/ctools-project-migration*.war artifact/ctools-project-migration.${buil
 
 function writeEnvironmentVariables {
     # Values to be used while writing lines into the here document need to be evaluated here.
-    # Values written by the here document can be used when the script itself is run.
+    # Values written by the here document can be used when the Makefile itself is run.
+    # Variables values to be used when writting the script must be defined outside of the
+    # here document.  Values explicitly defined in the here document can only be used
+    # at build time, hence the escaping of the $ values.
     local WEBAPPNAME_value=ctools-project-migration
     local BUILD_value=${BUILD_NUMBER:-imaginary}
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build.
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
-JOBNAME=${JOB_NAME:-LOCAL}
-BUILD=${BUILD_NUMBER:-imaginary}
 ARTIFACT_DIRECTORY=artifact/artifact
-WEBAPPNAME=${WEBAPPNAME_value}
-WARFILENAME=ROOT
 IMAGE_INSTALL_TYPE=war
+JOBNAME=${JOB_NAME:-LOCAL}
+WEBAPPNAME=${WEBAPPNAME_value}
+VERSION=${WEBAPPNAME_value}
+WARFILENAME=ROOT
+BUILD=${BUILD_NUMBER:-imaginary}
+
+
+
+
 IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
+IMAGE_NAME_2=\\\${WEBAPPNAME}.\\\${BUILD}.war
 #######################
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
