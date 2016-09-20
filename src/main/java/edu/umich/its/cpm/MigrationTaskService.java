@@ -1459,7 +1459,10 @@ class MigrationTaskService {
 			JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
 			String subject = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT);
 			String sender = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_FROM);
-			String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
+            		if (sender.indexOf('<') != -1) {
+                		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
+            		}
+            		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
 
 			// create file for each message
 			String messageFolderName = "";
@@ -1467,7 +1470,7 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + date + " " + sender + " " + subject) + "/";
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + " " + sender+ " "+date+ " "+subject) + "/";
 
 			return messageFolderName;
 		}
