@@ -34,18 +34,19 @@ function writeEnvironmentVariables {
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job/
 JOBNAME=${JOB_NAME:-LOCAL}
 #BUILD=${BUILD_NUMBER:-imaginary}
-BUILD=${BUILD_value}
+export BUILD=${BUILD_value}
 ARTIFACT_DIRECTORY=artifact/artifact
 #TIMESTAMP=${TIMESTAMP_value}
 #VERSION=ctools-project-migration
 WEBAPPNAME=${WEBAPPNAME_value}
 WARFILENAME=ROOT
 IMAGE_INSTALL_TYPE=war
+IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
 echo "BUILD: \\${BUILD}"
 echo "build:"
 echo \\${BUILD}
 echo "after build:"
-echo IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
+#echo IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
 #######################
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
