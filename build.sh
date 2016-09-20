@@ -34,7 +34,7 @@ function writeEnvironmentVariables {
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job/
 JOBNAME=${JOB_NAME:-LOCAL}
 #BUILD=${BUILD_NUMBER:-imaginary}
-export BUILD=${BUILD_value}
+BUILD=${BUILD_value}
 ARTIFACT_DIRECTORY=artifact/artifact
 #TIMESTAMP=${TIMESTAMP_value}
 #VERSION=ctools-project-migration
@@ -48,7 +48,7 @@ echo \\${BUILD}
 echo "after build:"
 #echo IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
 #######################
-ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
+ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD_value}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
 EOF`
     echo "${vars}"
