@@ -31,7 +31,7 @@ function writeEnvironmentVariables {
     # at build time, hence the escaping of the $ values.
     local WEBAPPNAME_value=ctools-project-migration
     local BUILD_value=${BUILD_NUMBER:-imaginary}
-    local DATE_VALUE=$(date --iso-8601=seconds)
+    local DATE_value=$(date --iso-8601=seconds)
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build at ${DATE_value}.
