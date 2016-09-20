@@ -24,29 +24,21 @@ echo "For build number: ${build_number}"
 mv target/ctools-project-migration*.war artifact/ctools-project-migration.${build_number}.war
 
 function writeEnvironmentVariables {
- #   local TIMESTAMP_value=$(ls artifact/ctools-project-migration.*.war | perl -n -e 'm/.+\.(.+)\.war/ && print $1' )
+    # Values to be used while writing lines into the here document need to be evaluated here.
+    # Values written by the here document can be used when the script itself is run.
     local WEBAPPNAME_value=ctools-project-migration
     local BUILD_value=${BUILD_NUMBER:-imaginary}
-#    local ARTIFACTFILE_value=${WEBRELSRC}/${JOBNAME}/${BUILD}/${ARTIFACT_DIRECTORY}/${IMAGE_NAME}
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build.
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 JOBNAME=${JOB_NAME:-LOCAL}
 BUILD=${BUILD_NUMBER:-imaginary}
-#BUILD=${BUILD_value}
 ARTIFACT_DIRECTORY=artifact/artifact
-#TIMESTAMP=${TIMESTAMP_value}
-#VERSION=ctools-project-migration
 WEBAPPNAME=${WEBAPPNAME_value}
 WARFILENAME=ROOT
 IMAGE_INSTALL_TYPE=war
 IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
-echo "BUILD: \\${BUILD}"
-echo "build:"
-echo \\${BUILD}
-echo "after build:"
-#echo IMAGE_NAME=${WEBAPPNAME_value}.${BUILD_value}.war
 #######################
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
