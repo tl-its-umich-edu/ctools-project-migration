@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Mappings</title>
+  <link rel="stylesheet" href="vendors/bootstrap/bootstrap.min.css">
+</head>
+
+<body ng-app="projectMigrationApp">
+
+  <div ng-controller="mappingsController" class="container" style="padding:20px"  data-ng-init="getMappings();method='e'">
+        <h3>CPM Mappings:</h3>
+      <br>
+        <input type="radio" name="method" ng-model=
+        "method" value="umich" id="umich"> <label for="umich">umich </label> <input type="radio" name="method" ng-model=
+        "method" value="e" id="everything"> <label for="everything">everything</label>
+        <br><br>
+
+    <ul class="list-group container">
+      <li class="list-group-item" ng-repeat="(key, value) in mappingsList"  ng-show="!value.method && method==='e' || value.method.indexOf(method) && value.method.indexOf(method)!==-1">
+        <p>
+          <strong>{{key}}</strong>
+        </p>
+        <div class="well">
+          <p>
+            <strong>Bean:</strong><br>{{value.bean}}
+          </p>
+          <p ng-show="value.method" style="overflow:hidden">
+            <strong>Method:</strong><br><span style="word-wrap: break-word;"></span>{{value.method}}
+          </p>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <script type="text/javascript" src="vendors/jquery/jquery-1.11.0.min.js"></script>
+  <script src="vendors/bootstrap/bootstrap.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/angular/angular-animate.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/underscore/underscore-min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="vendors/moment/moment.min.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/app.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/controllers.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/sserve/factories.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/filters.js" type="text/javascript" charset="utf-8"></script>
+  <script src="js/utils.js" type="text/javascript" charset="utf-8"></script>
+</body>
+
+</html>

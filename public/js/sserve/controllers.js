@@ -666,10 +666,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
 projectMigrationApp.controller('projectMigrationControllerStatus', ['Status',
   '$rootScope', '$scope', '$log', '$q', '$window',
   function(Status, $rootScope, $scope, $log, $q, $window) {
-
     $scope.getStatus = function() {
       Status.getStatus('/status').then(function(result) {
         $rootScope.server_status = result.data;
+      });
+    };
+  }
+]);
+
+projectMigrationApp.controller('mappingsController', ['Status',
+  '$rootScope', '$scope', '$log', '$q', '$window',
+  function(Status, $rootScope, $scope, $log, $q, $window) {
+
+    $scope.getMappings = function() {
+      Status.getStatus('/mappings.json').then(function(result) {
+        $scope.mappingsList = result.data;
       });
     };
   }
