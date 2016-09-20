@@ -2,7 +2,7 @@
 
 ## find the next Jenkins build number from environment setting: BUILD_NUMBER
 ## if missing, set the number to be 1
-echo "shell env variable BUILD_NUMBER is ${BUILD_NUMBER}"
+
 build_number=${BUILD_NUMBER:=1}
 
 ## check the artifact folder, whether it exists or not
@@ -18,7 +18,6 @@ if [ ! -d "artifact" ]; then
     mkdir artifact
     chmod -R 755 artifact
 fi
-echo "For build number: ${build_number}"
 
 ## relocate the war file
 mv target/ctools-project-migration*.war artifact/ctools-project-migration.${build_number}.war
@@ -54,33 +53,6 @@ EOF`
     echo "${vars}"
 }
 
-writeEnvironmentVariables >| VERSION_2.Makefile
+writeEnvironmentVariables >| VERSION.Makefile
+#end
 
-
-# timestamp is TIMESTAMP=${TIMESTAMP_value} is not in the current one
-# ####################################
-# # identify Jenkins project directory and type of install
-# + WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job/
-# + ARTIFACT_DIRECTORY=artifact/artifact
-# + IMAGE_INSTALL_TYPE=war
-
-# # project specification
-# JOBNAME=CTools_Project_Migration (DIFFERS)
-
-# # artifact specification
-# +WEBAPPNAME=ctools-project-migration
-# # for compatibility
-# +VERSION=${WEBAPPNAME}
-# # name of the installed war file.  Could be application name or ROOT or whatever.
-# # will have '.war' appended to it.
-# + WARFILENAME=ROOT
-# # specify which build to pick up
-# BUILD=186 (DIFFERS)
-# # unique identifier supplied by build and placed in war and tar file names
-# UID=${BUILD}
-# ########## no need to change these.
-# # name of war file built by Jenkins
-# IMAGE_NAME=${WEBAPPNAME}.${UID}.war
-
-# ARTIFACTFILE=${WEBRELSRC}/${JOBNAME}/${BUILD}/${ARTIFACT_DIRECTORY}/${IMAGE_NAME}
-# #CONFIGFILE=${WEBRELSRC}/${JOBNAME}/${BUILD}/${ARTIFACT_DIRECTORY}/${CONFIGURATION_NAME}
