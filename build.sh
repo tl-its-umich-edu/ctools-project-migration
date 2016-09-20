@@ -27,6 +27,7 @@ function writeEnvironmentVariables {
  #   local TIMESTAMP_value=$(ls artifact/ctools-project-migration.*.war | perl -n -e 'm/.+\.(.+)\.war/ && print $1' )
     local WEBAPPNAME_value=ctools-project-migration
     local BUILD_value=${BUILD_NUMBER:-imaginary}
+#    local ARTIFACTFILE_value=${WEBRELSRC}/${JOBNAME}/${BUILD}/${ARTIFACT_DIRECTORY}/${IMAGE_NAME}
     vars=`cat <<EOF
 ########################
 # Environment variables for installation of this build.
