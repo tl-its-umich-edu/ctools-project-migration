@@ -34,7 +34,8 @@ function writeEnvironmentVariables {
     local DATE_value=$(date --iso-8601=seconds)
     vars=`cat <<EOF
 ########################
-# Environment variables for installation of this build at ${DATE_value}.
+# Created at ${DATE_value}.
+# Environment variables for installation of this CPM build.
 ##### STATIC VALUES #######
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 ARTIFACT_DIRECTORY=artifact/artifact
