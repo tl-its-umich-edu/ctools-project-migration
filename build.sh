@@ -31,19 +31,21 @@ function writeEnvironmentVariables {
     # at build time, hence the escaping of the $ values.
     local WEBAPPNAME_value=ctools-project-migration
     local BUILD_value=${BUILD_NUMBER:-imaginary}
+    local DATE_VALUE=$(date --iso-8601=seconds)
     vars=`cat <<EOF
 ########################
-# Environment variables for installation of this build.
-##### VALUES SET AT BUILD TIME.
+# Environment variables for installation of this build at ${DATE_value}.
+##### STATIC VALUES #######
 WEBRELSRC=http://limpkin.dsc.umich.edu:6660/job
 ARTIFACT_DIRECTORY=artifact/artifact
 IMAGE_INSTALL_TYPE=war
+WARFILENAME=ROOT
+##### VALUES SET AT BUILD TIME. ########
 JOBNAME=${JOB_NAME:-LOCAL}
 WEBAPPNAME=${WEBAPPNAME_value}
 VERSION=${WEBAPPNAME_value}
-WARFILENAME=ROOT
 BUILD=${BUILD_NUMBER:-imaginary}
-##### VALUES SET AT INSTALL TIME.
+##### VALUES SET AT INSTALL TIME. #######
 IMAGE_NAME=\\\${WEBAPPNAME}.\\\${BUILD}.war
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
