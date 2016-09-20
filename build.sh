@@ -42,7 +42,7 @@ echo "BUILD: \\${BUILD}"
 echo "build:"
 echo \\${BUILD}
 echo "after build:"
-eval "IMAGE_NAME=${WEBAPPNAME_value}.\\${BUILD}.war"
+echo $(eval "IMAGE_NAME=${WEBAPPNAME_value}.\\${BUILD}.war")
 #######################
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
 #######################
