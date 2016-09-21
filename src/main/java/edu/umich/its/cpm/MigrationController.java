@@ -1870,6 +1870,14 @@ public class MigrationController {
 					{
 						allSiteOwners.append(",").append(userEmail);
 					}
+					else if (siteId.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX))
+					{
+						// myworkspace site, add maintainer role user
+						if (Utils.ROLE_MAINTAINER.equals(userRole))
+						{
+							allSiteOwners.append(",").append(userEmail);
+						}
+					}
 				}
 			}
 			catch (RestClientException e)
