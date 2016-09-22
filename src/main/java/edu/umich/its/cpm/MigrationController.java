@@ -1184,18 +1184,10 @@ public class MigrationController {
 				//String userEmail = Utils.getUserEmailFromUserId(userEid);
 				String userEmail = getUserEmailFromUserId(userEid);
 				
-				if (Utils.ROLE_OWNER.equals(userRole))
+				// add user email to owner list
+				if (addUserEmail(siteId, userRole))
 				{
-					// add Owner role user
 					allSiteOwners.append(",").append(userEmail);
-				}
-				else if (siteId.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX))
-				{
-					// myworkspace site, add maintainer role user
-					if (Utils.ROLE_MAINTAINER.equals(userRole))
-					{
-						allSiteOwners.append(",").append(userEmail);
-					}
 				}
 			}
 		}
@@ -1866,17 +1858,10 @@ public class MigrationController {
 							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 							userEmail, userRole, boxFolderId,
 							boxAdminClientId, boxAdminClientSecret, uRepository);
-					if (Utils.ROLE_OWNER.equals(userRole))
+					// add user email to the owner list
+					if (addUserEmail(siteId, userRole)) 
 					{
 						allSiteOwners.append(",").append(userEmail);
-					}
-					else if (siteId.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX))
-					{
-						// myworkspace site, add maintainer role user
-						if (Utils.ROLE_MAINTAINER.equals(userRole))
-						{
-							allSiteOwners.append(",").append(userEmail);
-						}
 					}
 				}
 			}
@@ -1911,6 +1896,19 @@ public class MigrationController {
 						+ status.get("migrationId"));
 			}
 		}
+	}
+
+	/**
+	 * return true if user has Owner role inside the project site
+	 * or if the user has maintain role in myworkspace site
+	 * @param siteId
+	 * @param userRole
+	 * @return
+	 */
+	private boolean addUserEmail(String siteId, String userRole) {
+		return Utils.ROLE_OWNER.equals(userRole)
+		 || (siteId.startsWith(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX)
+			&& Utils.ROLE_MAINTAINER.equals(userRole));
 	}
 
 	public String getUserEmailFromUserId(String userEmail) {
