@@ -99,8 +99,15 @@ class MigrationTaskService {
 	private static final HashMap<String,String> MemberRoleMap = new HashMap<String,String>() {
 		private static final long serialVersionUID = -8839396373117387837L;
 		{
-			put("Member","MEMBER");
-			put("Owner","OWNER");
+			put(Utils.ROLE_OWNER,"OWNER");
+			put(Utils.ROLE_ORGANIZER,"MANAGER");	
+			put(Utils.ROLE_MEMBER,"MEMBER");
+			put(Utils.ROLE_OBSERVER,"MEMBER");
+			put(Utils.ROLE_MAINTAINER,"OWNER");
+			put(Utils.ROLE_INSTRUCTOR,"MANAGER");
+			put(Utils.ROLE_STUDENT,"MEMBER");
+			// Role that will be used if nothing else matches
+			put("DEFAULT","MEMBER");
 		}};
 
 		private static final Logger log = LoggerFactory
@@ -1783,10 +1790,8 @@ class MigrationTaskService {
 
 		// map the CTools role to the Google role
 		public String findGoogleRole(String role) {
-			log.info("CTools <=> Google role mapping is incomplete");
-			String default_role = "UNKNOWN";
 			String goole_role = MemberRoleMap.get(role);
-			return (goole_role != null) ? goole_role : default_role;
+			return (goole_role != null) ? goole_role : MemberRoleMap.get("DEFAULT");
 		}
 
 		// change members list to one suitable for inserting into google.
