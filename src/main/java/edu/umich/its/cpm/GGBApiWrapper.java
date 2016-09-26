@@ -10,15 +10,21 @@ import java.security.cert.X509Certificate;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
 import org.apache.http.HttpStatus;
 import org.apache.http.NameValuePair;
 import org.apache.http.ParseException;
+import org.apache.http.auth.AuthScope;
+import org.apache.http.auth.UsernamePasswordCredentials;
+import org.apache.http.client.ClientProtocolException;
 import org.apache.http.client.CookieStore;
+import org.apache.http.client.CredentialsProvider;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.entity.UrlEncodedFormEntity;
+import org.apache.http.client.methods.HttpGet;
 import org.apache.http.client.methods.HttpPost;
 import org.apache.http.client.methods.HttpPut;
 import org.apache.http.client.protocol.HttpClientContext;
@@ -27,6 +33,7 @@ import org.apache.http.conn.ssl.NoopHostnameVerifier;
 import org.apache.http.entity.ContentType;
 import org.apache.http.entity.StringEntity;
 import org.apache.http.impl.client.BasicCookieStore;
+import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.impl.client.HttpClients;
 import org.apache.http.impl.client.LaxRedirectStrategy;
@@ -36,11 +43,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.ssl.SSLContextBuilder;
 import org.apache.http.ssl.TrustStrategy;
 import org.apache.http.util.EntityUtils;
+import org.apache.commons.codec.binary.Base64;
+import org.json.JSONException;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.http.ResponseEntity;
-import org.springframework.web.client.RestTemplate;
 
 /*
  * Class to allow configuring calls to a web api that returns JSON.  It is configured with a 
@@ -48,6 +55,10 @@ import org.springframework.web.client.RestTemplate;
  * to change for the duration of the class.  Multiple authentication methods will be implemented.
  * This assumes responses will be returned in REST format.  Wrappers can be used to ensure the 
  * value returned is always json.
+ * 
+ * The <request_type>_request methods are the external interface and deal with any requirement to 
+ * do multiple requests (such as authentication or paging).
+ * run_<request_type> methods implement a single request and handle those errors.
  */
 
 public class GGBApiWrapper {
@@ -68,11 +79,8 @@ public class GGBApiWrapper {
 	// any information required for authentication. There may be multiple
 	// authentication methods so a hashmap is used to retain flexibility.
 
-	// First pass will only implement room to configure an instance GGBApi with 
-	// (null) authinfo.
-	
 	// Create lousy trust strategy for testing.
-	public TrustStrategy trusting(){  
+	public TrustStrategy trusting() {
 		return new TrustStrategy() {
 			@Override
 			public boolean isTrusted(X509Certificate[] chain, String authType) throws CertificateException {
@@ -80,159 +88,169 @@ public class GGBApiWrapper {
 			}
 		};
 	}
-		 
-	@SuppressWarnings({ "rawtypes", "deprecation" })
-	public GGBApiWrapper(String baseUrl, HashMap authInfo) {
+
+	public GGBApiWrapper(String baseUrl, HashMap<String, String> authInfo) {
 		super();
 		this.baseUrl = baseUrl;
+
+		String default_userName = "admin";
+		String default_password = "admin";
+
+		if (authInfo == null) {
+			authInfo = new HashMap<String, String>();
+			authInfo.put("userName", default_userName);
+			authInfo.put("password", default_password);
+		}
+
 		this.authInfo = authInfo;
+
+		log.debug("this.authInfo: {}", this.authInfo.toString());
+
 		try {
 			log.error("ignoring ssl!!!!");
-			this.httpClient = HttpClients.custom()
-					.setSSLHostnameVerifier(new NoopHostnameVerifier())
+
+			CredentialsProvider credentialsProvider = new BasicCredentialsProvider();
+
+			// TODO: don't use AuthScope.ANY
+			log.warn("don't use AuthScope.ANY for GGB basicAuth");
+			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(
+					(String) this.authInfo.get("userName"), (String) this.authInfo.get("password")));
+
+			this.httpClient = HttpClients.custom().setSSLHostnameVerifier(new NoopHostnameVerifier())
 					.setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, trusting()).build())
-					.setRedirectStrategy(new LaxRedirectStrategy())
+					.setRedirectStrategy(new LaxRedirectStrategy()).setDefaultCredentialsProvider(credentialsProvider)
+					// .setAuthenticationPreemptive(true);
 					.build();
+
 		} catch (KeyManagementException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warn(createExceptionResult("GGBApiWrapper: KeyManagementException:", e).toString());
 		} catch (NoSuchAlgorithmException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warn(createExceptionResult("GGBApiWrapper: NoSuchAlgorithmException:", e).toString());
 		} catch (KeyStoreException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
+			log.warn(createExceptionResult("GGBApiWrapper: KeyStoreException:", e).toString());
 		}
+
 		this.httpContext = new BasicHttpContext();
 		this.cookieStore = new BasicCookieStore();
 		this.httpContext.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);
 	}
 
-	// Take an URL and get the data back make calls to do_request to get
-	// external data.
+	// Take an URL and get the data back.
 
-	// This method with deal with any multiple call issues: e.g. authentication, page links,
-	// throttling.  It calls do_one_get_request to actually do the calls.
+	// This method with deal with any multiple call issues: e.g. authentication,
+	// page links,
+	// throttling. It calls do_one_get_request to actually do the calls.
 
-	public JSONObject get_request(String url) {
-		// TODO: Multiple call request handing not yet implemented.
-		log.warn("Multiple call request handing not yet implemented.");
-		return do_one_get_request(create_complete_url(url));
+	public ApiResultWrapper get_request(String url) {
+		log.warn("get_request: Multiple call request handing not yet implemented.");
+		return runGet(create_complete_url(url));
 	}
 
-	// take a url, make a single call, return a json result.
-	protected JSONObject do_one_get_request(String url) {
-		log.debug("one_get_request: url: {}",url);
-		RestTemplate restTemplate = new RestTemplate();
-		ResponseEntity<String> value = restTemplate.getForEntity(url, String.class);
-		JSONObject valueObject = null;
+	// Do a post request
+	public ApiResultWrapper post_request(String url, String body) {
+		log.warn("post_result: Multiple call request handing not yet implemented.");
+		log.debug("post_request: {}", formatBodyInfo(url, body));
+		String full_url = create_complete_url(url);
+		return runPost(full_url, body);
+	}
 
-		if (value.getStatusCode().is2xxSuccessful()) {
-			valueObject = new JSONObject(value.getBody());
+	public ApiResultWrapper put_request(String url, String body) {
+		log.warn("put_request: Multiple call request handing not yet implemented.");
+		log.debug("put_request: {}", formatBodyInfo(url, body));
+		ApiResultWrapper response = runPut(create_complete_url(url), body);
+		log.debug("put_request_response: {}", response.toString());
+		return response;
+	}
+
+	// take a url, make a single GET call, return a wrapped result
+	protected ApiResultWrapper runGet(String url) {
+		log.debug("one_get_request: url: {}", url);
+
+		HttpGet request = new HttpGet(url);
+		HttpResponse response = null;
+
+		try {
+			response = this.httpClient.execute(request);
+		} catch (ClientProtocolException e) {
+			return createExceptionResult("runGet: ClientProtocolException:", e);
+		} catch (IOException e) {
+			return createExceptionResult("runGet: IOException:", e);
 		}
+
+		int status = response.getStatusLine().getStatusCode();
+
+		if (status != HttpStatus.SC_OK) {
+			String msg = String.format("runGet bad status: %s for url: %s", status, url);
+			log.warn(msg);
+		}
+
+//		String entityString = null;
+//		
+//		try {
+//			entityString = EntityUtils.toString(response.getEntity(), "UTF-8");
+//		} catch (IOException e) {
+//			String msg = String.format("runGet IOException: url: " + url);
+//			return createExceptionResult(msg, e);
+//		}
+//		
+		ApiResultWrapper valueObject = safeCreateResultFromHttpResponse(url, "", response);
+
+		log.debug("get result as json object: {}", valueObject.toString());
 
 		return valueObject;
 	}
 
-	// Make a partial url from a request into a full url based on the url prefix.
-	public String create_complete_url(String url) {
-		String completeUrl = baseUrl+url;
-		log.info("complete_url: {}",completeUrl);
-		return completeUrl;
-	}
+	// run a single post command with this url and body
+	protected ApiResultWrapper runPost(String url, String body) {
 
-	// Do a post request
-	public String post_request(String url, String body){
-		String full_url = create_complete_url(url);
-		HttpResponse response = runPost(full_url,body);
-		log.debug("post_request: {}",formatBodyInfo(url,body));
-
-		if (response == null) {
-			// lower level should report the url and body
-			log.warn("post_response got null response");
-			return null;
-		}
-
-		int status = response.getStatusLine().getStatusCode();
-		if (status != HttpStatus.SC_OK) {
-			log.warn("post_request bad status: {} for url: {}",status,full_url);
-			return null;
-		}
-
-		try {
-			return EntityUtils.toString(response.getEntity(),"UTF-8");
-		} catch (ParseException e) {
-			log.warn("post_request exception: url: "+url+" body: "+body+" exception: "+e);
-			return null;
-		} catch ( IOException e) {
-			log.warn("post_request exception: url: "+url+" body: "+body+" exception: "+e);
-			return null;
-		}
-	}
-
-
-	// run a post command with this url and body
-	protected HttpResponse runPost (String url,String body) {
-
-		log.debug("runPost: {}",String.format("url: [%s] body: [%s]", url,body.toString()));
+		log.debug("runPost: {}", String.format("url: [%s] body: [%s]", url, body.toString()));
 		HttpPost postRequest = new HttpPost(url);
 
 		postRequest.setHeader("Content-Type", "text/plain");
-		postRequest.setEntity((HttpEntity) new StringEntity(body,ContentType.TEXT_PLAIN));
+		postRequest.setEntity((HttpEntity) new StringEntity(body, ContentType.TEXT_PLAIN));
 
 		HttpResponse response = null;
 
 		try {
 			response = httpClient.execute(postRequest);
 		} catch (IOException e) {
-			log.warn("Exception for post request :"+formatBodyInfo(url,body));
-			log.warn("exception: "+e);
-			log.warn("stacktrace: {}",e.getStackTrace().toString());
-			return null;
+			String msg = "runPost: IOException for post request :" + formatBodyInfo(url, body);
+			return createExceptionResult(msg, e);
 		}
 
 		// check the status code
 		int status = response.getStatusLine().getStatusCode();
 		String reason = response.getStatusLine().getReasonPhrase();
-		log.debug("runPost: reason: "+reason);
+		log.debug("runPost: status reason: {} url: {}" + reason, url);
 
 		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
-			// if status code is not 201, there is a problem with the
-			// request.
-			log.warn("Can not run POST request for: status: {} url: {} body: {}",status,url,body);
+			String msg = "runPost: unexpected status for post request :" + formatBodyInfo(url, body);
+			log.warn(msg);
 		}
 
-		// have a response so return it for the caller to deal with.
-		return response;
+		return safeCreateResultFromHttpResponse(url, body, response);
 	}
 
-	public HttpResponse put_request(String url, String body) {
-		log.debug("put_request: {}",formatBodyInfo(url,body));
-		HttpResponse response = runPut(create_complete_url(url),body);
-		log.debug("put_request_response: {}",response.toString());
-		return response;
-	}
-
-	// run a put command with this url and body
-	protected HttpResponse runPut (String url,String body) {
+	// run a single put command with this url and body
+	protected ApiResultWrapper runPut(String url, String body) {
 
 		JSONObject jo = new JSONObject(body);
-		log.debug("runPut: jo: {}",jo.toString());
+		log.debug("runPut: jo: {}", jo.toString());
 
 		List<NameValuePair> params = new ArrayList<NameValuePair>();
-		for(int i = 0; i<jo.names().length(); i++){
-			log.debug("name: "+jo.names().getString(i)+" value="+jo.get(jo.names().getString(i)));
-			params.add(new BasicNameValuePair(jo.names().getString(i),(String) jo.get(jo.names().getString(i))));
+		for (int i = 0; i < jo.names().length(); i++) {
+			log.debug("name: " + jo.names().getString(i) + " value=" + jo.get(jo.names().getString(i)));
+			params.add(new BasicNameValuePair(jo.names().getString(i), (String) jo.get(jo.names().getString(i))));
 		}
 
-		log.debug("ggb: runPut: {}",formatBodyInfo(url,body));
+		log.debug("ggb: runPut: {}", formatBodyInfo(url, body));
 
 		HttpPut putRequest = new HttpPut(url);
 
 		try {
 			putRequest.setEntity(new UrlEncodedFormEntity(params));
 		} catch (UnsupportedEncodingException e1) {
-			log.warn("runPut exception: {}",e1.getStackTrace().toString());
+			log.warn("runPut exception: {}", e1.getStackTrace().toString());
 		}
 
 		HttpResponse response = null;
@@ -240,30 +258,109 @@ public class GGBApiWrapper {
 		try {
 			response = httpClient.execute(putRequest);
 		} catch (IOException e) {
-			log.warn("Exception for put request :"+formatBodyInfo(url,body));
-			log.warn("exception: "+e);
-			log.warn("stacktrace: ");
-			log.warn(e.getStackTrace().toString());
-			return null;
+			String msg = "runPost: IOException for post request :" + formatBodyInfo(url, body);
+			return createExceptionResult(msg, e);
 		}
 
 		// check the status code
 		int status = response.getStatusLine().getStatusCode();
 		String reason = response.getStatusLine().getReasonPhrase();
-		log.debug("runPut: status: {} reason: {}",status,reason);
+		log.debug("runPut: status: {} reason: {}", status, reason);
 
 		if (status != HttpStatus.SC_CREATED && status != HttpStatus.SC_OK) {
-			// if status code is not 201, there is a problem with the
-			// request.
-			log.warn("Can not run PUT request for: status: {} url: {} body: {}",status,url,body);
+			String msg = String.format("runPut: unexpected status %s for put request %s:", formatBodyInfo(url, body),
+					status);
+			log.warn(msg);
 		}
 
 		// have a response so return it for the caller to deal with.
-		return response;
+		// return response;
+		return safeCreateResultFromHttpResponse(url, body, response);
+	}
+
+	// Make a partial url from a request into a full url based on the url prefix
+	// provided to the constructor.
+	public String create_complete_url(String url) {
+		String completeUrl = baseUrl + url;
+		log.info("complete_url: {}", completeUrl);
+		return completeUrl;
 	}
 
 	private String formatBodyInfo(String url, String body) {
-		return String.format("url/body data for: url: [%s] body: [%s]",url,body);
+		return String.format("url/body data for: url: [%s] body: [%s]", url, body);
+	}
+
+	public ApiResultWrapper createExceptionResult(String prefix, Exception e) {
+		String msg = String.format("%s cause: %s message: %s", prefix, e.getCause(), e.getMessage());
+		log.warn(msg);
+		return new ApiResultWrapper(ApiResultWrapper.API_EXCEPTION_ERROR, msg, null);
+	}
+
+	public ApiResultWrapper createJSONResponseMap(int status, String message, String result) {
+		return new ApiResultWrapper(status, message, result);
+	}
+
+	// construct a wrapper with unknow_error
+	public ApiResultWrapper createErrorResult(String message, String result) {
+		return new ApiResultWrapper(ApiResultWrapper.API_UNKNOWN_ERROR, message, result);
+	}
+
+	// entityString = EntityUtils.toString(response.getEntity(), "UTF-8");
+
+	public ApiResultWrapper createResultFromHttpResponse(HttpResponse response)
+			throws JSONException, ParseException, IOException {
+		String entity = EntityUtils.toString(response.getEntity(), "UTF-8");
+		
+		log.error("createResultFromHttpResponse: original entity: >>>{}<<<",entity);
+		// if it isn't json make it json
+		//if (!entity.startsWith("{")) {
+		//if (entity.matches("^ ")) {
+		
+		// normalize entity so can return in json string
+		if (entity.startsWith(" ")) {
+			log.error("cRFHR: replace leading whitespace");
+			entity = entity.replaceFirst(" ","");
+		}
+		
+		log.error("cRFHR: A: entity >>>{}<<<",entity);
+		// normalize: if not already a json string then wrap in object 
+		// with 'response' element and make sure the entity starts 
+		// with quotes.
+		
+		//entity = String.format("{\"response\":\"%s\"}",entity);
+		
+		if (!entity.startsWith("{")) {
+			String formatString = entity.startsWith("\"") ? "{\"response\":%s}":"{\"response\":\"%s\"}";
+			log.debug("cRFHR: formatString: {}",formatString);
+			entity = String.format(formatString,entity);			
+		}
+		
+		log.error("cRFHR: B: entity >>>{}<<<",entity);
+		
+		// normalize: replace any explicit line return with a \n
+		entity = entity.replace("\n", "\\n");
+		
+		log.error("cRFHR: C: final entity >>>{}<<<",entity);
+		
+		entity = new JSONObject(entity).toString();
+		
+		log.error("createResultFromHttpResponse: final entity: >>>{}<<<",entity);
+		return new ApiResultWrapper(response.getStatusLine().getStatusCode(),
+				response.getStatusLine().getReasonPhrase(),
+				entity);
+				//EntityUtils.toString(response.getEntity(), "UTF-8"));
+	}
+
+	public ApiResultWrapper safeCreateResultFromHttpResponse(String url, String body, HttpResponse response) {
+		try {
+			return createResultFromHttpResponse(response);
+		} catch (ParseException e) {
+			String msg = String.format("run_post ParseException: url: " + url + " body: " + body);
+			return createExceptionResult(msg, e);
+		} catch (IOException e) {
+			String msg = String.format("run_post IOException: url: " + url + " body: " + body);
+			return createExceptionResult(msg, e);
+		}
 	}
 
 }
