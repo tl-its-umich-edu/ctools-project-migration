@@ -47,7 +47,9 @@ VERSION=${WEBAPPNAME_value}
 BUILD=${BUILD_NUMBER:-imaginary}
 ##### VALUES SET AT INSTALL TIME. #######
 IMAGE_NAME=\\\${WEBAPPNAME}.\\\${BUILD}.war
+CONFIGURATION_NAME=configuration-files.${BUILD}.tar
 ARTIFACTFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${IMAGE_NAME}
+CONFIGFILE=\\\${WEBRELSRC}/\\\${JOBNAME}/\\\${BUILD}/\\\${ARTIFACT_DIRECTORY}/\\\${CONFIGURATION_NAME}
 #######################
 EOF`
     echo "${vars}"
