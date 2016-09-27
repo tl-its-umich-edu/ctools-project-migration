@@ -61,6 +61,14 @@ import org.slf4j.LoggerFactory;
  * run_<request_type> methods implement a single request and handle those errors.
  */
 
+/* Results are returned in a standard format ApiResultWrapper.  It has methods to get:
+ * the underlying HTTP status for the request.  
+ * an optional message to provide more information on the status if appropriate.
+ * result - a string containing json.  This will be json passed back from the request. If the request
+ * does not natively return json then a trivial json wrapper will be constructed with a 'response' key
+ * that holds the actual response.
+ */
+
 public class GGBApiWrapper {
 
 	String server;
@@ -135,11 +143,9 @@ public class GGBApiWrapper {
 		this.httpContext.setAttribute(HttpClientContext.COOKIE_STORE, this.cookieStore);
 	}
 
-	// Take an URL and get the data back.
-
-	// This method with deal with any multiple call issues: e.g. authentication,
-	// page links,
-	// throttling. It calls do_one_get_request to actually do the calls.
+	//////////////////////////////////////////////////
+	// These <verb>_request methods deal with taking a request and dealing with issues
+	// that requires making multiple requests.  E.G. page links, throttling.
 
 	public ApiResultWrapper get_request(String url) {
 		log.warn("get_request: Multiple call request handing not yet implemented.");
@@ -162,7 +168,9 @@ public class GGBApiWrapper {
 		return response;
 	}
 
-	// take a url, make a single GET call, return a wrapped result
+	////////////////////////////////
+	// These run<VERB> methods take a URL, make a single call and return a result. 
+	
 	protected ApiResultWrapper runGet(String url) {
 		log.debug("one_get_request: url: {}", url);
 
@@ -184,15 +192,6 @@ public class GGBApiWrapper {
 			log.warn(msg);
 		}
 
-//		String entityString = null;
-//		
-//		try {
-//			entityString = EntityUtils.toString(response.getEntity(), "UTF-8");
-//		} catch (IOException e) {
-//			String msg = String.format("runGet IOException: url: " + url);
-//			return createExceptionResult(msg, e);
-//		}
-//		
 		ApiResultWrapper valueObject = safeCreateResultFromHttpResponse(url, "", response);
 
 		log.debug("get result as json object: {}", valueObject.toString());
@@ -200,7 +199,6 @@ public class GGBApiWrapper {
 		return valueObject;
 	}
 
-	// run a single post command with this url and body
 	protected ApiResultWrapper runPost(String url, String body) {
 
 		log.debug("runPost: {}", String.format("url: [%s] body: [%s]", url, body.toString()));
@@ -231,7 +229,6 @@ public class GGBApiWrapper {
 		return safeCreateResultFromHttpResponse(url, body, response);
 	}
 
-	// run a single put command with this url and body
 	protected ApiResultWrapper runPut(String url, String body) {
 
 		JSONObject jo = new JSONObject(body);
@@ -278,6 +275,7 @@ public class GGBApiWrapper {
 		return safeCreateResultFromHttpResponse(url, body, response);
 	}
 
+	///////////// utilities.
 	// Make a partial url from a request into a full url based on the url prefix
 	// provided to the constructor.
 	public String create_complete_url(String url) {
@@ -290,6 +288,8 @@ public class GGBApiWrapper {
 		return String.format("url/body data for: url: [%s] body: [%s]", url, body);
 	}
 
+	/////////////////////////// 
+	// Format a response into a wrapper with a known structure.
 	public ApiResultWrapper createExceptionResult(String prefix, Exception e) {
 		String msg = String.format("%s cause: %s message: %s", prefix, e.getCause(), e.getMessage());
 		log.warn(msg);
@@ -300,21 +300,16 @@ public class GGBApiWrapper {
 		return new ApiResultWrapper(status, message, result);
 	}
 
-	// construct a wrapper with unknow_error
+	// construct a wrapper for unknown_error
 	public ApiResultWrapper createErrorResult(String message, String result) {
 		return new ApiResultWrapper(ApiResultWrapper.API_UNKNOWN_ERROR, message, result);
 	}
-
-	// entityString = EntityUtils.toString(response.getEntity(), "UTF-8");
 
 	public ApiResultWrapper createResultFromHttpResponse(HttpResponse response)
 			throws JSONException, ParseException, IOException {
 		String entity = EntityUtils.toString(response.getEntity(), "UTF-8");
 		
 		log.error("createResultFromHttpResponse: original entity: >>>{}<<<",entity);
-		// if it isn't json make it json
-		//if (!entity.startsWith("{")) {
-		//if (entity.matches("^ ")) {
 		
 		// normalize entity so can return in json string
 		if (entity.startsWith(" ")) {
@@ -326,8 +321,6 @@ public class GGBApiWrapper {
 		// normalize: if not already a json string then wrap in object 
 		// with 'response' element and make sure the entity starts 
 		// with quotes.
-		
-		//entity = String.format("{\"response\":\"%s\"}",entity);
 		
 		if (!entity.startsWith("{")) {
 			String formatString = entity.startsWith("\"") ? "{\"response\":%s}":"{\"response\":\"%s\"}";
@@ -348,7 +341,6 @@ public class GGBApiWrapper {
 		return new ApiResultWrapper(response.getStatusLine().getStatusCode(),
 				response.getStatusLine().getReasonPhrase(),
 				entity);
-				//EntityUtils.toString(response.getEntity(), "UTF-8"));
 	}
 
 	public ApiResultWrapper safeCreateResultFromHttpResponse(String url, String body, HttpResponse response) {
