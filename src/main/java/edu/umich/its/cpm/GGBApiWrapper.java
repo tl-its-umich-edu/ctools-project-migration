@@ -61,10 +61,10 @@ import org.slf4j.LoggerFactory;
  * run_<request_type> methods implement a single request and handle those errors.
  */
 
-/* Results are returned in a standard format ApiResultWrapper.  It has methods to get:
- * the underlying HTTP status for the request.  
- * an optional message to provide more information on the status if appropriate.
- * result - a string containing json.  This will be json passed back from the request. If the request
+/* Results are returned in a standard format implemented by the ApiResultWrapper class.  It has methods to get:
+ * getStatus() - return the underlying HTTP status for the request.  
+ * getMessage() - return an associated message for the status.  It may be an empty string.
+ * getResult() - return the result, if there is one, in a string containing json. If the request
  * does not natively return json then a trivial json wrapper will be constructed with a 'response' key
  * that holds the actual response.
  */
@@ -289,7 +289,7 @@ public class GGBApiWrapper {
 	}
 
 	/////////////////////////// 
-	// Format a response into a wrapper with a known structure.
+	// Format a response into a standard wrapper with a known structure.
 	public ApiResultWrapper createExceptionResult(String prefix, Exception e) {
 		String msg = String.format("%s cause: %s message: %s", prefix, e.getCause(), e.getMessage());
 		log.warn(msg);
@@ -343,6 +343,7 @@ public class GGBApiWrapper {
 				entity);
 	}
 
+	// Create a wrapper from http response and handle common error conditions.
 	public ApiResultWrapper safeCreateResultFromHttpResponse(String url, String body, HttpResponse response) {
 		try {
 			return createResultFromHttpResponse(response);

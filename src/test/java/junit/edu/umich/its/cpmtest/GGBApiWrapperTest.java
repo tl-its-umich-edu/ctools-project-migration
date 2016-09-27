@@ -40,7 +40,7 @@ public class GGBApiWrapperTest {
 	HashMap<String,String> badAuth = null;
 	HashMap<String,String> goodAuth = null;
 
-	
+
 	// create an authentication object
 	HashMap<String,String> createBasicAuthInfo(String username,String password) {
 
@@ -76,7 +76,7 @@ public class GGBApiWrapperTest {
 		goodAuth = createBasicAuthInfo("upstart","ohcrap");
 		log.debug("setup: goodAuth: {}",goodAuth);
 	}
-	
+
 	@After
 	public void tearDown() throws Exception {
 	}
@@ -119,7 +119,7 @@ public class GGBApiWrapperTest {
 		String new_url = ggb.create_complete_url(request_url);
 		assertEquals("trivial_url",server+request_url,new_url);
 	}
-	
+
 	@Test
 	public void get_status_ping() {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,goodAuth);
@@ -133,7 +133,7 @@ public class GGBApiWrapperTest {
 
 		assertThat("ping_url is plausible",ping_url,containsString("/status/ping.json"));
 	}
-	
+
 	@Test
 	public void get_test_unprotected() {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,goodAuth);
@@ -180,7 +180,7 @@ public class GGBApiWrapperTest {
 		assertThat("protected was authenticated",response,containsString("Not authorized"));
 	}
 
-	
+
 	@Test
 	public void post_email() {
 		log.debug("post_email: goodAuth: {}",goodAuth);
@@ -238,7 +238,7 @@ public class GGBApiWrapperTest {
 		}
 
 	}
-	
+
 	@Test 
 	public void put_member() {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,goodAuth);

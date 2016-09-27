@@ -2279,28 +2279,6 @@ public class MigrationController {
 
 	}
 
-	/*********** start mail archive google migration ***********/
-
-	// add a specific email to the Google group.
-//	String  addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
-//		String ggb_server = env.getProperty(Utils.GGB_SERVER_NAME);
-//		log.info("addEmailToGoogleGroup: group: {}",googleGroup);
-//		log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
-//		GGBApiWrapper ggb = new GGBApiWrapper(ggb_server,null);
-//		String archive_url = "/groups/"+googleGroup+"/messages";
-//		//IMPLEMENT
-//		ApiResultWrapper arw = ggb.post_request(archive_url,rcf822Email);
-//		
-//		//String response = ggb.post_request(archive_url,rcf822Email);
-//		// TODO: make this work
-//		//JSONObject response = ggb.post_request(archive_url,rcf822Email);
-//		//return response.getString("response");
-//		//return response;
-//		log.error("redo ggb call");
-//		return null;
-//	}
-
-
 	/**************** zip download of Mail Archive content ***************/
 	/**
 	 * insert a new record of Migration
