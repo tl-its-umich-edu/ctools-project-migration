@@ -1596,23 +1596,14 @@ class MigrationTaskService {
 		 * @return
 		 */
 
-		String  addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
-			//String ggb_server = env.getProperty(Utils.GGB_SERVER_NAME);
+		String addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
 			log.info("addEmailToGoogleGroup: group: {}",googleGroup);
 			log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
-			
-		//	GGBApiWrapper ggb = new GGBApiWrapper(ggb_server,null);
-			
+
 			GGBApiWrapper ggb = establishGGBConnection();
-			
+
 			String archive_url = "/groups/"+googleGroup+"/messages";
-			//IMPLEMENT
 			ApiResultWrapper arw= ggb.post_request(archive_url,rcf822Email);
-			//String response = ggb.post_request(archive_url,rcf822Email);
-			//TODO: redo ggb request
-			//JSONObject responseJSON = ggb.post_request(archive_url,rcf822Email);
-			// TODO: error handling
-			//return (String) responseJSON.get("response");
 			return arw.getStatus().toString();
 		}
 
@@ -1668,11 +1659,9 @@ class MigrationTaskService {
 			return getCToolsGroupInfoJson(sessionId,siteId,getArchiveEmail(sessionId,siteId));
 		}
 
-		// test url
 		//https://ctdevsearch.dsc.umich.edu/direct/mailarchive/siteMessages/22b5d237-0a22-4995-a4b1-d5022dd90a86.json
 		// Get the new Google email address based on the email name available in the archive.
 		protected String getArchiveEmail(String sessionId, String siteId) {
-			//String suffix = env.getProperty("group.email.suffix") != null ? env.getProperty("group.email.suffix") : "";
 			RestTemplate restTemplate = new RestTemplate();
 			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+"/direct/mailarchive/siteMessages/"+siteId+".json?_sessionId=" + sessionId;
@@ -1691,7 +1680,7 @@ class MigrationTaskService {
 				log.warn("no google suffix provided. Property name is: {}",Utils.GGB_GOOGLE_GROUP_DOMAIN);
 				suffix = "";
 			}
-			// TODO: standarize email name generation.
+
 			String group_name = archiveEmail+"@"+suffix;
 			log.info("from extractArchiveEmailName: {} ",archiveEmail);
 
@@ -1741,18 +1730,14 @@ class MigrationTaskService {
 		 */
 
 		protected JSONObject createGoogleGroupForSite(String sessionId, String siteId) {
-			
+
 			GGBApiWrapper ggb = establishGGBConnection();
-			
+
 			JSONObject googleGroupSettings = getGoogleGroupSettings(sessionId, siteId);
-			
+
 			String new_group_url = String.format("/groups/%s",googleGroupSettings.getString("email"));
-			//IMPLEMENT
-			//ApiResultWrapper arw = ggb.put_request(new_group_url,jo.toString());
 			ApiResultWrapper arw = ggb.put_request(new_group_url,googleGroupSettings.toString());
-			// TODO: redo ggb request
-			//log.error("fix GGB request");
-			// TODO: error checking.
+
 			log.warn("check for errors");
 
 			if (arw.getStatus() == SC_OK) {
@@ -1762,12 +1747,12 @@ class MigrationTaskService {
 		}
 
 		public GGBApiWrapper establishGGBConnection() {
+			
 			String server = env.getProperty(Utils.GGB_SERVER_NAME);
 			String ggb_authinfo_username = env.getProperty(Utils.GGB_AUTHINFO_BASICAUTH_USERNAME);
 			String ggb_authinfo_password = env.getProperty(Utils.GGB_AUTHINFO_BASICAUTH_PASSWORD);
 			HashMap<String,String> basicAuthInfo = createBasicAuthInfo(ggb_authinfo_username,ggb_authinfo_password);			
-			
-			//GGBApiWrapper ggb = new GGBApiWrapper(server,null);
+
 			GGBApiWrapper ggb = new GGBApiWrapper(server,basicAuthInfo);
 			return ggb;
 		}
@@ -1847,7 +1832,6 @@ class MigrationTaskService {
 		}
 
 
-		//
 		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
 
 			log.debug("process members for site: "+siteId);
@@ -1875,24 +1859,15 @@ class MigrationTaskService {
 
 
 		String addMemberToGroup(String group_id, String member_email, String member_role) {
-			// TODO: use only one instance of ggb.
-			// TODO: proper return value.
-			// TODO: status handling
-//			String server = env.getProperty(Utils.GGB_SERVER_NAME);
-//			GGBApiWrapper ggb = new GGBApiWrapper(server,null);
-			
+
 			GGBApiWrapper ggb = establishGGBConnection();
-			
+
 			String new_member_url = String.format("/groups/%s/members/%s",group_id,member_email);
 
 			JSONObject jo = new JSONObject();
 			jo.put("email",member_email);
 			jo.put("role",member_role);
-			//IMPLEMENT
-            // 	TODO: fix ggb request
-			//HttpResponse response = ggb.put_request(new_member_url,jo.toString());
 			ApiResultWrapper result = ggb.put_request(new_member_url,jo.toString());
-			//return "MAYBE";
 			return result.toString();
 		}
 

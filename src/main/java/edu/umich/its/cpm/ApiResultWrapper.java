@@ -3,7 +3,7 @@ package edu.umich.its.cpm;
 import lombok.Data;
 import lombok.NonNull;
 
-// Wrapper for results of API calls.  Will make the status code, optional message, and actual result
+// Wrapper for results of API calls.  Will make the status code, status message, and actual result
 // available in standard JSON format. 
 
 
