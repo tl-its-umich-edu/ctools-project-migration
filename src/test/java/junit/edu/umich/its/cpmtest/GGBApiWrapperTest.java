@@ -224,7 +224,7 @@ public class GGBApiWrapperTest {
 			String response = arw.getResult();
 			log.debug("put_group: response: {}",response);
 			JSONObject result_jo = new JSONObject(response);
-			assertEquals("successful group insert","SUCCESS.XXX",result_jo.get("responseCode"));
+			assertEquals("successful group insert","SUCCESS",result_jo.get("responseCode"));
 		}
 		else if (status == SC_CONFLICT) {
 			assertEquals("put_group: conflict request",SC_CONFLICT,status);
