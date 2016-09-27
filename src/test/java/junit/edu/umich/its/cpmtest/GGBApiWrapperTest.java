@@ -73,7 +73,7 @@ public class GGBApiWrapperTest {
 	public void setUp() {
 		log.debug("in setup");
 		badAuth = createBasicAuthInfo("HOWDY","DUTY");
-		goodAuth = createBasicAuthInfo("upstart","ohcrap");
+		goodAuth = createBasicAuthInfo("BILLY","BOBBY");
 		log.debug("setup: goodAuth: {}",goodAuth);
 	}
 
