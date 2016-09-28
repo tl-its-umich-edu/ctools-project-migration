@@ -1768,19 +1768,26 @@ public class MigrationController {
 		return new ResponseEntity<String>("Bulk Migration started.", headers,
 				HttpStatus.ACCEPTED);
 	}
-	
+
 	private void handleBulkMessageGoogleMigration(String sessionId,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName) {
-		
+
 		// Create and populate group up front.  Migrate messages async.
 		// call Umich Google Group microservice for group creation
 		// and get the group group id, and group name
-		JSONObject googleGroupSettings = (JSONObject) migrationTaskService.createGoogleGroupForSite(sessionId,siteId);
+		JSONObject googleGroupSettings = migrationTaskService.getGoogleGroupSettings(sessionId, siteId);
+		ApiResultWrapper arw = migrationTaskService.createGoogleGroupForSite(googleGroupSettings);
+
+		if (arw.getStatus() != HttpStatus.OK.value() && arw.getStatus() != HttpStatus.CREATED.value()){
+			//TODO: continue after error?
+			log.info("group creation failed for site: {} with result: {}",siteId,arw.toString());
+		}
+
 		String googleGroupId = googleGroupSettings.getString("email");
 		String googleGroupName = googleGroupSettings.getString("name");
-		
+
 		// 1. add site members to Google Group membership
 		String membershipStatus = migrationTaskService.updateGoogleGroupMembershipFromSite(sessionId, siteId,get_site_members(siteId,sessionId));
 		log.info(" add site " + siteId + " membership into Google Group status: " + membershipStatus);
@@ -1789,13 +1796,13 @@ public class MigrationController {
 		HashMap<String, Object> saveBulkMigration  = saveBulkGoogleMigrationRecord(bulkMigrationId, bulkMigrationName, siteId,
 			siteName, toolId, toolName,
 			googleGroupId, googleGroupName, userId);
-		
+
 		// 3. delegate the actual message migrations to async calls
 		HashMap<String, String> status = migrationTaskService.processAddEmailMessages(
 				request, response, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId,
 				new HashMap<String, String>(), googleGroupId, siteId,
 				toolId, saveBulkMigration);
-		
+
 		if (status.containsKey("errorMessage")) {
 			log.info(this + " batch upload call for site id="
 					+ siteId + " error message="
@@ -1805,9 +1812,9 @@ public class MigrationController {
 					+ siteId + " migration started id="
 					+ status.get("migrationId"));
 		}
-		
+
 	}
-	
+
 	/**
 	 *
 	 * @param sessionId

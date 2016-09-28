@@ -9,13 +9,11 @@ import lombok.NonNull;
 
 @Data
 public class ApiResultWrapper {
-	
-	public final static int HTTP_SUCCESS = 200;
-	public final static int HTTP_BAD_REQUEST = 400;
-	public final static int HTTP_UNAUTHORIZED = 401;
-	public final static int HTTP_FORBIDDEN = 403;
-	public final static int HTTP_NOT_FOUND = 404;
-	public final static int HTTP_GATEWAY_TMEOUT = 504;
+
+	// For established Http status codes use another sources such as 
+	// import org.springframework.http.HttpStatus;
+	// These are additions so that we can use the ApiResultWrapper for request that end
+	// up with a non-standard status.
 	public final static int API_UNKNOWN_ERROR = 666;
 	public final static int API_EXCEPTION_ERROR = 667;
 	

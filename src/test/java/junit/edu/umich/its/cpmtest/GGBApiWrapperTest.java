@@ -11,6 +11,8 @@ import java.time.Instant;
 import java.util.Date;
 import java.util.HashMap;
 
+import org.springframework.http.HttpStatus;
+
 import javax.mail.internet.MailDateFormat;
 
 import static org.apache.http.HttpStatus.*;
@@ -34,8 +36,8 @@ public class GGBApiWrapperTest {
 	//String server = "https://one.durango.ctools.org/service";
 	//String server = "https://one.durango.ctools.org";
 	//String server = "http://six.durango.ctools.org/service";
-	//String server = "https://ggb.openshift.dsc.umich.edu";
-	String server = "http://ms-ggb-dev-cpm-dev.openshift.dsc.umich.edu";
+	String server = "https://ggb.openshift.dsc.umich.edu";
+	//String server = "http://ms-ggb-dev-cpm-dev.openshift.dsc.umich.edu";
 	
 	HashMap<String,String> badAuth = null;
 	HashMap<String,String> goodAuth = null;
@@ -128,7 +130,7 @@ public class GGBApiWrapperTest {
 		log.debug("get_status_ping: arw: {}",arw.toString());
 		log.debug("get_status_ping: response: {}",arw.getResult().toString());
 		JSONObject result = new JSONObject(arw.getResult().toString());
-		assertEquals("get_status_ping: get status url status",(Integer)ApiResultWrapper.HTTP_SUCCESS,arw.getStatus());
+		assertEquals("get_status_ping: get status url status",(Integer)HttpStatus.OK.value(),arw.getStatus());
 		String ping_url = (String) result.get("ping");
 
 		assertThat("ping_url is plausible",ping_url,containsString("/status/ping.json"));
@@ -154,7 +156,7 @@ public class GGBApiWrapperTest {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,goodAuth);
 		String request_url = "/test/protected";
 		ApiResultWrapper arw = ggb.get_request(request_url);
-		assertEquals("get_test_protected_good_credentials: successful request",arw.getStatus(),(Integer)200);
+		assertEquals("get_test_protected_good_credentials: successful request",arw.getStatus(),(Integer)HttpStatus.OK.value());
 		JSONObject result = new JSONObject(arw.getResult().toString());
 		log.error("get_test_protected_good_credentials: result: {}",result.toString());
 		String response = (String) result.get("response");
@@ -170,7 +172,7 @@ public class GGBApiWrapperTest {
 		GGBApiWrapper ggb = new GGBApiWrapper(server,badAuth);
 		String request_url = "/test/protected";
 		ApiResultWrapper arw = ggb.get_request(request_url);
-		assertEquals("get_test_protected_bad_credentials: authentication failed",arw.getStatus(),(Integer)401);
+		assertEquals("get_test_protected_bad_credentials: authentication failed",arw.getStatus(),(Integer)HttpStatus.UNAUTHORIZED.value());
 
 		JSONObject result = new JSONObject(arw.getResult().toString());
 		log.warn("get_test_bad_credentials: status: {}",arw.getStatus());
@@ -194,7 +196,7 @@ public class GGBApiWrapperTest {
 		log.debug("post_email: response_wrapper: {}",arw.toString());
 		log.warn("post_email: status: {}",arw.getStatus());
 		log.debug("post_email: request_url: {} response: {}",archive_url,arw.toString());
-		assertEquals("post_email: successful request",arw.getStatus(),(Integer)200);
+		assertEquals("post_email: successful request",arw.getStatus(),(Integer)HttpStatus.OK.value());
 		
 		String response = arw.getResult();
 		log.debug("post_email: response: {}",response);

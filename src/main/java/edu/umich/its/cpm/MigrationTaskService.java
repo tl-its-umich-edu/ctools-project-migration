@@ -1603,7 +1603,7 @@ class MigrationTaskService {
 		 * @return
 		 */
 
-		String addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
+		ApiResultWrapper addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
 			log.info("addEmailToGoogleGroup: group: {}",googleGroup);
 			log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
 
@@ -1611,7 +1611,7 @@ class MigrationTaskService {
 
 			String archive_url = "/groups/"+googleGroup+"/messages";
 			ApiResultWrapper arw= ggb.post_request(archive_url,rcf822Email);
-			return arw.getStatus().toString();
+			return arw;
 		}
 
 		// Get the json version of the site info.
@@ -1736,21 +1736,16 @@ class MigrationTaskService {
 		 * @return
 		 */
 
-		protected JSONObject createGoogleGroupForSite(String sessionId, String siteId) {
+		public ApiResultWrapper createGoogleGroupForSite(JSONObject googleGroupSettings) {
 
 			GGBApiWrapper ggb = establishGGBConnection();
-
-			JSONObject googleGroupSettings = getGoogleGroupSettings(sessionId, siteId);
 
 			String new_group_url = String.format("/groups/%s",googleGroupSettings.getString("email"));
 			ApiResultWrapper arw = ggb.put_request(new_group_url,googleGroupSettings.toString());
 
 			log.warn("check for errors");
 
-			if (arw.getStatus() == SC_OK) {
-				return googleGroupSettings;
-			}
-			return null;
+			return  arw;
 		}
 
 		public GGBApiWrapper establishGGBConnection() {
@@ -1863,7 +1858,7 @@ class MigrationTaskService {
 		}
 
 
-		String addMemberToGroup(String group_id, String member_email, String member_role) {
+		ApiResultWrapper addMemberToGroup(String group_id, String member_email, String member_role) {
 
 			GGBApiWrapper ggb = establishGGBConnection();
 
@@ -1873,7 +1868,7 @@ class MigrationTaskService {
 			jo.put("email",member_email);
 			jo.put("role",member_role);
 			ApiResultWrapper result = ggb.put_request(new_member_url,jo.toString());
-			return result.toString();
+			return result;
 		}
 
 		/**
@@ -1884,8 +1879,8 @@ class MigrationTaskService {
 		@Async
 		protected Future<String> uploadMessageToGoogleGroup(MigrationEmailMessage message) {
 
-			// status string
-			String status = "";
+			// result of call
+			String status = null;
 
 			String googleGroupId = message.getGoogle_group_id();
 
@@ -1909,7 +1904,8 @@ class MigrationTaskService {
 				mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 
 				// process the message
-				status = addEmailToGoogleGroup(googleGroupId, emailText);
+				ApiResultWrapper arw = addEmailToGoogleGroup(googleGroupId, emailText);
+				status = arw.getStatus().toString();
 				log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}",status,googleGroupId);
 
 			}
