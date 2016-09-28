@@ -36,8 +36,8 @@ public class GGBApiWrapperTest {
 	//String server = "https://one.durango.ctools.org/service";
 	//String server = "https://one.durango.ctools.org";
 	//String server = "http://six.durango.ctools.org/service";
-	String server = "https://ggb.openshift.dsc.umich.edu";
-	//String server = "http://ms-ggb-dev-cpm-dev.openshift.dsc.umich.edu";
+	//String server = "https://ggb.openshift.dsc.umich.edu";
+	String server = "http://ms-ggb-dev-cpm-dev.openshift.dsc.umich.edu";
 	
 	HashMap<String,String> badAuth = null;
 	HashMap<String,String> goodAuth = null;

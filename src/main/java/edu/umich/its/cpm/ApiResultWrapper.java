@@ -14,6 +14,7 @@ public class ApiResultWrapper {
 	// import org.springframework.http.HttpStatus;
 	// These are additions so that we can use the ApiResultWrapper for request that end
 	// up with a non-standard status.
+
 	public final static int API_UNKNOWN_ERROR = 666;
 	public final static int API_EXCEPTION_ERROR = 667;
 	
