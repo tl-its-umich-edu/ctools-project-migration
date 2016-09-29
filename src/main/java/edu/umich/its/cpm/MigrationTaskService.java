@@ -9,6 +9,8 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+import static org.apache.http.HttpStatus.*;
+
 import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
@@ -1601,15 +1603,15 @@ class MigrationTaskService {
 		 * @return
 		 */
 
-		String  addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
-			String ggb_server = env.getProperty(Utils.GGB_SERVER_NAME);
+		ApiResultWrapper addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
 			log.info("addEmailToGoogleGroup: group: {}",googleGroup);
 			log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
-			GGBApiWrapper ggb = new GGBApiWrapper(ggb_server,null);
+
+			GGBApiWrapper ggb = establishGGBConnection();
+
 			String archive_url = "/groups/"+googleGroup+"/messages";
-			String response = ggb.post_request(archive_url,rcf822Email);
-			// TODO: error handling
-			return response;
+			ApiResultWrapper arw= ggb.post_request(archive_url,rcf822Email);
+			return arw;
 		}
 
 		// Get the json version of the site info.
@@ -1664,11 +1666,9 @@ class MigrationTaskService {
 			return getCToolsGroupInfoJson(sessionId,siteId,getArchiveEmail(sessionId,siteId));
 		}
 
-		// test url
 		//https://ctdevsearch.dsc.umich.edu/direct/mailarchive/siteMessages/22b5d237-0a22-4995-a4b1-d5022dd90a86.json
 		// Get the new Google email address based on the email name available in the archive.
 		protected String getArchiveEmail(String sessionId, String siteId) {
-			//String suffix = env.getProperty("group.email.suffix") != null ? env.getProperty("group.email.suffix") : "";
 			RestTemplate restTemplate = new RestTemplate();
 			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
 					+"/direct/mailarchive/siteMessages/"+siteId+".json?_sessionId=" + sessionId;
@@ -1687,7 +1687,7 @@ class MigrationTaskService {
 				log.warn("no google suffix provided. Property name is: {}",Utils.GGB_GOOGLE_GROUP_DOMAIN);
 				suffix = "";
 			}
-			// TODO: standarize email name generation.
+
 			String group_name = archiveEmail+"@"+suffix;
 			log.info("from extractArchiveEmailName: {} ",archiveEmail);
 
@@ -1736,19 +1736,36 @@ class MigrationTaskService {
 		 * @return
 		 */
 
-		protected JSONObject createGoogleGroupForSite(String sessionId, String siteId) {
-			String server = env.getProperty(Utils.GGB_SERVER_NAME);
+		public ApiResultWrapper createGoogleGroupForSite(JSONObject googleGroupSettings) {
 
-			JSONObject googleGroupSettings = getGoogleGroupSettings(sessionId, siteId);
+			GGBApiWrapper ggb = establishGGBConnection();
 
-			GGBApiWrapper ggb = new GGBApiWrapper(server,null);
-			String url = String.format("/groups/%s",googleGroupSettings.getString("email"));
-			HttpResponse ggb_response = ggb.put_request(url, googleGroupSettings.toString());
-			// TODO: error checking.
+			String new_group_url = String.format("/groups/%s",googleGroupSettings.getString("email"));
+			ApiResultWrapper arw = ggb.put_request(new_group_url,googleGroupSettings.toString());
+
 			log.warn("check for errors");
-			log.debug("group add ggb_response: {} ",ggb_response.toString());
 
-			return googleGroupSettings;
+			return  arw;
+
+		}
+
+		public GGBApiWrapper establishGGBConnection() {
+			
+			String server = env.getProperty(Utils.GGB_SERVER_NAME);
+			String ggb_authinfo_username = env.getProperty(Utils.GGB_AUTHINFO_BASICAUTH_USERNAME);
+			String ggb_authinfo_password = env.getProperty(Utils.GGB_AUTHINFO_BASICAUTH_PASSWORD);
+			HashMap<String,String> basicAuthInfo = createBasicAuthInfo(ggb_authinfo_username,ggb_authinfo_password);			
+
+			GGBApiWrapper ggb = new GGBApiWrapper(server,basicAuthInfo);
+			return ggb;
+		}
+		
+		HashMap<String,String> createBasicAuthInfo(String username,String password) {
+
+			HashMap<String,String >authInfo = new HashMap<String,String>();
+			authInfo.put("userName",username);
+			authInfo.put("password",password);
+			return authInfo;
 		}
 
 		// Change the ctools site information into Google group information.
@@ -1816,7 +1833,6 @@ class MigrationTaskService {
 		}
 
 
-		//
 		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
 
 			log.debug("process members for site: "+siteId);
@@ -1843,20 +1859,17 @@ class MigrationTaskService {
 		}
 
 
-		String addMemberToGroup(String group_id, String member_email, String member_role) {
-			// TODO: use only one instance of ggb.
-			// TODO: proper return value.
-			// TODO: status handling
-			String server = env.getProperty(Utils.GGB_SERVER_NAME);
-			GGBApiWrapper ggb = new GGBApiWrapper(server,null);
+		ApiResultWrapper addMemberToGroup(String group_id, String member_email, String member_role) {
+
+			GGBApiWrapper ggb = establishGGBConnection();
+
 			String new_member_url = String.format("/groups/%s/members/%s",group_id,member_email);
 
 			JSONObject jo = new JSONObject();
 			jo.put("email",member_email);
 			jo.put("role",member_role);
-
-			HttpResponse response = ggb.put_request(new_member_url,jo.toString());
-			return "MAYBE";
+			ApiResultWrapper result = ggb.put_request(new_member_url,jo.toString());
+			return result;
 		}
 
 		/**
@@ -1867,8 +1880,8 @@ class MigrationTaskService {
 		@Async
 		protected Future<String> uploadMessageToGoogleGroup(MigrationEmailMessage message) {
 
-			// status string
-			String status = "";
+			// result of call
+			String status = null;
 
 			String googleGroupId = message.getGoogle_group_id();
 
@@ -1892,7 +1905,8 @@ class MigrationTaskService {
 				mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 
 				// process the message
-				status = addEmailToGoogleGroup(googleGroupId, emailText);
+				ApiResultWrapper arw = addEmailToGoogleGroup(googleGroupId, emailText);
+				status = arw.getStatus().toString();
 				log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}",status,googleGroupId);
 
 			}
