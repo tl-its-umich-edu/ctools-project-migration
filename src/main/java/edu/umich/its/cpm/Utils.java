@@ -171,6 +171,9 @@ class Utils {
 	// the Sakai Evaluation tool id
 	public static final String SAKAI_EVALUATION_TOOL_ID = "sakai.rsf.evaluation";
 	
+	public static final String GGB_AUTHINFO_BASICAUTH_USERNAME = "ggb.authinfo.basicauth.username";
+	public static final String GGB_AUTHINFO_BASICAUTH_PASSWORD = "ggb.authinfo.basicauth.password";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
