@@ -329,8 +329,14 @@ public class MigrationController {
 					String userRole = userRoles.get(currentUserId);
 					if (Utils.ROLE_OWNER.equals(userRole))
 					{
-						// keep the site JSON if current user has Owner role in this site
-						ownerSitesJSONArray.put(siteJSON);
+						
+						// check whether this site is automatically created from Canvas
+						// and with only one Evaluation tool inside
+						if (!isEvalProjectSite(sessionId, siteId))
+						{
+							// keep the site JSON if current user has Owner role in this site
+							ownerSitesJSONArray.put(siteJSON);
+						}
 					}
 				}
 				catch (RestClientException e)
@@ -356,6 +362,39 @@ public class MigrationController {
 			log.error(this + " error parsing sites JSON value " + projectsString);
 		}
 		return projectsString;
+	}
+
+	/**
+	 * Some project sites are automatically created from Canvas
+	 * those sites have only one tool, the evaluation tool
+	 * Do not show those sites in user's migration project list
+	 * @param sessionId
+	 * @param siteId
+	 * @return
+	 */
+	private boolean isEvalProjectSite(String sessionId, String siteId) {
+		// filter out those sites that has only evaluation tool inside
+		boolean evaluationSite = false;
+		HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
+		String pagesString = pagesMap.get("pagesString");
+		JSONArray pagesJSON = new JSONArray(pagesString);
+		if (pagesJSON.length() == 1)
+		{
+			// site only has one page
+			// get the first page
+			JSONObject pageJSON = (JSONObject) pagesJSON.get(0);
+			// look the tools attribute and find whether it only contain one tool --- Evaluation tool
+			JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
+			if (toolsJSON.length() == 1)
+			{
+				// get the only tool JSON object
+				JSONObject toolJSON = (JSONObject) toolsJSON.get(0);
+				if (Utils.SAKAI_EVALUATION_TOOL_ID.equals(toolJSON.get("toolId"))) {
+					evaluationSite =true;
+				}
+			}
+		}
+		return evaluationSite;
 	}
 
 	/**

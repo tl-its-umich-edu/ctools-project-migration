@@ -167,6 +167,10 @@ class Utils {
 	// Google connection property names
 	public static final String GGB_SERVER_NAME = "ggb.server";
 	public static final String GGB_GOOGLE_GROUP_DOMAIN = "ggb.google.group.domain";	
+	
+	// the Sakai Evaluation tool id
+	public static final String SAKAI_EVALUATION_TOOL_ID = "sakai.rsf.evaluation";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
