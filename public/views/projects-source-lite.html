@@ -22,6 +22,7 @@
 					<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
 						<h4 class="site-header">
 							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
+              <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
 							<small class="bigSmall" ng-show="project.last_migrated">last
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
@@ -96,7 +97,7 @@
 					<div class="row noFocus"
 						id="toolSelDest{{project.tool_id}}" tabindex="-1">
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink">
-              <a ng-show="project.tool_type==='sakai.resources'" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download {{project.tool_name}} as a zip file</a>
+              <a ng-show="project.tool_type==='sakai.resources'" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zip file</a>
               <div ng-show="project.tool_type==='sakai.mailbox'">
                 <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped .mbox file</a></div>
 						</div>

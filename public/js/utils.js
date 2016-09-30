@@ -48,12 +48,11 @@ var getTypeCode = function(type){
 user has requested the tools of a given project. Returned json is a Sakai like /direct feed
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
-
-*/var transformProject = function (data){
-  var toolColl = [];
+*/
+var transformProject = function (data){
+    var toolColl = [];
     var siteId = data.data[0].tools[0].siteId;
-    var siteName = $('#' + siteId.replace('~','')).text();
-    //console.log(siteName)
+    var siteName = $('#siteid' + siteId.replace('~','')).text();
 
   $.each(data.data, function(i, item){
     /*need to make this tool filtering more visible & maintainable
