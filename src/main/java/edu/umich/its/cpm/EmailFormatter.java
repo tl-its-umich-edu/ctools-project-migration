@@ -3,8 +3,12 @@ package edu.umich.its.cpm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
+import org.json.JSONArray;
+import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 
 import javax.activation.DataHandler;
 import javax.mail.BodyPart;
@@ -31,7 +35,20 @@ public class EmailFormatter {
     public static final String NEW_LINE = "\r\n";
     public static final String BOUNDARY = "boundary=";
     public static final String FROM = "From ";
+    public static final String SUBJECT_WITH_COLON = "Subject:";
     public AttachmentHandler attachmentHandler;
+
+    public Environment getEnv() {
+        return env;
+    }
+
+    public void setEnv(Environment env) {
+        this.env = env;
+    }
+
+    @Autowired
+    private Environment env;
+
 
     private String emailMessage;
 
@@ -41,12 +58,91 @@ public class EmailFormatter {
         ObjectMapper mapper = new ObjectMapper();
         this.emailMessage = emailMgs;
         this.attachmentHandler = attachmentHandler;
-        this.messageMap = mapper.readValue(this.emailMessage, new TypeReference<HashMap<String, Object>>(){});
+        this.messageMap = mapper.readValue(this.emailMessage, new TypeReference<HashMap<String, Object>>() {
+        });
     }
 
-    public String rfc822Format() {
+    public List<Object> rfc822Format() {
+        List<Object> emailMsgPlusStatus = rfcFormatWithoutAttachmentLimitCheck();
+        String rfcFormattedText = (String) emailMsgPlusStatus.get(0);
+        JSONObject status = (JSONObject) emailMsgPlusStatus.get(1);
+        status.put(Utils.JSON_ATTR_ITEM_ID, getItemId());
+
+        // Something bad happened in formatting the email
+        if (rfcFormattedText == null) {
+            log.error("Email formatting is not successful");
+
+            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
+            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+            emailMsgPlusStatus.set(1, status);
+            return emailMsgPlusStatus;
+        }
+        // Large email size check, if grater than proposed limit attachment will be dropped
+        if (checkMsgSizeMoreThanExpectedLimit(rfcFormattedText)) {
+            log.warn("Attachments are dropped for the message");
+
+            rfcFormattedText = removeAttachments(rfcFormattedText);
+            emailMsgPlusStatus.set(0, rfcFormattedText);
+            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
+            status.put(Utils.JSON_ATTR_MESSAGE, "email Message size exceeds the expected limit, attachments dropped");
+            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+            emailMsgPlusStatus.set(1, status);
+
+            return emailMsgPlusStatus;
+        }
+
+        JSONArray attachments = status.getJSONArray("attachments");
+        for (int i = 0; i < attachments.length(); i++) {
+            JSONObject attach = attachments.getJSONObject(i);
+            if(attach.get(Utils.MIGRATION_STATUS)!= Utils.STATUS_OK){
+                status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
+                status.put(Utils.JSON_ATTR_MESSAGE,"attachments URL from Ctools couldn't be resolved, some or all of the attachments dropped");
+                status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+                emailMsgPlusStatus.set(1, status);
+                return emailMsgPlusStatus;
+            }
+        }
+        // everything went fine at this point
+        status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_OK);
+        status.put(Utils.JSON_ATTR_MESSAGE, Utils.SUCCESS_MSG);
+        status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+        emailMsgPlusStatus.set(1, status);
+        return emailMsgPlusStatus;
+    }
+
+    public List<Object> rfcFormatWithoutAttachmentLimitCheck() {
         ArrayList<String> headers = prunedHeadersWithoutContentType();
-        return getFormattedEmailText(headers).toString();
+        List<Object> formattedEmailText = getFormattedEmailText(headers);
+        return formattedEmailText;
+    }
+
+    public String removeAttachments(String rfcFormattedText) {
+        String emailWithOutattachments = subStringToRemoveAttachments(rfcFormattedText);
+        return emailWithOutattachments;
+    }
+
+    private String subStringToRemoveAttachments(String rfcFormattedText) {
+        StringBuilder emailTextWithBodyNoAttachments = new StringBuilder();
+        String attachmentRemovedText = subStringBefore(rfcFormattedText, "Content-Transfer-Encoding: base64");
+        String[] msgBodyWithSomeExtra = attachmentRemovedText.split(NEW_LINE);
+        List<String> emailTextList = new LinkedList(Arrays.asList(msgBodyWithSomeExtra));
+        int size = emailTextList.size();
+        emailTextList.remove(size - 1); // remove the last element in the list
+        String lastItemInList = emailTextList.get(emailTextList.size() - 1) + "--"; // the replacing the new last element with new string
+        emailTextList.set(emailTextList.size() - 1, lastItemInList);
+        for (int i = 0; i < emailTextList.size(); i++) {
+            if (i == (emailTextList.size() - 2)) {
+                String lastLineInBody = emailTextList.get(i);
+                String appendToBodyText = NEW_LINE + NEW_LINE +
+                        "YOUR ATTACHMENTS ARE DROPPED DUE TO SIZE LIMIT";
+                emailTextList.set(i, lastLineInBody + appendToBodyText);
+            }
+            emailTextWithBodyNoAttachments.append(emailTextList.get(i));
+            emailTextWithBodyNoAttachments.append(NEW_LINE);
+        }
+
+
+        return emailTextWithBodyNoAttachments.toString();
     }
 
     /*
@@ -54,45 +150,97 @@ public class EmailFormatter {
       Mbox format email messages file must start like "From doe@eg.edu Wed Aug 24 14:04:47 2016" and
       each message is separated by blank line
      */
-    public String mboxFormat() {
+    public List<Object> mboxFormat() {
         ArrayList<String> headers = mboxFormatHeaders();
-        return getMboxFormattedEmailText(headers);
+        List<Object> mboxFormatEmailTextPlusStatus = getMboxFormattedEmailText(headers);
+        String emailText = (String) mboxFormatEmailTextPlusStatus.get(0);
+        JSONObject status = (JSONObject) mboxFormatEmailTextPlusStatus.get(1);
+        if (emailText == null) {
+            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
+            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+            mboxFormatEmailTextPlusStatus.set(1, status);
+            log.error("Mbox formatting is not successful");
+            return mboxFormatEmailTextPlusStatus;
+        }
+
+        JSONArray attachments = status.getJSONArray("attachments");
+        for (int i = 0; i < attachments.length(); i++) {
+            JSONObject attach = attachments.getJSONObject(i);
+            if(attach.get(Utils.MIGRATION_STATUS)!= Utils.STATUS_OK){
+                status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
+                status.put(Utils.JSON_ATTR_MESSAGE,"Attachments URL from Ctools couldn't be resolved");
+                status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+                mboxFormatEmailTextPlusStatus.set(1, status);
+                return mboxFormatEmailTextPlusStatus;
+            }
+        }
+        // everything went fine at this point
+        status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_OK);
+        status.put(Utils.JSON_ATTR_MESSAGE, Utils.SUCCESS_MSG);
+        status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+        mboxFormatEmailTextPlusStatus.set(1, status);
+        return mboxFormatEmailTextPlusStatus;
     }
 
-    private StringBuilder getFormattedEmailText(ArrayList<String> headers) {
+    private List<Object> getFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
+        List<Object> emailTextAndStatusObject = getEmailText();
+        String emailText = (String) emailTextAndStatusObject.get(0);
+        if (emailText == null) {
+            return emailTextAndStatusObject;
+        }
+        String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
         emailFormat.append(bodyAndAttachment);
         emailFormat.append(NEW_LINE);
-        return emailFormat;
+        emailTextAndStatusObject.set(0, emailFormat.toString());
+        return emailTextAndStatusObject;
     }
 
-    private String getMboxFormattedEmailText(ArrayList<String> headers) {
+    public boolean checkMsgSizeMoreThanExpectedLimit(String rfc822FormatMessage) {
+        long rfc822MgsSize = rfc822FormatMessage.length();
+        log.debug("Email Message Size: " + rfc822MgsSize + " bytes");
+        String attachLimit = env.getProperty(Utils.ENV_ATTACHMENT_LIMIT);
+        log.debug("Attachment Size Limit : " + attachLimit + " bytes");
+        long attachmentLimit = Long.parseLong(attachLimit);
+        if (rfc822MgsSize > attachmentLimit) {
+            log.info("Email Message Size: " + rfc822MgsSize + " bytes");
+            return true;
+        }
+        return false;
+    }
+
+    private List<Object> getMboxFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
+        List<Object> emailTextAndStatusObject = getEmailText();
+        String emailText = (String) emailTextAndStatusObject.get(0);
+        if (emailText == null) {
+            return emailTextAndStatusObject;
+        }
+        String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
         ArrayList<String> pureBodyText = mboxBodyFormatting(bodyAndAttachment);
         String[] split = bodyAndAttachment.split(NEW_LINE);
         List<String> formattedBodyAndAttachment = Arrays.asList(split);
-        for (int i=0;i<4;i++) {
-            pureBodyText.add(i,formattedBodyAndAttachment.get(i));
+        for (int i = 0; i < 4; i++) {
+            pureBodyText.add(i, formattedBodyAndAttachment.get(i));
         }
 
-        for(int i=0; i<pureBodyText.size();i++){
-            formattedBodyAndAttachment.set(i,pureBodyText.get(i));
+        for (int i = 0; i < pureBodyText.size(); i++) {
+            formattedBodyAndAttachment.set(i, pureBodyText.get(i));
         }
-        for (String format: formattedBodyAndAttachment) {
+        for (String format : formattedBodyAndAttachment) {
             emailFormat.append(format);
             emailFormat.append(NEW_LINE);
         }
-        return emailFormat.toString() ;
+        emailTextAndStatusObject.set(0, emailFormat.toString());
+        return emailTextAndStatusObject;
     }
 
     public ArrayList<String> mboxBodyFormatting(String bodyAndAttachment) {
@@ -114,7 +262,7 @@ public class EmailFormatter {
         ArrayList<String> modifiedSplit = new ArrayList<String>();
         for (String body : bodyTextSplit) {
             if (body.startsWith(FROM)) {
-                body = body.replaceFirst(FROM,">From ");
+                body = body.replaceFirst(FROM, ">From ");
             }
             modifiedSplit.add(body);
         }
@@ -129,6 +277,22 @@ public class EmailFormatter {
     public ArrayList<String> getHeaders() {
         ArrayList<String> headers = (ArrayList<String>) messageMap.get("headers");
         return headers;
+    }
+    public String getItemId(){
+        ArrayList<String> headers = getHeaders();
+        String date=null;
+        String subject=null;
+        String itemId;
+        for (String header: headers) {
+            if (header.startsWith(DATE_WITH_COLON)) {
+                 date = header.split(DATE_WITH_COLON)[1].trim();
+            }
+            if(header.startsWith(SUBJECT_WITH_COLON)){
+                 subject = header.split(SUBJECT_WITH_COLON)[1].trim();
+            }
+        }
+        itemId=date+" "+subject;
+        return itemId;
     }
 
     //we are taking out all the headers that  contains "content-type" as these are again created again with
@@ -174,7 +338,7 @@ public class EmailFormatter {
                     // Wed Aug 24 14:04:47 2016
                     date = ascTimePattern.format(new Date(epochTime));
                 } catch (java.text.ParseException e) {
-                    log.error("Error occurred while paring the Date: "+dateTemp+ " due to" + e.getMessage());
+                    log.error("Error occurred while paring the Date: " + dateTemp + " due to" + e.getMessage());
                 }
 
             }
@@ -211,10 +375,11 @@ public class EmailFormatter {
      We are using java mailing services for generating the emailText. generally the mail services complaint with RFC822
      Mime format.
      */
-    public String getEmailText() {
+    public List<Object> getEmailText() {
         Session session = null;
         MimeMessage message = new MimeMessage(session);
         String emailText = null;
+        JSONObject status = new JSONObject();
         try {
             Multipart multipart = new MimeMultipart();
 
@@ -228,23 +393,35 @@ public class EmailFormatter {
 
             // attachment part of email
             HashMap<String, ArrayList<String>> attachments = getAttachments();
+            JSONArray attachmentArray = new JSONArray();
+            status.put(Utils.JSON_ATTR_MAIL_ATTACHMENTS, attachmentArray);
             if (!attachments.isEmpty()) {
                 Set<String> attachmentIDs = attachments.keySet();
                 for (String id : attachmentIDs) {
+                    JSONObject attachmentStatus = new JSONObject();
                     msgBodyPart = new MimeBodyPart();
                     ArrayList<String> attachmentMetaData = attachments.get(id); // [Mimetype, fileName, attachmentUrl]
                     String attachmentUrl = attachmentMetaData.get(2);
                     String mimeType = attachmentMetaData.get(0);
                     String fileName = attachmentMetaData.get(1);
                     byte[] fileContent = attachmentHandler.getAttachmentContent(attachmentUrl);
-                    msgBodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(fileContent, mimeType)));
-                    msgBodyPart.setFileName(fileName);
-                    msgBodyPart.addHeader("Content-Transfer-Encoding", "base64");
-                    multipart.addBodyPart(msgBodyPart);
+                    if (fileContent != null) {
+                        msgBodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(fileContent, mimeType)));
+                        msgBodyPart.setFileName(fileName);
+                        msgBodyPart.addHeader("Content-Transfer-Encoding", "base64");
+                        multipart.addBodyPart(msgBodyPart);
+                        attachmentStatus.put(Utils.JSON_ATTR_MAIL_NAME, fileName);
+                        attachmentStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
+                    } else {
+                        attachmentStatus.put(Utils.JSON_ATTR_MAIL_NAME, attachmentUrl);
+                        attachmentStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+                    }
+                    attachmentArray.put(attachmentStatus);
 
                 }
-
+                status.put(Utils.JSON_ATTR_MAIL_ATTACHMENTS, attachmentArray);
             }
+
             message.setContent(multipart);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             message.writeTo(output);
@@ -252,12 +429,20 @@ public class EmailFormatter {
 
         } catch (MessagingException e) {
             log.error("Error occurred while generating the email stream" + e.getMessage());
+            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred generating email stream");
 
         } catch (IOException ioe) {
-            log.error("Error occurred while process writing the Mime message as stream" + ioe.getMessage());
-
+            log.error("Error occurred while process writing the Mime message to stream" + ioe.getMessage());
+            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred when writing the Mime message to stream");
+        } catch (Exception ioe) {
+            log.error("Expection occurred while generating a email stream " + ioe.getMessage());
+            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred when writing the Mime message to stream");
         }
-        return emailText;
+        List<Object> emailTextPlusStatus = new ArrayList<Object>();
+        emailTextPlusStatus.add(emailText);
+        emailTextPlusStatus.add(status);
+
+        return emailTextPlusStatus;
     }
 
     public String emailTextWithBodyAndAttachment(String emailText) {
@@ -271,6 +456,14 @@ public class EmailFormatter {
             return "";
         }
         return emailText.substring(posA);
+    }
+
+    public String subStringBefore(String emailText, String contentToChopFrom) {
+        int posA = emailText.indexOf(contentToChopFrom);
+        if (posA == -1) {
+            return "";
+        }
+        return emailText.substring(0, posA);
     }
 
     public String subStringInBetween(String emailText, String chopper) {

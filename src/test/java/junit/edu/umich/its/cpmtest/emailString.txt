@@ -1,0 +1,28 @@
+Received: from localhost ([127.0.0.1]) by prefect.dsc.umich.edu (JAMES SMTP Server 2.3.2) with SMTP ID 920 for <mbox-2@ctdev.dsc.umich.edu>; Tue, 20 Sep 2016 12:59:30 -0400 (EDT)
+Received: from snowwhite.mr.itd.umich.edu (tl-nonprod-asb-nat1.dsc.umich.edu [141.211.192.39]) by prefect.dsc.umich.edu (Postfix) with ESMTP id 24761CB2 for <mbox-2@ctdev.dsc.umich.edu>; Tue, 20 Sep 2016 12:59:30 -0400 (EDT)
+Authentication-Results: snowwhite.mr.itd.umich.edu; iprev=pass policy.iprev=209.85.218.52 (mail-oi0-f52.google.com); spf=pass smtp.mailfrom=pushyami@umich.edu; dkim=pass header.d=@umich.edu; dmarc=pass header.from=pushyami@umich.edu
+Received: FROM mail-oi0-f52.google.com (mail-oi0-f52.google.com [209.85.218.52]) By snowwhite.mr.itd.umich.edu ID 57E16AEB.94005.395; Tue, 20 Sep 2016 12:59:23 -0400
+Received: by mail-oi0-f52.google.com with SMTP id r126so29242339oib.0 for <mbox-2@ctdev.dsc.umich.edu>; Tue, 20 Sep 2016 09:59:23 -0700 (PDT)
+DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=umich.edu; s=google-2016-06-03; h=mime-version:from:date:message-id:subject:to; bh=VYJct9w+SZhk1u2A9ed2h9zI1xnv8bn0jew0VXnsL+o=; b=QQamvo3fHuV5dqh9NIaTNNRQNl6+jYkkOCC1EGyK7F5MU3eNBLuPo9QJ1nSTB9gntf UTcKh0F8fNKedILr+a/fHVbYsn0uGYVO5bwECcZe8iURxxLblaZZMDNGfwpOK30eDRfO Yttzs30pmujkmtccM51x64QtS1s+X6CGd2bM9tluG+7yWNMlPS7ILQ5+GKcq1qMpZXHk f/AeL8hfLTm9DTiDN27Yh3QaWs9ydthUCK3GgQpurBszizgSaHmNI1YHSjEo1kwPjpEo ESeMZSJaqVeH1eHq5Nu8coyKxgJsGhf9VysAReN9UVlEz6unLxFNt3l9DI4bO6GetL9g 7QKw==
+X-Google-DKIM-Signature: v=1; a=rsa-sha256; c=relaxed/relaxed; d=1e100.net; s=20130820; h=x-gm-message-state:mime-version:from:date:message-id:subject:to; bh=VYJct9w+SZhk1u2A9ed2h9zI1xnv8bn0jew0VXnsL+o=; b=WOfdpzoKJrra9nq/ua6qaA+YqrCqAKqqSpDAxB14z91oL0sla2icrY7STFqBgJZEq+ JzozHBXTYf19pdzFRlIOWKTTJihcVSHU3zZGuvj2hu55X75qE4CK+xlrHqMAZYXnn+q/ cKyoswplMDO7X5Ltk2zVXQNc0E60Sa7zdGLKHNuywTqOxN5dDfhAjp5+aDS1EEO9ufFF IEXuMarCsTXpwc0+QzwUshf8CmTcnb7YS2bHpXvaTrkLd+6lDmIjFvLPEgGZ60Oe/ijQ IZ0qezDRbBy/sW1WLZ935udRq+Ypt6ZexuhdgtHvw52O5m76YzRaOd8mKFopOJPzt8Nj 385g==
+X-Gm-Message-State: AE9vXwNlUPJ9GDAQGDMS0tJsRksNGjNEcFWU84C2ED2Gyx6P3VlZYS6+AG5g+2UQB1bcb8HGd8X66OYZeCG1ZhKplnw=
+X-Received: by 10.202.221.138 with SMTP id u132mr31622718oig.120.1474390702367; Tue, 20 Sep 2016 09:58:22 -0700 (PDT)
+MIME-Version: 1.0
+Received: by 10.202.186.70 with HTTP; Tue, 20 Sep 2016 09:58:21 -0700 (PDT)
+From: Pushyami Gundala <pushyami@umich.edu>
+Date: Tue, 20 Sep 2016 12:58:21 -0400
+Message-ID: <CAF8Wsuop8XDMKrjDMPqQEFH8L+EprUQRs=+pYGYzMN1K7BxowQ@mail.gmail.com>
+Subject: Attachment with 5mb size
+To: mbox-2@ctdev.dsc.umich.edu
+List-Id: <main.localhost>
+Content-Type: multipart/mixed;
+	boundary="XXX"
+
+--XXX
+Content-Type: text/plain; charset=UTF-8
+Content-Transfer-Encoding: 7bit
+
+This is Super
+
+YOUR ATTACHMENTS ARE DROPPED DUE TO SIZE LIMIT
+--XXX--
