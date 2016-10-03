@@ -378,20 +378,22 @@ public class MigrationController {
 		HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
 		String pagesString = pagesMap.get("pagesString");
 		JSONArray pagesJSON = new JSONArray(pagesString);
-		if (pagesJSON.length() == 1)
+		
+		// return false if the site has none or more than one pages
+		if (pagesJSON.length() == 0 || pagesJSON.length() > 1)
+			return evaluationSite;
+		
+		// site only has one page
+		// get the first page
+		JSONObject pageJSON = (JSONObject) pagesJSON.get(0);
+		// look the tools attribute and find whether it only contain one tool --- Evaluation tool
+		JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
+		if (toolsJSON.length() == 1)
 		{
-			// site only has one page
-			// get the first page
-			JSONObject pageJSON = (JSONObject) pagesJSON.get(0);
-			// look the tools attribute and find whether it only contain one tool --- Evaluation tool
-			JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
-			if (toolsJSON.length() == 1)
-			{
-				// get the only tool JSON object
-				JSONObject toolJSON = (JSONObject) toolsJSON.get(0);
-				if (Utils.SAKAI_EVALUATION_TOOL_ID.equals(toolJSON.get("toolId"))) {
-					evaluationSite =true;
-				}
+			// get the only tool JSON object
+			JSONObject toolJSON = (JSONObject) toolsJSON.get(0);
+			if (Utils.SAKAI_EVALUATION_TOOL_ID.equals(toolJSON.get("toolId"))) {
+				evaluationSite =true;
 			}
 		}
 		return evaluationSite;
