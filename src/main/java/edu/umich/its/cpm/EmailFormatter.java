@@ -3,8 +3,6 @@ package edu.umich.its.cpm;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
-import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -62,66 +60,42 @@ public class EmailFormatter {
         });
     }
 
-    public List<Object> rfc822Format() {
-        List<Object> emailMsgPlusStatus = rfcFormatWithoutAttachmentLimitCheck();
-        String rfcFormattedText = (String) emailMsgPlusStatus.get(0);
-        JSONObject status = (JSONObject) emailMsgPlusStatus.get(1);
-        status.put(Utils.JSON_ATTR_ITEM_ID, getItemId());
+    public MailResultPair rfc822Format() {
+        MailResultPair emailMsgPlusStatus = rfcFormatWithoutAttachmentLimitCheck();
+        String rfcFormattedText = emailMsgPlusStatus.getMessage();
+        StatusReport status = emailMsgPlusStatus.getReport();
 
         // Something bad happened in formatting the email
         if (rfcFormattedText == null) {
             log.error("Email formatting is not successful");
-
-            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-            emailMsgPlusStatus.set(1, status);
             return emailMsgPlusStatus;
         }
-        // Large email size check, if grater than proposed limit attachment will be dropped
+        // Large email size check, if greater than proposed limit attachment will be dropped
         if (checkMsgSizeMoreThanExpectedLimit(rfcFormattedText)) {
             log.warn("Attachments are dropped for the message");
-
             rfcFormattedText = removeAttachments(rfcFormattedText);
-            emailMsgPlusStatus.set(0, rfcFormattedText);
-            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
-            status.put(Utils.JSON_ATTR_MESSAGE, "email Message size exceeds the expected limit, attachments dropped");
-            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-            emailMsgPlusStatus.set(1, status);
-
+            emailMsgPlusStatus.setMessage(rfcFormattedText);
+            status.setStatus(Utils.STATUS_PARTIAL);
+            status.setMsg("email Message size exceeds the expected limit, attachments "+status.getAllAttachments() +" are dropped");
+            emailMsgPlusStatus.setReport(status);
             return emailMsgPlusStatus;
         }
 
-        JSONArray attachments = status.getJSONArray("attachments");
-        for (int i = 0; i < attachments.length(); i++) {
-            JSONObject attach = attachments.getJSONObject(i);
-            if(attach.get(Utils.MIGRATION_STATUS)!= Utils.STATUS_OK){
-                status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
-                status.put(Utils.JSON_ATTR_MESSAGE,"attachments URL from Ctools couldn't be resolved, some or all of the attachments dropped");
-                status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-                emailMsgPlusStatus.set(1, status);
-                return emailMsgPlusStatus;
-            }
-        }
-        // everything went fine at this point
-        status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_OK);
-        status.put(Utils.JSON_ATTR_MESSAGE, Utils.SUCCESS_MSG);
-        status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-        emailMsgPlusStatus.set(1, status);
         return emailMsgPlusStatus;
     }
 
-    public List<Object> rfcFormatWithoutAttachmentLimitCheck() {
+    public MailResultPair rfcFormatWithoutAttachmentLimitCheck() {
         ArrayList<String> headers = prunedHeadersWithoutContentType();
-        List<Object> formattedEmailText = getFormattedEmailText(headers);
+        MailResultPair formattedEmailText = getFormattedEmailText(headers);
         return formattedEmailText;
     }
 
     public String removeAttachments(String rfcFormattedText) {
-        String emailWithOutattachments = subStringToRemoveAttachments(rfcFormattedText);
+        String emailWithOutattachments = returnEmailTextDroppingAttachments(rfcFormattedText);
         return emailWithOutattachments;
     }
 
-    private String subStringToRemoveAttachments(String rfcFormattedText) {
+    private String returnEmailTextDroppingAttachments(String rfcFormattedText) {
         StringBuilder emailTextWithBodyNoAttachments = new StringBuilder();
         String attachmentRemovedText = subStringBefore(rfcFormattedText, "Content-Transfer-Encoding: base64");
         String[] msgBodyWithSomeExtra = attachmentRemovedText.split(NEW_LINE);
@@ -150,53 +124,27 @@ public class EmailFormatter {
       Mbox format email messages file must start like "From doe@eg.edu Wed Aug 24 14:04:47 2016" and
       each message is separated by blank line
      */
-    public List<Object> mboxFormat() {
+    public MailResultPair mboxFormat() {
         ArrayList<String> headers = mboxFormatHeaders();
-        List<Object> mboxFormatEmailTextPlusStatus = getMboxFormattedEmailText(headers);
-        String emailText = (String) mboxFormatEmailTextPlusStatus.get(0);
-        JSONObject status = (JSONObject) mboxFormatEmailTextPlusStatus.get(1);
-        if (emailText == null) {
-            status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-            status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-            mboxFormatEmailTextPlusStatus.set(1, status);
-            log.error("Mbox formatting is not successful");
-            return mboxFormatEmailTextPlusStatus;
-        }
-
-        JSONArray attachments = status.getJSONArray("attachments");
-        for (int i = 0; i < attachments.length(); i++) {
-            JSONObject attach = attachments.getJSONObject(i);
-            if(attach.get(Utils.MIGRATION_STATUS)!= Utils.STATUS_OK){
-                status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_PARTIAL);
-                status.put(Utils.JSON_ATTR_MESSAGE,"Attachments URL from Ctools couldn't be resolved");
-                status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-                mboxFormatEmailTextPlusStatus.set(1, status);
-                return mboxFormatEmailTextPlusStatus;
-            }
-        }
-        // everything went fine at this point
-        status.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_OK);
-        status.put(Utils.JSON_ATTR_MESSAGE, Utils.SUCCESS_MSG);
-        status.remove(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
-        mboxFormatEmailTextPlusStatus.set(1, status);
+        MailResultPair mboxFormatEmailTextPlusStatus = getMboxFormattedEmailText(headers);
         return mboxFormatEmailTextPlusStatus;
     }
 
-    private List<Object> getFormattedEmailText(ArrayList<String> headers) {
+    private MailResultPair getFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        List<Object> emailTextAndStatusObject = getEmailText();
-        String emailText = (String) emailTextAndStatusObject.get(0);
+        MailResultPair emailTextAndStatusObject = getEmailText();
+        String emailText =  emailTextAndStatusObject.getMessage();
         if (emailText == null) {
             return emailTextAndStatusObject;
         }
         String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
         emailFormat.append(bodyAndAttachment);
         emailFormat.append(NEW_LINE);
-        emailTextAndStatusObject.set(0, emailFormat.toString());
+        emailTextAndStatusObject.setMessage(emailFormat.toString());
         return emailTextAndStatusObject;
     }
 
@@ -207,20 +155,20 @@ public class EmailFormatter {
         log.debug("Attachment Size Limit : " + attachLimit + " bytes");
         long attachmentLimit = Long.parseLong(attachLimit);
         if (rfc822MgsSize > attachmentLimit) {
-            log.info("Email Message Size: " + rfc822MgsSize + " bytes");
+            log.info("The message with Id \"" + getItemId() + "\" is " +rfc822MgsSize+ " bytes exceed the expected limit that GGB can handle");
             return true;
         }
         return false;
     }
 
-    private List<Object> getMboxFormattedEmailText(ArrayList<String> headers) {
+    private MailResultPair getMboxFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        List<Object> emailTextAndStatusObject = getEmailText();
-        String emailText = (String) emailTextAndStatusObject.get(0);
+        MailResultPair emailTextAndStatusObject = getEmailText();
+        String emailText = emailTextAndStatusObject.getMessage();
         if (emailText == null) {
             return emailTextAndStatusObject;
         }
@@ -239,7 +187,7 @@ public class EmailFormatter {
             emailFormat.append(format);
             emailFormat.append(NEW_LINE);
         }
-        emailTextAndStatusObject.set(0, emailFormat.toString());
+        emailTextAndStatusObject.setMessage(emailFormat.toString());
         return emailTextAndStatusObject;
     }
 
@@ -338,7 +286,7 @@ public class EmailFormatter {
                     // Wed Aug 24 14:04:47 2016
                     date = ascTimePattern.format(new Date(epochTime));
                 } catch (java.text.ParseException e) {
-                    log.error("Error occurred while paring the Date: " + dateTemp + " due to" + e.getMessage());
+                    log.error("Error occurred while parsing the Date: " + dateTemp + " due to" + e.getMessage());
                 }
 
             }
@@ -375,11 +323,14 @@ public class EmailFormatter {
      We are using java mailing services for generating the emailText. generally the mail services complaint with RFC822
      Mime format.
      */
-    public List<Object> getEmailText() {
+
+    public MailResultPair getEmailText() {
         Session session = null;
         MimeMessage message = new MimeMessage(session);
         String emailText = null;
-        JSONObject status = new JSONObject();
+        int attachmentFailureCount=0;
+        StatusReport report=new StatusReport();
+        report.setId(getItemId());
         try {
             Multipart multipart = new MimeMultipart();
 
@@ -393,33 +344,26 @@ public class EmailFormatter {
 
             // attachment part of email
             HashMap<String, ArrayList<String>> attachments = getAttachments();
-            JSONArray attachmentArray = new JSONArray();
-            status.put(Utils.JSON_ATTR_MAIL_ATTACHMENTS, attachmentArray);
             if (!attachments.isEmpty()) {
                 Set<String> attachmentIDs = attachments.keySet();
                 for (String id : attachmentIDs) {
-                    JSONObject attachmentStatus = new JSONObject();
                     msgBodyPart = new MimeBodyPart();
                     ArrayList<String> attachmentMetaData = attachments.get(id); // [Mimetype, fileName, attachmentUrl]
                     String attachmentUrl = attachmentMetaData.get(2);
                     String mimeType = attachmentMetaData.get(0);
                     String fileName = attachmentMetaData.get(1);
+                    report.addAllAttachmnts(fileName);
                     byte[] fileContent = attachmentHandler.getAttachmentContent(attachmentUrl);
                     if (fileContent != null) {
                         msgBodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(fileContent, mimeType)));
                         msgBodyPart.setFileName(fileName);
                         msgBodyPart.addHeader("Content-Transfer-Encoding", "base64");
                         multipart.addBodyPart(msgBodyPart);
-                        attachmentStatus.put(Utils.JSON_ATTR_MAIL_NAME, fileName);
-                        attachmentStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
                     } else {
-                        attachmentStatus.put(Utils.JSON_ATTR_MAIL_NAME, attachmentUrl);
-                        attachmentStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+                        attachmentFailureCount++;
+                        report.addFailedAttachments(fileName);
                     }
-                    attachmentArray.put(attachmentStatus);
-
                 }
-                status.put(Utils.JSON_ATTR_MAIL_ATTACHMENTS, attachmentArray);
             }
 
             message.setContent(multipart);
@@ -428,21 +372,35 @@ public class EmailFormatter {
             emailText = output.toString();
 
         } catch (MessagingException e) {
-            log.error("Error occurred while generating the email stream" + e.getMessage());
-            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred generating email stream");
+            String msg = "MessagingException occurred while generating the email stream";
+            log.error(msg + e.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return  new MailResultPair(report,emailText);
 
         } catch (IOException ioe) {
-            log.error("Error occurred while process writing the Mime message to stream" + ioe.getMessage());
-            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred when writing the Mime message to stream");
+            String msg = "IOException occurred while process writing the Mime message to stream";
+            log.error(msg + ioe.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return new MailResultPair(report,emailText);
         } catch (Exception ioe) {
-            log.error("Expection occurred while generating a email stream " + ioe.getMessage());
-            status.put(Utils.JSON_ATTR_MESSAGE, "problem occurred when writing the Mime message to stream");
+            String msg = "Expection occurred while generating a email stream";
+            log.error(msg + ioe.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return new MailResultPair(report,emailText);
         }
-        List<Object> emailTextPlusStatus = new ArrayList<Object>();
-        emailTextPlusStatus.add(emailText);
-        emailTextPlusStatus.add(status);
+        if(attachmentFailureCount>0){
+            report.setStatus(Utils.STATUS_PARTIAL);
+            report.setMsg(attachmentFailureCount+"/"+ getAttachments().size()+" attachments failed and they are " +StringUtils.join(report.getFailedAttachments())+" missing from the email");
+            return new MailResultPair(report,emailText);
+        }
+        report.setStatus(Utils.STATUS_OK);
+        report.setMsg(Utils.SUCCESS_MSG);
+        return new MailResultPair(report,emailText);
+    }
 
-        return emailTextPlusStatus;
+    private void errHandlingInGetTextMail(StatusReport report, String msg) {
+        report.setMsg(msg);
+        report.setStatus(Utils.STATUS_ERROR);
     }
 
     public String emailTextWithBodyAndAttachment(String emailText) {

@@ -1,16 +1,11 @@
 package edu.umich.its.cpm;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.CookieStore;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-import static org.apache.http.HttpStatus.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -1313,7 +1308,7 @@ class MigrationTaskService {
 				if (Utils.isItMailArchiveZip(destination_type)) {
 					JSONArray mailZipMessagesStatus = new JSONArray();
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
-					    JSONObject singleMailZipMsgStatus = new JSONObject();
+						JSONObject singleMailZipMsgStatus = new JSONObject();
 						JSONObject message = messages.getJSONObject(iMessage);
 
 						// create file for each message
@@ -1331,9 +1326,9 @@ class MigrationTaskService {
 
 						mailZipMessagesStatus.put(singleMailZipMsgStatus);
 					}
-                                        downloadStatus.put(Utils.JSON_ATTR_ITEMS,mailZipMessagesStatus);
+					downloadStatus.put(Utils.JSON_ATTR_ITEMS, mailZipMessagesStatus);
 
-					downloadStatus= finalreportObjBuilderForMailZipMigration(downloadStatus, mailZipMessagesStatus);
+					downloadStatus = finalReportObjBuilderForMailZipMigration(downloadStatus, mailZipMessagesStatus);
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
 					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id, channelName, folderForChannels);
@@ -1342,7 +1337,9 @@ class MigrationTaskService {
 					JSONArray mboxMessagesStatus = new JSONArray();
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject message = messages.getJSONObject(iMessage);
-						String messageId=getDate(message)+" "+getSubject(message);
+						String date= getProperty(message,Utils.JSON_ATTR_MAIL_DATE);
+						String subject= getProperty(message,Utils.JSON_ATTR_MAIL_SUBJECT);
+						String messageId=date+" "+subject;
 						String emailMessage = message.toString();
 						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 						attachmentHandler.setEnv(env);
@@ -1355,10 +1352,9 @@ class MigrationTaskService {
 							log.error(msg +"for message: "+messageId+ " "+ e.getMessage());
 							continue;
 						}
-						List<Object> MboxFormatTextPlusStatus = emailFormatter.mboxFormat();
-						String mboxMessage = (String) MboxFormatTextPlusStatus.get(0);
-						JSONObject singleMboxMsgStatus = (JSONObject) MboxFormatTextPlusStatus.get(1);
-						singleMboxMsgStatus.put(Utils.JSON_ATTR_ITEM_ID, messageId);
+						MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
+						String mboxMessage = mboxFormatTextPlusStatus.getMessage();
+						JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
 						if(mboxMessage!=null) {
 							msgBundle.append(mboxMessage);
 							msgBundle.append("\r\n");
@@ -1372,30 +1368,30 @@ class MigrationTaskService {
 					mboxMessagesStatus = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
 								mboxMessagesStatus);
 
-					downloadStatus= finalreportObjBuilderForMailZipMigration(downloadStatus, mboxMessagesStatus);
+					downloadStatus= finalReportObjBuilderForMailZipMigration(downloadStatus, mboxMessagesStatus);
 
 				}
 			}
 			return downloadStatus;
 		}
 
-	private JSONObject finalreportObjBuilderForMailZipMigration(JSONObject downloadStatus, JSONArray mboxMessagesStatus) {
+	private JSONObject finalReportObjBuilderForMailZipMigration(JSONObject downloadStatus, JSONArray mboxMessagesStatus) {
 		JSONArray errAndPartialSuccessList = new JSONArray();
 		int successes,errors,partial;
 		successes = errors=partial=0;
 		for (int i = 0; i < mboxMessagesStatus.length(); i++) {
-            JSONObject perMsg = mboxMessagesStatus.getJSONObject(i);
-            String msgStatus = (String) perMsg.get(Utils.JSON_ATTR_ITEM_STATUS);
-            if (msgStatus.equals(Utils.STATUS_OK)) {
-                successes = successes + 1;
-            } else if (msgStatus.equals(Utils.STATUS_PARTIAL)) {
-                partial = partial + 1;
-                errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
-            } else if (msgStatus.equals(Utils.STATUS_ERROR)) {
-                errors = errors + 1;
-                errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
-            }
-        }
+			JSONObject perMsg = mboxMessagesStatus.getJSONObject(i);
+			String msgStatus = (String) perMsg.get(Utils.JSON_ATTR_ITEM_STATUS);
+			if (msgStatus.equals(Utils.STATUS_OK)) {
+				successes = successes + 1;
+			} else if (msgStatus.equals(Utils.STATUS_PARTIAL)) {
+				partial = partial + 1;
+				errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
+			} else if (msgStatus.equals(Utils.STATUS_ERROR)) {
+				errors = errors + 1;
+				errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
+			}
+		}
 		JSONObject counts = new JSONObject();
 		counts.put(Utils.STATUS_SUCCESSES,successes);
 		counts.put(Utils.STATUS_ERRORS,errors);
@@ -1403,24 +1399,18 @@ class MigrationTaskService {
 		downloadStatus.put(Utils.JSON_ATTR_COUNTS,counts);
 		downloadStatus.put(Utils.JSON_ATTR_ITEMS,errAndPartialSuccessList);
 		if (errors > 0) {
-            downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
-        } else if (partial > 0 & successes > 0) {
-            downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_PARTIAL);
-        } else
-            downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+		} else if (partial > 0 & successes > 0) {
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_PARTIAL);
+		} else
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
 		return downloadStatus;
 	}
 
-	private String getDate(JSONObject message) {
+	private String getProperty(JSONObject message, String jsonAttribute) {
 		JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
-		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);;
+		String date = getHeaderAttribute(headers, jsonAttribute);;
 		return date;
-	}
-
-	private String getSubject(JSONObject message) {
-		JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
-		String subject = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT);
-		return subject;
 	}
 
 
@@ -1978,16 +1968,17 @@ class MigrationTaskService {
 			attachmentHandler.setEnv(env);
 
 			String emailText;
-			JSONObject statusObj=null;
+			JSONObject statusObj=new JSONObject();
+			statusObj.put(Utils.JSON_ATTR_ITEM_ID, messageId);
 
 			// Try only once and record the resulting status in the database.
 			try
 			{
 				EmailFormatter formatter = new EmailFormatter(emailContent, attachmentHandler);
 				formatter.setEnv(env);
-				List<Object> emailTextPlusStatus = formatter.rfc822Format();
-				emailText = (String) emailTextPlusStatus.get(0);
-				statusObj = (JSONObject)emailTextPlusStatus.get(1);
+				MailResultPair emailTextPlusStatus = formatter.rfc822Format();
+				emailText = emailTextPlusStatus.getMessage();
+				statusObj = emailTextPlusStatus.getReport().getJsonReportObject();
 
 				if (emailText != null) {
 					// mark the file as being processed
@@ -2002,7 +1993,7 @@ class MigrationTaskService {
 					String ggbMsg = arw.getMessage();
 					log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}", statusCode, googleGroupId);
 
-					if (statusCode / 100 != 2)  {
+					if (statusCode / 100 != 2 && statusCode != 409)  {
 						errorHandlingWhenNot200(statusObj, statusCode, ggbMsg);
 						log.error(String.format("Failure in migrating message with MessageId: \"%1$s\" to google groups" +
 								", status code %2$d and error message %3$s", messageId, statusCode, ggbMsg));

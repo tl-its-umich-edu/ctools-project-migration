@@ -2,6 +2,7 @@ package junit.edu.umich.its.cpmtest;
 
 import edu.umich.its.cpm.AttachmentHandler;
 import edu.umich.its.cpm.EmailFormatter;
+import edu.umich.its.cpm.MailResultPair;
 import junit.framework.TestCase;
 import org.apache.commons.lang3.StringUtils;
 import org.json.JSONArray;
@@ -81,9 +82,6 @@ public class EmailFormatterTest extends TestCase {
         }
     }
 
-    public void testGetEmailText(){
-        formatterForLargeAttachmentSizes.getEmailText();
-    }
 
     public void testFormattingMboxStartingHeader() {
         ArrayList<String> headers = formatter.prunedHeadersWithoutContentType();
@@ -104,21 +102,19 @@ public class EmailFormatterTest extends TestCase {
 
     public void testSimpleMsgInRFCFormat() {
         String expected = expectedEmailTextValue().toString();
-        List<Object> emailTextPlusStatus = formatter.rfc822Format();
-        String actualEmailText = (String) emailTextPlusStatus.get(0);
+        MailResultPair emailTextPlusStatus = formatter.rfc822Format();
+        String actualEmailText = emailTextPlusStatus.getMessage();
 //        System.out.println(actualEmailText);
+//        System.out.println("StatusReport: "+emailTextPlusStatus.getReport().getJsonReportObject().toString());
         assertEquals(expected, replaceTheBoundaryValue(actualEmailText));
     }
 
-    public void testSomething(){
-        List<Object> x = formatter.mboxFormat();
-        System.out.println(x.get(0));
-    }
 
     public void testSimpleMsgInRFCFormatWithAttachmentSizeExceedingLimit() {
-        List<Object> emailTextPlusStatus = formatterForLargeAttachmentSizes.rfc822Format();
-        String actual = (String) emailTextPlusStatus.get(0);
+        MailResultPair emailTextPlusStatus = formatterForLargeAttachmentSizes.rfc822Format();
+        String actual = emailTextPlusStatus.getMessage();
 //        System.out.println(actual);
+//        System.out.println("StatusReport: "+emailTextPlusStatus.getReport().getJsonReportObject().toString());
         assertEquals(expected(), replaceTheBoundaryValue(actual.trim()));
     }
     private  String expected(){
@@ -182,8 +178,8 @@ public class EmailFormatterTest extends TestCase {
 
     public void testCheckMsgSizeMoreThanExpectedLimit() {
         boolean actual = false;
-        List<Object> emailMsgPlusStatus = formatterForLargeAttachmentSizes.rfcFormatWithoutAttachmentLimitCheck();
-        String emailMessage = (String) emailMsgPlusStatus.get(0);
+        MailResultPair emailMsgPlusStatus = formatterForLargeAttachmentSizes.rfcFormatWithoutAttachmentLimitCheck();
+        String emailMessage = (String) emailMsgPlusStatus.getMessage();
         actual = formatterForLargeAttachmentSizes.checkMsgSizeMoreThanExpectedLimit(emailMessage);
         assertEquals(true, actual);
 
