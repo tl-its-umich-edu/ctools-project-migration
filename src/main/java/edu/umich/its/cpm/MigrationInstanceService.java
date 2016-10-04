@@ -205,16 +205,17 @@ class MigrationInstanceService {
 			for(MigrationBoxFile mFile : mFileList)
 			{
 				String status = mFile.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mFile.getFile_access_url(), 
-						mFile.getTitle(), 
-						status);
-				itemStatusList.add(item);
-				
 				if (status.indexOf("Box upload successful for file") == -1)
 				{
 					// if there is error, status message won't have String "Box upload successful for file"
 					itemStatusFailureCount++;
+					
+					// add status only when it is a failure
+					MigrationFileItem item = new MigrationFileItem(
+							mFile.getFile_access_url(), 
+							mFile.getTitle(), 
+							status);
+					itemStatusList.add(item);
 				}
 			}
 			
