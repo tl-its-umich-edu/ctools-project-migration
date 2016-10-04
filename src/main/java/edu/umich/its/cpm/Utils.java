@@ -145,6 +145,7 @@ class Utils {
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
 
+
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
 	
@@ -178,10 +179,13 @@ class Utils {
 
 	// Google connection property names
 	public static final String GGB_SERVER_NAME = "ggb.server";
-	public static final String GGB_GOOGLE_GROUP_DOMAIN = "ggb.google.group.domain";	
+	public static final String GGB_GOOGLE_GROUP_DOMAIN = "ggb.google.group.domain";
 	public static final String GGB_AUTHINFO_BASICAUTH_USERNAME = "ggb.authinfo.basicauth.username";
 	public static final String GGB_AUTHINFO_BASICAUTH_PASSWORD = "ggb.authinfo.basicauth.password";
-
+	
+	// the Sakai Evaluation tool id
+	public static final String SAKAI_EVALUATION_TOOL_ID = "sakai.rsf.evaluation";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
