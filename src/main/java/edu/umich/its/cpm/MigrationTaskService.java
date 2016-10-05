@@ -9,6 +9,7 @@ import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
+
 import static org.apache.http.HttpStatus.*;
 
 import org.json.JSONArray;
@@ -911,8 +912,8 @@ class MigrationTaskService {
 		 * @return
 		 */
 		@Async
-		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext) {
-
+		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext, String sessionId) {
+			
 			// get all bFile params
 			String id = bFile.getId();
 			String userId = bFile.getUser_id();
@@ -946,7 +947,7 @@ class MigrationTaskService {
 
 			try {
 				// get file content from /access url
-				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				HttpGet getRequest = new HttpGet(fileAccessUrl + "?_sessionId=" + sessionId);
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);

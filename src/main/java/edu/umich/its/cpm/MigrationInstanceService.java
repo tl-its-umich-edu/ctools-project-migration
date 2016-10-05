@@ -13,11 +13,17 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.Iterator;
+import java.io.IOException;
 import java.sql.Timestamp;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
+import org.apache.http.HttpResponse;
+import org.apache.http.client.HttpClient;
+import org.apache.http.client.methods.HttpPost;
+import org.apache.http.client.methods.HttpDelete;
+import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.springframework.scheduling.annotation.Async;
 import org.springframework.stereotype.Service;
@@ -90,21 +96,22 @@ class MigrationInstanceService {
 			// delay for 5 seconds
 			Thread.sleep(5000L);
 	        
+			// get right HttpContext object
+			HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty("username"));
+			HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
+			String sessionId = sessionAttributes != null ? (String) sessionAttributes.get("sessionId"):null;
+			
 			/*********** Box migration tasks ***********/
 			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
 			if (bFiles != null && bFiles.size() > 0)
 			{
-				// get right HttpContext object
-				HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
-				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
-				
 				// process with the Box upload request
 				for(MigrationBoxFile bFile : bFiles)
 				{	
 					if (futureBoxList.size() < threadNum)
 					{
-						futureBoxList.add( migrationTaskService.uploadBoxFile(bFile, httpContext));
+						futureBoxList.add( migrationTaskService.uploadBoxFile(bFile, httpContext, sessionId));
 					}
 				}
 			}
@@ -226,6 +233,8 @@ class MigrationInstanceService {
 			// update the status of migration record
 			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
 			
+			// cleanup the added owner of admin user from CTools site
+			removeAddedAdminOwner(mId);
 		}
 	}
 	
@@ -236,44 +245,82 @@ class MigrationInstanceService {
 	 * @param mId
 	 */
 	private void updateMessageMigrationTimeAndStatus(String mId) {
-		int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
-		int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
-		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
-		{
-			// all the items within the migration is finished
-			// update the end time of the parent record
-			Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
-			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
-			
-			// update the status of the parent record
-			List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
-			// parse the string into JSON object
-			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
-			int itemStatusFailureCount = 0;
-			for(MigrationEmailMessage mMessage : mMessageList)
-			{
-				String status = mMessage.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mMessage.getMessage_id(), 
-						"", 
-						status);
-				itemStatusList.add(item);
-				
-				if (status.indexOf("Box upload successful for file") == -1)
-				{
-					// if there is error, status message won't have String "Box upload successful for file"
-					itemStatusFailureCount++;
-				}
-			}
-			
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+        int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
+        int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
+        if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+        {
+            // all the items within the migration is finished
+            // update the end time of the parent record
+            Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
+            mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
 
-			// update the status of migration record
-			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
-			
+            // update the status of the parent record
+            List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
+            // parse the string into JSON object
+            List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
+            int itemStatusFailureCount = 0;
+            for(MigrationEmailMessage mMessage : mMessageList)
+            {
+                    String status = mMessage.getStatus();
+                    MigrationFileItem item = new MigrationFileItem(
+                                    mMessage.getMessage_id(),
+                                    "",
+                                    status);
+                    itemStatusList.add(item);
+
+                    if (status.indexOf("Box upload successful for file") == -1)
+                    {
+                            // if there is error, status message won't have String "Box upload successful for file"
+                            itemStatusFailureCount++;
+                    }
+            }
+
+            // the HashMap object holds itemized status information
+            HashMap<String, Object> statusMap = new HashMap<String, Object>();
+            statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+            statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+
+            // update the status of migration record
+            mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+            
+         // cleanup the added owner of admin user from CTools site
+         	removeAddedAdminOwner(mId);
+        }
+	}
+
+	/**
+	 * // cleanup the added owner of admin user from CTools site
+	 * @param migrationId
+	 */
+	private void removeAddedAdminOwner(String migrationId) {
+		String adminUser = env.getProperty("username");
+		
+		String siteId = mRepository.getMigrationSiteId(migrationId);
+		
+		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+		
+		if(sessionAttributes.isEmpty()){
+			log.error("Logging into Ctools failed for the admin user.");
+		}
+		
+		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+		// the request string to add user to site with Owner role
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/membership/" + adminUser + "::site:" + siteId + "?_sessionId=" + adminSessionId;
+		
+		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		try {
+		    HttpDelete request = new HttpDelete(requestUrl);
+		    request.setHeader("Content-Type", "application/x-www-form-urlencoded");
+			HttpResponse response = httpClient.execute(request, httpContext);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 201) {
+			    log.error(String.format("Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId ));
+			    return;
+			}
+		} catch (IOException e) {
+		    log.error(String.format("Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId) + e);
 		}
 	}
 
