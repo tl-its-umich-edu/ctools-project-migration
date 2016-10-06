@@ -63,6 +63,7 @@ class Utils {
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
 	public static final String STATUS_ONGING = "onging";
+	public static final String STATUS_SUCCESSES = "successes";
 
 	public static final String CTOOLS_SITE_TYPE_PROJECT = "project";
 	public static final String CTOOLS_SITE_TYPE_MYWORKSPACE = "myworkspace";
@@ -127,9 +128,23 @@ class Utils {
 	public static final String LINE_BREAK = "\n";
 
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
-	public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
-	
+       public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
+    public static final String ENV_ATTACHMENT_LIMIT = "attachment.size.limit" ;
+	public static final String STATUS_OK = "OK";
+	public static final String STATUS_ERROR = "ERROR";
+	public static final String STATUS_PARTIAL = "PARTIAL";
+	public static final String JSON_ATTR_ITEM_STATUS = "item_Status";
+	public static final String STATUS_ERRORS = "errors" ;
+	public static final String JSON_ATTR_MIGRATION_TYPE = "type";
+	public static final String JSON_ATTR_COUNTS = "counts";
+	public static final String STATUS_PARTIALS = "partial_successes";
+	public static final String JSON_ATTR_ITEMS = "items";
+	public static final String JSON_ATTR_ITEM_ID = "item_Id";
+	public static final String SUCCESS_MSG = "Everything Looks Good!";
+
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
+
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -150,12 +165,11 @@ class Utils {
 	public static final String JSON_ATTR_MAIL_FROM = "From: ";
 	public static final String JSON_ATTR_MAIL_SUBJECT = "Subject: ";
 	public static final String JSON_ATTR_MAIL_BODY = "body";
-	public static final String JSON_ATTR_MAIL_MESSAGE = "message";
+	public static final String JSON_ATTR_MESSAGE = "message";
 	public static final String JSON_ATTR_MAIL_ATTACHMENTS = "attachments";
 	public static final String JSON_ATTR_MAIL_TYPE = "type";
 	public static final String JSON_ATTR_MAIL_NAME = "name";
 	public static final String JSON_ATTR_MAIL_URL = "url";
-	public static final String JSON_ATTR_MAIL_MESSAGE_STATUS = "messageStatus";
 	public static final String MAIL_MESSAGE_FILE_NAME = "message.txt";
 	public static final String MAIL_MBOX_MESSAGE_FILE_NAME = "message.mbox";
 
