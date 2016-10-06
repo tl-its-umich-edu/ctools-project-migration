@@ -538,6 +538,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
            if(result.data === 'site tool delete exempt choice saved.'){
              var thisTool = _.findWhere($scope.sourceProjects, {tool_id: project.tool_id});
              thisTool.doNotMigrateStatus = null;
+             thisTool.selectedDoNotMove = false;
            }
          }
        );
