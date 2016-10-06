@@ -1994,7 +1994,7 @@ class MigrationTaskService {
 					log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}", statusCode, googleGroupId);
 
 					if (statusCode / 100 != 2 && statusCode != 409)  {
-						errorHandlingWhenNot200(statusObj, statusCode, ggbMsg);
+						statusObj=errorHandlingWhenNot200(statusObj, statusCode, ggbMsg);
 						log.error(String.format("Failure in migrating message with MessageId: \"%1$s\" to google groups" +
 								", status code %2$d and error message %3$s", messageId, statusCode, ggbMsg));
 						return new AsyncResult<String>(statusObj.toString());
@@ -2013,16 +2013,16 @@ class MigrationTaskService {
 			}catch (IOException exception) {
 				String errorString = "IOException from EmailFormatter for message id " + messageId + " " + exception.getMessage();
 				log.error(errorString);
-				errHandlingWhenExceptions(statusObj);
+				statusObj=errHandlingWhenExceptions(statusObj);
 			}catch (ParseException e){
 				String errorString = "ParseException while extracting response from GGB with message id " + messageId + " " + e.getMessage();
 				log.error(errorString);
-				errHandlingWhenExceptions(statusObj);
+				statusObj=errHandlingWhenExceptions(statusObj);
 			}catch (Exception e) {
 				String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
 						e.getMessage(),messageId);
 				log.error(msg);
-				errHandlingWhenExceptions(statusObj);
+				statusObj=errHandlingWhenExceptions(statusObj);
 			}
 
 			finally {
@@ -2034,14 +2034,16 @@ class MigrationTaskService {
 			return new AsyncResult<String>(statusObj.toString());
 		}
 
-	private void errHandlingWhenExceptions(JSONObject statusObj) {
+	private JSONObject errHandlingWhenExceptions(JSONObject statusObj) {
 		statusObj.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
 		statusObj.put(Utils.JSON_ATTR_MESSAGE, "Failure in upload to Google Groups");
+		return statusObj;
 	}
 
-	private void errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg) {
+	private JSONObject errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg) {
 		statusObj.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
 		statusObj.put(Utils.JSON_ATTR_MESSAGE, errMsg + " " + statusCode);
+		return statusObj;
 
 	}
 
