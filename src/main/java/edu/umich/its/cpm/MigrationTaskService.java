@@ -1959,6 +1959,7 @@ class MigrationTaskService {
 			String googleGroupId = message.getGoogle_group_id();
 
 			String messageId = message.getMessage_id();
+			mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 			log.info("begin to upload message " + messageId  + " to Google Group id = " + googleGroupId);
 
 			// use EmailFormatter to get RFC822 complaint email content
@@ -1982,7 +1983,6 @@ class MigrationTaskService {
 
 				if (emailText != null) {
 					// mark the file as being processed
-					mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 
 					// process the message
 					ApiResultWrapper arw = addEmailToGoogleGroup(googleGroupId, emailText);
@@ -1991,7 +1991,7 @@ class MigrationTaskService {
 					String ggbResult = arw.getResult();
 					// Taking the error message
 					String ggbMsg = arw.getMessage();
-					log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}", statusCode, googleGroupId);
+					log.debug("uploadMessageToGoogleGroup: status: {} googleGroupId: {}", statusCode, googleGroupId);
 
 					if (statusCode / 100 != 2 && statusCode != 409)  {
 						statusObj=errorHandlingWhenNot200(statusObj, statusCode, ggbMsg);
