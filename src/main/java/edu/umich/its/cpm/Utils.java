@@ -58,7 +58,23 @@ class Utils {
 	
 	// for local testing
 	public static final String TEST_REMOTEUSER = "test.remoteuser";
-
+	
+	// status report attributes
+	public static final String REPORT_ATTR_TYPE = "type";
+	public static final String REPORT_ATTR_STATUS = "status";
+	public static final String REPORT_ATTR_COUNTS = "counts";
+	public static final String REPORT_ATTR_COUNTS_SUCCESSES = "successes";
+	public static final String REPORT_ATTR_COUNTS_ERRORS = "errors";
+	public static final String REPORT_ATTR_DETAILS = "details";
+	public static final String REPORT_ATTR_MESSAGE = "messsge";
+	public static final String REPORT_ATTR_ADD_MEMBERS = "add_members";
+	public static final String REPORT_ATTR_ADD_ITEMS = "items";
+	public static final String REPORT_ATTR_ADD_ITEM_ID = "item_id";
+	// site-level status summary String
+	public static final String REPORT_STATUS_SUMMARY_OK = "OK";
+	public static final String REPORT_STATUS_SUMMARY_PARTIAL = "PARTIAL";
+	public static final String REPORT_STATUS_SUMMARY_ERROR = "ERROR";
+	
 	// migration status string
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
