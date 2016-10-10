@@ -58,7 +58,7 @@ class Utils {
 	
 	// for local testing
 	public static final String TEST_REMOTEUSER = "test.remoteuser";
-
+	
 	// migration status string
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
@@ -130,17 +130,26 @@ class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
        public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
     public static final String ENV_ATTACHMENT_LIMIT = "attachment.size.limit" ;
-	public static final String STATUS_OK = "OK";
-	public static final String STATUS_ERROR = "ERROR";
-	public static final String STATUS_PARTIAL = "PARTIAL";
-	public static final String JSON_ATTR_ITEM_STATUS = "item_Status";
-	public static final String STATUS_ERRORS = "errors" ;
-	public static final String JSON_ATTR_MIGRATION_TYPE = "type";
-	public static final String JSON_ATTR_COUNTS = "counts";
-	public static final String STATUS_PARTIALS = "partial_successes";
-	public static final String JSON_ATTR_ITEMS = "items";
-	public static final String JSON_ATTR_ITEM_ID = "item_Id";
-	public static final String SUCCESS_MSG = "Everything Looks Good!";
+	
+	// status report attributes
+	public static final String REPORT_ATTR_ITEM_STATUS = "item_Status";
+	public static final String REPORT_SUCCESS_MSG = "Everything Looks Good!";
+	public static final String REPORT_ATTR_TYPE = "type";
+	public static final String REPORT_ATTR_TYPE_RESOURCE_ZIP = "resource zip";
+	public static final String REPORT_ATTR_TYPE_RESOURCE_BOX = "resource box";
+	public static final String REPORT_ATTR_STATUS = "status";
+	public static final String REPORT_ATTR_COUNTS = "counts";
+	public static final String REPORT_ATTR_COUNTS_SUCCESSES = "successes";
+	public static final String REPORT_ATTR_COUNTS_ERRORS = "errors";
+	public static final String REPORT_ATTR_DETAILS = "details";
+	public static final String REPORT_ATTR_MESSAGE = "messsge";
+	public static final String REPORT_ATTR_ADD_MEMBERS = "add_members";
+	public static final String REPORT_ATTR_ITEMS = "items";
+	public static final String REPORT_ATTR_ITEM_ID = "item_id";
+	// site-level status summary String
+	public static final String REPORT_STATUS_OK = "OK";
+	public static final String REPORT_STATUS_PARTIAL = "PARTIAL";
+	public static final String REPORT_STATUS_ERROR = "ERROR";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";

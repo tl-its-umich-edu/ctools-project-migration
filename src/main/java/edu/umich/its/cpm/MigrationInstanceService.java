@@ -202,25 +202,47 @@ class MigrationInstanceService {
 			// parse the string into JSON object
 			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
 			int itemStatusFailureCount = 0;
+			int itemStatusSuccessCount = 0;
 			for(MigrationBoxFile mFile : mFileList)
 			{
 				String status = mFile.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mFile.getFile_access_url(), 
-						mFile.getTitle(), 
-						status);
-				itemStatusList.add(item);
-				
+
+				// if there is error, status message won't have String "Box upload successful for file"
 				if (status.indexOf("Box upload successful for file") == -1)
 				{
-					// if there is error, status message won't have String "Box upload successful for file"
+					// increase the count for failed migrated item
 					itemStatusFailureCount++;
+					
+					// add status only when it is a failure
+					MigrationFileItem item = new MigrationFileItem(
+							mFile.getFile_access_url(), 
+							mFile.getTitle(), 
+							status);
+					itemStatusList.add(item);
+				}
+				else
+				{
+					// increase the count for successfully migrated item
+					itemStatusSuccessCount++;
 				}
 			}
 			
 			// the HashMap object holds itemized status information
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			// migration type
+			statusMap.put(Utils.REPORT_ATTR_TYPE, "");
+			String statusSummary = Utils.REPORT_STATUS_OK;
+			if (itemStatusSuccessCount == 0 && itemStatusFailureCount > 0)
+			{
+				// no item migrated successfully
+				statusSummary = Utils.REPORT_STATUS_ERROR;
+			}
+			else if (itemStatusSuccessCount > 0 && itemStatusFailureCount > 0)
+			{
+				// with failures
+				statusSummary = Utils.REPORT_STATUS_PARTIAL;
+			}
+			statusMap.put(Utils.MIGRATION_STATUS, statusSummary);
 			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
 
 			// update the status of migration record

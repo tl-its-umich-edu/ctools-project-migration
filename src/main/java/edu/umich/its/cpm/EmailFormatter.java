@@ -75,7 +75,7 @@ public class EmailFormatter {
             log.warn("Attachments are dropped for the message");
             rfcFormattedText = removeAttachments(rfcFormattedText);
             emailMsgPlusStatus.setMessage(rfcFormattedText);
-            status.setStatus(Utils.STATUS_PARTIAL);
+            status.setStatus(Utils.REPORT_STATUS_PARTIAL);
             status.setMsg("email Message size exceeds the expected limit, attachments "+status.getAllAttachments() +" are dropped");
             emailMsgPlusStatus.setReport(status);
             return emailMsgPlusStatus;
@@ -389,18 +389,18 @@ public class EmailFormatter {
             return new MailResultPair(report,emailText);
         }
         if(attachmentFailureCount>0){
-            report.setStatus(Utils.STATUS_PARTIAL);
+            report.setStatus(Utils.REPORT_STATUS_PARTIAL);
             report.setMsg(attachmentFailureCount+"/"+ getAttachments().size()+" attachments failed and they are " +StringUtils.join(report.getFailedAttachments())+" missing from the email");
             return new MailResultPair(report,emailText);
         }
-        report.setStatus(Utils.STATUS_OK);
-        report.setMsg(Utils.SUCCESS_MSG);
+        report.setStatus(Utils.REPORT_STATUS_OK);
+        report.setMsg(Utils.REPORT_SUCCESS_MSG);
         return new MailResultPair(report,emailText);
     }
 
     private void errHandlingInGetTextMail(StatusReport report, String msg) {
         report.setMsg(msg);
-        report.setStatus(Utils.STATUS_ERROR);
+        report.setStatus(Utils.REPORT_STATUS_ERROR);
     }
 
     public String emailTextWithBodyAndAttachment(String emailText) {

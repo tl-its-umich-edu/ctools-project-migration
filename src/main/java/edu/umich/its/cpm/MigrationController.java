@@ -724,9 +724,9 @@ public class MigrationController {
 	public Response migrated(HttpServletRequest request) {
 		String userId = Utils.getCurrentUserId(request, env);
 		try {
-			List<Migration> l = repository.findMigrated(userId);
+			List<Migration> migrated = repository.findMigrated(userId);
 			return Response.status(Response.Status.OK)
-					.entity(repository.findMigrated(userId)).build();
+					.entity(migrated).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
