@@ -25,6 +25,7 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.springframework.beans.factory.annotation.Autowired;
 
@@ -141,6 +142,8 @@ class Utils {
 	public static final String JSON_ATTR_ITEMS = "items";
 	public static final String JSON_ATTR_ITEM_ID = "item_Id";
 	public static final String SUCCESS_MSG = "Everything Looks Good!";
+	public static final String JSON_ATTR_MSG_DETAILS = "details" ;
+	public static final String JSON_ATTR_ADD_MEMBERS = "add_members" ;
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
@@ -467,6 +470,27 @@ class Utils {
 			remoteUser = propertyRemoteUser;		
 		}
 		return remoteUser;
+	}
+
+	public static JSONObject migrationStatusObject(String destination_type) {
+		JSONObject downloadStatus = new JSONObject();
+		downloadStatus.put(Utils.JSON_ATTR_MIGRATION_TYPE,destination_type);
+		downloadStatus.put(Utils.MIGRATION_STATUS, "");
+		JSONObject counts = new JSONObject();
+		counts.put(Utils.STATUS_SUCCESSES,0);
+		counts.put(Utils.STATUS_ERRORS,0);
+		counts.put(Utils.STATUS_PARTIALS,0);
+		downloadStatus.put(Utils.JSON_ATTR_COUNTS,counts);
+		downloadStatus.put(Utils.JSON_ATTR_ITEMS,new JSONArray());
+		return downloadStatus;
+	}
+
+	public static JSONObject getCountJsonObj() {
+		JSONObject counts = new JSONObject();
+		counts.put(Utils.STATUS_SUCCESSES,0);
+		counts.put(Utils.STATUS_ERRORS,0);
+		counts.put(Utils.STATUS_PARTIALS,0);
+		return counts;
 	}
 
 	/*

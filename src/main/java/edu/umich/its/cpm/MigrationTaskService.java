@@ -13,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedInputStream;
@@ -1142,7 +1143,7 @@ class MigrationTaskService {
 
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
-			JSONObject downloadStatus = migrationStatusObject(destination_type);
+			JSONObject downloadStatus = Utils.migrationStatusObject(destination_type);
 			// login to CTools and get sessionId
 			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
 				String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
@@ -1222,19 +1223,6 @@ class MigrationTaskService {
 		count.put(Utils.STATUS_ERRORS, errorCount+1);
 		downloadStatus.put(Utils.JSON_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
 		downloadStatus.put(Utils.JSON_ATTR_COUNTS,count);
-		return downloadStatus;
-	}
-
-	private JSONObject migrationStatusObject(String destination_type) {
-		JSONObject downloadStatus = new JSONObject();
-		downloadStatus.put(Utils.JSON_ATTR_MIGRATION_TYPE,destination_type);
-		downloadStatus.put(Utils.MIGRATION_STATUS, "");
-		JSONObject counts = new JSONObject();
-		counts.put(Utils.STATUS_SUCCESSES,0);
-		counts.put(Utils.STATUS_ERRORS,0);
-		counts.put(Utils.STATUS_PARTIALS,0);
-		downloadStatus.put(Utils.JSON_ATTR_COUNTS,counts);
-		downloadStatus.put(Utils.JSON_ATTR_ITEMS,new JSONArray());
 		return downloadStatus;
 	}
 
@@ -1709,7 +1697,6 @@ class MigrationTaskService {
 				siteJSONObject = new JSONObject(siteJson);
 			} catch (RestClientException e) {
 				log.error(requestUrl + e.getMessage());
-				throw e;
 			}
 			return siteJSONObject;
 		}
@@ -1721,7 +1708,12 @@ class MigrationTaskService {
 		public JSONObject getCToolsGroupInfoJson(String sessionId,
 				String siteId, String group_email) {
 			JSONObject siteJSONObject = getSiteInfoJson(sessionId,siteId);
-			return create_group_info_object(siteId, group_email, siteJSONObject);
+			if(siteJSONObject==null) {
+				return null;
+			}
+			JSONObject group_info_object = create_group_info_object(siteId, group_email, siteJSONObject);
+
+			return group_info_object;
 		}
 
 		public static JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
@@ -1739,7 +1731,11 @@ class MigrationTaskService {
 
 		// Get the new email prefix from the old one used in the archive.
 		public JSONObject getCToolsGroupInfoJson(String sessionId,String siteId) {
-			return getCToolsGroupInfoJson(sessionId,siteId,getArchiveEmail(sessionId,siteId));
+			String archiveEmail = getArchiveEmail(sessionId, siteId);
+			if(archiveEmail==null){
+				return null;
+			}
+			return getCToolsGroupInfoJson(sessionId, siteId, archiveEmail);
 		}
 
 		//https://ctdevsearch.dsc.umich.edu/direct/mailarchive/siteMessages/22b5d237-0a22-4995-a4b1-d5022dd90a86.json
@@ -1753,8 +1749,7 @@ class MigrationTaskService {
 				archiveJson = restTemplate.getForObject(requestUrl,String.class);
 			} catch (RestClientException e) {
 				log.error(requestUrl + e.getMessage());
-				// Don't hide the error.
-				throw e;
+				return null;
 			}
 
 			String archiveEmail = extractArchiveEmailName(archiveJson);
@@ -1819,8 +1814,6 @@ class MigrationTaskService {
 			String new_group_url = String.format("/groups/%s",googleGroupSettings.getString("email"));
 			ApiResultWrapper arw = ggb.put_request(new_group_url,googleGroupSettings.toString());
 
-			log.warn("check for errors");
-
 			return  arw;
 
 		}
@@ -1848,7 +1841,10 @@ class MigrationTaskService {
 		protected JSONObject getGoogleGroupSettings(String sessionId, String siteId) {
 			// get group information for this site and update Google
 			JSONObject group_info = getCToolsGroupInfoJson(sessionId,siteId);
-
+			if(group_info ==null){
+				log.error("Changing ctools site info into Google group has errors for SiteId: "+siteId);
+				return null;
+			}
 			log.debug(String.format("migration: group info: [%s]",group_info.toString()));
 
 			JSONObject googleGroupSettings = createGoogleGroupJson(group_info);
@@ -1909,29 +1905,34 @@ class MigrationTaskService {
 		}
 
 
-		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
+		public List<StatusReport> updateGoogleGroupMembershipFromSite(String siteId,HashMap<String, String> members, String groupId) {
 
 			log.debug("process members for site: "+siteId);
 			List<List<String>> membersProperties = memberPropertiesList(members,Utils.DEFAULT_EMAIL_MEMBER_SUFFIX);
 			log.debug("found members for site: "+siteId+" "+membersProperties);
-
-			JSONObject ggs = getGoogleGroupSettings(sessionId,  siteId);
-
-			addMembersToGroup(ggs.getString("email"),membersProperties);
-			//TODO: error handling
-			return null;
+			List<StatusReport> membershipsStatus = addMembersToGroup(groupId, membersProperties);
+			return membershipsStatus;
 		}
 
-		// TODO: proper return value. and status handling.
-		// What is the result of the
-		String addMembersToGroup(String group_id,List<List<String>> membersProperties) {
-
+		List<StatusReport> addMembersToGroup(String group_id,List<List<String>> membersProperties) {
+			List<StatusReport> memberships = new ArrayList<StatusReport>();
 			for (List<String> user : membersProperties) {
+			    StatusReport memberStatus = new StatusReport();
 				log.debug("group: {} user: {} role: {}",group_id,user.get(0),user.get(1));
-				addMemberToGroup(group_id,user.get(0),user.get(1));
+				ApiResultWrapper arw = addMemberToGroup(group_id, user.get(0), user.get(1));
+				int statusCode = arw.getStatus();
+				memberStatus.setStatus(Utils.STATUS_OK);
+				if(statusCode/100 !=2 && statusCode != HttpStatus.CONFLICT.value()){
+					memberStatus.setStatus(Utils.STATUS_ERROR);
+				}
+				memberStatus.setMsg(arw.getMessage());
+				memberStatus.setId(user.get(0)+" "+user.get(1)+ " "+group_id);
+				memberships.add(memberStatus);
+
+
 			}
 
-			return "MAYBE";
+			return memberships;
 		}
 
 

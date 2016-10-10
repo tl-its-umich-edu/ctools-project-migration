@@ -1,5 +1,6 @@
 package edu.umich.its.cpm;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -243,36 +244,48 @@ class MigrationInstanceService {
 			// all the items within the migration is finished
 			// update the end time of the parent record
 			Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
+
 			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
 			
 			// update the status of the parent record
 			List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
-			// parse the string into JSON object
-			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
-			int itemStatusFailureCount = 0;
-			for(MigrationEmailMessage mMessage : mMessageList)
-			{
-				String status = mMessage.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mMessage.getMessage_id(), 
-						"", 
-						status);
-				itemStatusList.add(item);
-				
-				if (status.indexOf("Box upload successful for file") == -1)
-				{
-					// if there is error, status message won't have String "Box upload successful for file"
-					itemStatusFailureCount++;
+			Migration migration = mRepository.findOne(mId);
+			String partialStatus = migration.getStatus();
+			JSONObject status = new JSONObject(partialStatus);
+			JSONArray messages = new JSONArray();
+			int success,error,partial;
+			success=error=partial=0;
+			for (MigrationEmailMessage message: mMessageList) {
+				JSONObject msgStatus = new JSONObject(message.getStatus());
+				String itemStatus = (String)msgStatus.get(Utils.JSON_ATTR_ITEM_STATUS);
+				if(itemStatus.equals(Utils.STATUS_OK)){
+					success++;
+				}
+				if(itemStatus.equals(Utils.STATUS_ERROR)){
+					error++;
+					messages.put(msgStatus);
+				}
+				if(itemStatus.equals(Utils.STATUS_PARTIAL)){
+					partial++;
+					messages.put(msgStatus);
 				}
 			}
-			
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+			status.put(Utils.JSON_ATTR_ITEMS,messages);
+			if(error>0){
+				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+			}else if(success>0 & partial>0){
+				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_PARTIAL);
+			}else{
+				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
+			}
+			JSONObject counts = Utils.getCountJsonObj();
+			counts.put(Utils.STATUS_SUCCESSES,success);
+			counts.put(Utils.STATUS_ERRORS,error);
+			counts.put(Utils.STATUS_PARTIALS,partial);
+			status.put(Utils.JSON_ATTR_COUNTS,counts);
 
 			// update the status of migration record
-			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			mRepository.setMigrationStatus(status.toString(), mId);
 			
 		}
 	}
