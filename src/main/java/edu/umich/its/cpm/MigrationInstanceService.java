@@ -231,16 +231,16 @@ class MigrationInstanceService {
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
 			// migration type
 			statusMap.put(Utils.REPORT_ATTR_TYPE, "");
-			String statusSummary = Utils.REPORT_STATUS_SUMMARY_OK;
+			String statusSummary = Utils.REPORT_STATUS_OK;
 			if (itemStatusSuccessCount == 0 && itemStatusFailureCount > 0)
 			{
 				// no item migrated successfully
-				statusSummary = Utils.REPORT_STATUS_SUMMARY_ERROR;
+				statusSummary = Utils.REPORT_STATUS_ERROR;
 			}
 			else if (itemStatusSuccessCount > 0 && itemStatusFailureCount > 0)
 			{
 				// with failures
-				statusSummary = Utils.REPORT_STATUS_SUMMARY_PARTIAL;
+				statusSummary = Utils.REPORT_STATUS_PARTIAL;
 			}
 			statusMap.put(Utils.MIGRATION_STATUS, statusSummary);
 			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
