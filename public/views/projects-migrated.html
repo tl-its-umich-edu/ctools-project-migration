@@ -16,15 +16,9 @@
   			<h4 class="site-header">{{migratedProject.site_name}}</h4>
   		</div>
   		<div class="row">
-	  		<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+	  		<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
 	    			{{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
 		  	</div>
-		  	<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
-          <small>
-            <a  ng-show="migratedProject.destination_type !=='mailarchivezip'" href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
-              (info)  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
-          </small>
-        </div>
 		  </div>
 		  <div class="row">
 				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
@@ -39,10 +33,22 @@
 				 <span ng-show="migratedProject.destination_url===null">Exported to <span ng-if="migratedProject.destination_type==='mailarchivezip'">zip</span><span ng-if="migratedProject.destination_type!=='mailarchivezip'">{{migratedProject.destination_type}}</span></span>
          <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
 				</div>
-        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
-          <small ng-show="migratedProject.status.data.counts.failures !==0" class="export-fail">
-            There were {{migratedProject.status.data.counts.failures}} failures
+        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6 {{migratedProject.status.status}}" style="text-align:right">
+          <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0">
+            Nothing got migrated.
           </small>
+          <small ng-show="migratedProject.status.counts.successes !==0">
+            There were {{migratedProject.status.counts.successes}} successes
+          </small>
+          <small ng-show="migratedProject.status.counts.errors !==0" class="export-fail"><br>
+            There were {{migratedProject.status.counts.errors}} failures
+            <a  ng-show="migratedProject.destination_type !=='mailarchivezip'" href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
+              (info)  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+          </small>
+          &nbsp;
+          <span ng-show="migratedProject.status.status==='OK'" class="glyphicon glyphicon-ok"></span>
+          <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
+          <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-fire"></span>
         </div>
 		  	</div>
 		  </div>
