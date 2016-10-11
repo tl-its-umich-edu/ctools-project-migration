@@ -1851,8 +1851,8 @@ public class MigrationController {
 		details.put(Utils.REPORT_ATTR_MESSAGE, Utils.REPORT_SUCCESS_MSG);
 		JSONObject addMembers = Utils.migrationStatusObject(null);
 		addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_OK);
-		details.put(Utils.JSON_ATTR_ADD_MEMBERS, addMembers);
-		statusObj.put(Utils.JSON_ATTR_MSG_DETAILS, details);
+		details.put(Utils.REPORT_ATTR_ADD_MEMBERS, addMembers);
+		statusObj.put(Utils.REPORT_ATTR_DETAILS, details);
 
 		JSONObject googleGroupSettings = migrationTaskService.getGoogleGroupSettings(sessionId, siteId);
 
@@ -1934,8 +1934,8 @@ public class MigrationController {
 			addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_PARTIAL);
 			details.put(Utils.REPORT_ATTR_MESSAGE,"Some membership is successful and some failed to Google Groups");
 		}
-		details.put(Utils.JSON_ATTR_ADD_MEMBERS,addMembers);
-		statusObj.put(Utils.JSON_ATTR_MSG_DETAILS,details);
+		details.put(Utils.REPORT_ATTR_ADD_MEMBERS,addMembers);
+		statusObj.put(Utils.REPORT_ATTR_DETAILS,details);
 
 
 		// 2. save the site migration record
