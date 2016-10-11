@@ -211,7 +211,7 @@ class MigrationTaskService {
 
 			// the HashMap object holds itemized status information
 			JSONObject statusJson = new JSONObject();
-			statusJson.append(Utils.REPORT_ATTR_TYPE, Utils.REPORT_ATTR_TYPE_RESOURCE_ZIP);
+			statusJson.put(Utils.REPORT_ATTR_TYPE, Utils.REPORT_ATTR_TYPE_RESOURCE_ZIP);
 			
 			// count JSON
 			JSONObject countsJson = new JSONObject();
@@ -232,20 +232,20 @@ class MigrationTaskService {
 					
 					// report error 
 					JSONObject itemJson = new JSONObject();
-					itemJson.append(Utils.REPORT_ATTR_ITEM_ID, fItem.getFile_name());
-					itemJson.append(Utils.REPORT_ATTR_ITEM_STATUS, fItem.getStatus());
+					itemJson.put(Utils.REPORT_ATTR_ITEM_ID, fItem.getFile_name());
+					itemJson.put(Utils.REPORT_ATTR_ITEM_STATUS, fItem.getStatus());
 					itemsArray.put(itemJson);
 				}
 			}
-			countsJson.append(Utils.REPORT_ATTR_COUNTS_SUCCESSES, successItemCount);
-			countsJson.append(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount);
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, successItemCount);
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount);
 			
 			// add to top report level
-			statusJson.append(Utils.REPORT_ATTR_COUNTS, countsJson);
-			statusJson.append(Utils.REPORT_ATTR_ITEMS, itemsArray);
+			statusJson.put(Utils.REPORT_ATTR_COUNTS, countsJson);
+			statusJson.put(Utils.REPORT_ATTR_ITEMS, itemsArray);
 			
 
-			statusJson.append(Utils.MIGRATION_STATUS, errorCount == 0 ? Utils.REPORT_STATUS_OK:Utils.REPORT_STATUS_PARTIAL);
+			statusJson.put(Utils.MIGRATION_STATUS, errorCount == 0 ? Utils.REPORT_STATUS_OK:Utils.REPORT_STATUS_PARTIAL);
 
 			// update the status and end_time of migration record
 			setMigrationEndTimeAndStatus(migrationId, repository, statusJson);
