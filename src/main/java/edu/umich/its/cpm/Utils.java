@@ -142,7 +142,7 @@ class Utils {
 	public static final String REPORT_ATTR_COUNTS_SUCCESSES = "successes";
 	public static final String REPORT_ATTR_COUNTS_ERRORS = "errors";
 	public static final String REPORT_ATTR_DETAILS = "details";
-	public static final String REPORT_ATTR_MESSAGE = "messsge";
+	public static final String REPORT_ATTR_MESSAGE = "message";
 	public static final String REPORT_ATTR_ADD_MEMBERS = "add_members";
 	public static final String REPORT_ATTR_ITEMS = "items";
 	public static final String REPORT_ATTR_ITEM_ID = "item_id";
