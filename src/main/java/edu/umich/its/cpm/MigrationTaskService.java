@@ -1412,15 +1412,15 @@ class MigrationTaskService {
 
 	private JSONObject finalReportObjBuilderForMailZipMigration(JSONObject downloadStatus, JSONArray mboxMessagesStatus) {
 		JSONArray errAndPartialSuccessList = new JSONArray();
-		int successes,errors,partial;
-		successes = errors=partial=0;
+		int successes,errors,partials;
+		successes = errors=partials=0;
 		for (int i = 0; i < mboxMessagesStatus.length(); i++) {
 			JSONObject perMsg = mboxMessagesStatus.getJSONObject(i);
 			String msgStatus = (String) perMsg.get(Utils.REPORT_ATTR_ITEM_STATUS);
 			if (msgStatus.equals(Utils.REPORT_STATUS_OK)) {
 				successes = successes + 1;
 			} else if (msgStatus.equals(Utils.REPORT_STATUS_PARTIAL)) {
-				partial = partial + 1;
+				partials = partials + 1;
 				errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
 			} else if (msgStatus.equals(Utils.REPORT_STATUS_ERROR)) {
 				errors = errors + 1;
@@ -1430,12 +1430,12 @@ class MigrationTaskService {
 		JSONObject counts = new JSONObject();
 		counts.put(Utils.STATUS_SUCCESSES,successes);
 		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,errors);
-		counts.put(Utils.REPORT_STATUS_PARTIAL,partial);
+		counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,partials);
 		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,counts);
 		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errAndPartialSuccessList);
 		if (errors > 0) {
 			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
-		} else if (partial > 0 & successes > 0) {
+		} else if (partials > 0 & successes > 0) {
 			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_PARTIAL);
 		} else
 			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_OK);
@@ -2055,7 +2055,7 @@ class MigrationTaskService {
 				statusObj=errHandlingWhenExceptions(statusObj);
 			}catch (Exception e) {
 				String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
-						e.getMessage(),messageId);
+						e.getStackTrace(),messageId);
 				log.error(msg);
 				statusObj=errHandlingWhenExceptions(statusObj);
 			}

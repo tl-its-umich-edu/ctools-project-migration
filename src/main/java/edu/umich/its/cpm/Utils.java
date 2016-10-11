@@ -150,6 +150,7 @@ class Utils {
 	public static final String REPORT_STATUS_OK = "OK";
 	public static final String REPORT_STATUS_PARTIAL = "PARTIAL";
 	public static final String REPORT_STATUS_ERROR = "ERROR";
+	public static final String REPORT_ATTR_COUNT_PARTIALS = "partial_successes";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
