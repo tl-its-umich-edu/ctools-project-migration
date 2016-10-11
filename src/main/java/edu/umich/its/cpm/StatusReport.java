@@ -58,9 +58,9 @@ public class StatusReport {
 
     public JSONObject getJsonReportObject(){
         JSONObject status = new JSONObject();
-        status.put(Utils.JSON_ATTR_ITEM_ID,getId());
-        status.put(Utils.JSON_ATTR_ITEM_STATUS,getStatus());
-        status.put(Utils.JSON_ATTR_MESSAGE,getMsg());
+        status.put(Utils.REPORT_ATTR_ITEM_ID,getId());
+        status.put(Utils.REPORT_ATTR_ITEM_STATUS,getStatus());
+        status.put(Utils.REPORT_ATTR_MESSAGE,getMsg());
         return status;
     }
 

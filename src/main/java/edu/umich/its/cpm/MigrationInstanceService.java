@@ -10,10 +10,8 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
-import java.util.Iterator;
 import java.sql.Timestamp;
 
 import javax.servlet.http.HttpServletRequest;
@@ -203,25 +201,47 @@ class MigrationInstanceService {
 			// parse the string into JSON object
 			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
 			int itemStatusFailureCount = 0;
+			int itemStatusSuccessCount = 0;
 			for(MigrationBoxFile mFile : mFileList)
 			{
 				String status = mFile.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mFile.getFile_access_url(), 
-						mFile.getTitle(), 
-						status);
-				itemStatusList.add(item);
-				
+
+				// if there is error, status message won't have String "Box upload successful for file"
 				if (status.indexOf("Box upload successful for file") == -1)
 				{
-					// if there is error, status message won't have String "Box upload successful for file"
+					// increase the count for failed migrated item
 					itemStatusFailureCount++;
+					
+					// add status only when it is a failure
+					MigrationFileItem item = new MigrationFileItem(
+							mFile.getFile_access_url(), 
+							mFile.getTitle(), 
+							status);
+					itemStatusList.add(item);
+				}
+				else
+				{
+					// increase the count for successfully migrated item
+					itemStatusSuccessCount++;
 				}
 			}
 			
 			// the HashMap object holds itemized status information
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
+			// migration type
+			statusMap.put(Utils.REPORT_ATTR_TYPE, "");
+			String statusSummary = Utils.REPORT_STATUS_OK;
+			if (itemStatusSuccessCount == 0 && itemStatusFailureCount > 0)
+			{
+				// no item migrated successfully
+				statusSummary = Utils.REPORT_STATUS_ERROR;
+			}
+			else if (itemStatusSuccessCount > 0 && itemStatusFailureCount > 0)
+			{
+				// with failures
+				statusSummary = Utils.REPORT_STATUS_PARTIAL;
+			}
+			statusMap.put(Utils.MIGRATION_STATUS, statusSummary);
 			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
 
 			// update the status of migration record
@@ -257,32 +277,32 @@ class MigrationInstanceService {
 			success=error=partial=0;
 			for (MigrationEmailMessage message: mMessageList) {
 				JSONObject msgStatus = new JSONObject(message.getStatus());
-				String itemStatus = (String)msgStatus.get(Utils.JSON_ATTR_ITEM_STATUS);
-				if(itemStatus.equals(Utils.STATUS_OK)){
+				String itemStatus = (String)msgStatus.get(Utils.REPORT_ATTR_ITEM_STATUS);
+				if(itemStatus.equals(Utils.REPORT_STATUS_OK)){
 					success++;
 				}
-				if(itemStatus.equals(Utils.STATUS_ERROR)){
+				if(itemStatus.equals(Utils.REPORT_STATUS_ERROR)){
 					error++;
 					messages.put(msgStatus);
 				}
-				if(itemStatus.equals(Utils.STATUS_PARTIAL)){
+				if(itemStatus.equals(Utils.REPORT_STATUS_PARTIAL)){
 					partial++;
 					messages.put(msgStatus);
 				}
 			}
-			status.put(Utils.JSON_ATTR_ITEMS,messages);
+			status.put(Utils.REPORT_ATTR_ITEMS,messages);
 			if(error>0){
-				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
 			}else if(success>0 & partial>0){
-				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_PARTIAL);
+				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_PARTIAL);
 			}else{
-				status.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
+				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_OK);
 			}
 			JSONObject counts = Utils.getCountJsonObj();
-			counts.put(Utils.STATUS_SUCCESSES,success);
-			counts.put(Utils.STATUS_ERRORS,error);
-			counts.put(Utils.STATUS_PARTIALS,partial);
-			status.put(Utils.JSON_ATTR_COUNTS,counts);
+			counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,success);
+			counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,error);
+			counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,partial);
+			status.put(Utils.REPORT_ATTR_COUNTS,counts);
 
 			// update the status of migration record
 			mRepository.setMigrationStatus(status.toString(), mId);

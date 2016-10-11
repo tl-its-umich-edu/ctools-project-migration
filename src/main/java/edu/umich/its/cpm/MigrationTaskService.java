@@ -211,12 +211,46 @@ class MigrationTaskService {
 			}
 
 			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, downloadStatus);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatus);
+			JSONObject statusJson = new JSONObject();
+			statusJson.append(Utils.REPORT_ATTR_TYPE, Utils.REPORT_ATTR_TYPE_RESOURCE_ZIP);
+			
+			// count JSON
+			JSONObject countsJson = new JSONObject();
+			int errorCount = 0;
+			int successItemCount = 0;
+			// items json
+			JSONArray itemsArray = new JSONArray();
+			for(MigrationFileItem fItem : itemStatus)
+			{
+				String status = fItem.getStatus();
+				if (status.isEmpty() || status.toLowerCase().contains("success"))
+				{
+					successItemCount++;
+				}
+				else
+				{
+					errorCount++;
+					
+					// report error 
+					JSONObject itemJson = new JSONObject();
+					itemJson.append(Utils.REPORT_ATTR_ITEM_ID, fItem.getFile_name());
+					itemJson.append(Utils.REPORT_ATTR_ITEM_STATUS, fItem.getStatus());
+					itemsArray.put(itemJson);
+				}
+			}
+			countsJson.append(Utils.REPORT_ATTR_COUNTS_SUCCESSES, successItemCount);
+			countsJson.append(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount);
+			
+			// add to top report level
+			statusJson.append(Utils.REPORT_ATTR_COUNTS, countsJson);
+			statusJson.append(Utils.REPORT_ATTR_ITEMS, itemsArray);
+			
+
+			statusJson.append(Utils.MIGRATION_STATUS, errorCount == 0 ? Utils.REPORT_STATUS_OK:Utils.REPORT_STATUS_PARTIAL);
 
 			// update the status and end_time of migration record
-			setMigrationEndTimeAndStatus(migrationId, repository, new JSONObject(statusMap));
+			setMigrationEndTimeAndStatus(migrationId, repository, statusJson);
+			
 
 			return;
 
@@ -353,9 +387,10 @@ class MigrationTaskService {
 						String zipFileStatus = zipFiles(type, httpContext,
 								zipFileName, title, webLinkUrl, contentAccessUrl,
 								sessionId, out, folderNameMap);
-						itemStatus.append(zipFileStatus + Utils.LINE_BREAK);
+						itemStatus.append(zipFileStatus);
 					}
 				}
+				
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						title, itemStatus.toString());
 
@@ -1217,12 +1252,12 @@ class MigrationTaskService {
 		}
 
 	private JSONObject errHandlingInDownloadMailArchiveZipFile(String site_id, JSONObject downloadStatus, String errorMessage) {
-		downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
-		JSONObject count = (JSONObject)downloadStatus.get(Utils.JSON_ATTR_COUNTS);
-		int errorCount = (Integer)count.get(Utils.STATUS_ERRORS);
-		count.put(Utils.STATUS_ERRORS, errorCount+1);
-		downloadStatus.put(Utils.JSON_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
-		downloadStatus.put(Utils.JSON_ATTR_COUNTS,count);
+		downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
+		JSONObject count = (JSONObject)downloadStatus.get(Utils.REPORT_ATTR_COUNTS);
+		int errorCount = (Integer)count.get(Utils.REPORT_ATTR_COUNTS_ERRORS);
+		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount+1);
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
+		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
 		return downloadStatus;
 	}
 
@@ -1302,7 +1337,7 @@ class MigrationTaskService {
 						// create file for each message
 						String messageFolderName = getMailArchiveMessageFolderName(message, channelName, folderForChannels);
 
-						singleMailZipMsgStatus.put(Utils.JSON_ATTR_ITEM_ID, messageFolderName);
+						singleMailZipMsgStatus.put(Utils.REPORT_ATTR_ITEM_ID, messageFolderName);
 
 						// 1. write the message file
 						singleMailZipMsgStatus = handleMailArchiveMessage(out, message, messageFolderName,
@@ -1314,7 +1349,7 @@ class MigrationTaskService {
 
 						mailZipMessagesStatus.put(singleMailZipMsgStatus);
 					}
-					downloadStatus.put(Utils.JSON_ATTR_ITEMS, mailZipMessagesStatus);
+					downloadStatus.put(Utils.REPORT_ATTR_ITEMS, mailZipMessagesStatus);
 
 					downloadStatus = finalReportObjBuilderForMailZipMigration(downloadStatus, mailZipMessagesStatus);
 
@@ -1369,29 +1404,29 @@ class MigrationTaskService {
 		successes = errors=partial=0;
 		for (int i = 0; i < mboxMessagesStatus.length(); i++) {
 			JSONObject perMsg = mboxMessagesStatus.getJSONObject(i);
-			String msgStatus = (String) perMsg.get(Utils.JSON_ATTR_ITEM_STATUS);
-			if (msgStatus.equals(Utils.STATUS_OK)) {
+			String msgStatus = (String) perMsg.get(Utils.REPORT_ATTR_ITEM_STATUS);
+			if (msgStatus.equals(Utils.REPORT_STATUS_OK)) {
 				successes = successes + 1;
-			} else if (msgStatus.equals(Utils.STATUS_PARTIAL)) {
+			} else if (msgStatus.equals(Utils.REPORT_STATUS_PARTIAL)) {
 				partial = partial + 1;
 				errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
-			} else if (msgStatus.equals(Utils.STATUS_ERROR)) {
+			} else if (msgStatus.equals(Utils.REPORT_STATUS_ERROR)) {
 				errors = errors + 1;
 				errAndPartialSuccessList.put(mboxMessagesStatus.get(i));
 			}
 		}
 		JSONObject counts = new JSONObject();
-		counts.put(Utils.STATUS_SUCCESSES,successes);
-		counts.put(Utils.STATUS_ERRORS,errors);
-		counts.put(Utils.STATUS_PARTIALS,partial);
-		downloadStatus.put(Utils.JSON_ATTR_COUNTS,counts);
-		downloadStatus.put(Utils.JSON_ATTR_ITEMS,errAndPartialSuccessList);
+		counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,successes);
+		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,errors);
+		counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,partial);
+		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,counts);
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errAndPartialSuccessList);
 		if (errors > 0) {
-			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
 		} else if (partial > 0 & successes > 0) {
-			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_PARTIAL);
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_PARTIAL);
 		} else
-			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.STATUS_OK);
+			downloadStatus.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_OK);
 		return downloadStatus;
 	}
 
@@ -1433,15 +1468,15 @@ class MigrationTaskService {
 				out.write(messageContent.getBytes());
 
 
-				messageStatus.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_OK);
+				messageStatus.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_OK);
 			} catch (java.net.MalformedURLException e) {
 				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-				messageStatus.put(Utils.JSON_ATTR_MESSAGE,"problem getting message content");
+				messageStatus.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+				messageStatus.put(Utils.REPORT_ATTR_MESSAGE,"problem getting message content");
 			} catch (IOException e) {
 				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-				messageStatus.put(Utils.JSON_ATTR_MESSAGE,"problem getting message content");
+				messageStatus.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+				messageStatus.put(Utils.REPORT_ATTR_MESSAGE,"problem getting message content");
 			}
 			return messageStatus;
 		}
@@ -1474,9 +1509,9 @@ class MigrationTaskService {
 
 	private JSONObject errHandlingForZiparchive(String msgIdentifier, String errMsg) {
 		JSONObject errRes=new JSONObject();
-		errRes.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-		errRes.put(Utils.JSON_ATTR_MESSAGE, errMsg);
-		errRes.put(Utils.JSON_ATTR_ITEM_ID,msgIdentifier);
+		errRes.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		errRes.put(Utils.REPORT_ATTR_MESSAGE, errMsg);
+		errRes.put(Utils.REPORT_ATTR_ITEM_ID,msgIdentifier);
 		return errRes;
 	}
 
@@ -1921,9 +1956,9 @@ class MigrationTaskService {
 				log.debug("group: {} user: {} role: {}",group_id,user.get(0),user.get(1));
 				ApiResultWrapper arw = addMemberToGroup(group_id, user.get(0), user.get(1));
 				int statusCode = arw.getStatus();
-				memberStatus.setStatus(Utils.STATUS_OK);
+				memberStatus.setStatus(Utils.REPORT_STATUS_OK);
 				if(statusCode/100 !=2 && statusCode != HttpStatus.CONFLICT.value()){
-					memberStatus.setStatus(Utils.STATUS_ERROR);
+					memberStatus.setStatus(Utils.REPORT_STATUS_ERROR);
 				}
 				memberStatus.setMsg(arw.getMessage());
 				memberStatus.setId(user.get(0)+" "+user.get(1)+ " "+group_id);
@@ -1971,7 +2006,7 @@ class MigrationTaskService {
 
 			String emailText;
 			JSONObject statusObj=new JSONObject();
-			statusObj.put(Utils.JSON_ATTR_ITEM_ID, messageId);
+			statusObj.put(Utils.REPORT_ATTR_ITEM_ID, messageId);
 
 			// Try only once and record the resulting status in the database.
 			try
@@ -2002,11 +2037,11 @@ class MigrationTaskService {
 					}
 
 					// Upload to Google groups went fine
-					String messageStatus = (String) statusObj.get(Utils.JSON_ATTR_ITEM_STATUS);
-					String messageStr = (String) statusObj.get(Utils.JSON_ATTR_MESSAGE);
+					String messageStatus = (String) statusObj.get(Utils.REPORT_ATTR_ITEM_STATUS);
+					String messageStr = (String) statusObj.get(Utils.REPORT_ATTR_MESSAGE);
 					//This is the case when in the EmailFormatter attachment might have dropped due to some error or size limit
-					if (messageStatus == Utils.STATUS_PARTIAL) {
-						statusObj.put(Utils.JSON_ATTR_ITEM_STATUS, "Google Groups upload Went fine but " + messageStr);
+					if (messageStatus == Utils.REPORT_STATUS_PARTIAL) {
+						statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, "Google Groups upload Went fine but " + messageStr);
 					}
 					log.info("The response from google groups when 200: "+ggbResult+" for MessageId: "+messageId);
 				}
@@ -2036,14 +2071,14 @@ class MigrationTaskService {
 		}
 
 	private JSONObject errHandlingWhenExceptions(JSONObject statusObj) {
-		statusObj.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-		statusObj.put(Utils.JSON_ATTR_MESSAGE, "Failure in upload to Google Groups");
+		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Failure in upload to Google Groups");
 		return statusObj;
 	}
 
 	private JSONObject errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg) {
-		statusObj.put(Utils.JSON_ATTR_ITEM_STATUS, Utils.STATUS_ERROR);
-		statusObj.put(Utils.JSON_ATTR_MESSAGE, errMsg + " " + statusCode);
+		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, errMsg + " " + statusCode);
 		return statusObj;
 
 	}

@@ -724,9 +724,9 @@ public class MigrationController {
 	public Response migrated(HttpServletRequest request) {
 		String userId = Utils.getCurrentUserId(request, env);
 		try {
-			List<Migration> l = repository.findMigrated(userId);
+			List<Migration> migrated = repository.findMigrated(userId);
 			return Response.status(Response.Status.OK)
-					.entity(repository.findMigrated(userId)).build();
+					.entity(migrated).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -1848,9 +1848,9 @@ public class MigrationController {
 		// and get the group group id, and group name
 		JSONObject statusObj = Utils.migrationStatusObject(Utils.MIGRATION_TYPE_GOOGLE_GROUP);
 		JSONObject details = new JSONObject();
-		details.put(Utils.JSON_ATTR_MESSAGE, Utils.SUCCESS_MSG);
+		details.put(Utils.REPORT_ATTR_MESSAGE, Utils.REPORT_SUCCESS_MSG);
 		JSONObject addMembers = Utils.migrationStatusObject(null);
-		addMembers.put(Utils.MIGRATION_STATUS,Utils.STATUS_OK);
+		addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_OK);
 		details.put(Utils.JSON_ATTR_ADD_MEMBERS, addMembers);
 		statusObj.put(Utils.JSON_ATTR_MSG_DETAILS, details);
 
@@ -1912,27 +1912,27 @@ public class MigrationController {
 		successes=errors=0;
 		for (StatusReport membership:membershipStatus) {
 			JSONObject failedMembership = new JSONObject();
-			if(membership.getStatus()==Utils.STATUS_ERROR){
+			if(membership.getStatus()==Utils.REPORT_STATUS_ERROR){
 				errors++;
-				failedMembership.put(Utils.JSON_ATTR_ITEM_ID,membership.getId());
-				failedMembership.put(Utils.JSON_ATTR_MESSAGE,membership.getMsg());
-				failedMembership.put(Utils.JSON_ATTR_ITEM_STATUS,membership.getStatus());
-			}else if(membership.getStatus()==Utils.STATUS_OK){
+				failedMembership.put(Utils.REPORT_ATTR_ITEM_ID,membership.getId());
+				failedMembership.put(Utils.REPORT_ATTR_MESSAGE,membership.getMsg());
+				failedMembership.put(Utils.REPORT_ATTR_ITEM_STATUS,membership.getStatus());
+			}else if(membership.getStatus()==Utils.REPORT_STATUS_OK){
 				successes++;
 			}
 			memberships.put(failedMembership);
 		}
-		addMembers.put(Utils.JSON_ATTR_ITEMS,memberships);
+		addMembers.put(Utils.REPORT_ATTR_ITEMS,memberships);
 		JSONObject counts = Utils.getCountJsonObj();
-		counts.put(Utils.STATUS_SUCCESSES,successes);
-		counts.put(Utils.STATUS_ERRORS,errors);
-		addMembers.put(Utils.JSON_ATTR_COUNTS,counts);
+		counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,successes);
+		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,errors);
+		addMembers.put(Utils.REPORT_ATTR_COUNTS,counts);
 		if(errors>0 & successes == 0){
-			details.put(Utils.JSON_ATTR_MESSAGE,"All memberships failed to Google groups");
-			addMembers.put(Utils.MIGRATION_STATUS,Utils.STATUS_ERROR);
+			details.put(Utils.REPORT_ATTR_MESSAGE,"All memberships failed to Google groups");
+			addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_ERROR);
 		}else if(errors>0 & successes>0){
-			addMembers.put(Utils.MIGRATION_STATUS,Utils.STATUS_PARTIAL);
-			details.put(Utils.JSON_ATTR_MESSAGE,"Some membership is successful and some failed to Google Groups");
+			addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_PARTIAL);
+			details.put(Utils.REPORT_ATTR_MESSAGE,"Some membership is successful and some failed to Google Groups");
 		}
 		details.put(Utils.JSON_ATTR_ADD_MEMBERS,addMembers);
 		statusObj.put(Utils.JSON_ATTR_MSG_DETAILS,details);
@@ -1961,8 +1961,8 @@ public class MigrationController {
 	}
 
 	private JSONObject googleGlobalFailureReport(JSONObject statusObj, JSONObject details, String detailMsg) {
-		details.put(Utils.JSON_ATTR_MESSAGE, detailMsg);
-		statusObj.put(Utils.MIGRATION_STATUS, Utils.STATUS_ERROR);
+		details.put(Utils.REPORT_ATTR_MESSAGE, detailMsg);
+		statusObj.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
 		return statusObj;
 	}
 
