@@ -33,17 +33,32 @@
 				 <span ng-show="migratedProject.destination_url===null">Exported to <span ng-if="migratedProject.destination_type==='mailarchivezip'">zip</span><span ng-if="migratedProject.destination_type!=='mailarchivezip'">{{migratedProject.destination_type}}</span></span>
          <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
 				</div>
-        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6 {{migratedProject.status.status}}" style="text-align:right">
+        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
           <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0">
             Nothing got migrated.
           </small>
-          <small ng-show="migratedProject.status.counts.successes !==0">
-            There were {{migratedProject.status.counts.successes}} successes
+          <small ng-show="migratedProject.status.counts.successes && migratedProject.status.counts.successes !==0">
+            {{migratedProject.status.counts.successes}}
+            <span ng-show="migratedProject.status.counts.successes === 1">success</span>
+            <span ng-show="migratedProject.status.counts.successes > 1">successes</span>
           </small>
-          <small ng-show="migratedProject.status.counts.errors !==0" class="export-fail"><br>
-            There were {{migratedProject.status.counts.errors}} failures
-            <a  ng-show="migratedProject.destination_type !=='mailarchivezip'" href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
-              (info)  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+          <small ng-show="migratedProject.status.counts.partial_successes && migratedProject.status.counts.partial_successes !==0">
+            {{migratedProject.status.counts.successes}} partial
+            <span ng-show="migratedProject.status.counts.partial_successes === 1">success</span>
+            <span ng-show="migratedProject.status.counts.partial_successes > 1">successes</span>
+          </small>
+          <small ng-show="migratedProject.status.counts.errors && migratedProject.status.counts.errors !==0">
+            {{migratedProject.status.counts.errors}}
+            <span ng-show="migratedProject.status.counts.errors === 1">error</span>
+            <span ng-show="migratedProject.status.counts.errors > 1">errors</span>
+          </small>
+
+          <small ng-show="(migratedProject.status.details && migratedProject.status.details.add_members.counts.partial_successes !==0 ||
+            migratedProject.status.details && migratedProject.status.details.add_members.counts.errors !==0) ||
+            (migratedProject.status.counts.errors && migratedProject.status.counts.errors !==0) ||
+            (migratedProject.status.counts.partial_successes && migratedProject.status.counts.partial_successes !==0)"><br>
+            <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
+              Some problems  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
           <span ng-show="migratedProject.status.status==='OK'" class="glyphicon glyphicon-ok"></span>

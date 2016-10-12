@@ -39,4 +39,12 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       }
     };
 
+}).filter('extractMember', function() {
+    return function(member) {
+      if(member){
+        var realMember = member.split(' ')[1] + ' '  +member.split(' ')[2];
+        return realMember;
+      }
+
+    };
 });
