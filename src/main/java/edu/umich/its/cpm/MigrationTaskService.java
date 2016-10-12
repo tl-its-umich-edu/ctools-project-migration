@@ -2056,8 +2056,9 @@ class MigrationTaskService {
 				statusObj=errHandlingWhenExceptions(statusObj);
 			}catch (Exception e) {
 				String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
-						e.getStackTrace(),messageId);
+						e.getMessage(),messageId);
 				log.error(msg);
+				e.printStackTrace();
 				statusObj=errHandlingWhenExceptions(statusObj);
 			}
 
