@@ -1,7 +1,6 @@
 package edu.umich.its.cpm;
 
 import java.io.UnsupportedEncodingException;
-import java.net.URL;
 import java.net.URLDecoder;
 import java.net.MalformedURLException;
 import java.util.HashMap;
@@ -25,15 +24,11 @@ import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
+import org.json.JSONArray;
 import org.json.JSONObject;
-import org.springframework.beans.factory.annotation.Autowired;
 
-import javax.annotation.Resource;
-
-import org.springframework.context.annotation.PropertySource;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
-import org.springframework.stereotype.Component;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -46,10 +41,7 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 
-import org.apache.tika.mime.MimeType;
-import org.apache.tika.mime.MimeTypeException;
 import org.apache.tika.config.TikaConfig;
-import org.apache.commons.io.FilenameUtils;
 import org.springframework.util.StringUtils;
 
 @Configuration
@@ -63,7 +55,6 @@ class Utils {
 	public static final String STATUS_SUCCESS = "success";
 	public static final String STATUS_FAILURE = "failure";
 	public static final String STATUS_ONGING = "onging";
-	public static final String STATUS_SUCCESSES = "successes";
 
 	public static final String CTOOLS_SITE_TYPE_PROJECT = "project";
 	public static final String CTOOLS_SITE_TYPE_MYWORKSPACE = "myworkspace";
@@ -130,7 +121,7 @@ class Utils {
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
        public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
     public static final String ENV_ATTACHMENT_LIMIT = "attachment.size.limit" ;
-	
+
 	// status report attributes
 	public static final String REPORT_ATTR_ITEM_STATUS = "item_Status";
 	public static final String REPORT_SUCCESS_MSG = "Everything Looks Good!";
@@ -175,7 +166,6 @@ class Utils {
 	public static final String JSON_ATTR_MAIL_FROM = "From: ";
 	public static final String JSON_ATTR_MAIL_SUBJECT = "Subject: ";
 	public static final String JSON_ATTR_MAIL_BODY = "body";
-	public static final String JSON_ATTR_MESSAGE = "message";
 	public static final String JSON_ATTR_MAIL_ATTACHMENTS = "attachments";
 	public static final String JSON_ATTR_MAIL_TYPE = "type";
 	public static final String JSON_ATTR_MAIL_NAME = "name";
@@ -477,6 +467,24 @@ class Utils {
 			remoteUser = propertyRemoteUser;		
 		}
 		return remoteUser;
+	}
+
+	public static JSONObject migrationStatusObject(String destination_type) {
+		JSONObject downloadStatus = new JSONObject();
+		downloadStatus.put(Utils.REPORT_ATTR_TYPE,destination_type);
+		downloadStatus.put(Utils.MIGRATION_STATUS, "");
+		JSONObject counts = getCountJsonObj();
+		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,counts);
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,new JSONArray());
+		return downloadStatus;
+	}
+
+	public static JSONObject getCountJsonObj() {
+		JSONObject counts = new JSONObject();
+		counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,0);
+		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,0);
+		counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,0);
+		return counts;
 	}
 
 	/*
