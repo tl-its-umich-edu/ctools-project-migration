@@ -192,7 +192,7 @@
 		<dependency>
 			<groupId>com.box</groupId>
 			<artifactId>box-java-sdk</artifactId>
-			<version>2.1.1</version>
+			<version>0.7.0</version>
 		</dependency>
 		<!-- Apache Commons IO -->
 		<dependency>
