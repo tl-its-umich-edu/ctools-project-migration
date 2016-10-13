@@ -241,7 +241,7 @@ class MigrationInstanceService {
 				// with failures
 				statusSummary = Utils.REPORT_STATUS_PARTIAL;
 			}
-			statusMap.put(Utils.MIGRATION_STATUS, statusSummary);
+			statusMap.put(Utils.REPORT_ATTR_STATUS, statusSummary);
 			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
 
 			// update the status of migration record
@@ -292,11 +292,11 @@ class MigrationInstanceService {
 			}
 			status.put(Utils.REPORT_ATTR_ITEMS,messages);
 			if(error>0){
-				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
 			}else if(success>0 & partial>0){
-				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_PARTIAL);
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_PARTIAL);
 			}else{
-				status.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_OK);
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_OK);
 			}
 			JSONObject counts = Utils.getCountJsonObj();
 			counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,success);
