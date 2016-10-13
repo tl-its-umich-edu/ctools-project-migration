@@ -34,7 +34,7 @@ status CLOB,
 PRIMARY KEY (id));
 
 create table migration_email_message (
-message_id	VARCHAR(99)    NOT NULL,
+message_id	VARCHAR(150) NOT NULL,
 migration_id VARCHAR(99) NOT NULL,
 user_id VARCHAR(99) NOT NULL,
 google_group_id VARCHAR(99) NOT NULL,
