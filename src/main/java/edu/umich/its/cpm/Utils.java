@@ -82,7 +82,7 @@ class Utils {
        public static final String MAILARCHIVEMBOX = "mailarchivembox";
 
 	public static final String MIGRATION_FILENAME = "file_name";
-	public static final String MIGRATION_STATUS = "status";
+	public static final String REPORT_ATTR_STATUS = "status";
 	public static final String MIGRATION_DATA = "data";
 
 	// the format of folder path in box
@@ -128,7 +128,7 @@ class Utils {
 	public static final String REPORT_ATTR_TYPE = "type";
 	public static final String REPORT_ATTR_TYPE_RESOURCE_ZIP = "resource zip";
 	public static final String REPORT_ATTR_TYPE_RESOURCE_BOX = "resource box";
-	public static final String REPORT_ATTR_STATUS = "status";
+//	public static final String REPORT_ATTR_STATUS = "status";
 	public static final String REPORT_ATTR_COUNTS = "counts";
 	public static final String REPORT_ATTR_COUNTS_SUCCESSES = "successes";
 	public static final String REPORT_ATTR_COUNTS_ERRORS = "errors";
@@ -472,7 +472,7 @@ class Utils {
 	public static JSONObject migrationStatusObject(String destination_type) {
 		JSONObject downloadStatus = new JSONObject();
 		downloadStatus.put(Utils.REPORT_ATTR_TYPE,destination_type);
-		downloadStatus.put(Utils.MIGRATION_STATUS, "");
+		downloadStatus.put(Utils.REPORT_ATTR_STATUS, "");
 		JSONObject counts = getCountJsonObj();
 		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,counts);
 		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,new JSONArray());

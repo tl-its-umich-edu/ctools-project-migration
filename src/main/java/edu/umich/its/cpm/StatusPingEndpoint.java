@@ -4,17 +4,11 @@ import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.stereotype.Component;
 import org.springframework.beans.factory.annotation.Autowired;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
-import java.util.Properties;
 
 import javax.servlet.ServletContext;
 
 import org.json.JSONObject;
-
-import edu.umich.its.cpm.MigrationRepository;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -57,12 +51,12 @@ class StatusPingEndpoint implements Endpoint<String>{
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
 			try
 			{
-				statusMap.put(Utils.MIGRATION_STATUS, repository.validate() >= 0 ? "OK":"Unable to connect to database.");
+				statusMap.put(Utils.REPORT_ATTR_STATUS, repository.validate() >= 0 ? "OK":"Unable to connect to database.");
 			}
 			catch (Exception e)
 			{
 				// IOException might be thrown, due to database connection problems
-				statusMap.put(Utils.MIGRATION_STATUS, "Unable to connect to database.");
+				statusMap.put(Utils.REPORT_ATTR_STATUS, "Unable to connect to database.");
 				log.error(this + " Unable to connect to database.");
 			}
 			rv = (new JSONObject(statusMap)).toString();

@@ -1359,7 +1359,7 @@ public class MigrationController {
 		if (status.length() == 0) {
 			status.append("Database Migration record successfully created.");
 		}
-		rv.put(Utils.MIGRATION_STATUS, status.toString());
+		rv.put(Utils.REPORT_ATTR_STATUS, status.toString());
 
 		return rv;
 	}
@@ -1396,7 +1396,7 @@ public class MigrationController {
 		if (newMigration != null) {
 			rv.put("migration", newMigration);
 		}
-		rv.put(Utils.MIGRATION_STATUS, status);
+		rv.put(Utils.REPORT_ATTR_STATUS, status);
 
 		return rv;
 	}
@@ -1612,7 +1612,7 @@ public class MigrationController {
 					for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
 						JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
 						String path = itemJSON.getString("path");
-						String status = itemJSON.getString(Utils.MIGRATION_STATUS);
+						String status = itemJSON.getString(Utils.REPORT_ATTR_STATUS);
 						if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
 						{
 							// file path did not end with "/"
@@ -1635,18 +1635,18 @@ public class MigrationController {
 			if (errorSiteCount != 0)
 			{
 				// error
-				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_FAILURE);
+				statusMap.put(Utils.REPORT_ATTR_STATUS, Utils.STATUS_FAILURE);
 				statusMap.put("errors", errorSiteCount);
 			}
 			else if (ongoing)
 			{
 				// migration not finished yet
-				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_ONGING);
+				statusMap.put(Utils.REPORT_ATTR_STATUS, Utils.STATUS_ONGING);
 			}
 			else
 			{
 				// all sites are migrated successfully within the bulk migration
-				statusMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
+				statusMap.put(Utils.REPORT_ATTR_STATUS, Utils.STATUS_SUCCESS);
 			}
 
 			totalMap.put("status-summary", statusMap);
@@ -1850,7 +1850,7 @@ public class MigrationController {
 		JSONObject details = new JSONObject();
 		details.put(Utils.REPORT_ATTR_MESSAGE, Utils.REPORT_SUCCESS_MSG);
 		JSONObject addMembers = Utils.migrationStatusObject(null);
-		addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_OK);
+		addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_OK);
 		details.put(Utils.REPORT_ATTR_ADD_MEMBERS, addMembers);
 		statusObj.put(Utils.REPORT_ATTR_DETAILS, details);
 
@@ -1929,9 +1929,9 @@ public class MigrationController {
 		addMembers.put(Utils.REPORT_ATTR_COUNTS,counts);
 		if(errors>0 & successes == 0){
 			details.put(Utils.REPORT_ATTR_MESSAGE,"All memberships failed to Google groups");
-			addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_ERROR);
+			addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_ERROR);
 		}else if(errors>0 & successes>0){
-			addMembers.put(Utils.MIGRATION_STATUS,Utils.REPORT_STATUS_PARTIAL);
+			addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_PARTIAL);
 			details.put(Utils.REPORT_ATTR_MESSAGE,"Some membership is successful and some failed to Google Groups");
 		}
 		details.put(Utils.REPORT_ATTR_ADD_MEMBERS,addMembers);
@@ -1962,7 +1962,7 @@ public class MigrationController {
 
 	private JSONObject googleGlobalFailureReport(JSONObject statusObj, JSONObject details, String detailMsg) {
 		details.put(Utils.REPORT_ATTR_MESSAGE, detailMsg);
-		statusObj.put(Utils.MIGRATION_STATUS, Utils.REPORT_STATUS_ERROR);
+		statusObj.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
 		return statusObj;
 	}
 
