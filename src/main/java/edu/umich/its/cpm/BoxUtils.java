@@ -630,15 +630,6 @@ public class BoxUtils implements EnvironmentAware {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
-			if (api.needsRefresh())
-			{
-				// box access token is valid for one hour
-				// box refresh token is valid for 60 days, but can only be used for one time
-				log.info("refreshed box access token and refresh token");
-				repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
-				repository.setBoxAuthUserRefreshToken(api.getRefreshToken(), userId);
-			}
-			api.setAutoRefresh(false);
 			
 			return api;
 
