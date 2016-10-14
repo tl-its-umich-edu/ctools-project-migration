@@ -141,13 +141,11 @@
             </ol>
           </div>
           <div class="container" ng-show="reportDetails.type !=='google'">
-            <div class="row" style="width:535px">
-              <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10">
-                <p>
+            <div class="row" style="width:500px;" >
+              <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
                   Items exported: {{reportDetails.counts.successes}}
-                </p>
               </div>
-              <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+              <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
                 <!--//will box migrations be reported here as well -->
                 <div ng-hide="reportDetails.type !=='resource zip'">
                   <button ng-show="!showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">More Information</button>
@@ -166,7 +164,7 @@
           </div>
           <ul class="list-group container"  style="width:550px;margin:0" ng-if="reportDetails.items.length">
             <li class="list-group-item" ng-class="item.item_Status==='PARTIAL'?'list-group-item-warn':list-group-item-danger" ng-repeat="item in reportDetails.items">
-              <div class="row">
+              <div class="row" ng-if="reportDetails.type !=='resource zip'">
                 <div class="col-md-9 col-lg-9 col-sm-9 col-xs-9" style="vertical-align: middle">
                   {{item.item_id}} <br>
                   <small>{{item.message}}</small>
