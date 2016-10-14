@@ -1917,10 +1917,10 @@ public class MigrationController {
 				failedMembership.put(Utils.REPORT_ATTR_ITEM_ID,membership.getId());
 				failedMembership.put(Utils.REPORT_ATTR_MESSAGE,membership.getMsg());
 				failedMembership.put(Utils.REPORT_ATTR_ITEM_STATUS,membership.getStatus());
+				memberships.put(failedMembership);
 			}else if(membership.getStatus()==Utils.REPORT_STATUS_OK){
 				successes++;
 			}
-			memberships.put(failedMembership);
 		}
 		addMembers.put(Utils.REPORT_ATTR_ITEMS,memberships);
 		JSONObject counts = Utils.getCountJsonObj();
