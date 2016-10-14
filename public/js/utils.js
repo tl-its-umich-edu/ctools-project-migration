@@ -124,39 +124,6 @@ var transformMigrations = function (data){
 var transformMigrated = function(result) {
   _.each(result.data.entity, function(migrated){
     migrated.migrated_by = migrated.migrated_by.split(',')[0];
-    //GOOGLE
-
-    // google - content in reportDetails.details.message - some sort of global gg failure
-    migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":1},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":""},"message":"google groups creation failed for siteId b200a9b5-ea80-42d4-86c9-6c574b01feaa as could not the map the Ctools site info to google groups info"},"type":"google","items":[],"status":"ERROR"};
-    //migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":1},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":""},"message":"Failed to add site members to google group as couldn't get membership from ctools site b200a9b5-ea80-42d4-86c9-6c574b01feaa"},"type":"google","items":[],"status":"ERROR"};
-    //migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":1},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":""},"message":"google groups creation failed for siteId b200a9b5-ea80-42d4-86c9-6c574b01feaa as could not map the Ctools site info to google groups info"},"type":"google","items":[],"status":"ERROR"};
-    //migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":1},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":""},"message":"google groups creation failed for siteId b200a9b5-ea80-42d4-86c9-6c574b01feaa with status code 409 and due to Conflict"},"type":"google","items":[],"status":"ERROR"};
-
-    // google - global sucess - with errors
-    //migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":4},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[{}],"status":"OK"},"message":"Everything Looks Good!"},"type":"google","items":[{"item_id":"Wed, 7 Sep 2016 14:48:51 -0400 SUOER","item_Status":"ERROR","message":"Failure in upload to Google Groups"},{"item_id":"Wed, 7 Sep 2016 14:47:36 -0400 ATTACHMENT","item_Status":"ERROR","message":"Gateway Time-out 504"},{"item_id":"Wed, 7 Sep 2016 14:46:53 -0400 This is a test","item_Status":"ERROR","message":"Failure in upload to Google Groups"},{"item_id":"Wed, 7 Sep 2016 14:48:22 -0400 RUN RUNE","item_Status":"ERROR","message":"Failure in upload to Google Groups"}],"status":"ERROR"};
-
-    // google - global sucess - NO errors
-    //migrated.status ={"counts":{"successes":4,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[{}],"status":"OK"},"message":"Everything Looks Good!"},"type":"google","items":[],"status":"OK"};
-
-    // google - global success, partials in export
-    //migrated.status ={"counts":{"successes":3,"partial_successes":1,"errors":0},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[{}],"status":"OK"},"message":"Everything Looks Good!"},"type":"google","items":[{"item_id":"Wed, 21 Sep 2016 09:43:31 -0400 attachment with 16 mb","item_Status":"PARTIAL","message":"Google Groups upload Went fine but email Message size exceeds the expected limit, attachments [Cal_dimention.twbx, Bar-1.twbx] are dropped"}],"status":"PARTIAL"};
-    // google - lgobal success but member errors
-    //migrated.status ={"counts":{"successes":6,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":6,"partial_successes":0,"errors":3},"items":[{"item_Id":"kitchensink@discussions-dev.its.umich.edu slonn@umich.edu MANAGER","item_Status":"ERROR","message":"Bad Request"},{"item_Id":"kitchensink@discussions-dev.its.umich.edu kentfitz@umich.edu MANAGER","item_Status":"ERROR","message":"Bad Request"},{"item_Id":"kitchensink@discussions-dev.its.umich.edu cousinea@umich.edu MANAGER","item_Status":"ERROR","message":"Bad Request"}],"status":"ERROR"},"message":"Some membership is successful and some failed to Google Groups"},"type":"google","items":[],"status":"OK"};
-
-
-    //MAIL zip
-    //has errors
-    migrated.status ={"counts":{"successes":0,"partial_successes":0,"errors":2},"type":"mailarchivezip","items":[{"item_id":" pushyami@umich.edu Thu, 29 Sep 2016 14_10_38 -0400 This is second/","item_Status":"ERROR","message":"problem getting message content"},{"item_id":" pushyami@umich.edu Fri, 9 Sep 2016 07_41_46 -0400 Wow i am excited/","item_Status":"ERROR","message":"problem getting message content"}],"status":"ERROR"};
-    // has no errors
-    //migrated.status ={"counts":{"successes":4,"partial_successes":0,"errors":0},"type":"mailarchivezip","items":[],"status":"OK"};
-
-    //.mbox zip
-    // has errors
-    //migrated.status ={"counts":{"successes":2,"partial_successes":2,"errors":0},"type":"mailarchivembox","items":[{"item_id":"Wed, 7 Sep 2016 14:48:22 -0400 RUN RUNE","item_Status":"PARTIAL","message":"1/1 attachments failed and they are [standup.txt] missing from the email"},{"item_id":"Wed, 7 Sep 2016 14:47:36 -0400 ATTACHMENT","item_Status":"PARTIAL","message":"1/1 attachments failed and they are [email_msg.txt] missing from the email"}],"status":"PARTIAL"};
-    // no partial errors
-    //migrated.status ={"counts":{"successes":1,"partial_successes":1,"errors":0},"type":"mailarchivembox","items":[{"item_id":"Fri, 9 Sep 2016 07:41:46 -0400 Wow i am excited","item_Status":"PARTIAL","message":"1/1 attachments failed and they are [standup.txt] missing from the email"}],"status":"PARTIAL"};
-    //migrated.status ={"counts":{"successes":2,"partial_successes":2,"errors":0},"type":"mailarchivembox","items":[{"item_id":"Wed, 7 Sep 2016 14:48:22 -0400 RUN RUNE","item_Status":"PARTIAL","message":"1/1 attachments failed and they are [standup.txt] missing from the email"},{"item_id":"Wed, 7 Sep 2016 14:47:36 -0400 ATTACHMENT","item_Status":"PARTIAL","message":"1/1 attachments failed and they are [email_msg.txt] missing from the email"}],"status":"PARTIAL"};
-
     if (migrated.destination_url){
       var destination_urlArr = migrated.destination_url.split('/');
       if(destination_urlArr.length > 7) {

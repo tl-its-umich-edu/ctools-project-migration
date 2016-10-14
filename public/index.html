@@ -108,7 +108,7 @@
             aria-label="Close">
             <span aria-hidden="true">&times;</span>
           </button>
-          <h4 class="modal-title" id="reportModalLabel">Site: {{reportDetails.title}} - {{reportDetails.type}}</h4>
+          <h4 class="modal-title" id="reportModalLabel">Site: {{reportDetails.title}} - {{reportDetails.type | readableExportType}}</h4>
         </div>
         <div class="modal-body">
           <div class="container" ng-show="reportDetails.type ==='google'">

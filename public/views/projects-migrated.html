@@ -52,7 +52,6 @@
             <span ng-show="migratedProject.status.counts.errors === 1">error</span>
             <span ng-show="migratedProject.status.counts.errors > 1">errors</span>
           </small>
-
           <small ng-show="(migratedProject.status.details && migratedProject.status.details.add_members.counts.partial_successes !==0 ||
             migratedProject.status.details && migratedProject.status.details.add_members.counts.errors !==0) ||
             (migratedProject.status.counts.errors && migratedProject.status.counts.errors !==0) ||
@@ -61,6 +60,7 @@
               Some problems  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
+          <span ng-if="migratedProject.status.data">Old export format</span>
           <span ng-show="migratedProject.status.status==='OK'" class="glyphicon glyphicon-ok"></span>
           <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
           <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-fire"></span>
