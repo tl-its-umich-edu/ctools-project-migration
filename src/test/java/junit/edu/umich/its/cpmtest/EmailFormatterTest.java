@@ -168,7 +168,7 @@ public class EmailFormatterTest extends TestCase {
         expectedEmailText.append("This is Super");
         expectedEmailText.append(formatter.NEW_LINE);
         expectedEmailText.append(formatter.NEW_LINE);
-        expectedEmailText.append("YOUR ATTACHMENTS ARE DROPPED DUE TO SIZE LIMIT");
+        expectedEmailText.append("ATTACHMENTS THAT EXCEED THE SIZE LIMIT HAVE BEEN REMOVED");
         expectedEmailText.append(formatter.NEW_LINE);
         expectedEmailText.append("--XXX--");
 
