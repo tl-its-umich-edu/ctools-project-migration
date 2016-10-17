@@ -1302,7 +1302,7 @@ public class MigrationController {
 		// create new migration record
 		rv = newMigrationRecordForMsgMigration(status, bulkMigrationId, bulkMigrationName,
 				siteId, siteName, toolId, toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId,
-				targetUrl);
+				targetUrl,null);
 
 		return rv;
 	}
@@ -1367,12 +1367,12 @@ public class MigrationController {
 	private HashMap<String, Object> newMigrationRecordForMsgMigration(String status,
 																	  String batch_id, String batch_name, String siteId, String siteName,
 																	  String toolId, String toolName, String destinationType,
-																	  String userId, String targetUrl) {
+																	  String userId, String targetUrl, Timestamp endtime) {
 		HashMap<String, Object> rv = new HashMap<String, Object>();
 		Migration m = new Migration(batch_id, batch_name, siteId, siteName,
-				toolId, toolName, userId, new Timestamp(
+				toolId, toolName, userId,  new Timestamp(
 				System.currentTimeMillis()), // start time is now
-				null, destinationType, targetUrl, status);
+				endtime, destinationType, targetUrl, status);
 
 		Migration newMigration = null;
 
@@ -1848,7 +1848,8 @@ public class MigrationController {
 		// and get the group group id, and group name
 		JSONObject statusObj = Utils.migrationStatusObject(Utils.MIGRATION_TYPE_GOOGLE_GROUP);
 		JSONObject details = new JSONObject();
-		details.put(Utils.REPORT_ATTR_MESSAGE, Utils.REPORT_SUCCESS_MSG);
+		//this is the only place we are making the success msg as OK instead of Everything Looks Good!
+		details.put(Utils.REPORT_ATTR_MESSAGE, Utils.REPORT_STATUS_OK);
 		JSONObject addMembers = Utils.migrationStatusObject(null);
 		addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_OK);
 		details.put(Utils.REPORT_ATTR_ADD_MEMBERS, addMembers);
@@ -1857,11 +1858,12 @@ public class MigrationController {
 		JSONObject googleGroupSettings = migrationTaskService.getGoogleGroupSettings(sessionId, siteId);
 
 		if (googleGroupSettings == null) {
-			String detailMsg = String.format("google groups creation failed for siteId %s" +
-					" as could not map the Ctools site info to google groups info", siteId);
-			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg);
+			String detailMsg = String.format("Google Groups creation failed for siteId %s" +
+					" as could not the map the Ctools site information to Google Groups information", siteId);
+			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg,addMembers);
 			newMigrationRecordForMsgMigration(statusObj.toString(), bulkMigrationId, bulkMigrationName, siteId, siteName, toolId,
-					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null);
+					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null,new Timestamp(
+							System.currentTimeMillis()));
 			log.error(detailMsg);
 			return;
 
@@ -1871,18 +1873,20 @@ public class MigrationController {
 		try {
 			 site_members = get_site_members(siteId, sessionId);
 		}catch (RestClientException e) {
-			String detailMsg = String.format("mail migration to google for the site $s failed, couldn't get memberships from ctools",siteId);
-			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg);
+			String detailMsg = String.format("Mail migration to Google Groups for the site %s failed, couldn't get site members from ctools",siteId);
+			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg,addMembers);
 			newMigrationRecordForMsgMigration(statusObj.toString(), bulkMigrationId, bulkMigrationName, siteId, siteName, toolId,
-					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null);
+					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null,new Timestamp(
+							System.currentTimeMillis()));
 			log.error("RestClientException occurred, {} and details are [{}]",detailMsg,e.getMessage());
 			return;
 		}
 		catch (JSONException e) {
-			String detailMsg = String.format("mail migration to google for the site $s failed, couldn't get memberships from ctools",siteId);
-			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg);
+			String detailMsg = String.format("Mail migration to Google Groups for the site %s failed, couldn't get site members from ctools",siteId);
+			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg,addMembers);
 			newMigrationRecordForMsgMigration(statusObj.toString(), bulkMigrationId, bulkMigrationName, siteId, siteName, toolId,
-					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null);
+					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null,new Timestamp(
+							System.currentTimeMillis()));
 			log.error("JSONException occurred, {} and details are [{}]",detailMsg,e.getMessage());
 			return;
 		}
@@ -1891,11 +1895,12 @@ public class MigrationController {
 
 		if (arw.getStatus() != HttpStatus.OK.value() && arw.getStatus() != HttpStatus.CREATED.value() &&
 				arw.getStatus() != HttpStatus.CONFLICT.value()) {
-			String detailMsg = String.format("google groups creation failed for siteId %s with status code %d " +
+			String detailMsg = String.format("Google Groups creation failed for siteId %s with status code %d " +
 					"and due to %s", siteId, arw.getStatus(), arw.message);
-			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg);
+			statusObj = googleGlobalFailureReport(statusObj, details, detailMsg,addMembers);
 			newMigrationRecordForMsgMigration(statusObj.toString(), bulkMigrationId, bulkMigrationName, siteId, siteName, toolId,
-					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null);
+					toolName, Utils.MIGRATION_TYPE_GOOGLE_GROUP, userId, null,new Timestamp(
+							System.currentTimeMillis()));
 			log.error(detailMsg);
 			return;
 		}
@@ -1928,11 +1933,11 @@ public class MigrationController {
 		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,errors);
 		addMembers.put(Utils.REPORT_ATTR_COUNTS,counts);
 		if(errors>0 & successes == 0){
-			details.put(Utils.REPORT_ATTR_MESSAGE,"All memberships failed to Google groups");
+			details.put(Utils.REPORT_ATTR_MESSAGE,"All the site members were not able to be added to the destination Google Group");
 			addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_ERROR);
 		}else if(errors>0 & successes>0){
 			addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_PARTIAL);
-			details.put(Utils.REPORT_ATTR_MESSAGE,"Some membership is successful and some failed to Google Groups");
+			details.put(Utils.REPORT_ATTR_MESSAGE,"Some site members were not able to be added to the destination Google Group");
 		}
 		details.put(Utils.REPORT_ATTR_ADD_MEMBERS,addMembers);
 		statusObj.put(Utils.REPORT_ATTR_DETAILS,details);
@@ -1960,8 +1965,9 @@ public class MigrationController {
 
 	}
 
-	private JSONObject googleGlobalFailureReport(JSONObject statusObj, JSONObject details, String detailMsg) {
+	private JSONObject googleGlobalFailureReport(JSONObject statusObj, JSONObject details, String detailMsg,JSONObject addMembers) {
 		details.put(Utils.REPORT_ATTR_MESSAGE, detailMsg);
+		addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_ERROR);
 		statusObj.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
 		return statusObj;
 	}

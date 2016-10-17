@@ -1452,6 +1452,7 @@ class MigrationTaskService {
 		private StatusReport handleMailArchiveMessage(ZipOutputStream out,
 				JSONObject message, String messageFolderName,
 				StatusReport messageStatus)  {
+				String problemMsg="Problem getting message content for Mail Zip Download";
 			try {
 				// get the html file content first
 				String messageContent = message.has(Utils.JSON_ATTR_MAIL_BODY)?message.getString(Utils.JSON_ATTR_MAIL_BODY):"";
@@ -1475,15 +1476,15 @@ class MigrationTaskService {
 			} catch (java.net.MalformedURLException e) {
 				log.error("Mail Zip download has MalFormedURLException due to "+e.getMessage());
 				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
-				messageStatus.setMsg("problem getting message content");
+				messageStatus.setMsg(problemMsg);
 			} catch (IOException e) {
 				log.error("Mail Zip download has IOException due to "+e.getMessage());
 				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
-				messageStatus.setMsg("problem getting message content");
+				messageStatus.setMsg(problemMsg);
 			} catch (Exception e) {
 				log.error("Mail Zip download has Exception due to "+e.getMessage());
 				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
-				messageStatus.setMsg("problem getting message content");
+				messageStatus.setMsg(problemMsg);
 			}
 			return messageStatus;
 		}
@@ -1558,7 +1559,8 @@ class MigrationTaskService {
 			}
 			if (errors > 0) {
 				String msg = sr.getFailedAttachments().size() + "/" + sr.getAllAttachments().size()
-						+ "attachment could not be downloaded and are" + org.apache.commons.lang3.StringUtils.join(sr.getFailedAttachments());
+						+ " attachments " + org.apache.commons.lang3.StringUtils.join(sr.getFailedAttachments()
+						+" failed to be exported and they are missing from message");
 				sr.setStatus(Utils.REPORT_STATUS_PARTIAL);
 				sr.setMsg(msg);
 			}else{
@@ -2053,7 +2055,7 @@ class MigrationTaskService {
 					String messageStr = (String) statusObj.get(Utils.REPORT_ATTR_MESSAGE);
 					//This is the case when in the EmailFormatter attachment might have dropped due to some error or size limit
 					if (messageStatus == Utils.REPORT_STATUS_PARTIAL) {
-						statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Google Groups upload Went fine but " + messageStr);
+						statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Google Groups message migration successful, but " + messageStr);
 					}
 					log.info("The response from google groups when 200: "+ggbResult+" for MessageId: "+messageId);
 				}
@@ -2085,13 +2087,14 @@ class MigrationTaskService {
 
 	private JSONObject errHandlingWhenExceptions(JSONObject statusObj) {
 		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
-		statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Failure in upload to Google Groups");
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Failure to migrate message to Google Groups");
 		return statusObj;
 	}
 
 	private JSONObject errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg) {
 		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
-		statusObj.put(Utils.REPORT_ATTR_MESSAGE, errMsg + " " + statusCode);
+		String msg= "Failure to migrate message to Google Groups due to " +errMsg+", failed with status code "+statusCode;
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, msg);
 		return statusObj;
 
 	}
