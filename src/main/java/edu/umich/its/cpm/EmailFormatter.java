@@ -76,7 +76,7 @@ public class EmailFormatter {
             rfcFormattedText = removeAttachments(rfcFormattedText);
             emailMsgPlusStatus.setMessage(rfcFormattedText);
             status.setStatus(Utils.REPORT_STATUS_PARTIAL);
-            status.setMsg("email Message size exceeds the expected limit, attachments "+status.getAllAttachments() +" are dropped");
+            status.setMsg("message size exceeded the expected limit. Attachments "+status.getAllAttachments() +" are omitted");
             emailMsgPlusStatus.setReport(status);
             return emailMsgPlusStatus;
         }
@@ -108,7 +108,7 @@ public class EmailFormatter {
             if (i == (emailTextList.size() - 2)) {
                 String lastLineInBody = emailTextList.get(i);
                 String appendToBodyText = NEW_LINE + NEW_LINE +
-                        "YOUR ATTACHMENTS ARE DROPPED DUE TO SIZE LIMIT";
+                        "ATTACHMENTS THAT EXCEED THE SIZE LIMIT HAVE BEEN REMOVED";
                 emailTextList.set(i, lastLineInBody + appendToBodyText);
             }
             emailTextWithBodyNoAttachments.append(emailTextList.get(i));
@@ -390,7 +390,8 @@ public class EmailFormatter {
         }
         if(attachmentFailureCount>0){
             report.setStatus(Utils.REPORT_STATUS_PARTIAL);
-            report.setMsg(attachmentFailureCount+"/"+ getAttachments().size()+" attachments failed and they are " +StringUtils.join(report.getFailedAttachments())+" missing from the email");
+            report.setMsg(attachmentFailureCount+"/"+ getAttachments().size()+" attachments "+StringUtils.join(report.getFailedAttachments())
+                    +" failed to be exported and they are missing from message");
             return new MailResultPair(report,emailText);
         }
         report.setStatus(Utils.REPORT_STATUS_OK);

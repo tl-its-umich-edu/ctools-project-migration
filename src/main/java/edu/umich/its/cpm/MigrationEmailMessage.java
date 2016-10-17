@@ -29,7 +29,7 @@ public class MigrationEmailMessage {
 	 * 
 	 */
 	@Id
-	@Column(name = "MESSAGE_ID", columnDefinition = "VARCHAR(99) NOT NULL")
+	@Column(name = "MESSAGE_ID", columnDefinition = "VARCHAR(150) NOT NULL")
 	@Getter
 	@Setter
 	private String message_id;
@@ -89,7 +89,7 @@ public class MigrationEmailMessage {
 			String user_id, String google_group_id,
 			String json, Timestamp start_time,
 			Timestamp end_time, String status) {
-		this.message_id = message_id;
+		this.message_id = migration_id+":"+message_id;
 		this.migration_id = migration_id;
 		this.user_id = user_id;
 		this.google_group_id = google_group_id;
