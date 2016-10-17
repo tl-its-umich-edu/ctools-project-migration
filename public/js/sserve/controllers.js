@@ -280,13 +280,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var reportDetails = $scope.migratedProjects[index].status;
       var destination = $scope.migratedProjects[index].destination_type;
       reportDetails.title = site_title;
-      // on success - add site title to status
-      if (reportDetails.status.indexOf('Finished upload site content for site') !== -1) {
-        reportDetails.status = 'Finished upload site content for site ' + site_title;
-      }
-      if (destination === 'zip') {
-        reportDetails.status = 'Finished creating zip file for ' + site_title;
-      }
       $scope.reportDetails = reportDetails;
     };
     $scope.checkBoxAuth = function() {

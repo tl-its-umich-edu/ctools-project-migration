@@ -112,7 +112,7 @@
         </div>
         <div class="modal-body">
           <div class="container" ng-show="reportDetails.type ==='google'">
-            <div class="row" style="width:535px" ng-show="reportDetails.details && reportDetails.details.message !=='Everything Looks Good!'">
+            <div class="row" style="width:535px" ng-show="reportDetails.details && reportDetails.details.message !=='OK'">
               <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
                 <div class="alert alert-danger">
                   {{reportDetails.details.message}}
@@ -135,7 +135,7 @@
             </span>
             <ol ng-show="reportDetails.showMembers">
               <li ng-repeat="member in reportDetails.details.add_members.items">
-                {{member.item_Id | extractMember}}
+                {{member.item_id | extractMember}}
                 {{member.message}}
               </li>
             </ol>
