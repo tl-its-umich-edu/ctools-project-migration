@@ -293,7 +293,7 @@ public class GGBApiWrapper {
 	public ApiResultWrapper createExceptionResult(String prefix, Exception e) {
 		String msg = String.format("%s cause: %s message: %s", prefix, e.getCause(), e.getMessage());
 		log.warn(msg);
-		return new ApiResultWrapper(ApiResultWrapper.API_EXCEPTION_ERROR, msg, null);
+		return new ApiResultWrapper(ApiResultWrapper.API_EXCEPTION_ERROR, msg, "");
 	}
 
 	public ApiResultWrapper createJSONResponseMap(int status, String message, String result) {

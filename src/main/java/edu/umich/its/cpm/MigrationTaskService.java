@@ -2044,7 +2044,7 @@ class MigrationTaskService {
 					log.debug("uploadMessageToGoogleGroup: status: {} googleGroupId: {}", statusCode, googleGroupId);
 
 					if (statusCode / 100 != 2 && statusCode != 409)  {
-						statusObj=errorHandlingWhenNot200(statusObj, statusCode, ggbMsg);
+						statusObj=errorHandlingWhenNot200(statusObj, statusCode, ggbMsg,ggbResult);
 						log.error(String.format("Failure in migrating message with MessageId: \"%1$s\" to google groups" +
 								", status code %2$d and error message %3$s", messageId, statusCode, ggbMsg));
 						return new AsyncResult<String>(statusObj.toString());
@@ -2072,7 +2072,6 @@ class MigrationTaskService {
 				String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
 						e.getMessage(),messageId);
 				log.error(msg);
-				e.printStackTrace();
 				statusObj=errHandlingWhenExceptions(statusObj);
 			}
 
@@ -2091,12 +2090,25 @@ class MigrationTaskService {
 		return statusObj;
 	}
 
-	private JSONObject errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg) {
+	private JSONObject errorHandlingWhenNot200(JSONObject statusObj, int statusCode, String errMsg, String googleResults) {
+		String msg=googleResults;
 		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
-		String msg= "Failure to migrate message to Google Groups due to " +errMsg+", failed with status code "+statusCode;
-		statusObj.put(Utils.REPORT_ATTR_MESSAGE, msg);
+		if(statusCode == ApiResultWrapper.API_EXCEPTION_ERROR || statusCode == ApiResultWrapper.API_UNKNOWN_ERROR) {
+			msg=truncateMessage(errMsg);
+		}
+		String reportMsg= "Failure to migrate message to Google Groups due to " +msg+", failed with status code "+statusCode;
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, reportMsg);
 		return statusObj;
 
+	}
+
+	private String truncateMessage(String msg) {
+		String msgChunk = "message:";
+		int i = msg.indexOf(msgChunk);
+		if (i == -1) {
+			return "unknown reason";
+		}
+		return msg.substring(i + 8);
 	}
 
 }
