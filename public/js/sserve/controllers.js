@@ -329,7 +329,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.startMigration = function(projectId,siteName, destinationType) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
       var targetProjChildPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId,tool: true}));
-
       $scope.sourceProjects[targetProjPos].migrating = true;
       $scope.sourceProjects[targetProjChildPos].migrating = true;
       $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
@@ -372,6 +371,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           // use promise factory
           // to execute the post
           Migration.getMigrationZip(migrationUrl).then(function(result) {
+            // add a mask to not allow more that on zip request at the time
+            $rootScope.mask=true;
             $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos]);
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
@@ -426,6 +427,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               // different data
               // than the last one
               if (!angular.equals($scope.migratedProjects,$scope.migratedProjectsShadow)) {
+                // remove the mask
+                $rootScope.mask=false;
                 $log.info('migrated has changed - call a function to update projects panel');
                 // update
                 // project panel
