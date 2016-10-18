@@ -79,9 +79,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     var migratedUrl = $rootScope.urls.migratedUrl;
     Migrated.getMigrated(migratedUrl).then(function(result) {
       if (result.status === 200) {
-        _.each(result.data.entity,function(migrated) {
-          migrated.status.data = prepareReport(migrated.status.data);
-        });
         result = transformMigrated(result);
         $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
         $rootScope.status.migrated = moment().format('h:mm:ss');
@@ -283,13 +280,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var reportDetails = $scope.migratedProjects[index].status;
       var destination = $scope.migratedProjects[index].destination_type;
       reportDetails.title = site_title;
-      // on success - add site title to status
-      if (reportDetails.status.indexOf('Finished upload site content for site') !== -1) {
-        reportDetails.status = 'Finished upload site content for site ' + site_title;
-      }
-      if (destination === 'zip') {
-        reportDetails.status = 'Finished creating zip file for ' + site_title;
-      }
       $scope.reportDetails = reportDetails;
     };
     $scope.checkBoxAuth = function() {
@@ -412,14 +402,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               $scope.migratingProjectsError = true;
             }
         } else {
-            // update time stamp
+              // update time stamp
             // displayed in
             // /migrated panel
             $rootScope.status.migrated = moment().format('h:mm:ss');
             if (result.data.status === 200) {
-              _.each(result.data.entity,function(migrated) {
-                migrated.status.data = prepareReport(migrated.status.data);
-              });
               result = transformMigrated(result);
               $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
               // this poll has
