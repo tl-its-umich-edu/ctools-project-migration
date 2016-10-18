@@ -1919,7 +1919,11 @@ public class MigrationController {
 			JSONObject failedMembership = new JSONObject();
 			if(membership.getStatus()==Utils.REPORT_STATUS_ERROR){
 				errors++;
-				failedMembership.put(Utils.REPORT_ATTR_ITEM_ID,membership.getId());
+				String[] id = membership.getId().split(" ");
+				JSONObject memberIdRole=new JSONObject();
+				memberIdRole.put(Utils.REPORT_ATTR_ID,id[0]);
+				memberIdRole.put(Utils.REPORT_ATTR_ROLE,id[1]);
+				failedMembership.put(Utils.REPORT_ATTR_ITEM_ID,memberIdRole);
 				failedMembership.put(Utils.REPORT_ATTR_MESSAGE,membership.getMsg());
 				failedMembership.put(Utils.REPORT_ATTR_ITEM_STATUS,membership.getStatus());
 				memberships.put(failedMembership);
