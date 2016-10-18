@@ -133,12 +133,29 @@
             <span ng-if="reportDetails.details.add_members.counts.errors > 0 || reportDetails.details.add_members.counts.partial_successes > 0">
               <a href="" ng-click="reportDetails.showMembers = !reportDetails.showMembers">(info?)</a>
             </span>
-            <ol ng-show="reportDetails.showMembers">
-              <li ng-repeat="member in reportDetails.details.add_members.items">
-                {{member.item_id | extractMember}}
-                {{member.message}}
+            <ul ng-show="reportDetails.showMembers"  style="width:535px;list-style:none;margin-top:20px">
+              <li class="row" style="font-weight:bold">
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  User email
+                </div>
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  User CTools Role
+                </div>
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  Google error
+                </div>
+              <li ng-repeat="member in reportDetails.details.add_members.items" class="row">
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  {{member.item_id.id}}
+                </div>
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  {{member.item_id.id}}
+                </div>
+                <div class="col-lg-4 col-lg-4 col-lg-4">
+                  {{member.message}}
+                </div>
               </li>
-            </ol>
+            </ul>
           </div>
           <div class="container" ng-show="reportDetails.type !=='google'">
             <div class="row" style="width:500px;" >

@@ -65,7 +65,7 @@
             (migratedProject.status.counts.partial_successes &&
             migratedProject.status.counts.partial_successes !==0
             ) ||
-            migratedProject.status.status!=='OK'
+            migratedProject.status.status!=='OK' && !migratedProject.status.counts.length
             "
           >
             <br>
@@ -73,10 +73,10 @@
               Some problems  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
-          <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0">Old export format</small>
-          <span ng-show="migratedProject.status.status==='OK'" class="glyphicon glyphicon-ok"></span>
+          <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
+          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0)" class="glyphicon glyphicon-ok"></span>
           <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
-          <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-fire"></span>
+          <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-warning-sign"></span>
         </div>
 		  	</div>
 		  </div>
