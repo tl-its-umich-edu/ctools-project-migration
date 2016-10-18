@@ -22,19 +22,13 @@
 		  </div>
 		  <div class="row">
 				<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-				  <span ng-show="migratedProject.destination_type==='Box' && migratedProject.destination_url">
-				    <a href ="{{migratedProject.destination_url}}" target="_blank">
-				      Exported to
-				      <span class="sr-only">Go to Box folder for content migrated from site {{migratedProject.site_name}}</span>
-				      <span aria-hidden="true" ng-if="migratedProject.destination_folder">{{migratedProject.destination_type}} - {{migratedProject.destination_folder}}</span>
-              <span ng-if="!migratedProject.destination_folder">{{migratedProject.destination_type}}</span>
-				    </a>
-				  </span>
-				 <span ng-show="migratedProject.destination_url===null">Exported to <span ng-if="migratedProject.destination_type==='mailarchivezip'">zip</span><span ng-if="migratedProject.destination_type!=='mailarchivezip'">{{migratedProject.destination_type}}</span></span>
-         <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
+          <small>
+            {{migratedProject.status.type | readableExportType}}
+            <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
+          </small>
 				</div>
         <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
-          <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0">
+          <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0 && migratedProject.status.counts.partial_successes ===0">
             Nothing got migrated.
           </small>
           <small ng-show="migratedProject.status.counts.successes && migratedProject.status.counts.successes !==0">
@@ -52,22 +46,10 @@
             <span ng-show="migratedProject.status.counts.errors === 1">error</span>
             <span ng-show="migratedProject.status.counts.errors > 1">errors</span>
           </small>
-          <small ng-show="
-            (
-              migratedProject.status.details &&
-              migratedProject.status.details.add_members.counts.partial_successes !==0 ||
-              migratedProject.status.details &&
-              migratedProject.status.details.add_members.counts.errors !==0
-            ) ||
-            (
-            migratedProject.status.counts.errors &&
-            migratedProject.status.counts.errors !==0) ||
-            (migratedProject.status.counts.partial_successes &&
-            migratedProject.status.counts.partial_successes !==0
-            ) ||
-            migratedProject.status.status!=='OK' && !migratedProject.status.counts.length
-            "
-          >
+          <!-- First member of OR checks for global GG failures or ITEMS - in both cases we have a report to show.bs.modal source
+          so we display a link to it. Second part of the OR discounts old report data formats -  do not provide a link if status.data (old report format) or is status is an array -->
+          <small ng-show="((migratedProject.status.details && migratedProject.status.details !=='OK') || migratedProject.status.items.length)
+          && !migratedProject.status.data && !migratedProject.status.counts.length">
             <br>
             <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
               Some problems  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
