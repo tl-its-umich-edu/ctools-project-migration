@@ -1975,7 +1975,7 @@ class MigrationTaskService {
 					memberStatus.setStatus(Utils.REPORT_STATUS_ERROR);
 				}
 				memberStatus.setMsg(arw.getMessage());
-				memberStatus.setId(user.get(0)+" "+user.get(1)+ " "+group_id);
+				memberStatus.setId(user.get(0)+" "+user.get(1));
 				memberships.add(memberStatus);
 
 
