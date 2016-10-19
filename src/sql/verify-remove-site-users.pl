@@ -45,7 +45,7 @@ main:
    
    SITE: foreach $_ (@sites)
    {
-       chomp($_);
+       $_ =~ s/\r?\n$//;
        next SITE if ( !$_ );
        
        if ($site_id_count > 0)
