@@ -55,6 +55,14 @@ public class SiteToolExemptChoice {
 	@Getter
 	@Setter
 	private String toolId;
+	
+	/**
+	 * CTools tool type: Resources or Email Archive
+	 */
+	@Column(name = "TOOL_NAME", columnDefinition = "VARCHAR(99) NOT NULL")
+	@Getter
+	@Setter
+	private String toolName;
 
 	/**
 	 * User id - who made the choice
@@ -72,10 +80,11 @@ public class SiteToolExemptChoice {
 	protected SiteToolExemptChoice() {
 	}
 	
-	public SiteToolExemptChoice(String siteId, String toolId, String userId, Timestamp consentTime) {
+	public SiteToolExemptChoice(String siteId, String toolId, String toolName, String userId, Timestamp consentTime) {
 		this.exemptId = UUID.randomUUID().toString();
 		this.siteId = siteId;
 		this.toolId = toolId;
+		this.toolName = toolName;
 		this.userId = userId;
 		this.consentTime = consentTime;
 	}
@@ -85,9 +94,11 @@ public class SiteToolExemptChoice {
 		String s = String
 				.format("SiteDeleteChoice[exemptId=%s,"
 						+ "siteId=%s, "
+						+ "toolId=%s, "
+						+ "toolName=%s, "
 						+ "userId='%s',"
 						+ "consentTime='%s',"
-						+ "]", exemptId, siteId, userId, consentTime);
+						+ "]", exemptId, siteId, toolId, toolName, userId, consentTime);
 		return s;
 	}
 }

@@ -522,7 +522,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
      // handler for removing a flag that tool not be migrated
      $scope.unFlagDoNotMigrate = function(project){
        $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
-       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&reset=true';
+       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&toolTitle=' + project.tool_type + '&reset=true';
        ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
          function(result) {
            if(result.data === 'site tool delete exempt choice saved.'){
@@ -551,7 +551,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         targetDeleteData.push('siteId=' + target.site_id);
       });
       _.each(targetDoNotMove, function(target) {
-        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id);
+        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolTitle=' + target.title);
       });
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
@@ -612,7 +612,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.toolStatus = function(data){
       _.each(data, function(tool){
         var migratedMatch =[];
-        var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
+        var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id + '&toolTitle=' + tool.title;
         ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
           function(result) {
              if (result.data.entity) {
