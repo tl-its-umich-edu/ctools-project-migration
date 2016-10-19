@@ -62,27 +62,32 @@ main:
        $sql = $ARCHIVE_SAKAI_SITE_USER_ROLE_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
+       print OUTFILE "\n";
 
        $sql = $ARCHIVE_USER_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
+       print OUTFILE "\n";
 
        $sql = $USER_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
+       print OUTFILE "\n";
 
        $sql = $ARCHIVE_REALM_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
+       print OUTFILE "\n";
 
        $sql = $REALM_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
+       print OUTFILE "\n";
        
        $sql = $SITE_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
-       print OUTFILE "\n";
+       print OUTFILE "\n\n";
    }
    print OUTFILE $COMMIT_SQL;
    close OUTFILE;

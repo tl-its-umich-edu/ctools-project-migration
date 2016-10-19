@@ -61,19 +61,19 @@ main:
    
    my $sql;
        
-   print OUTFILE "-- to see if there is any undeleted SAKAI_SITE_USER records \n";
+   print OUTFILE "-- to see if there is any user associated with those deleted sites, checking SAKAI_SITE_USER table \n";
    $sql = $VERIFY_SAKAI_SITE_USER_SQL;
    $sql =~ s/IN_CLAUSE/$sql_in_clause/;
    print OUTFILE $sql;
    print OUTFILE "\n";
 
-   print OUTFILE "-- to see if there is any undeleted SAKAI_REALM_RL_GR records \n";
+   print OUTFILE "-- to see if there is any user role assignments associated with those deleted sites, checking SAKAI_REALM_RL_GR table \n";
    $sql = $VERIFY_SAKAI_REALM_RL_GR_SQL;
    $sql =~ s/IN_CLAUSE/$sql_in_clause/;
    print OUTFILE $sql;
    print OUTFILE "\n";
    
-   print OUTFILE "-- to see if there is any undeleted SAKAI_SITE records \n";
+   print OUTFILE "-- to see if there is any site still marked as PUBLISHED, checking SAKAI_SITE table \n";
    $sql = $VERIFY_SAKAI_SITE_SQL;
    $sql =~ s/IN_CLAUSE/$sql_in_clause/;
    print OUTFILE $sql;
