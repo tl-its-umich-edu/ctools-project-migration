@@ -15,7 +15,7 @@
 use strict;
 
 my $VERIFY_SAKAI_SITE_USER_SQL = "select site_id, count(*) from SAKAI_SITE_USER where SITE_ID in IN_CLAUSE group by site_id;\n";
-my $VERIFY_SAKAI_REALM_RL_GR_SQL = "select substr(t2.realm_id, length('/site/')+1), count(*) from SAKAI_REALM_RL_GR t1, sakai_realm t2 where t1.realm_key=t2.realm_key and substr(t2.realm_id, length('/site/')+1) in IN_CLAUSE group by t2.REALM_ID;\n";
+my $VERIFY_SAKAI_REALM_RL_GR_SQL = "select substr(t2.realm_id, length('/site/')+1) as SITE_ID, count(*) from SAKAI_REALM_RL_GR t1, sakai_realm t2 where t1.realm_key=t2.realm_key and substr(t2.realm_id, length('/site/')+1) in IN_CLAUSE group by t2.REALM_ID;\n";
 my $VERIFY_SAKAI_SITE_SQL = "select site_id from SAKAI_SITE where site_id in IN_CLAUSE and PUBLISHED=1; \n";
 
 main:
@@ -45,13 +45,13 @@ main:
    
    SITE: foreach $_ (@sites)
    {
-       chomp;
+       chomp($_);
        next SITE if ( !$_ );
        
        if ($site_id_count > 0)
        {
            # concatenate with a comma
-           $sql_in_clause = $sql_in_clause . ","
+           $sql_in_clause = $sql_in_clause . ",\n"
        }
        
        $sql_in_clause = $sql_in_clause . "'" . $_ . "'";
