@@ -2331,9 +2331,9 @@ public class MigrationController {
 		}
 		
 		// check if missing or more than one toolName
-		String[] toolNames = parameterMap.get("toolName");
-		if (toolNames == null || toolNames.length != 1) {
-			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: toolNames");
+		String[] toolTypes = parameterMap.get("toolType");
+		if (toolTypes == null || toolTypes.length != 1) {
+			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: toolType");
 		}
 		
 		// get the reset param if there is any
@@ -2365,8 +2365,8 @@ public class MigrationController {
 		// the target site id and tool id
 		String siteId = siteIds[0];
 		String toolId = toolIds[0];
-		String toolName = toolNames[0];
-		log.info("request migration for site " + siteId + ", toolId " + toolId + " and toolName " + toolName);
+		String toolType = toolTypes[0];
+		log.info("request set tool exemption for site " + siteId + ", toolId " + toolId + " and toolType " + toolType);
 
 		try {
 			if (reset) {
@@ -2375,12 +2375,12 @@ public class MigrationController {
 			}
 			else {
 				// save the choices into database
-				SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, toolName, userId, 
+				SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, toolType, userId, 
 						new java.sql.Timestamp(System.currentTimeMillis()));
 					c = tRepository.save(c);
 			}
 		} catch (Exception e) {
-			errorMessages.append("Exception in saving siteToolExcemptChoice siteId = " + siteId + " toolId=" + toolId  + " " + e.getMessage());
+			errorMessages.append("Exception in saving siteToolExcemptChoice siteId = " + siteId + " toolId=" + toolId + " toolType=" + toolType  + " " + e.getMessage());
 		}
 
 		if (errorMessages.length() > 0)
