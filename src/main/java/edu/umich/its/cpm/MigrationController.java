@@ -2295,10 +2295,10 @@ public class MigrationController {
 	 * save user input for do-not-migrate
 	 *
 	 * 1. to not migrate a tool:
-	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>
+	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>&toolName=<tool_name>
 	 * 
 	 * 2. to reset the previous setting:
-	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>&reset=true
+	 * /doNotMigrateTool?siteId=<site_id>&toolId=<tool_id>&toolName=<tool_name>&reset=true
 	 * 
 	 * 
 	 * @return
@@ -2330,6 +2330,12 @@ public class MigrationController {
 			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: toolId");
 		}
 		
+		// check if missing or more than one toolName
+		String[] toolTypes = parameterMap.get("toolType");
+		if (toolTypes == null || toolTypes.length != 1) {
+			errorMessages.append("doNotMigrateToolChoice request missing or multiple required parameter: toolType");
+		}
+		
 		// get the reset param if there is any
 		boolean reset = false;
 		String[] resetParam = parameterMap.get("reset");
@@ -2359,7 +2365,8 @@ public class MigrationController {
 		// the target site id and tool id
 		String siteId = siteIds[0];
 		String toolId = toolIds[0];
-		log.info("request migration for site " + siteId + " and toolId " + toolId);
+		String toolType = toolTypes[0];
+		log.info("request set tool exemption for site " + siteId + ", toolId " + toolId + " and toolType " + toolType);
 
 		try {
 			if (reset) {
@@ -2368,12 +2375,12 @@ public class MigrationController {
 			}
 			else {
 				// save the choices into database
-				SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, userId, 
+				SiteToolExemptChoice c = new SiteToolExemptChoice(siteId, toolId, toolType, userId, 
 						new java.sql.Timestamp(System.currentTimeMillis()));
 					c = tRepository.save(c);
 			}
 		} catch (Exception e) {
-			errorMessages.append("Exception in saving siteToolExcemptChoice siteId = " + siteId + " toolId=" + toolId  + " " + e.getMessage());
+			errorMessages.append("Exception in saving siteToolExcemptChoice siteId = " + siteId + " toolId=" + toolId + " toolType=" + toolType  + " " + e.getMessage());
 		}
 
 		if (errorMessages.length() > 0)

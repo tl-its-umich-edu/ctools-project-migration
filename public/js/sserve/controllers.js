@@ -522,7 +522,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
      // handler for removing a flag that tool not be migrated
      $scope.unFlagDoNotMigrate = function(project){
        $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
-       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&reset=true';
+       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&toolType=' + project.tool_type + '&reset=true';
        ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
          function(result) {
            if(result.data === 'site tool delete exempt choice saved.'){
@@ -551,7 +551,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         targetDeleteData.push('siteId=' + target.site_id);
       });
       _.each(targetDoNotMove, function(target) {
-        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id);
+        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolType=' + target.tool_type);
       });
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
@@ -581,8 +581,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
             function(result) {
               if(result.data ==='site tool delete exempt choice saved.') {
                 // find this tool and add doNotMigrateStatus object to let user know
-                var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolNotToMigr.split('=')[2]});
-                thisTool.doNotMigrateStatus = {
+            	// "TOOLID&toolType=TYPE"
+            	var toolId = toolNotToMigr.split('=')[2];
+            	// another splite will return the actual tool id
+            	toolId = toolId.split('&')[0];
+            	var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolId});
+            	thisTool.doNotMigrateStatus = {
                   'userId':'You have',
                   'consentTime': moment().valueOf()
                 };
