@@ -302,6 +302,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       });
     });
     $scope.startMigrationEmail = function(project, destinationType) {
+      $rootScope.mask=true;
       project.processing = true;
 
       $timeout(function() {
