@@ -52,7 +52,8 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       'google': 'Migration to Google Groups',
       'mailarchivezip':'Zip Download of CTools Email',
       'mailarchivembox':'Zipped .mbox format download of CTools Email',
-      'resource zip':'Zipped download of CTools Resources'
+      'resource zip':'Zipped download of CTools Resources',
+      'box':'Migration to Box'
     }[String(type)] || 'Unknown Migration Type');
   };
 });
