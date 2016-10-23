@@ -463,7 +463,7 @@ class Utils {
 	 * get CoSign user
 	 */
 	public static String getRemoteUser(HttpServletRequest request, Environment env) {
-		String propertyRemoteUser = env.getProperty(TEST_REMOTEUSER);
+		String propertyRemoteUser = "zqian";//env.getProperty(TEST_REMOTEUSER);
 		String remoteUser = request.getRemoteUser();
 		if (remoteUser == null || remoteUser.length() == 0) {
 			remoteUser = propertyRemoteUser;		
