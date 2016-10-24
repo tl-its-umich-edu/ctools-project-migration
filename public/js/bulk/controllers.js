@@ -148,30 +148,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
-        //$scope.siteReport = resultList.data.entity;
-        // BOX partial
-        // $scope.reportDetails = {"counts":{"successes":293,"errors":2},"type":"box","items":[{"item_id":"Drop Spine Box.pdf","item_Status":"There is already a file with name Drop Spine Box.pdf - file was not added to Box\n"},{"item_id":"OnePageWonders_0_Instructions.pdf","item_Status":"There is already a file with name OnePageWonders_0_Instructions.pdf - file was not added to Box\n"}],"status":"PARTIAL"};
-        // BOX successes
-        // $scope.reportDetails = {"counts":{"successes":119,"errors":0},"type":"box","items":[],"status":"OK"};
-        // GOOGLE global failure
-        // $scope.reportDetails =  {"counts":{"successes":0,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":"ERROR"},"message":"Google Groups creation failed for siteId f8345fdf-500f-4c5b-bfcb-e8602cb40d3b with status code 409 and due to Conflict"},"type":"google","items":[],"status":"ERROR"};
-        // GOOGLE member failure
-        // $scope.reportDetails =  {"counts":{"successes":3,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":6,"partial_successes":0,"errors":3},"items":[{"item_id":"slonn@umich.edu MANAGER kitchensink@discussions-dev.its.umich.edu","item_Status":"ERROR","message":"Bad Request"},{"item_id":"kentfitz@umich.edu MANAGER kitchensink@discussions-dev.its.umich.edu","item_Status":"ERROR","message":"Bad Request"},{"item_id":"cousinea@umich.edu MANAGER kitchensink@discussions-dev.its.umich.edu","item_Status":"ERROR","message":"Bad Request"}],"status":"PARTIAL"},"message":"Some site members were not able to be added to the destination Google Group"},"type":"google","items":[],"status":"OK"};
-        // GOOGLE OK
-        // $scope.reportDetails = {"counts":{"successes":2,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[],"status":"OK"},"message":"OK"},"type":"google","items":[],"status":"OK"};
-        // GOOGLE ITEM PARTIAL FAILURE
-        // $scope.reportDetails = {"counts":{"successes":3,"partial_successes":1,"errors":0},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[],"status":"OK"},"message":"OK"},"type":"google","items":[{"item_id":"Wed, 21 Sep 2016 09:43:31 -0400 attachment with 16 mb","item_Status":"PARTIAL","message":"Google Groups message migration successful, but message size exceeded the expected limit. Attachments [Cal_dimention.twbx, Bar-1.twbx] are omitted"}],"status":"PARTIAL"};
-        // GOOGLE OK
-        // $scope.reportDetails = {"counts":{"successes":4,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":3,"partial_successes":0,"errors":0},"items":[],"status":"OK"},"message":"OK"},"type":"google","items":[],"status":"OK"};
-        // GOOGLE ITEM ATTACH FAILURE
-        // $scope.reportDetails = {"counts":{"successes":2,"partial_successes":2,"errors":0},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[],"status":"OK"},"message":"OK"},"type":"google","items":[{"item_id":"Wed, 7 Sep 2016 14:47:36 -0400 ATTACHMENT","item_Status":"PARTIAL","message":"Google Groups message migration successful, but 1/1 attachments [email_msg.txt] failed to be exported and they are missing from message"},{"item_id":"Wed, 7 Sep 2016 14:48:22 -0400 RUN RUNE","item_Status":"PARTIAL","message":"Google Groups message migration successful, but 1/1 attachments [standup.txt] failed to be exported and they are missing from message"}],"status":"PARTIAL"};
-        // GOOGLE GROUP CREATE FAILURE
-        // $scope.reportDetails = {"counts":{"successes":0,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":"ERROR"},"message":"Google Groups creation failed for siteId 69785b14-a7df-4a28-a0bc-7615ee9b8d10 with status code 667 and due to runPost: IOException for post request :url/body data for: url: [null/groups/mbox-3@discussions-dev.its.umich.edu] body: [{\"name\":\"Mbox_finally\",\"description\":\"DUMMY DESCRIPTION FROM formatDescription\",\"email\":\"mbox-3@discussions-dev.its.umich.edu\"}] cause: org.apache.http.ProtocolException: Target host is not specified message: null"},"type":"google","items":[],"status":"ERROR"};
-        // GOOGLE MESSAGE FAILURE
-        // $scope.reportDetails = {"counts":{"successes":0,"partial_successes":0,"errors":4},"details":{"add_members":{"counts":{"successes":1,"partial_successes":0,"errors":0},"items":[],"status":"OK"},"message":"OK"},"type":"google","items":[{"item_id":"Wed, 7 Sep 2016 14:48:51 -0400 SUOER","item_Status":"ERROR","message":"Failure to migrate message to Google Groups"},{"item_id":"Wed, 7 Sep 2016 14:47:36 -0400 ATTACHMENT","item_Status":"ERROR","message":"Failure to migrate message to Google Groups due to Gateway Time-out failed with status code 504"},{"item_id":"Wed, 7 Sep 2016 14:46:53 -0400 This is a test","item_Status":"ERROR","message":"Failure to migrate message to Google Groups"},{"item_id":"Wed, 7 Sep 2016 14:48:22 -0400 RUN RUNE","item_Status":"ERROR","message":"Failure to migrate message to Google Groups"}],"status":"ERROR"};
-        // GOOGLE MEMBER GROUP FAILURE
-        // $scope.reportDetails = {"counts":{"successes":0,"partial_successes":0,"errors":0},"details":{"add_members":{"counts":{"successes":0,"partial_successes":0,"errors":0},"items":[],"status":"ERROR"},"message":"Mail migration to Google Groups for the site 22b5d237-0a22-4995-a4b1-d5022dd90a86 failed, couldn't get site members from ctools"},"type":"google","items":[],"status":"ERROR"};
-
+        $scope.reportDetails = resultList.data.entity;
         $scope.siteReportLoading = false;
       });
       return null;
