@@ -198,10 +198,12 @@
                                 {{site.name}}
                               </td>
                               <td class="col-lg-4">
-                                <a href="" ng-show="site.status==='success' || site.status==='failure'" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
-                                <i class="glyphicon glyphicon-ok" ng-show="site.status==='success'"></i>
-                                <i class="spinner" ng-show="site.status==='onging'"></i>
-                                <i class="glyphicon glyphicon-fire" ng-show="site.status==='failure'"></i>
+                                <div ng-if="!site.name.includes('Cannnot find a CTools site')">
+                                  <a href="" ng-show="site.status==='success' || site.status==='failure'" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
+                                  <i class="glyphicon glyphicon-ok" ng-show="site.status==='success'"></i>
+                                  <i class="spinner" ng-show="site.status==='onging'"></i>
+                                  <i class="glyphicon glyphicon-fire" ng-show="site.status==='failure'"></i>
+                                </div>
                               </td>
                             </tr>
                           </tbody>
