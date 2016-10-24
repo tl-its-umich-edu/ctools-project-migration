@@ -202,22 +202,21 @@ class MigrationInstanceService {
 			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
 			int itemStatusFailureCount = 0;
 			int itemStatusSuccessCount = 0;
+			JSONArray itemsArray = new JSONArray();
 			for(MigrationBoxFile mFile : mFileList)
 			{
 				String status = mFile.getStatus();
-
 				// if there is error, status message won't have String "Box upload successful for file"
 				if (status.indexOf("Box upload successful for file") == -1)
 				{
 					// increase the count for failed migrated item
 					itemStatusFailureCount++;
 					
-					// add status only when it is a failure
-					MigrationFileItem item = new MigrationFileItem(
-							mFile.getFile_access_url(), 
-							mFile.getTitle(), 
-							status);
-					itemStatusList.add(item);
+					// report error 
+					JSONObject itemJson = new JSONObject();
+					itemJson.put(Utils.REPORT_ATTR_ITEM_ID, mFile.getTitle());
+					itemJson.put(Utils.REPORT_ATTR_ITEM_STATUS, status);
+					itemsArray.put(itemJson);
 				}
 				else
 				{
@@ -226,10 +225,10 @@ class MigrationInstanceService {
 				}
 			}
 			
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			// the JSON object holds itemized status information
+			JSONObject statusObject = new JSONObject();
 			// migration type
-			statusMap.put(Utils.REPORT_ATTR_TYPE, "");
+			statusObject.put(Utils.REPORT_ATTR_TYPE, Utils.MIGRATION_TYPE_BOX);
 			String statusSummary = Utils.REPORT_STATUS_OK;
 			if (itemStatusSuccessCount == 0 && itemStatusFailureCount > 0)
 			{
@@ -241,11 +240,21 @@ class MigrationInstanceService {
 				// with failures
 				statusSummary = Utils.REPORT_STATUS_PARTIAL;
 			}
-			statusMap.put(Utils.REPORT_ATTR_STATUS, statusSummary);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+			
+			// count JSON
+			JSONObject countsJson = new JSONObject();
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, itemStatusSuccessCount);
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_ERRORS, itemStatusFailureCount);
+	
+			// add to top report level
+			statusObject.put(Utils.REPORT_ATTR_COUNTS, countsJson);
+			statusObject.put(Utils.REPORT_ATTR_ITEMS, itemsArray);
+			
+			statusObject.put(Utils.REPORT_ATTR_STATUS, statusSummary);
+			//statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
 
 			// update the status of migration record
-			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			mRepository.setMigrationStatus(statusObject.toString(), mId);
 			
 		}
 	}
