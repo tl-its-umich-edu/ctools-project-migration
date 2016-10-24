@@ -292,7 +292,6 @@ public class GGBApiWrapper {
 	// Format a response into a standard wrapper with a known structure.
 	public ApiResultWrapper createExceptionResult(String prefix, Exception e) {
 		String msg = String.format("%s cause: %s message: %s", prefix, e.getCause(), e.getMessage());
-		log.warn(msg);
 		return new ApiResultWrapper(ApiResultWrapper.API_EXCEPTION_ERROR, msg, "");
 	}
 
