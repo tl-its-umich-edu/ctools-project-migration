@@ -554,31 +554,6 @@ class MigrationTaskService {
 		}
 
 		/*************** Box Migration ********************/
-		@Async
-		private Future<HashMap<String, String>> uploadToBox(String userId, HashMap<String, Object> sessionAttributes,
-				String siteId, String boxFolderId, String migrationId,
-				MigrationRepository repository, BoxAuthUserRepository uRepository) throws InterruptedException {
-			// the HashMap object to be returned
-			HashMap<String, String> rvMap = new HashMap<String, String>();
-			rvMap.put("userId", userId);
-			rvMap.put("siteId", siteId);
-			rvMap.put("migrationId", migrationId);
-
-			StringBuffer boxMigrationStatus = new StringBuffer();
-			List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
-
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.REPORT_ATTR_STATUS, boxMigrationStatus.toString());
-			statusMap.put(Utils.MIGRATION_DATA, itemMigrationStatus);
-
-			// update the status and end_time of migration record
-			setMigrationEndTimeAndStatus(migrationId, repository, new JSONObject(statusMap));
-
-			rvMap.put(Utils.REPORT_ATTR_STATUS, Utils.STATUS_SUCCESS);
-			return new AsyncResult<HashMap<String, String>>(rvMap);
-		}
-
 		/**
 		 * iterating though content json and upload folders and files to Box
 		 */
