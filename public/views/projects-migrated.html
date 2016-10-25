@@ -52,7 +52,7 @@
           && !migratedProject.status.data && !migratedProject.status.counts.length">
             <br>
             <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
-              Some problems  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+              See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
           <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
