@@ -38,4 +38,4 @@ FindProjectTool(t1.site_id, 'osp') as Portfolio,
 FindProjectTool(t1.site_id, 'sakai.rsf.evaluation') as Evaluation 
 from sakai_site t1 
 where (t1.type='project' or t1.type='specialized_projects') 
-order by t1.site_id asc;
+order by t1.title asc;
