@@ -26,11 +26,10 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
         return _.last(url.split('/'));
       }
     };
-
 }).filter('whatStatus', function() {
     return function(status) {
       if(status){
-        if(status.indexOf('success') !==-1 || status.indexOf('created') !==-1){
+        if(status.indexOf('success') !==-1 || status.indexOf0('created') !==-1){
             return "glyphicon glyphicon-ok";
         }
         else {
@@ -39,4 +38,22 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       }
     };
 
+}).filter('extractMember', function() {
+    return function(member) {
+      if(member){
+        var realMember = member.split(' ')[0] + ' '  +member.split(' ')[1];
+        return realMember;
+      }
+
+    };
+}).filter('readableExportType', function() {
+  return function(type) {
+    return ({
+      'google': 'Migration to Google Groups',
+      'mailarchivezip':'Zip Download of CTools Email',
+      'mailarchivembox':'Zipped .mbox format download of CTools Email',
+      'resource zip':'Zipped download of CTools Resources',
+      'box':'Migration to Box'
+    }[String(type)] || 'Unknown Migration Type');
+  };
 });

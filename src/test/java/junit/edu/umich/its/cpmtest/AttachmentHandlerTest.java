@@ -48,6 +48,7 @@ public class AttachmentHandlerTest extends TestCase {
         mockEnv.setProperty("ctools.server.url", (String)props.get("ctools.server.url"));
         mockEnv.setProperty("username", (String)props.get("username"));
         mockEnv.setProperty("password", (String)props.get("password"));
+        mockEnv.setProperty("attachment.size.limit", (String)props.get("attachment.size.limit"));
         return mockEnv;
     }
 

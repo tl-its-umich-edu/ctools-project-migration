@@ -1,16 +1,11 @@
 package edu.umich.its.cpm;
 
 import org.apache.http.HttpResponse;
-import org.apache.http.client.CookieStore;
+import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
 import org.apache.http.client.methods.HttpGet;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.impl.client.BasicCookieStore;
 import org.apache.http.impl.client.HttpClientBuilder;
-import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
-
-import static org.apache.http.HttpStatus.*;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -18,6 +13,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Component;
 
 import java.io.BufferedInputStream;
@@ -215,12 +211,46 @@ class MigrationTaskService {
 			}
 
 			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, downloadStatus);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatus);
+			JSONObject statusJson = new JSONObject();
+			statusJson.put(Utils.REPORT_ATTR_TYPE, Utils.REPORT_ATTR_TYPE_RESOURCE_ZIP);
+			
+			// count JSON
+			JSONObject countsJson = new JSONObject();
+			int errorCount = 0;
+			int successItemCount = 0;
+			// items json
+			JSONArray itemsArray = new JSONArray();
+			for(MigrationFileItem fItem : itemStatus)
+			{
+				String status = fItem.getStatus();
+				if (status.isEmpty() || status.toLowerCase().contains("success"))
+				{
+					successItemCount++;
+				}
+				else
+				{
+					errorCount++;
+					
+					// report error 
+					JSONObject itemJson = new JSONObject();
+					itemJson.put(Utils.REPORT_ATTR_ITEM_ID, fItem.getFile_name());
+					itemJson.put(Utils.REPORT_ATTR_ITEM_STATUS, fItem.getStatus());
+					itemsArray.put(itemJson);
+				}
+			}
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, successItemCount);
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount);
+			
+			// add to top report level
+			statusJson.put(Utils.REPORT_ATTR_COUNTS, countsJson);
+			statusJson.put(Utils.REPORT_ATTR_ITEMS, itemsArray);
+			
+
+			statusJson.put(Utils.REPORT_ATTR_STATUS, errorCount == 0 ? Utils.REPORT_STATUS_OK:Utils.REPORT_STATUS_PARTIAL);
 
 			// update the status and end_time of migration record
-			setMigrationEndTimeAndStatus(migrationId, repository, new JSONObject(statusMap));
+			setMigrationEndTimeAndStatus(migrationId, repository, statusJson);
+			
 
 			return;
 
@@ -357,9 +387,10 @@ class MigrationTaskService {
 						String zipFileStatus = zipFiles(type, httpContext,
 								zipFileName, title, webLinkUrl, contentAccessUrl,
 								sessionId, out, folderNameMap);
-						itemStatus.append(zipFileStatus + Utils.LINE_BREAK);
+						itemStatus.append(zipFileStatus);
 					}
 				}
+				
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						title, itemStatus.toString());
 
@@ -523,31 +554,6 @@ class MigrationTaskService {
 		}
 
 		/*************** Box Migration ********************/
-		@Async
-		private Future<HashMap<String, String>> uploadToBox(String userId, HashMap<String, Object> sessionAttributes,
-				String siteId, String boxFolderId, String migrationId,
-				MigrationRepository repository, BoxAuthUserRepository uRepository) throws InterruptedException {
-			// the HashMap object to be returned
-			HashMap<String, String> rvMap = new HashMap<String, String>();
-			rvMap.put("userId", userId);
-			rvMap.put("siteId", siteId);
-			rvMap.put("migrationId", migrationId);
-
-			StringBuffer boxMigrationStatus = new StringBuffer();
-			List<MigrationFileItem> itemMigrationStatus = new ArrayList<MigrationFileItem>();
-
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, boxMigrationStatus.toString());
-			statusMap.put(Utils.MIGRATION_DATA, itemMigrationStatus);
-
-			// update the status and end_time of migration record
-			setMigrationEndTimeAndStatus(migrationId, repository, new JSONObject(statusMap));
-
-			rvMap.put(Utils.MIGRATION_STATUS, Utils.STATUS_SUCCESS);
-			return new AsyncResult<HashMap<String, String>>(rvMap);
-		}
-
 		/**
 		 * iterating though content json and upload folders and files to Box
 		 */
@@ -1145,15 +1151,14 @@ class MigrationTaskService {
 				String migrationId, MigrationRepository repository) {
 			// hold download status
 
-			JSONObject downloadStatus = new JSONObject();
-
+			Map<String, String[]> parameterMap = request.getParameterMap();
+			String destination_type = parameterMap.get("destination_type")[0];
+			JSONObject downloadStatus = Utils.migrationStatusObject(destination_type);
 			// login to CTools and get sessionId
 			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
 				String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 				HttpContext httpContext = (HttpContext) sessionAttributes
 						.get("httpContext");
-				Map<String, String[]> parameterMap = request.getParameterMap();
-				String destination_type = parameterMap.get("destination_type")[0];
 				try {
 					//
 					// Sends the response back to the user / browser. The
@@ -1174,8 +1179,7 @@ class MigrationTaskService {
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
-					ZipOutputStream out = new ZipOutputStream(
-							response.getOutputStream());
+					ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
 					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
 					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
 						// set compression level to high by default
@@ -1187,7 +1191,7 @@ class MigrationTaskService {
 
 					log.info("Starting mail archive download for site " + site_id);
 					downloadStatus = getMailArchiveZipContent(env, site_id, downloadStatus,
-							sessionId, httpContext, out, request);
+							sessionId, httpContext, out, request,migrationId);
 
 					out.flush();
 					out.close();
@@ -1200,15 +1204,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.NOT_FOUND).entity(errorMessage)
 					.type(MediaType.TEXT_PLAIN).build();
 					log.error(errorMessage);
-					downloadStatus.put("status", errorMessage);
-				} catch (IOException e) {
-					String errorMessage = Utils.STATUS_FAILURE + " Problem getting mail archive zip file for "
-							+ site_id + " " + e.getMessage();
-					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
-					.build();
-					log.error(errorMessage);
-					downloadStatus.put("status", errorMessage);
+					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 
 				} catch (Exception e) {
 					String errorMessage = Utils.STATUS_FAILURE + " Migration status for " + site_id + " "
@@ -1217,21 +1213,30 @@ class MigrationTaskService {
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
 					log.error("downloadMailArchiveZipFile ", e);
-					downloadStatus.put("status", errorMessage);
+					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 				}
 			} else {
 				String userError = "Cannot become user " + userId;
 				log.error(userError);
-				downloadStatus.put("status", userError);
+				downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, userError);
 			}
-
 			// update the status and end_time of migration record
 			setMigrationEndTimeAndStatus(migrationId, repository, downloadStatus);
 
 			return;
 		}
 
-		/**
+	private JSONObject errHandlingInDownloadMailArchiveZipFile(String site_id, JSONObject downloadStatus, String errorMessage) {
+		downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
+		JSONObject count = (JSONObject)downloadStatus.get(Utils.REPORT_ATTR_COUNTS);
+		int errorCount = (Integer)count.get(Utils.REPORT_ATTR_COUNTS_ERRORS);
+		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount+1);
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
+		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
+		return downloadStatus;
+	}
+
+	/**
 		 * get MailArchive message content into ZipOutputStream
 		 * @param env
 		 * @param site_id
@@ -1244,9 +1249,8 @@ class MigrationTaskService {
 		 */
 		private JSONObject getMailArchiveZipContent(Environment env, String site_id,
 				JSONObject downloadStatus, String sessionId,
-				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request) throws IOException {
+				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId)  {
 
-			JSONArray messagesStatus = new JSONArray();
 
 			// get all mail channels inside the site
 			RestTemplate restTemplate = new RestTemplate();
@@ -1271,6 +1275,11 @@ class MigrationTaskService {
 				// create zip folder for each channel
 				folderForChannels = true;
 			}
+			JSONArray allChannelMsgItems = new JSONArray();
+			StringBuilder msgBundle = new StringBuilder();
+			Map<String, String[]> parameterMap = request.getParameterMap();
+			String destination_type = parameterMap.get("destination_type")[0];
+
 			for (int iChannel = 0; iChannel < channels.length(); iChannel++) {
 				JSONObject channel = channels.getJSONObject(iChannel);
 				String channelId = channel.getString("data");
@@ -1296,63 +1305,117 @@ class MigrationTaskService {
 				JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
 						String.class));
 				JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
-				Map<String, String[]> parameterMap = request.getParameterMap();
-				String destination_type = parameterMap.get("destination_type")[0];
-				JSONObject messageStatus = new JSONObject();
 
 				if (Utils.isItMailArchiveZip(destination_type)) {
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
+						JSONObject singleMailZipMsgStatus = new JSONObject();
+						StatusReport report = new StatusReport();
 						JSONObject message = messages.getJSONObject(iMessage);
 
 						// create file for each message
 						String messageFolderName = getMailArchiveMessageFolderName(message, channelName, folderForChannels);
+						report.setId(messageFolderName);
 
-						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
 
 						// 1. write the message file
-						messageStatus = handleMailArchiveMessage(out, message, messageFolderName,
-								messageStatus);
+						report = handleMailArchiveMessage(out, message, messageFolderName,
+								report);
 
 						// 2. get attachments, if any
-						messageStatus = handleMailArchiveMessageAttachments(
-								sessionId, httpContext, out, message, messageFolderName, messageStatus);
+						if (report.getStatus() != Utils.REPORT_STATUS_ERROR) {
+							report = handleMailArchiveMessageAttachments(
+									sessionId, httpContext, out, message, messageFolderName, report);
+						}
+						singleMailZipMsgStatus.put(Utils.REPORT_ATTR_ITEM_ID, report.getId());
+						singleMailZipMsgStatus.put(Utils.REPORT_ATTR_ITEM_STATUS, report.getStatus());
+						singleMailZipMsgStatus.put(Utils.REPORT_ATTR_MESSAGE, report.getMsg());
 
-						messagesStatus.put(messageStatus);
+						allChannelMsgItems.put(singleMailZipMsgStatus);
 					}
+
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
-					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id, channelName, folderForChannels);
-					StringBuilder msgBundle = new StringBuilder();
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject message = messages.getJSONObject(iMessage);
+						String date= getProperty(message,Utils.JSON_ATTR_MAIL_DATE);
+						String subject= getProperty(message,Utils.JSON_ATTR_MAIL_SUBJECT);
+						String messageId=date+" "+subject;
 						String emailMessage = message.toString();
 						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 						attachmentHandler.setEnv(env);
-						EmailFormatter emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
-						String mboxMessage = emailFormatter.mboxFormat();
-						msgBundle.append(mboxMessage);
-						msgBundle.append("\r\n");
-
-						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE, messageFolderName);
-						messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
-
-						messagesStatus.put(messageStatus);
-
+						EmailFormatter emailFormatter = null;
+						try {
+							 emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
+						}catch (IOException e){
+							String msg = "Mbox zip file could not be downloaded due to bad json response";
+							allChannelMsgItems.put(errHandlingForZiparchive(messageId,msg));
+							log.error(msg +"for message: "+messageId+ " "+ e.getMessage());
+							continue;
+						}
+						MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
+						String mboxMessage = mboxFormatTextPlusStatus.getMessage();
+						JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
+						if(mboxMessage!=null) {
+							msgBundle.append(mboxMessage);
+							msgBundle.append("\r\n");
+							allChannelMsgItems.put(singleMboxMsgStatus);
+						}else {
+							allChannelMsgItems.put(singleMboxMsgStatus);
+							log.error(String.format("Mbox Formatting for message with Id (%s) not successful with migrationid " +
+									"(%s) for site (%s)",messageId,migrationId,site_id));
+						}
 					}
-
-					messageStatus = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
-							messageStatus);
-					messagesStatus.put(messageStatus);
 
 				}
 			}
-
-			downloadStatus.put(Utils.MIGRATION_DATA, messagesStatus);
-			downloadStatus.put(Utils.MIGRATION_STATUS, messagesStatus.toString().contains(Utils.STATUS_FAILURE)? Utils.STATUS_FAILURE: Utils.STATUS_SUCCESS);
-
+			if (Utils.isItMailArchiveMbox(destination_type)) {
+				String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
+				allChannelMsgItems = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
+						allChannelMsgItems);
+			}
+			downloadStatus = finalReportObjBuilderForMailZipMigration(downloadStatus, allChannelMsgItems);
 			return downloadStatus;
 		}
 
-		/**
+	private JSONObject finalReportObjBuilderForMailZipMigration(JSONObject downloadStatus, JSONArray messagesStatus) {
+		JSONArray errAndPartialSuccessList = new JSONArray();
+		int successes,errors,partials;
+		successes = errors=partials=0;
+		for (int i = 0; i < messagesStatus.length(); i++) {
+			JSONObject perMsg = messagesStatus.getJSONObject(i);
+			String msgStatus = (String) perMsg.get(Utils.REPORT_ATTR_ITEM_STATUS);
+			if (msgStatus.equals(Utils.REPORT_STATUS_OK)) {
+				successes = successes + 1;
+			} else if (msgStatus.equals(Utils.REPORT_STATUS_PARTIAL)) {
+				partials = partials + 1;
+				errAndPartialSuccessList.put(messagesStatus.get(i));
+			} else if (msgStatus.equals(Utils.REPORT_STATUS_ERROR)) {
+				errors = errors + 1;
+				errAndPartialSuccessList.put(messagesStatus.get(i));
+			}
+		}
+		JSONObject counts = new JSONObject();
+		counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,successes);
+		counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,errors);
+		counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,partials);
+		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,counts);
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errAndPartialSuccessList);
+		if (errors > 0) {
+			downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
+		} else if (partials > 0 & successes > 0) {
+			downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_PARTIAL);
+		} else
+			downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_OK);
+		return downloadStatus;
+	}
+
+	private String getProperty(JSONObject message, String jsonAttribute) {
+		JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
+		String date = getHeaderAttribute(headers, jsonAttribute);;
+		return date;
+	}
+
+
+	/**
 		 * output MailArchive message content
 		 * @param out
 		 * @param message
@@ -1361,9 +1424,10 @@ class MigrationTaskService {
 		 * @return
 		 * @throws IOException
 		 */
-		private JSONObject handleMailArchiveMessage(ZipOutputStream out,
+		private StatusReport handleMailArchiveMessage(ZipOutputStream out,
 				JSONObject message, String messageFolderName,
-				JSONObject messageStatus) throws IOException {
+				StatusReport messageStatus)  {
+				String problemMsg="Problem getting message content for Mail Zip Download";
 			try {
 				// get the html file content first
 				String messageContent = message.has(Utils.JSON_ATTR_MAIL_BODY)?message.getString(Utils.JSON_ATTR_MAIL_BODY):"";
@@ -1383,20 +1447,27 @@ class MigrationTaskService {
 				out.write(messageContent.getBytes());
 
 
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
+				messageStatus.setStatus(Utils.REPORT_STATUS_OK);
 			} catch (java.net.MalformedURLException e) {
-				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+				log.error("Mail Zip download has MalFormedURLException due to "+e.getMessage());
+				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
+				messageStatus.setMsg(problemMsg);
 			} catch (IOException e) {
-				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+				log.error("Mail Zip download has IOException due to "+e.getMessage());
+				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
+				messageStatus.setMsg(problemMsg);
+			} catch (Exception e) {
+				log.error("Mail Zip download has Exception due to "+e.getMessage());
+				messageStatus.setStatus(Utils.REPORT_STATUS_ERROR);
+				messageStatus.setMsg(problemMsg);
 			}
 			return messageStatus;
 		}
 
-		private JSONObject handleMailArchiveMboxMessage(ZipOutputStream out,
+		private JSONArray handleMailArchiveMboxMessage(ZipOutputStream out,
 				String message, String messageFolderName,
-				JSONObject messageStatus) throws IOException {
+				JSONArray messagesStatus) {
+
 			try {
 				// get the html file content first
 
@@ -1407,18 +1478,27 @@ class MigrationTaskService {
 				out.write(message.getBytes());
 
 
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_SUCCESS);
 			} catch (java.net.MalformedURLException e) {
-				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+				String msg = "Mbox zip file could not be downloaded due to MalformedURLException ";
+				messagesStatus.put(errHandlingForZiparchive(messageFolderName,  msg));
+				log.error(msg+e.getMessage());
 			} catch (IOException e) {
-				// return status with error message
-				messageStatus.put(Utils.JSON_ATTR_MAIL_MESSAGE_STATUS, Utils.STATUS_FAILURE + " problem getting message content" + e.getMessage());
+				String msg = "Mbox zip file could not be downloaded due to IOException ";
+				messagesStatus.put(errHandlingForZiparchive(messageFolderName,msg));
+				log.error(msg+e.getMessage());
 			}
-			return messageStatus;
+			return messagesStatus;
 		}
 
-		/**
+	private JSONObject errHandlingForZiparchive(String msgIdentifier, String errMsg) {
+		JSONObject errRes=new JSONObject();
+		errRes.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		errRes.put(Utils.REPORT_ATTR_MESSAGE, errMsg);
+		errRes.put(Utils.REPORT_ATTR_ITEM_ID,msgIdentifier);
+		return errRes;
+	}
+
+	/**
 		 * put mail message attachments into zip
 		 * @param sessionId
 		 * @param httpContext
@@ -1427,33 +1507,43 @@ class MigrationTaskService {
 		 * @param messageFolderName
 		 * @return
 		 */
-		private JSONObject handleMailArchiveMessageAttachments(String sessionId,
+		private StatusReport handleMailArchiveMessageAttachments(String sessionId,
 				HttpContext httpContext, ZipOutputStream out, JSONObject message,
-				String messageFolderName, JSONObject messageStatus) {
-			JSONArray attachmentsStatus = new JSONArray();
+				String messageFolderName, StatusReport sr) {
 			JSONArray attachments = message.getJSONArray(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
+			int successes, errors;
+			successes = errors = 0;
 			for (int iAttachment = 0; iAttachment < attachments.length(); iAttachment++) {
 				// get each attachment
 				JSONObject attachment = attachments.getJSONObject(iAttachment);
-				String type = attachment.has(Utils.JSON_ATTR_MAIL_TYPE)?attachment.getString(Utils.JSON_ATTR_MAIL_TYPE):"";
-				String name = attachment.has(Utils.JSON_ATTR_MAIL_NAME)?attachment.getString(Utils.JSON_ATTR_MAIL_NAME):"";
-				String url = attachment.has(Utils.JSON_ATTR_MAIL_URL)?attachment.getString(Utils.JSON_ATTR_MAIL_URL):"";
+				String type = attachment.has(Utils.JSON_ATTR_MAIL_TYPE) ? attachment.getString(Utils.JSON_ATTR_MAIL_TYPE) : "";
+				String name = attachment.has(Utils.JSON_ATTR_MAIL_NAME) ? attachment.getString(Utils.JSON_ATTR_MAIL_NAME) : "";
+				String url = attachment.has(Utils.JSON_ATTR_MAIL_URL) ? attachment.getString(Utils.JSON_ATTR_MAIL_URL) : "";
 				// Call the zipFiles method for creating a zip stream.
 				String fileStatus = zipFiles(type, httpContext,
 						messageFolderName + name, name, "", url,
 						sessionId, out, new HashMap<String, String>());
-				JSONObject attachmentStatus = new JSONObject();
-				attachmentStatus.put(Utils.JSON_ATTR_MAIL_NAME, name);
-				attachmentStatus.put(Utils.MIGRATION_STATUS, fileStatus);
+				sr.addAllAttachmnts(name);
+				if (fileStatus!=null &&fileStatus.contains("successfully")) {
+					successes=successes+1;
+				} else {
+					errors=errors+1;
+					sr.addFailedAttachments(name);
+				}
 
-				// add the attachment status to the list
-				attachmentsStatus.put(attachmentStatus);
+			}
+			if (errors > 0) {
+				String msg = sr.getFailedAttachments().size() + "/" + sr.getAllAttachments().size()
+						+ " attachments " + org.apache.commons.lang3.StringUtils.join(sr.getFailedAttachments()
+						+" failed to be exported and they are missing from message");
+				sr.setStatus(Utils.REPORT_STATUS_PARTIAL);
+				sr.setMsg(msg);
+			}else{
+				sr.setStatus(Utils.REPORT_STATUS_OK);
+				sr.setMsg(Utils.REPORT_SUCCESS_MSG);
 			}
 
-			// update message status
-			messageStatus.put(Utils.JSON_ATTR_MAIL_ATTACHMENTS, attachmentsStatus);
-
-			return messageStatus;
+			return sr;
 		}
 
 		/**
@@ -1485,12 +1575,8 @@ class MigrationTaskService {
 			return messageFolderName;
 		}
 
-		private String getMailArchiveMboxMessageFolderName(String site_id, String channelName, boolean folderForChannels) {
-			// get message information from header
+		private String getMailArchiveMboxMessageFolderName(String site_id) {
 			String messageFolderName = "";
-			if (folderForChannels) {
-				messageFolderName = channelName + Utils.PATH_SEPARATOR;
-			}
 			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + site_id) + "/";
 
 			return messageFolderName;
@@ -1606,13 +1692,14 @@ class MigrationTaskService {
 
 		ApiResultWrapper addEmailToGoogleGroup(String googleGroup, String rcf822Email) {
 			log.info("addEmailToGoogleGroup: group: {}",googleGroup);
-			log.info("addEmailToGoogleGroup: email: {}",rcf822Email);
+			log.debug("addEmailToGoogleGroup: email: {}",rcf822Email);
 
 			GGBApiWrapper ggb = establishGGBConnection();
 
 			String archive_url = "/groups/"+googleGroup+"/messages";
 			ApiResultWrapper arw= ggb.post_request(archive_url,rcf822Email);
 			return arw;
+
 		}
 
 		// Get the json version of the site info.
@@ -1634,7 +1721,6 @@ class MigrationTaskService {
 				siteJSONObject = new JSONObject(siteJson);
 			} catch (RestClientException e) {
 				log.error(requestUrl + e.getMessage());
-				throw e;
 			}
 			return siteJSONObject;
 		}
@@ -1646,7 +1732,12 @@ class MigrationTaskService {
 		public JSONObject getCToolsGroupInfoJson(String sessionId,
 				String siteId, String group_email) {
 			JSONObject siteJSONObject = getSiteInfoJson(sessionId,siteId);
-			return create_group_info_object(siteId, group_email, siteJSONObject);
+			if(siteJSONObject==null) {
+				return null;
+			}
+			JSONObject group_info_object = create_group_info_object(siteId, group_email, siteJSONObject);
+
+			return group_info_object;
 		}
 
 		public static JSONObject create_group_info_object(String siteId, String group_email, JSONObject siteJSONObject) {
@@ -1664,7 +1755,11 @@ class MigrationTaskService {
 
 		// Get the new email prefix from the old one used in the archive.
 		public JSONObject getCToolsGroupInfoJson(String sessionId,String siteId) {
-			return getCToolsGroupInfoJson(sessionId,siteId,getArchiveEmail(sessionId,siteId));
+			String archiveEmail = getArchiveEmail(sessionId, siteId);
+			if(archiveEmail==null){
+				return null;
+			}
+			return getCToolsGroupInfoJson(sessionId, siteId, archiveEmail);
 		}
 
 		//https://ctdevsearch.dsc.umich.edu/direct/mailarchive/siteMessages/22b5d237-0a22-4995-a4b1-d5022dd90a86.json
@@ -1678,8 +1773,7 @@ class MigrationTaskService {
 				archiveJson = restTemplate.getForObject(requestUrl,String.class);
 			} catch (RestClientException e) {
 				log.error(requestUrl + e.getMessage());
-				// Don't hide the error.
-				throw e;
+				return null;
 			}
 
 			String archiveEmail = extractArchiveEmailName(archiveJson);
@@ -1744,8 +1838,6 @@ class MigrationTaskService {
 			String new_group_url = String.format("/groups/%s",googleGroupSettings.getString("email"));
 			ApiResultWrapper arw = ggb.put_request(new_group_url,googleGroupSettings.toString());
 
-			log.warn("check for errors");
-
 			return  arw;
 
 		}
@@ -1773,7 +1865,10 @@ class MigrationTaskService {
 		protected JSONObject getGoogleGroupSettings(String sessionId, String siteId) {
 			// get group information for this site and update Google
 			JSONObject group_info = getCToolsGroupInfoJson(sessionId,siteId);
-
+			if(group_info ==null){
+				log.error("Changing ctools site info into Google group has errors for SiteId: "+siteId);
+				return null;
+			}
 			log.debug(String.format("migration: group info: [%s]",group_info.toString()));
 
 			JSONObject googleGroupSettings = createGoogleGroupJson(group_info);
@@ -1834,29 +1929,34 @@ class MigrationTaskService {
 		}
 
 
-		public String updateGoogleGroupMembershipFromSite(String sessionId,String siteId,HashMap<String, String> members) {
+		public List<StatusReport> updateGoogleGroupMembershipFromSite(String siteId,HashMap<String, String> members, String groupId) {
 
 			log.debug("process members for site: "+siteId);
 			List<List<String>> membersProperties = memberPropertiesList(members,Utils.DEFAULT_EMAIL_MEMBER_SUFFIX);
 			log.debug("found members for site: "+siteId+" "+membersProperties);
-
-			JSONObject ggs = getGoogleGroupSettings(sessionId,  siteId);
-
-			addMembersToGroup(ggs.getString("email"),membersProperties);
-			//TODO: error handling
-			return null;
+			List<StatusReport> membershipsStatus = addMembersToGroup(groupId, membersProperties);
+			return membershipsStatus;
 		}
 
-		// TODO: proper return value. and status handling.
-		// What is the result of the
-		String addMembersToGroup(String group_id,List<List<String>> membersProperties) {
-
+		List<StatusReport> addMembersToGroup(String group_id,List<List<String>> membersProperties) {
+			List<StatusReport> memberships = new ArrayList<StatusReport>();
 			for (List<String> user : membersProperties) {
+			    StatusReport memberStatus = new StatusReport();
 				log.debug("group: {} user: {} role: {}",group_id,user.get(0),user.get(1));
-				addMemberToGroup(group_id,user.get(0),user.get(1));
+				ApiResultWrapper arw = addMemberToGroup(group_id, user.get(0), user.get(1));
+				int statusCode = arw.getStatus();
+				memberStatus.setStatus(Utils.REPORT_STATUS_OK);
+				if(statusCode/100 !=2 && statusCode != HttpStatus.CONFLICT.value()){
+					memberStatus.setStatus(Utils.REPORT_STATUS_ERROR);
+				}
+				memberStatus.setMsg(arw.getMessage());
+				memberStatus.setId(user.get(0)+" "+user.get(1));
+				memberships.add(memberStatus);
+
+
 			}
 
-			return "MAYBE";
+			return memberships;
 		}
 
 
@@ -1881,12 +1981,10 @@ class MigrationTaskService {
 		@Async
 		protected Future<String> uploadMessageToGoogleGroup(MigrationEmailMessage message) {
 
-			// result of call
-			String status = null;
-
 			String googleGroupId = message.getGoogle_group_id();
 
 			String messageId = message.getMessage_id();
+			mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
 			log.info("begin to upload message " + messageId  + " to Google Group id = " + googleGroupId);
 
 			// use EmailFormatter to get RFC822 complaint email content
@@ -1895,42 +1993,97 @@ class MigrationTaskService {
 			AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 			attachmentHandler.setEnv(env);
 
+			String emailText;
+			JSONObject statusObj=new JSONObject();
+			statusObj.put(Utils.REPORT_ATTR_ITEM_ID, messageId);
+
 			// Try only once and record the resulting status in the database.
 			try
 			{
 				EmailFormatter formatter = new EmailFormatter(emailContent, attachmentHandler);
+				formatter.setEnv(env);
+				MailResultPair emailTextPlusStatus = formatter.rfc822Format();
+				emailText = emailTextPlusStatus.getMessage();
+				statusObj = emailTextPlusStatus.getReport().getJsonReportObject();
 
-				String emailText = formatter.rfc822Format();
+				if (emailText != null) {
+					// mark the file as being processed
 
-				// mark the file as being processed
-				mRepository.setMigrationMessageStartTime(message.getMessage_id(), new Timestamp(System.currentTimeMillis()));
+					// process the message
+					ApiResultWrapper arw = addEmailToGoogleGroup(googleGroupId, emailText);
+					int statusCode = arw.getStatus();
+					// taking the success msg
+					String ggbResult = arw.getResult();
+					// Taking the error message
+					String ggbMsg = arw.getMessage();
+					log.debug("uploadMessageToGoogleGroup: status: {} googleGroupId: {}", statusCode, googleGroupId);
 
-				// process the message
-				ApiResultWrapper arw = addEmailToGoogleGroup(googleGroupId, emailText);
-				status = arw.getStatus().toString();
-				log.debug("uploadMessageToGoogleGroup: status: googleGroupId: {}",status,googleGroupId);
+					if (statusCode / 100 != 2 && statusCode != 409)  {
+						statusObj= errorHandlingWhenNotSuccess(statusObj, statusCode, ggbMsg,ggbResult);
+						log.error(String.format("Failure in migrating message with MessageId: \"%1$s\" to google groups" +
+								", status code %2$d and error message %3$s", messageId, statusCode, ggbMsg));
+						return new AsyncResult<String>(statusObj.toString());
+					}
 
-			}
-			catch (IOException exception)
-			{
+					// Upload to Google groups went fine
+					String messageStatus = (String) statusObj.get(Utils.REPORT_ATTR_ITEM_STATUS);
+					String messageStr = (String) statusObj.get(Utils.REPORT_ATTR_MESSAGE);
+					//This is the case when in the EmailFormatter attachment might have dropped due to some error or size limit
+					if (messageStatus == Utils.REPORT_STATUS_PARTIAL) {
+						statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Google Groups message migration successful, but " + messageStr);
+					}
+					log.info("The response from google groups when 200: "+ggbResult+" for MessageId: "+messageId);
+				}
+
+			}catch (IOException exception) {
 				String errorString = "IOException from EmailFormatter for message id " + messageId + " " + exception.getMessage();
 				log.error(errorString);
-				status = errorString;
-			}
-			catch (Exception e) {
+				statusObj=errHandlingWhenExceptions(statusObj);
+			}catch (ParseException e){
+				String errorString = "ParseException while extracting response from GGB with message id " + messageId + " " + e.getMessage();
+				log.error(errorString);
+				statusObj=errHandlingWhenExceptions(statusObj);
+			}catch (Exception e) {
 				String msg = String.format("unexpected exception in uploadMessageToGoogleGroup: %s for messageId: %s",
 						e.getMessage(),messageId);
 				log.error(msg);
-				status = msg;
+				statusObj=errHandlingWhenExceptions(statusObj);
 			}
+
 			finally {
 				// update the status and end time for file item
 				mRepository.setMigrationMessageEndTime(messageId, new java.sql.Timestamp(System.currentTimeMillis()));
-				mRepository.setMigrationMessageStatus(messageId, status);
+				mRepository.setMigrationMessageStatus(messageId, statusObj.toString());
 			}
-
 			log.debug("uploadMessageToGoogleGroup: return");
-			return new AsyncResult<String>(status);
+			return new AsyncResult<String>(statusObj.toString());
 		}
+
+	private JSONObject errHandlingWhenExceptions(JSONObject statusObj) {
+		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, "Failure to migrate message to Google Groups");
+		return statusObj;
+	}
+
+	private JSONObject errorHandlingWhenNotSuccess(JSONObject statusObj, int statusCode, String errMsg, String googleResults) {
+		String msg=googleResults;
+		statusObj.put(Utils.REPORT_ATTR_ITEM_STATUS, Utils.REPORT_STATUS_ERROR);
+		if(statusCode == ApiResultWrapper.API_EXCEPTION_ERROR || statusCode == ApiResultWrapper.API_UNKNOWN_ERROR) {
+			msg=truncateMessage(errMsg);
+		}
+		String reportMsg= "Failure to migrate message to Google Groups due to " +msg+", failed with status code "+statusCode;
+		statusObj.put(Utils.REPORT_ATTR_MESSAGE, reportMsg);
+		return statusObj;
+
+	}
+
+	private String truncateMessage(String msg) {
+		String msgChunk = "message:";
+		int i = msg.indexOf(msgChunk);
+		if (i == -1) {
+			return "unknown reason";
+		}
+		return msg.substring(i + 8);
+	}
 
 }

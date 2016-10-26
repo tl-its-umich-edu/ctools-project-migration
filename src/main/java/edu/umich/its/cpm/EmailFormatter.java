@@ -5,6 +5,8 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import org.apache.commons.lang3.StringUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.core.env.Environment;
 
 import javax.activation.DataHandler;
 import javax.mail.BodyPart;
@@ -31,7 +33,20 @@ public class EmailFormatter {
     public static final String NEW_LINE = "\r\n";
     public static final String BOUNDARY = "boundary=";
     public static final String FROM = "From ";
+    public static final String SUBJECT_WITH_COLON = "Subject:";
     public AttachmentHandler attachmentHandler;
+
+    public Environment getEnv() {
+        return env;
+    }
+
+    public void setEnv(Environment env) {
+        this.env = env;
+    }
+
+    @Autowired
+    private Environment env;
+
 
     private String emailMessage;
 
@@ -41,12 +56,67 @@ public class EmailFormatter {
         ObjectMapper mapper = new ObjectMapper();
         this.emailMessage = emailMgs;
         this.attachmentHandler = attachmentHandler;
-        this.messageMap = mapper.readValue(this.emailMessage, new TypeReference<HashMap<String, Object>>(){});
+        this.messageMap = mapper.readValue(this.emailMessage, new TypeReference<HashMap<String, Object>>() {
+        });
     }
 
-    public String rfc822Format() {
+    public MailResultPair rfc822Format() {
+        MailResultPair emailMsgPlusStatus = rfcFormatWithoutAttachmentLimitCheck();
+        String rfcFormattedText = emailMsgPlusStatus.getMessage();
+        StatusReport status = emailMsgPlusStatus.getReport();
+
+        // Something bad happened in formatting the email
+        if (rfcFormattedText == null) {
+            log.error("Email formatting is not successful");
+            return emailMsgPlusStatus;
+        }
+        // Large email size check, if greater than proposed limit attachment will be dropped
+        if (checkMsgSizeMoreThanExpectedLimit(rfcFormattedText)) {
+            log.warn("Attachments are dropped for the message");
+            rfcFormattedText = removeAttachments(rfcFormattedText);
+            emailMsgPlusStatus.setMessage(rfcFormattedText);
+            status.setStatus(Utils.REPORT_STATUS_PARTIAL);
+            status.setMsg("message size exceeded the expected limit. Attachments "+status.getAllAttachments() +" are omitted");
+            emailMsgPlusStatus.setReport(status);
+            return emailMsgPlusStatus;
+        }
+
+        return emailMsgPlusStatus;
+    }
+
+    public MailResultPair rfcFormatWithoutAttachmentLimitCheck() {
         ArrayList<String> headers = prunedHeadersWithoutContentType();
-        return getFormattedEmailText(headers).toString();
+        MailResultPair formattedEmailText = getFormattedEmailText(headers);
+        return formattedEmailText;
+    }
+
+    public String removeAttachments(String rfcFormattedText) {
+        String emailWithOutattachments = returnEmailTextDroppingAttachments(rfcFormattedText);
+        return emailWithOutattachments;
+    }
+
+    private String returnEmailTextDroppingAttachments(String rfcFormattedText) {
+        StringBuilder emailTextWithBodyNoAttachments = new StringBuilder();
+        String attachmentRemovedText = subStringBefore(rfcFormattedText, "Content-Transfer-Encoding: base64");
+        String[] msgBodyWithSomeExtra = attachmentRemovedText.split(NEW_LINE);
+        List<String> emailTextList = new LinkedList(Arrays.asList(msgBodyWithSomeExtra));
+        int size = emailTextList.size();
+        emailTextList.remove(size - 1); // remove the last element in the list
+        String lastItemInList = emailTextList.get(emailTextList.size() - 1) + "--"; // the replacing the new last element with new string
+        emailTextList.set(emailTextList.size() - 1, lastItemInList);
+        for (int i = 0; i < emailTextList.size(); i++) {
+            if (i == (emailTextList.size() - 2)) {
+                String lastLineInBody = emailTextList.get(i);
+                String appendToBodyText = NEW_LINE + NEW_LINE +
+                        "ATTACHMENTS THAT EXCEED THE SIZE LIMIT HAVE BEEN REMOVED";
+                emailTextList.set(i, lastLineInBody + appendToBodyText);
+            }
+            emailTextWithBodyNoAttachments.append(emailTextList.get(i));
+            emailTextWithBodyNoAttachments.append(NEW_LINE);
+        }
+
+
+        return emailTextWithBodyNoAttachments.toString();
     }
 
     /*
@@ -54,45 +124,71 @@ public class EmailFormatter {
       Mbox format email messages file must start like "From doe@eg.edu Wed Aug 24 14:04:47 2016" and
       each message is separated by blank line
      */
-    public String mboxFormat() {
+    public MailResultPair mboxFormat() {
         ArrayList<String> headers = mboxFormatHeaders();
-        return getMboxFormattedEmailText(headers);
+        MailResultPair mboxFormatEmailTextPlusStatus = getMboxFormattedEmailText(headers);
+        return mboxFormatEmailTextPlusStatus;
     }
 
-    private StringBuilder getFormattedEmailText(ArrayList<String> headers) {
+    private MailResultPair getFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
+        MailResultPair emailTextAndStatusObject = getEmailText();
+        String emailText =  emailTextAndStatusObject.getMessage();
+        if (emailText == null) {
+            return emailTextAndStatusObject;
+        }
+        String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
         emailFormat.append(bodyAndAttachment);
         emailFormat.append(NEW_LINE);
-        return emailFormat;
+        emailTextAndStatusObject.setMessage(emailFormat.toString());
+        return emailTextAndStatusObject;
     }
 
-    private String getMboxFormattedEmailText(ArrayList<String> headers) {
+    public boolean checkMsgSizeMoreThanExpectedLimit(String rfc822FormatMessage) {
+        long rfc822MgsSize = rfc822FormatMessage.length();
+        log.debug("Email Message Size: " + rfc822MgsSize + " bytes");
+        String attachLimit = env.getProperty(Utils.ENV_ATTACHMENT_LIMIT);
+        log.debug("Attachment Size Limit : " + attachLimit + " bytes");
+        long attachmentLimit = Long.parseLong(attachLimit);
+        if (rfc822MgsSize > attachmentLimit) {
+            log.info("The message with Id \"" + getItemId() + "\" is " +rfc822MgsSize+ " bytes exceed the expected limit that GGB can handle");
+            return true;
+        }
+        return false;
+    }
+
+    private MailResultPair getMboxFormattedEmailText(ArrayList<String> headers) {
         StringBuilder emailFormat = new StringBuilder();
         for (String header : headers) {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        String bodyAndAttachment = emailTextWithBodyAndAttachment(getEmailText());
+        MailResultPair emailTextAndStatusObject = getEmailText();
+        String emailText = emailTextAndStatusObject.getMessage();
+        if (emailText == null) {
+            return emailTextAndStatusObject;
+        }
+        String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
         ArrayList<String> pureBodyText = mboxBodyFormatting(bodyAndAttachment);
         String[] split = bodyAndAttachment.split(NEW_LINE);
         List<String> formattedBodyAndAttachment = Arrays.asList(split);
-        for (int i=0;i<4;i++) {
-            pureBodyText.add(i,formattedBodyAndAttachment.get(i));
+        for (int i = 0; i < 4; i++) {
+            pureBodyText.add(i, formattedBodyAndAttachment.get(i));
         }
 
-        for(int i=0; i<pureBodyText.size();i++){
-            formattedBodyAndAttachment.set(i,pureBodyText.get(i));
+        for (int i = 0; i < pureBodyText.size(); i++) {
+            formattedBodyAndAttachment.set(i, pureBodyText.get(i));
         }
-        for (String format: formattedBodyAndAttachment) {
+        for (String format : formattedBodyAndAttachment) {
             emailFormat.append(format);
             emailFormat.append(NEW_LINE);
         }
-        return emailFormat.toString() ;
+        emailTextAndStatusObject.setMessage(emailFormat.toString());
+        return emailTextAndStatusObject;
     }
 
     public ArrayList<String> mboxBodyFormatting(String bodyAndAttachment) {
@@ -114,7 +210,7 @@ public class EmailFormatter {
         ArrayList<String> modifiedSplit = new ArrayList<String>();
         for (String body : bodyTextSplit) {
             if (body.startsWith(FROM)) {
-                body = body.replaceFirst(FROM,">From ");
+                body = body.replaceFirst(FROM, ">From ");
             }
             modifiedSplit.add(body);
         }
@@ -129,6 +225,22 @@ public class EmailFormatter {
     public ArrayList<String> getHeaders() {
         ArrayList<String> headers = (ArrayList<String>) messageMap.get("headers");
         return headers;
+    }
+    public String getItemId(){
+        ArrayList<String> headers = getHeaders();
+        String date=null;
+        String subject=null;
+        String itemId;
+        for (String header: headers) {
+            if (header.startsWith(DATE_WITH_COLON)) {
+                 date = header.split(DATE_WITH_COLON)[1].trim();
+            }
+            if(header.startsWith(SUBJECT_WITH_COLON)){
+                 subject = header.split(SUBJECT_WITH_COLON)[1].trim();
+            }
+        }
+        itemId=date+" "+subject;
+        return itemId;
     }
 
     //we are taking out all the headers that  contains "content-type" as these are again created again with
@@ -174,7 +286,7 @@ public class EmailFormatter {
                     // Wed Aug 24 14:04:47 2016
                     date = ascTimePattern.format(new Date(epochTime));
                 } catch (java.text.ParseException e) {
-                    log.error("Error occurred while paring the Date: "+dateTemp+ " due to" + e.getMessage());
+                    log.error("Error occurred while parsing the Date: " + dateTemp + " due to" + e.getMessage());
                 }
 
             }
@@ -211,10 +323,14 @@ public class EmailFormatter {
      We are using java mailing services for generating the emailText. generally the mail services complaint with RFC822
      Mime format.
      */
-    public String getEmailText() {
+
+    public MailResultPair getEmailText() {
         Session session = null;
         MimeMessage message = new MimeMessage(session);
         String emailText = null;
+        int attachmentFailureCount=0;
+        StatusReport report=new StatusReport();
+        report.setId(getItemId());
         try {
             Multipart multipart = new MimeMultipart();
 
@@ -236,28 +352,56 @@ public class EmailFormatter {
                     String attachmentUrl = attachmentMetaData.get(2);
                     String mimeType = attachmentMetaData.get(0);
                     String fileName = attachmentMetaData.get(1);
+                    report.addAllAttachmnts(fileName);
                     byte[] fileContent = attachmentHandler.getAttachmentContent(attachmentUrl);
-                    msgBodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(fileContent, mimeType)));
-                    msgBodyPart.setFileName(fileName);
-                    msgBodyPart.addHeader("Content-Transfer-Encoding", "base64");
-                    multipart.addBodyPart(msgBodyPart);
-
+                    if (fileContent != null) {
+                        msgBodyPart.setDataHandler(new DataHandler(new ByteArrayDataSource(fileContent, mimeType)));
+                        msgBodyPart.setFileName(fileName);
+                        msgBodyPart.addHeader("Content-Transfer-Encoding", "base64");
+                        multipart.addBodyPart(msgBodyPart);
+                    } else {
+                        attachmentFailureCount++;
+                        report.addFailedAttachments(fileName);
+                    }
                 }
-
             }
+
             message.setContent(multipart);
             ByteArrayOutputStream output = new ByteArrayOutputStream();
             message.writeTo(output);
             emailText = output.toString();
 
         } catch (MessagingException e) {
-            log.error("Error occurred while generating the email stream" + e.getMessage());
+            String msg = "MessagingException occurred while generating the email stream";
+            log.error(msg + e.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return  new MailResultPair(report,emailText);
 
         } catch (IOException ioe) {
-            log.error("Error occurred while process writing the Mime message as stream" + ioe.getMessage());
-
+            String msg = "IOException occurred while process writing the Mime message to stream";
+            log.error(msg + ioe.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return new MailResultPair(report,emailText);
+        } catch (Exception ioe) {
+            String msg = "Expection occurred while generating a email stream";
+            log.error(msg + ioe.getMessage());
+            errHandlingInGetTextMail(report, msg);
+            return new MailResultPair(report,emailText);
         }
-        return emailText;
+        if(attachmentFailureCount>0){
+            report.setStatus(Utils.REPORT_STATUS_PARTIAL);
+            report.setMsg(attachmentFailureCount+"/"+ getAttachments().size()+" attachments "+StringUtils.join(report.getFailedAttachments())
+                    +" failed to be exported and they are missing from message");
+            return new MailResultPair(report,emailText);
+        }
+        report.setStatus(Utils.REPORT_STATUS_OK);
+        report.setMsg(Utils.REPORT_SUCCESS_MSG);
+        return new MailResultPair(report,emailText);
+    }
+
+    private void errHandlingInGetTextMail(StatusReport report, String msg) {
+        report.setMsg(msg);
+        report.setStatus(Utils.REPORT_STATUS_ERROR);
     }
 
     public String emailTextWithBodyAndAttachment(String emailText) {
@@ -271,6 +415,14 @@ public class EmailFormatter {
             return "";
         }
         return emailText.substring(posA);
+    }
+
+    public String subStringBefore(String emailText, String contentToChopFrom) {
+        int posA = emailText.indexOf(contentToChopFrom);
+        if (posA == -1) {
+            return "";
+        }
+        return emailText.substring(0, posA);
     }
 
     public String subStringInBetween(String emailText, String chopper) {

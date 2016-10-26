@@ -3,10 +3,7 @@ package edu.umich.its.cpm;
 import org.springframework.boot.actuate.endpoint.Endpoint;
 import org.springframework.stereotype.Component;
 
-import java.util.List;
-import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.Iterator;
 import java.util.Properties;
 
 import javax.servlet.ServletContext;
@@ -34,7 +31,7 @@ class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 	private Environment env;
 	
 	public String getId() {
-		return Utils.MIGRATION_STATUS;
+		return Utils.REPORT_ATTR_STATUS;
 	}
 
 	public boolean isEnabled() {

@@ -198,10 +198,12 @@
                                 {{site.name}}
                               </td>
                               <td class="col-lg-4">
-                                <a href="" ng-show="site.status==='success' || site.status==='failure'"data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
-                                <i class="glyphicon glyphicon-ok" ng-show="site.status==='success'"></i>
-                                <i class="spinner" ng-show="site.status==='onging'"></i>
-                                <i class="glyphicon glyphicon-fire" ng-show="site.status==='failure'"></i>
+                                <div ng-if="!site.name.includes('Cannnot find a CTools site')">
+                                  <a href="" ng-show="site.status==='success' || site.status==='failure'" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
+                                  <i class="glyphicon glyphicon-ok" ng-show="site.status==='success'"></i>
+                                  <i class="spinner" ng-show="site.status==='onging'"></i>
+                                  <i class="glyphicon glyphicon-fire" ng-show="site.status==='failure'"></i>
+                                </div>
                               </td>
                             </tr>
                           </tbody>
@@ -227,56 +229,91 @@
               aria-label="Close">
               <span aria-hidden="true">&times;</span>
             </button>
-            <h4 class="modal-title" id="siteReportModalLabel">Report for site {{siteReport.site_name}}</h4>
+            <h4 class="modal-title" id="reportModalLabel">{{reportDetails.type | readableExportType}}</h4>
           </div>
           <div class="modal-body">
-            <div class="container-fluid">
-              <div class="row">
-                <div class="col-lg-7">
-                  {{siteReport.tool_name}}.<br>
-                  <strong>Finished:</strong> {{siteReport.start_time | date:'medium'}}<br>
-                  <div class="spinner" ng-show="siteReportLoading"></div>
-                  <strong>Destination:</strong> {{siteReport.destination_type | uppercase}}.
-                  <a href="siteReport.destination_url" target="_top">{{siteReport.destination_url | destinationLinkName}}</a>
-                  <br><br>
+            <div class="" ng-show="reportDetails.status.data.length || reportDetails.status.data.length===0">
+              Old report format.
+            </div>
+            <div class="" ng-show="!reportDetails.status.data">
+              <div class="container" ng-show="reportDetails.type ==='google'">
+                <div class="row" style="width:535px" ng-show="reportDetails.details && reportDetails.details.message !=='OK'">
+                  <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                    <div class="alert alert-danger">
+                      {{reportDetails.details.message}}
+                    </div>
+                  </div>
                 </div>
-                <div class="col-lg-5" style="text-align:right">
-                  <button type="button" class="btn btn-default btn-xs" ng-click="showPaths = !showPaths">
-                    <span ng-show="showPaths">Hide paths</span><span ng-show="!showPaths">Show paths</span>
-                  </button>
-                  <button type="button" class="btn btn-default btn-xs" ng-click="showOnlyErrors = !showOnlyErrors">
-                    <span ng-show="showOnlyErrors">Show all</span><span ng-show="!showOnlyErrors">Show errors</span>
-                  </button>
-
-                </div>
+                <p ng-if="reportDetails.details.add_members.counts.successes > 0">
+                  {{reportDetails.details.add_members.counts.successes}} CTools members <strong>successfully </strong>added to Google Group.
+                </p>
+                <span ng-if="reportDetails.details &&
+                 reportDetails.details.add_members.counts.partial_successes > 0"  class="export-fail">
+                  {{reportDetails.details.add_members.counts.partial_successes}} partial success(es)
+                </span>
+                <span ng-if="reportDetails.details &&
+                 reportDetails.details.add_members.counts.errors > 0" class="export-fail">
+                  {{reportDetails.details.add_members.counts.errors}} members failed to be added.
+                </span>
+                <span ng-if="reportDetails.details.add_members.counts.errors > 0 || reportDetails.details.add_members.counts.partial_successes > 0">
+                  <a href="" ng-click="reportDetails.showMembers = !reportDetails.showMembers">(info?)</a>
+                </span>
+                <ul ng-show="reportDetails.showMembers"  style="width:535px;list-style:none;margin-top:20px">
+                  <li class="row" style="font-weight:bold">
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      User email
+                    </div>
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      User CTools Role
+                    </div>
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      Google error
+                    </div>
+                  <li ng-repeat="member in reportDetails.details.add_members.items" class="row">
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      {{member.item_id.id}}
+                    </div>
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      {{member.item_id.role}}
+                    </div>
+                    <div class="col-lg-4 col-lg-4 col-lg-4">
+                      {{member.message}}
+                    </div>
+                  </li>
+                </ul>
               </div>
-              <p class="">
-                <a href="https://its.umich.edu/projects/ctools-project-sites/?q=node/43#" target="_blank">See documentation for assistance on specific errors.</a>
-              </p>
-              <ul class="list-group" style="margin: 0 0;width:535px">
-                <li ng-repeat="item in siteReport.status.data" ng-show="(item.status | whatStatus) ===
-                'glyphicon glyphicon-fire' || !showOnlyErrors" class="list-group-item">
-                  <div class="row">
-                    <div class="col-xs-10 col-sm-10 col-md-10 col-lg-10">
-                      {{item.file_name}}
-                      <small ng-show="showPaths"><br>{{item.path}}</small>
-                    </div>
-                    <div class="col-xs-2 col-sm-2 col-md-2 col-lg-2">
-                      <i class="{{item.status | whatStatus}}"></i>
-                    </div>
+              <div class="container" ng-show="reportDetails.type !=='google'">
+                <div class="row" style="width:500px;" >
+                  <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                      Items exported: {{reportDetails.counts.successes}}
                   </div>
-                  <div class="row" ng-show="item.status.indexOf('success') ===-1 && item.status.indexOf('created') ===-1">
-                    <div class="col-xs-12 col-sm-12 col-md-12 col-lg-12">
-                      <small>{{item.status}}</small>
-                    </div>
+                </div>
+                <p ng-show="reportDetails.status === 'PARTIAL' || reportDetails.status === 'ERROR'">
+                  <a href="https://its.umich.edu/projects/ctools-project-sites/?q=node/43#" target="_blank">See documentation for assistance on specific errors.</a>
+                </p>
+                <p>
+                  <span class="label label-info" ng-show="reportDetails.counts.successes && reportDetails.counts.successes > 0">Successes: {{reportDetails.counts.successes}} </span>&nbsp;
+                  <span class="label label-danger" ng-show="reportDetails.counts.errors && reportDetails.counts.errors > 0">Errors: {{reportDetails.counts.errors}}</span>&nbsp;
+                  <span class="label label-warning"  ng-show="reportDetails.counts.partial_successes && reportDetails.counts.partial_successes > 0">Partial successes: {{reportDetails.counts.partial_successes}}</span>
+                </p>
+              </div>
+              <ul class="list-group container"  style="width:550px;margin:0" ng-if="reportDetails.items.length">
+              <li class="list-group-item" ng-class="item.item_Status==='PARTIAL'?'list-group-item-warn':list-group-item-danger" ng-repeat="item in reportDetails.items">
+                <div class="row">
+                  <div class="col-md-9 col-lg-9 col-sm-9 col-xs-9" style="vertical-align: middle">
+                    {{item.item_id}} <br>
+                    <small>{{item.item_Status}}</small>
                   </div>
-                </li>
-              </ul>
-
+                  <div class="col-md-3 col-lg-3 col-sm-3 col-xs-3" style="text-align:right">
+                    <span class="label label-danger">Error</span>
+                  </div>
+                </div>
+              </li>
+            </ul>
             </div>
           </div>
           <div class="modal-footer">
-            <button type="button" class="btn btn-link" data-dismiss="modal">Close</button>
+            <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
           </div>
         </div>
       </div>

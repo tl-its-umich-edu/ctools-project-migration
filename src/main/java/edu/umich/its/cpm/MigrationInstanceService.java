@@ -1,5 +1,6 @@
 package edu.umich.its.cpm;
 
+import org.json.JSONArray;
 import org.json.JSONObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -9,11 +10,11 @@ import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
 import java.util.HashMap;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.concurrent.Future;
 import java.util.Iterator;
 import java.io.IOException;
+
 import java.sql.Timestamp;
 
 import javax.servlet.http.HttpServletRequest;
@@ -209,29 +210,60 @@ class MigrationInstanceService {
 			// parse the string into JSON object
 			List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
 			int itemStatusFailureCount = 0;
+			int itemStatusSuccessCount = 0;
+			JSONArray itemsArray = new JSONArray();
 			for(MigrationBoxFile mFile : mFileList)
 			{
 				String status = mFile.getStatus();
-				MigrationFileItem item = new MigrationFileItem(
-						mFile.getFile_access_url(), 
-						mFile.getTitle(), 
-						status);
-				itemStatusList.add(item);
-				
+				// if there is error, status message won't have String "Box upload successful for file"
 				if (status.indexOf("Box upload successful for file") == -1)
 				{
-					// if there is error, status message won't have String "Box upload successful for file"
+					// increase the count for failed migrated item
 					itemStatusFailureCount++;
+					
+					// report error 
+					JSONObject itemJson = new JSONObject();
+					itemJson.put(Utils.REPORT_ATTR_ITEM_ID, mFile.getTitle());
+					itemJson.put(Utils.REPORT_ATTR_ITEM_STATUS, status);
+					itemsArray.put(itemJson);
+				}
+				else
+				{
+					// increase the count for successfully migrated item
+					itemStatusSuccessCount++;
 				}
 			}
 			
-			// the HashMap object holds itemized status information
-			HashMap<String, Object> statusMap = new HashMap<String, Object>();
-			statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-			statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
+			// the JSON object holds itemized status information
+			JSONObject statusObject = new JSONObject();
+			// migration type
+			statusObject.put(Utils.REPORT_ATTR_TYPE, Utils.MIGRATION_TYPE_BOX);
+			String statusSummary = Utils.REPORT_STATUS_OK;
+			if (itemStatusSuccessCount == 0 && itemStatusFailureCount > 0)
+			{
+				// no item migrated successfully
+				statusSummary = Utils.REPORT_STATUS_ERROR;
+			}
+			else if (itemStatusSuccessCount > 0 && itemStatusFailureCount > 0)
+			{
+				// with failures
+				statusSummary = Utils.REPORT_STATUS_PARTIAL;
+			}
+			
+			// count JSON
+			JSONObject countsJson = new JSONObject();
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, itemStatusSuccessCount);
+			countsJson.put(Utils.REPORT_ATTR_COUNTS_ERRORS, itemStatusFailureCount);
+	
+			// add to top report level
+			statusObject.put(Utils.REPORT_ATTR_COUNTS, countsJson);
+			statusObject.put(Utils.REPORT_ATTR_ITEMS, itemsArray);
+			
+			statusObject.put(Utils.REPORT_ATTR_STATUS, statusSummary);
+			//statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
 
 			// update the status of migration record
-			mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
+			mRepository.setMigrationStatus(statusObject.toString(), mId);
 			
 			// cleanup the added owner of admin user from CTools site
 			removeAddedAdminOwner(mId);
@@ -245,44 +277,55 @@ class MigrationInstanceService {
 	 * @param mId
 	 */
 	private void updateMessageMigrationTimeAndStatus(String mId) {
-        int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
-        int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
-        if (allItemCount > 0 && allItemCount == allFinishedItemCount )
-        {
-            // all the items within the migration is finished
-            // update the end time of the parent record
-            Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
-            mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
-
-            // update the status of the parent record
-            List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
-            // parse the string into JSON object
-            List<MigrationFileItem> itemStatusList = new ArrayList<MigrationFileItem>();
-            int itemStatusFailureCount = 0;
-            for(MigrationEmailMessage mMessage : mMessageList)
-            {
-                    String status = mMessage.getStatus();
-                    MigrationFileItem item = new MigrationFileItem(
-                                    mMessage.getMessage_id(),
-                                    "",
-                                    status);
-                    itemStatusList.add(item);
-
-                    if (status.indexOf("Box upload successful for file") == -1)
-                    {
-                            // if there is error, status message won't have String "Box upload successful for file"
-                            itemStatusFailureCount++;
-                    }
-            }
-
-            // the HashMap object holds itemized status information
-            HashMap<String, Object> statusMap = new HashMap<String, Object>();
-            statusMap.put(Utils.MIGRATION_STATUS, itemStatusFailureCount == 0? Utils.STATUS_SUCCESS:Utils.STATUS_FAILURE);
-            statusMap.put(Utils.MIGRATION_DATA, itemStatusList);
-
-            // update the status of migration record
-            mRepository.setMigrationStatus((new JSONObject(statusMap)).toString(), mId);
-            
+		int allItemCount = eRepository.getMigrationMessageCountForMigration(mId);
+		int allFinishedItemCount = eRepository.getFinishedMigrationMessageCountForMigration(mId);
+		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
+		{
+			// all the items within the migration is finished
+			// update the end time of the parent record
+			Timestamp lastItemMigrationTime = eRepository.getLastItemEndTimeForMigration(mId);
+		
+			mRepository.setMigrationEndTime(lastItemMigrationTime, mId);
+			
+			// update the status of the parent record
+			List<MigrationEmailMessage> mMessageList = eRepository.getAllItemStatusForMigration(mId);
+			Migration migration = mRepository.findOne(mId);
+			String partialStatus = migration.getStatus();
+			JSONObject status = new JSONObject(partialStatus);
+			JSONArray messages = new JSONArray();
+			int success,error,partial;
+			success=error=partial=0;
+			for (MigrationEmailMessage message: mMessageList) {
+				JSONObject msgStatus = new JSONObject(message.getStatus());
+				String itemStatus = (String)msgStatus.get(Utils.REPORT_ATTR_ITEM_STATUS);
+				if(itemStatus.equals(Utils.REPORT_STATUS_OK)){
+					success++;
+				}
+				if(itemStatus.equals(Utils.REPORT_STATUS_ERROR)){
+					error++;
+					messages.put(msgStatus);
+				}
+				if(itemStatus.equals(Utils.REPORT_STATUS_PARTIAL)){
+					partial++;
+					messages.put(msgStatus);
+				}
+			}
+			status.put(Utils.REPORT_ATTR_ITEMS,messages);
+			if(error>0){
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
+			}else if(success>0 & partial>0){
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_PARTIAL);
+			}else{
+				status.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_OK);
+			}
+			JSONObject counts = Utils.getCountJsonObj();
+			counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES,success);
+			counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS,error);
+			counts.put(Utils.REPORT_ATTR_COUNT_PARTIALS,partial);
+			status.put(Utils.REPORT_ATTR_COUNTS,counts);
+		
+			// update the status of migration record
+			mRepository.setMigrationStatus(status.toString(), mId);   
          // cleanup the added owner of admin user from CTools site
          	removeAddedAdminOwner(mId);
         }

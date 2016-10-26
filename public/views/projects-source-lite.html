@@ -1,3 +1,10 @@
+<div class="mask" ng-show="mask" ng-cloak>
+  <div class="loader"></div>
+  <p class="maskMessage">
+    Download should begin shortly.
+  </p>
+</div>
+
 <div style="text-align: right">
   <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button><br>
   <br>
@@ -29,8 +36,7 @@
 					</div>
 					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 						<a ng-click="getTools(project.site_id)" href=""
-							ng-
-              ="!project.stateHasTools && !project.migrating"> Download Options
+							ng-show="!project.stateHasTools && !project.migrating"> Download Options
                <span class="sr-only">for site {{project.site_name}}</span>
 						</a>
           </div>

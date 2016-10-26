@@ -79,9 +79,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     var migratedUrl = $rootScope.urls.migratedUrl;
     Migrated.getMigrated(migratedUrl).then(function(result) {
       if (result.status === 200) {
-        _.each(result.data.entity,function(migrated) {
-          migrated.status.data = prepareReport(migrated.status.data);
-        });
         result = transformMigrated(result);
         $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
         $rootScope.status.migrated = moment().format('h:mm:ss');
@@ -283,13 +280,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var reportDetails = $scope.migratedProjects[index].status;
       var destination = $scope.migratedProjects[index].destination_type;
       reportDetails.title = site_title;
-      // on success - add site title to status
-      if (reportDetails.status.indexOf('Finished upload site content for site') !== -1) {
-        reportDetails.status = 'Finished upload site content for site ' + site_title;
-      }
-      if (destination === 'zip') {
-        reportDetails.status = 'Finished creating zip file for ' + site_title;
-      }
       $scope.reportDetails = reportDetails;
     };
     $scope.checkBoxAuth = function() {
@@ -312,6 +302,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       });
     });
     $scope.startMigrationEmail = function(project, destinationType) {
+      $rootScope.mask=true;
       project.processing = true;
 
       $timeout(function() {
@@ -329,7 +320,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.startMigration = function(projectId,siteName, destinationType) {
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
       var targetProjChildPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId,tool: true}));
-
       $scope.sourceProjects[targetProjPos].migrating = true;
       $scope.sourceProjects[targetProjChildPos].migrating = true;
       $scope.sourceProjects[targetProjPos].stateExportConfirm = false;
@@ -372,6 +362,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           // use promise factory
           // to execute the post
           Migration.getMigrationZip(migrationUrl).then(function(result) {
+            // add a mask to not allow more that on zip request at the time
+            $rootScope.mask=true;
             $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos]);
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
@@ -412,20 +404,19 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               $scope.migratingProjectsError = true;
             }
         } else {
-            // update time stamp
+              // update time stamp
             // displayed in
             // /migrated panel
             $rootScope.status.migrated = moment().format('h:mm:ss');
             if (result.data.status === 200) {
-              _.each(result.data.entity,function(migrated) {
-                migrated.status.data = prepareReport(migrated.status.data);
-              });
               result = transformMigrated(result);
               $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
               // this poll has
               // different data
               // than the last one
               if (!angular.equals($scope.migratedProjects,$scope.migratedProjectsShadow)) {
+                // remove the mask
+                $rootScope.mask=false;
                 $log.info('migrated has changed - call a function to update projects panel');
                 // update
                 // project panel
@@ -532,7 +523,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
      // handler for removing a flag that tool not be migrated
      $scope.unFlagDoNotMigrate = function(project){
        $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
-       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&reset=true';
+       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&toolType=' + project.tool_type + '&reset=true';
        ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
          function(result) {
            if(result.data === 'site tool delete exempt choice saved.'){
@@ -561,7 +552,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         targetDeleteData.push('siteId=' + target.site_id);
       });
       _.each(targetDoNotMove, function(target) {
-        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id);
+        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolType=' + target.tool_type);
       });
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
@@ -591,8 +582,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
             function(result) {
               if(result.data ==='site tool delete exempt choice saved.') {
                 // find this tool and add doNotMigrateStatus object to let user know
-                var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolNotToMigr.split('=')[2]});
-                thisTool.doNotMigrateStatus = {
+            	// "TOOLID&toolType=TYPE"
+            	var toolId = toolNotToMigr.split('=')[2];
+            	// another splite will return the actual tool id
+            	toolId = toolId.split('&')[0];
+            	var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolId});
+            	thisTool.doNotMigrateStatus = {
                   'userId':'You have',
                   'consentTime': moment().valueOf()
                 };

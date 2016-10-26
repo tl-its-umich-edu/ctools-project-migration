@@ -136,8 +136,12 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting of sites in a batch process batches with  ' + bulkUploadListUrl);
-        $scope.concluded[$index].list = resultList.data.entity.sites;
-        $scope.concluded[$index].batchReportLoading = false;
+        if(resultList.status ===200){
+          $scope.concluded[$index].list = resultList.data.entity.sites;
+          $scope.concluded[$index].batchReportLoading = false;
+        } else {
+          alert(resultList.data.statusType + '\n\n' + resultList.data.entity);
+        }
       });
       return null;
     };
@@ -148,7 +152,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
-        $scope.siteReport = resultList.data.entity;
+        $scope.reportDetails = resultList.data.entity;
         $scope.siteReportLoading = false;
       });
       return null;
