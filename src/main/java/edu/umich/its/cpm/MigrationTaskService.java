@@ -474,24 +474,12 @@ class MigrationTaskService {
 								ZipEntry fileEntry = new ZipEntry(fileName);
 								out.putNextEntry(fileEntry);
 								out.write(webLinkContent.getBytes());
-							} catch (java.net.MalformedURLException e) {
+							}  catch (Exception e) {
 								// return status with error message
 								zipFileStatus
 								.append(e.getMessage() + "Link "
 										+ title
-										+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-							} catch (IOException e) {
-								// return status with error message
-								zipFileStatus
-								.append(e.getMessage() + "Link "
-										+ title
-										+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-							} catch (Exception e) {
-								// return status with error message
-								zipFileStatus
-								.append(e.getMessage() + "Link "
-										+ title
-										+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
 							}
 						}
 					} else {
