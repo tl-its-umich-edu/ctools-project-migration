@@ -457,29 +457,30 @@ class MigrationTaskService {
 					fileName = Utils.updateFolderPathForFileName(fileName,
 							folderNameUpdates);
 
-					log.info("download file " + fileName);
+					log.info("download file " + fileName + " type=" + type);
 
 					if (Utils.isOfURLMIMEType(type)) {
-						try {
-							// get the html file content first
-							String webLinkContent = Utils.getWebLinkContent(title,
-									webLinkUrl);
-
-							ZipEntry fileEntry = new ZipEntry(fileName);
-							out.putNextEntry(fileEntry);
-							out.write(webLinkContent.getBytes());
-						} catch (java.net.MalformedURLException e) {
-							// return status with error message
-							zipFileStatus
-							.append(e.getMessage() + "Link "
-									+ title
-									+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-						} catch (IOException e) {
-							// return status with error message
-							zipFileStatus
-							.append(e.getMessage() + "Link "
-									+ title
-									+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+						if (webLinkUrl == null || webLinkUrl.isEmpty())
+						{
+							zipFileStatus.append("Link "+ title + " could not be migrated due to empty URL link. ");
+						}
+						else
+						{
+							try {
+								// get the html file content first
+								String webLinkContent = Utils.getWebLinkContent(title,
+										webLinkUrl);
+	
+								ZipEntry fileEntry = new ZipEntry(fileName);
+								out.putNextEntry(fileEntry);
+								out.write(webLinkContent.getBytes());
+							}  catch (Exception e) {
+								// return status with error message
+								zipFileStatus
+								.append(e.getMessage() + "Link "
+										+ title
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
+							}
 						}
 					} else {
 
@@ -961,6 +962,11 @@ class MigrationTaskService {
 				content = r.getEntity().getContent();
 
 				if (Utils.isOfURLMIMEType(type)) {
+					if (webLinkUrl == null || webLinkUrl.isEmpty())
+					{
+						status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
+						return new AsyncResult<String>(status.toString());
+					}
 					try {
 						// special handling of Web Links resources
 						content = new ByteArrayInputStream(Utils.getWebLinkContent(
