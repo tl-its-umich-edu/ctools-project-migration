@@ -626,27 +626,41 @@ class Utils {
 	 * @return
 	 */
 	public static String modifyFileNameOnType(String type, String fileName) {
-		if (type != null && FilenameUtils.getExtension(fileName).isEmpty()) {
+		String fileExtension = FilenameUtils.getExtension(fileName);
+		if ((fileExtension == null 
+			|| fileExtension.isEmpty() 
+			|| !Utils.HTML_FILE_EXTENSION.equals(EXTENSION_SEPARATOR + fileExtension))
+			&& 
+			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) 
+			|| Utils.isOfURLMIMEType(type))) {
+				// handle citation and URL type
+				fileName = fileName + Utils.HTML_FILE_EXTENSION;
+				return fileName;
+		}
+		
+		if (type != null) {
+			String mimeExtension = null;
 			// do extension lookup first
+			// based on MIME type
 			try {
 				MimeType mimeType = tikaConfig.getMimeRepository()
 						.forName(type);
 				if (mimeType != null) {
-					String extension = mimeType.getExtension();
-					// do something with the extension
-					fileName = fileName.concat(extension);
+					mimeExtension = mimeType.getExtension();
 				}
 			} catch (MimeTypeException e) {
 				log.error(
 						"Utils.modifyFileNameOnType: Couldn't find file extension for resource: "
 								+ fileName + " of MIME type = " + type, e);
 			}
-		}
-		String extension = FilenameUtils.getExtension(fileName);
-		if ((extension == null || extension.isEmpty() || !Utils.HTML_FILE_EXTENSION
-				.equals(EXTENSION_SEPARATOR + extension))
-				&& (Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) || Utils.isOfURLMIMEType(type))) {
-			fileName = fileName + Utils.HTML_FILE_EXTENSION;
+			if (mimeExtension != null 
+				&& (FilenameUtils.getExtension(fileName).isEmpty()
+				|| !fileName.endsWith(mimeExtension))) {	
+				// if file name extension is missing
+				// or different from the default one
+				// add the extension to file name
+				fileName = fileName.concat(mimeExtension);
+			}
 		}
 		return fileName;
 	}
