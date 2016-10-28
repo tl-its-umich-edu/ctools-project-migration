@@ -60,12 +60,16 @@ var transformProject = function (data){
     var toolObj = {};
 
     var tool_name;
-      if(item.tools[0].toolId === 'sakai.resources'){
-        tool_name ='Resources';
-      }
-     else {
-       tool_name ='Email Archive';
-     }
+    var tool0 = item.tools[0];
+	if(tool0 !== undefined)
+	{
+		if (tool0.toolId === 'sakai.resources'){
+			tool_name ='Resources';
+		}
+		else {
+			tool_name ='Email Archive';
+		}
+	}
 
 
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources' || item.tools[0].toolId === 'sakai.mailbox' )) {
