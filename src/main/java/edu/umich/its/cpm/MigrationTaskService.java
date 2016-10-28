@@ -1225,11 +1225,12 @@ class MigrationTaskService {
 		}
 
 	private JSONObject errHandlingInDownloadMailArchiveZipFile(String site_id, JSONObject downloadStatus, String errorMessage) {
+		JSONArray errArray = new JSONArray();
 		downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
 		JSONObject count = (JSONObject)downloadStatus.get(Utils.REPORT_ATTR_COUNTS);
 		int errorCount = (Integer)count.get(Utils.REPORT_ATTR_COUNTS_ERRORS);
 		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount+1);
-		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS, errArray.put(errHandlingForZiparchive(site_id, errorMessage)));
 		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
 		return downloadStatus;
 	}
