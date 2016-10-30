@@ -1608,12 +1608,11 @@ public class MigrationController {
 				{
 					JSONObject siteStatusJson = new JSONObject(siteStatusString);
 					// look the tools attribute and find resource tool
-					JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
+					JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get(Utils.REPORT_ATTR_ITEMS);
 					for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
 						JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
-						String path = itemJSON.getString("path");
-						String status = itemJSON.getString(Utils.REPORT_ATTR_STATUS);
-						if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
+						String status = itemJSON.getString(Utils.REPORT_ATTR_ITEM_STATUS);
+						if (status.indexOf("Box upload successful for file") == -1)
 						{
 							// file path did not end with "/"
 							// and if there is error, status message won't have String "Box upload successful for file"
