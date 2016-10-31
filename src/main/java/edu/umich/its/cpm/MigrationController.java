@@ -104,6 +104,8 @@ import javax.servlet.http.HttpServletResponse;
 
 //import static org.junit.Assert.assertTrue;
 
+
+
 import java.io.*;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -1587,7 +1589,6 @@ public class MigrationController {
 				HashMap<String, String> siteMap = new HashMap<String, String>();
 
 				String siteId = m.getSite_id();
-				String siteStatus = Utils.STATUS_SUCCESS;
 				String siteStatusString = m.getStatus();
 
 				if (siteStatusString == null)
@@ -1607,21 +1608,10 @@ public class MigrationController {
 				else
 				{
 					JSONObject siteStatusJson = new JSONObject(siteStatusString);
-					// look the tools attribute and find resource tool
-					JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get("data");
-					for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
-						JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
-						String path = itemJSON.getString("path");
-						String status = itemJSON.getString(Utils.REPORT_ATTR_STATUS);
-						if (!path.endsWith("/") && status.indexOf("Box upload successful for file") == -1)
-						{
-							// file path did not end with "/"
-							// and if there is error, status message won't have String "Box upload successful for file"
-							// set the site migration status to be failure
-							siteStatus = Utils.STATUS_FAILURE;
-							errorSiteCount++;
-							break;
-						}
+					String siteStatus = (String) siteStatusJson.get(Utils.REPORT_ATTR_STATUS);
+					if (Utils.REPORT_STATUS_ERROR.equals(siteStatus))
+					{
+						errorSiteCount++;
 					}
 					siteMap.put("id", siteId);
 					siteMap.put("name", m.getSite_name());
@@ -2004,65 +1994,104 @@ public class MigrationController {
 				boxAdminClientId, 
 				boxAdminClientSecret,
 				boxSiteFolderName, siteId, uRepository);
+		if (boxFolder == null) {
+			// exit with error saved into migration record
+			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
+					bulkMigrationId, siteId, siteName, toolId, toolName);
+			return;
+		}
 		
 		// save the migration record into database
 		// the string to hold on all site owner's id, 
 		// and the admin id who are doing bulk migration is listed first
 		StringBuffer allSiteOwners = new StringBuffer(userId);
-		if (boxFolder != null) {
-			String boxFolderId = boxFolder.getID();
-			String boxFolderName = boxFolder.getName();
+		String boxFolderId = boxFolder.getID();
+		String boxFolderName = boxFolder.getName();
 
-			// add site members to Box folder as collaborators
-			try
-			{
-				HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
-				for (String userEid : userRolesMap.keySet()) {
-					String userRole = userRolesMap.get(userEid);
-					//String userEmail = Utils.getUserEmailFromUserId(userEid);
-					String userEmail = getUserEmailFromUserId(userEid);
+		// add site members to Box folder as collaborators
+		try
+		{
+			HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
+			for (String userEid : userRolesMap.keySet()) {
+				String userRole = userRolesMap.get(userEid);
+				//String userEmail = Utils.getUserEmailFromUserId(userEid);
+				String userEmail = getUserEmailFromUserId(userEid);
 
-					BoxUtils.addCollaboration(
-							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
-							userEmail, userRole, boxFolderId,
-							boxAdminClientId, boxAdminClientSecret, uRepository);
-					// add user email to the owner list
-					if (addUserEmail(siteId, userRole)) 
-					{
-						allSiteOwners.append(",").append(userEmail);
-					}
+				BoxUtils.addCollaboration(
+						env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
+						userEmail, userRole, boxFolderId,
+						boxAdminClientId, boxAdminClientSecret, uRepository);
+				// add user email to the owner list
+				if (addUserEmail(siteId, userRole)) 
+				{
+					allSiteOwners.append(",").append(userEmail);
 				}
 			}
-			catch (RestClientException e)
-			{
-				log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
-			}
-			catch (JSONException e)
-			{
-				log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
-			}
-			
-			// now after all checks passed, we are ready for migration
-			// save migration record into database
-			HashMap<String, Object> saveBulkMigration = saveBulkBoxMigrationRecord(
-					bulkMigrationId, bulkMigrationName, siteId,
-					siteName, toolId, toolName, boxFolderId,
-					boxFolderName, allSiteOwners.toString());
+		}
+		catch (RestClientException e)
+		{
+			log.error("Problem retrieving site members for site id = " + siteId + " " + e.getStackTrace());;
+		}
+		catch (JSONException e)
+		{
+			log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
+		}
+		
+		// now after all checks passed, we are ready for migration
+		// save migration record into database
+		HashMap<String, Object> saveBulkMigration = saveBulkBoxMigrationRecord(
+				bulkMigrationId, bulkMigrationName, siteId,
+				siteName, toolId, toolName, boxFolderId,
+				boxFolderName, allSiteOwners.toString());
 
-			// delegate the actual content migrations to async calls
-			HashMap<String, String> status = createMigrationBoxTask(
-					request, response, Utils.MIGRATION_TYPE_BOX, userId,
-					new HashMap<String, String>(), boxFolderId, siteId,
-					toolId, saveBulkMigration);
-			if (status.containsKey("errorMessage")) {
-				log.info(this + " batch upload call for site id="
-						+ siteId + " error message="
-						+ status.get("errorMessage"));
-			} else if (status.containsKey("migrationId")) {
-				log.info(this + " batch upload call for site id="
-						+ siteId + " migration started id="
-						+ status.get("migrationId"));
-			}
+		// delegate the actual content migrations to async calls
+		HashMap<String, String> status = createMigrationBoxTask(
+				request, response, Utils.MIGRATION_TYPE_BOX, userId,
+				new HashMap<String, String>(), boxFolderId, siteId,
+				toolId, saveBulkMigration);
+		if (status.containsKey("errorMessage")) {
+			log.info(this + " batch upload call for site id="
+					+ siteId + " error message="
+					+ status.get("errorMessage"));
+		} else if (status.containsKey("migrationId")) {
+			log.info(this + " batch upload call for site id="
+					+ siteId + " migration started id="
+					+ status.get("migrationId"));
+		}
+	}
+
+	private void handleBulkResourceBoxRootFolderError(String userId,
+			String bulkMigrationName, String bulkMigrationId, String siteId,
+			String siteName, String toolId, String toolName) {
+		// error message saved into status
+		// the status json object
+		JSONObject uploadStatus = new JSONObject();
+		// count
+		JSONObject count = new JSONObject();
+		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, 1);
+		uploadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
+		// details
+		JSONObject details = new JSONObject();
+		String errorMessage = "Box root folder was not created for site " + siteName + ". "
+				+ "Please check whether the Box folder with the name exists; Or Box auth token has expired. ";
+		details.put(Utils.REPORT_ATTR_MESSAGE, errorMessage);
+		uploadStatus.put(Utils.REPORT_ATTR_DETAILS, details);
+		// type
+		uploadStatus.put(Utils.REPORT_ATTR_TYPE, Utils.REPORT_ATTR_TYPE_RESOURCE_BOX);
+		// status
+		uploadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
+		
+		Timestamp now = new java.sql.Timestamp(System.currentTimeMillis());
+		
+		Migration m = new Migration(bulkMigrationId, bulkMigrationName, 
+				siteId, siteName, toolId, toolName,
+				userId, now, now,
+				Utils.MIGRATION_TYPE_BOX, null, uploadStatus.toString());
+		try {
+			repository.save(m);
+		} catch (Exception e) {
+			log.error("Exception saving migraion record " + errorMessage + " with error for " + siteName
+					+ e.getMessage());
 		}
 	}
 
