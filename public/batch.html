@@ -199,8 +199,8 @@
                               </td>
                               <td class="col-lg-4">
                                 <div ng-if="!site.name.includes('Cannnot find a CTools site')">
-                                  <a href="" ng-show="site.status.toLowerCase()==='success'.toLowerCase() || site.status.toLowerCase()==='failure'.toLowerCase() || site.status.toLowerCase()==='error'.toLowerCase()" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
-                                  <i class="glyphicon glyphicon-ok" ng-show="site.status.toLowerCase()==='success'.toLowerCase()"></i>
+                                  <a href="" ng-show="site.status.toLowerCase()==='success'.toLowerCase() || site.status.toLowerCase()==='ok'.toLowerCase() || site.status.toLowerCase()==='failure'.toLowerCase() || site.status.toLowerCase()==='error'.toLowerCase()" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
+                                  <i class="glyphicon glyphicon-ok" ng-show="site.status.toLowerCase()==='success'.toLowerCase() || site.status.toLowerCase()==='ok'.toLowerCase()"></i>
                                   <i class="spinner" ng-show="site.status==='onging'"></i>
                                   <i class="glyphicon glyphicon-fire" ng-show="site.status.toLowerCase()==='failure'.toLowerCase() || site.status.toLowerCase()==='error'.toLowerCase()"></i>
                                 </div>
@@ -219,8 +219,67 @@
 				</div>
 			</div>
 		</div>
+	    <div class="modal fade" id="siteReportModal" tabindex="-1" role="dialog"
+			aria-labelledby="reportModalLabel">
+			<div class="modal-dialog" role="document">
+				<div class="modal-content">
+					<div class="modal-header">
+						<button type="button" class="close" data-dismiss="modal"
+							aria-label="Close">
+							<span aria-hidden="true">&times;</span>
+						</button>
+						<h4 class="modal-title" id="reportModalLabel">Site Migration Report</h4>
+					</div>
+					<div class="modal-body">
+						<div class="container">
+              <div class="row" style="width:535px">
+                <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16">
+                  <h3>{{reportDetails.title}}. <small>Items exported: {{reportDetails.data.items.length}}</small></h3>
+                </div>
+                <div class="col-md-6 col-lg-6 col-sm-6 col-xs-16" style="text-align:right">
+                  <button ng-show="!showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">More information</button>
+                  <button ng-show="showPaths" class="btn btn-default" type="button" ng-click="showPaths = !showPaths">Less information</button>
+                </div>
+              </div>
+              <br>
+              <div style="width:535px" ng-class="reportDetails.data.counts.successes.length ? 'alert alert-info' : 'alert alert-warning'">
+                {{reportDetails.status}} - successes: {{reportDetails.data.counts.successes}}, errors: {{reportDetails.data.counts.failures}}
+                <p ng-show="reportDetails.data.counts.failures !== 0">
+                  <br>
+                  <a href="https://its.umich.edu/projects/ctools-project-sites/?q=node/43#" target="_blank">See documentation for assistance on specific errors.</a>
+                </p>
+              </div>
+              <ul class="list-group container"  style="width:550px;margin:0">
+                <li class="list-group-item" ng-repeat="item in reportDetails.data.items">
+                  <div class="row">
+                    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle">
+                      <span class="file-icon {{item.file_name | getExtension}}" style="vertical-align: middle;"></span>
+                      <span ng-show="showPaths" style="vertical-align: middle;">{{item.path}}</span>
+                      <span ng-hide="showPaths" style="vertical-align: middle;">{{item.file_name}}</span>
+                    </div>
+                    <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
+                      <span ng-show="item.status_code==='success'" class="glyphicon glyphicon-ok" aria-hidden="true" style="vertical-align: middle"></span>
+                      <span ng-show="item.status_code==='fail'" class="glyphicon glyphicon-info-sign" aria-hidden="true" style="vertical-align: middle;color:#c00"></span>
+                    </div>
+                  </div>
+                  <div class="row" ng-show="item.status.indexOf('success') === -1 && item.status.indexOf('created') === -1">
+                    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle;padding-left:50px">
+                    <small>{{item.status}}</small>
+                    </div>
+                  </div>
+                </li>
+              </ul>
+            </div>
+					</div>
+					<div class="modal-footer">
+						<button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+					</div>
+				</div>
+			</div>
+		</div>
+	</div>
 
-    <div class="modal fade" id="siteReportModal" tabindex="-1" role="dialog"
+    <div class="modal fade" id="siteReportModal_old" tabindex="-1" role="dialog"
       aria-labelledby="siteReportModalLabel">
       <div class="modal-dialog" role="document">
         <div class="modal-content">
@@ -282,7 +341,7 @@
                   </li>
                 </ul>
               </div>
-              {{reportDetails.type}}
+              {{reportDetails.type}}{{reportDetails.counts}}{{reportDetails.counts.successes}}
               <div class="container" ng-show="reportDetails.type !=='google'">
                 <div class="row" style="width:500px;" >
                   <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
