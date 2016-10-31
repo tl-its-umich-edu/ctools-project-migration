@@ -199,10 +199,11 @@
                               </td>
                               <td class="col-lg-4">
                                 <div ng-if="!site.name.includes('Cannnot find a CTools site')">
-                                  <a href="" ng-show="site.status.toLowerCase()==='success'.toLowerCase() || site.status.toLowerCase()==='ok'.toLowerCase() || site.status.toLowerCase()==='failure'.toLowerCase() || site.status.toLowerCase()==='error'.toLowerCase()" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
-                                  <i class="glyphicon glyphicon-ok" ng-show="site.status.toLowerCase()==='success'.toLowerCase() || site.status.toLowerCase()==='ok'.toLowerCase()"></i>
+                                  <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
+                                  <i class="glyphicon glyphicon-ok" ng-show="site.status==='OK'"></i>
                                   <i class="spinner" ng-show="site.status==='onging'"></i>
-                                  <i class="glyphicon glyphicon-fire" ng-show="site.status.toLowerCase()==='failure'.toLowerCase() || site.status.toLowerCase()==='error'.toLowerCase()"></i>
+                                  <i class="glyphicon glyphicon-fire" ng-show="site.status === 'ERROR'"></i>
+                                  <i class="glyphicon glyphicon-info" ng-show="site.status === 'PARTIAL'"></i>
                                 </div>
                               </td>
                             </tr>
