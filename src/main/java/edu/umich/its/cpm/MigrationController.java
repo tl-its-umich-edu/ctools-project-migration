@@ -2069,6 +2069,7 @@ public class MigrationController {
 		// count
 		JSONObject count = new JSONObject();
 		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, 1);
+		count.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, 0);
 		uploadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
 		// details
 		JSONObject details = new JSONObject();
