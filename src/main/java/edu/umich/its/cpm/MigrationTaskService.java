@@ -1814,11 +1814,18 @@ class MigrationTaskService {
 
 		static public String extractEmailFromToHeader(String header) {
 			String archive_email_name;
-			// Need to remove this if present.
-			header = header.replace("<","");
-			int at_index = header.indexOf("@");
-			int to_index = header.indexOf("To: ");
-			archive_email_name = header.substring(to_index+4,at_index);
+			header = header.split("To: ")[1].trim();
+			int i = header.indexOf('<');
+			if (i == -1) {
+				// To: ctqa-mbox@ctqa.dsc.umich.edu
+				archive_email_name = header.substring(0, header.indexOf('@'));
+			} else {
+				// To: <jennlove-test-project@ctqa.dsc.umich.edu>
+				// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
+				// To: Email Archive Test Site <ctqa-email-archive-1@discussions-dev.its.umich.edu>
+				archive_email_name = header.substring(i + 1, header.indexOf('>') - 1);
+				archive_email_name = archive_email_name.substring(0, archive_email_name.indexOf('@'));
+			}
 			return archive_email_name;
 		}
 
