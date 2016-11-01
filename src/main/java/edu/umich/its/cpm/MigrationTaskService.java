@@ -1776,6 +1776,9 @@ class MigrationTaskService {
 			}
 
 			String archiveEmail = extractArchiveEmailName(archiveJson);
+			if(archiveEmail.isEmpty()){
+				return null;
+			}
 			String suffix = env.getProperty(Utils.GGB_GOOGLE_GROUP_DOMAIN);
 			if (suffix == null) {
 				log.warn("no google suffix provided. Property name is: {}",Utils.GGB_GOOGLE_GROUP_DOMAIN);
@@ -1813,19 +1816,24 @@ class MigrationTaskService {
 		}
 
 		static public String extractEmailFromToHeader(String header) {
-			String archive_email_name;
-			header = header.split("To: ")[1].trim();
-			int i = header.indexOf('<');
-			if (i == -1) {
-				// To: ctqa-mbox@ctqa.dsc.umich.edu
-				archive_email_name = header.substring(0, header.indexOf('@'));
-			} else {
-				// To: <jennlove-test-project@ctqa.dsc.umich.edu>
-				// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
-				// To: Email Archive Test Site <ctqa-email-archive-1@discussions-dev.its.umich.edu>
-				archive_email_name = header.substring(i + 1, header.indexOf('>') - 1);
-				archive_email_name = archive_email_name.substring(0, archive_email_name.indexOf('@'));
+			String archive_email_name = "";
+			try {
+				header = header.split("To: ")[1].trim();
+				int i = header.indexOf('<');
+				if (i == -1) {
+					// To: ctqa-mbox@ctqa.dsc.umich.edu
+					archive_email_name = header.substring(0, header.indexOf('@'));
+				} else {
+					// To: <jennlove-test-project@ctqa.dsc.umich.edu>
+					// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
+					// To: Email Archive Test Site <ctqa-email-archive-1@discussions-dev.its.umich.edu>
+					archive_email_name = header.substring(i + 1, header.indexOf('>'));
+					archive_email_name = archive_email_name.substring(0, archive_email_name.indexOf('@'));
+				}
+			} catch (Exception e) {
+				log.error("Failure in getting the error google group id from " + header + "failed due to " + e.getMessage());
 			}
+
 			return archive_email_name;
 		}
 

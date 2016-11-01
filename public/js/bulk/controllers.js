@@ -152,7 +152,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId + '/' + siteId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting site report for batch id:' + batchId + 'and siteID: ' + siteId);
-        $scope.reportDetails = resultList.data.entity;
+        $scope.reportDetails = resultList.data.entity.status;
         $scope.siteReportLoading = false;
       });
       return null;

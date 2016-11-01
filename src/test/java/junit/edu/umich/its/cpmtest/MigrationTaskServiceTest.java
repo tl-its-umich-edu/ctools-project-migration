@@ -31,8 +31,20 @@ public class MigrationTaskServiceTest {
 
 	@Test
 	public void test_ExtractEmailWithGreaterThan() {
-		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: <HOWDY@HARVARD.edu");
-		assertEquals("email with leading <","HOWDY",email_addr);
+		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: <HOWDY@HARVARD.edu>");
+		assertEquals("email with < >","HOWDY",email_addr);
+	}
+
+	@Test
+	public void test_ExtractEmail2() {
+		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: \"HOWDY@HARVARD.edu\" <HOWDY@HARVARD.edu>");
+		assertEquals("HOWDY",email_addr);
+	}
+
+	@Test
+	public void test_ExtractEmail3() {
+		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: HOWDY Test Site <HOWDY@HARVARD.edu>");
+		assertEquals("HOWDY",email_addr);
 	}
 
 	@Test

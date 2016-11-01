@@ -207,7 +207,7 @@ class MigrationInstanceService {
 			{
 				String status = mFile.getStatus();
 				// if there is error, status message won't have String "Box upload successful for file"
-				if (status.indexOf("Box upload successful for file") == -1)
+				if (status == null || status.indexOf("Box upload successful for file") == -1)
 				{
 					// increase the count for failed migrated item
 					itemStatusFailureCount++;
