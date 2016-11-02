@@ -888,7 +888,7 @@ public class MigrationController {
 		HashMap<String, String> rv = new HashMap<String, String>();
 		
 		// exit if there is no new Migration record saved into DB
-		if (migrationId == null && migrationId.isEmpty() ) {
+		if (migrationId == null || migrationId.isEmpty() ) {
 			// no new Migration record created
 			rv.put("errorMessage", "Cannot create migration records for user "
 					+ remoteUser + " and site=" + siteId);
@@ -902,7 +902,7 @@ public class MigrationController {
 		StringBuffer boxMigrationErrors = new StringBuffer();
 		
 		// call asynchronous method for Box file upload
-		log.info("start to call Box migration asynch for siteId=" + siteId);
+		log.info("start to assign Box migration file tasks asynch for siteId=" + siteId);
 
 		// need to create all folders first
 		// get box client id and secret
@@ -915,6 +915,8 @@ public class MigrationController {
 			String boxClientIdError = "Missing Box integration parameters (Box client id, client secret)";
 			log.error(boxClientIdError);
 			boxMigrationErrors.append(boxClientIdError + Utils.LINE_BREAK);
+			rv.put("errorMessage", boxMigrationErrors.toString());
+			return rv;
 		}
 		
 		String remoteUserEmail = getUserEmailFromUserId(remoteUser);
@@ -923,49 +925,54 @@ public class MigrationController {
 			String boxFolderIdError = "Missing params for CTools site id, or target Box folder id.";
 			log.error(boxFolderIdError);
 			boxMigrationErrors.append(boxFolderIdError + Utils.LINE_BREAK);
+			rv.put("errorMessage", boxMigrationErrors.toString());
+			return rv;
 		}
 
-		// get sessionId
-		if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
-			String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
-			HttpContext httpContext = (HttpContext) sessionAttributes
-					.get("httpContext");
-
-			// 3. get the site resource list
-			RestTemplate restTemplate = new RestTemplate();
-			// the url should be in the format of
-			// "https://server/direct/site/SITE_ID.json"
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+ "direct/content/site/" + siteId + ".json?_sessionId="
-					+ sessionId;
-			String siteResourceJson = null;
-			try {
-				siteResourceJson = restTemplate.getForObject(requestUrl,
-						String.class);
-				 migrationTaskService.boxUploadSiteContent(migrationId, httpContext, remoteUserEmail,
-						sessionId, siteResourceJson, boxFolderId);
-
-			} catch (RestClientException e) {
-				String errorMessage = "Cannot find site by siteId: " + siteId
-						+ " " + e.getMessage();
-				log.error(errorMessage);
-				boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
-			} catch (Exception e) {
-				String errorMessage = "Migration status for " + siteId + " "
-						+ e.getClass().getName();
-				log.error("uploadToBox ", e);
-				boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
-			}
-
-			String uploadFinished = "Finished upload site content for site "
-					+ siteId;
-			log.info(uploadFinished);
-			rv.put("status", uploadFinished + Utils.LINE_BREAK);
-		} else {
-			String errorBecomeUser = "Problem become user to " + remoteUser;
-			log.error(errorBecomeUser);
-			boxMigrationErrors.append(errorBecomeUser + Utils.LINE_BREAK);
+		// return if sessionId is missing
+		if (!sessionAttributes.containsKey(Utils.SESSION_ID)) {
+			 String errorBecomeUser = "Problem become user to " + remoteUser;
+			 log.error(errorBecomeUser);
+			 boxMigrationErrors.append(errorBecomeUser + Utils.LINE_BREAK);
+			 rv.put("errorMessage", boxMigrationErrors.toString());
+			 return rv;
 		}
+		
+		String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+		HttpContext httpContext = (HttpContext) sessionAttributes
+				.get("httpContext");
+
+		// 3. get the site resource list
+		RestTemplate restTemplate = new RestTemplate();
+		// the url should be in the format of
+		// "https://server/direct/site/SITE_ID.json"
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/content/site/" + siteId + ".json?_sessionId="
+				+ sessionId;
+		String siteResourceJson = null;
+		try {
+			siteResourceJson = restTemplate.getForObject(requestUrl,
+					String.class);
+			 migrationTaskService.boxUploadSiteContent(migrationId, httpContext, remoteUserEmail,
+					sessionId, siteResourceJson, boxFolderId);
+
+		} catch (RestClientException e) {
+			String errorMessage = "Cannot find site by siteId: " + siteId
+					+ " " + e.getMessage();
+			log.error(errorMessage);
+			boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
+		} catch (Exception e) {
+			String errorMessage = "Migration status for " + siteId + " "
+					+ e.getClass().getName();
+			log.error("uploadToBox ", e);
+			boxMigrationErrors.append(errorMessage + Utils.LINE_BREAK);
+		}
+
+		String uploadFinished = "Finished upload site content for site "
+				+ siteId;
+		log.info(uploadFinished);
+		rv.put("status", uploadFinished + Utils.LINE_BREAK);
+		
 		rv.put("errorMessage", boxMigrationErrors.toString());
 		rv.put("migrationId", migrationId);
 		return rv;
@@ -1829,7 +1836,7 @@ public class MigrationController {
 				if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
 				{
 					// bulk migration of resource items into Box
-					siteBoxMigrationIdMap = handleBulkResourceBoxMigration(sessionId,
+					siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
 							request, response, userId, bulkMigrationName,
 							bulkMigrationId, siteId, siteName, toolId, toolName, siteBoxMigrationIdMap);
 				}
@@ -2037,7 +2044,7 @@ public class MigrationController {
 	 * @param toolName
 	 * @return
 	 */
-	private HashMap<String, String> handleBulkResourceBoxMigration(String sessionId,
+	private HashMap<String, String> createRootBoxFolderWithMembers(String sessionId,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName, HashMap<String, String> siteBoxMigrationIdMap) {

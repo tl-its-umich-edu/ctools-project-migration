@@ -995,7 +995,7 @@ class MigrationTaskService {
 						fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
 							long totalBytes) {
-						log.info(numBytes + " out of total bytes "
+						log.debug(numBytes + " out of total bytes "
 								+ totalBytes);
 					}
 				});
