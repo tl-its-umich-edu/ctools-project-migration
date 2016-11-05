@@ -37,7 +37,7 @@
             <span ng-show="migratedProject.status.counts.successes > 1">successes</span>
           </small>
           <small ng-show="migratedProject.status.counts.partial_successes && migratedProject.status.counts.partial_successes !==0">
-            {{migratedProject.status.counts.successes}} partial
+            {{migratedProject.status.counts.partial_successes}} partial
             <span ng-show="migratedProject.status.counts.partial_successes === 1">success</span>
             <span ng-show="migratedProject.status.counts.partial_successes > 1">successes</span>
           </small>

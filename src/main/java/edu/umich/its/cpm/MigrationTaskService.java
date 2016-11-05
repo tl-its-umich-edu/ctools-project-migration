@@ -347,16 +347,7 @@ class MigrationTaskService {
 							// create the zipentry for the sub-folder first
 							String folderName = contentUrl.replace(rootFolderPath,
 									"");
-							// update folder name
-							folderNameMap = Utils.updateFolderNameMap(
-									folderNameMap, title, folderName);
-							if (folderNameMap.containsKey(folderName)) {
-								// if the folder name have / in it then we are not zipping the file with original name instead the folder
-								// name will contain _ in it. As having the / will have cause the zip library creating inner folders
-								if (!(StringUtils.countOccurrencesOf(folderNameMap.get(folderName), "/") > 1)) {
-									folderName = folderNameMap.get(folderName);
-								}
-							}
+							folderName = Utils.sanitizeFolderNames(folderName);
 
 							log.info("download folder " + folderName);
 
@@ -375,6 +366,7 @@ class MigrationTaskService {
 						// get the zip file name with folder path info
 						String zipFileName = container.substring(container
 								.indexOf(rootFolderPath) + rootFolderPath.length());
+						zipFileName = Utils.sanitizeFolderNames(zipFileName);
 						zipFileName = zipFileName.concat(Utils.sanitizeName(type,
 								title));
 						log.info("zip download processing file " + zipFileName);
@@ -457,29 +449,30 @@ class MigrationTaskService {
 					fileName = Utils.updateFolderPathForFileName(fileName,
 							folderNameUpdates);
 
-					log.info("download file " + fileName);
+					log.info("download file " + fileName + " type=" + type);
 
 					if (Utils.isOfURLMIMEType(type)) {
-						try {
-							// get the html file content first
-							String webLinkContent = Utils.getWebLinkContent(title,
-									webLinkUrl);
-
-							ZipEntry fileEntry = new ZipEntry(fileName);
-							out.putNextEntry(fileEntry);
-							out.write(webLinkContent.getBytes());
-						} catch (java.net.MalformedURLException e) {
-							// return status with error message
-							zipFileStatus
-							.append(e.getMessage() + "Link "
-									+ title
-									+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-						} catch (IOException e) {
-							// return status with error message
-							zipFileStatus
-							.append(e.getMessage() + "Link "
-									+ title
-									+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+						if (webLinkUrl == null || webLinkUrl.isEmpty())
+						{
+							zipFileStatus.append("Link "+ title + " could not be migrated due to empty URL link. ");
+						}
+						else
+						{
+							try {
+								// get the html file content first
+								String webLinkContent = Utils.getWebLinkContent(title,
+										webLinkUrl);
+	
+								ZipEntry fileEntry = new ZipEntry(fileName);
+								out.putNextEntry(fileEntry);
+								out.write(webLinkContent.getBytes());
+							}  catch (Exception e) {
+								// return status with error message
+								zipFileStatus
+								.append(e.getMessage() + "Link "
+										+ title
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
+							}
 						}
 					} else {
 
@@ -961,6 +954,11 @@ class MigrationTaskService {
 				content = r.getEntity().getContent();
 
 				if (Utils.isOfURLMIMEType(type)) {
+					if (webLinkUrl == null || webLinkUrl.isEmpty())
+					{
+						status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
+						return new AsyncResult<String>(status.toString());
+					}
 					try {
 						// special handling of Web Links resources
 						content = new ByteArrayInputStream(Utils.getWebLinkContent(
@@ -997,7 +995,7 @@ class MigrationTaskService {
 						fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
 							long totalBytes) {
-						log.info(numBytes + " out of total bytes "
+						log.debug(numBytes + " out of total bytes "
 								+ totalBytes);
 					}
 				});
@@ -1227,11 +1225,12 @@ class MigrationTaskService {
 		}
 
 	private JSONObject errHandlingInDownloadMailArchiveZipFile(String site_id, JSONObject downloadStatus, String errorMessage) {
+		JSONArray errArray = new JSONArray();
 		downloadStatus.put(Utils.REPORT_ATTR_STATUS, Utils.REPORT_STATUS_ERROR);
 		JSONObject count = (JSONObject)downloadStatus.get(Utils.REPORT_ATTR_COUNTS);
 		int errorCount = (Integer)count.get(Utils.REPORT_ATTR_COUNTS_ERRORS);
 		count.put(Utils.REPORT_ATTR_COUNTS_ERRORS, errorCount+1);
-		downloadStatus.put(Utils.REPORT_ATTR_ITEMS,errHandlingForZiparchive(site_id,errorMessage));
+		downloadStatus.put(Utils.REPORT_ATTR_ITEMS, errArray.put(errHandlingForZiparchive(site_id, errorMessage)));
 		downloadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
 		return downloadStatus;
 	}
