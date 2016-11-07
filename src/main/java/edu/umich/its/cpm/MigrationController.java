@@ -1793,11 +1793,6 @@ public class MigrationController {
 			for (String siteId : bulkUploadSiteIds) {
 				// for each site id, start the migration process
 				// associate it with the bulk id
-				
-				// add admin user to site with Owner role
-				// will remove the user from site later once migration is done.
-				addAdminAsSiteOwner(ctoolsAdminUserName, siteId, sessionId);
-
 				// 1. get site name
 				String siteName = getSiteName(siteId, sessionId);
 				if (siteName == null)
@@ -1823,47 +1818,61 @@ public class MigrationController {
 					}
 					continue;
 				}
-
-				String toolId = "";
-				String toolName = "";
-
-				// 2. get tool id, tool name
-				HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
-				String pagesString = pagesMap.get("pagesString");
-				JSONArray pagesJSON = new JSONArray(pagesString);
-				for (int pageIndex = 0; pageIndex < pagesJSON.length(); pageIndex++) {
-					JSONObject pageJSON = (JSONObject) pagesJSON.get(pageIndex);
-					// look the tools attribute and find resource tool
-					JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
-					for (int toolIndex = 0; toolIndex < toolsJSON.length(); toolIndex++) {
-						JSONObject toolJSON = (JSONObject) toolsJSON
-								.get(toolIndex);
-						if (migrationToolId.equals(toolJSON.get("toolId"))) {
-							// found Resources tool
-							toolId = (String) toolJSON.get("id");
-							toolName = (String) toolJSON.get("title");
+				
+				try
+				{
+					// add admin user to site with Owner role
+					// will remove the user from site later once migration is done.
+					addAdminAsSiteOwner(ctoolsAdminUserName, siteId, sessionId);
+					
+					String toolId = "";
+					String toolName = "";
+	
+					// 2. get tool id, tool name
+					HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
+					String pagesString = pagesMap.get("pagesString");
+					JSONArray pagesJSON = new JSONArray(pagesString);
+					for (int pageIndex = 0; pageIndex < pagesJSON.length(); pageIndex++) {
+						JSONObject pageJSON = (JSONObject) pagesJSON.get(pageIndex);
+						// look the tools attribute and find resource tool
+						JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
+						for (int toolIndex = 0; toolIndex < toolsJSON.length(); toolIndex++) {
+							JSONObject toolJSON = (JSONObject) toolsJSON
+									.get(toolIndex);
+							if (migrationToolId.equals(toolJSON.get("toolId"))) {
+								// found Resources tool
+								toolId = (String) toolJSON.get("id");
+								toolName = (String) toolJSON.get("title");
+							}
 						}
 					}
+					
+					if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
+					{
+						// bulk migration of resource items into Box
+						siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
+								request, response, userId, bulkMigrationName,
+								bulkMigrationId, siteId, siteName, toolId, toolName, siteBoxMigrationIdMap);
+					}
+					else if (migrationToolId.equals(Utils.MIGRATION_TOOL_EMAILARCHIVE))
+					{
+						// bulk migration of email archive messages into Google Groups
+						handleBulkMessageGoogleMigration(sessionId,
+								request, response, userId, bulkMigrationName,
+								bulkMigrationId, siteId, siteName, toolId, toolName);
+					}
+					else
+					{
+						// wrong tool
+						log.error(" unrecognized migration tool " + migrationToolId);
+					}
 				}
-			
-				if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
+				catch (Exception e)
 				{
-					// bulk migration of resource items into Box
-					siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
-							request, response, userId, bulkMigrationName,
-							bulkMigrationId, siteId, siteName, toolId, toolName, siteBoxMigrationIdMap);
-				}
-				else if (migrationToolId.equals(Utils.MIGRATION_TOOL_EMAILARCHIVE))
-				{
-					// bulk migration of email archive messages into Google Groups
-					handleBulkMessageGoogleMigration(sessionId,
-							request, response, userId, bulkMigrationName,
-							bulkMigrationId, siteId, siteName, toolId, toolName);
-				}
-				else
-				{
-					// wrong tool
-					log.error(" unrecognized migration tool " + migrationToolId);
+					log.info("uploadBatch exception " + e.getMessage() + " for site " + siteId);
+					
+					// remove added admin user
+					migrationInstanceService.removeAddedAdminOwner(siteId);
 				}
 			}
 			
@@ -1881,20 +1890,13 @@ public class MigrationController {
 					if (siteBoxMigrationIdMap.containsKey(siteId + "_migrationId")) {
 						migrationId = siteBoxMigrationIdMap.get(siteId + "_migrationId");
 					}
-					if (boxFolderId != null && migrationId != null)
-					{
+					if (boxFolderId != null && migrationId != null) {
 						// delegate the actual content migrations to async calls
 						HashMap<String, String> status = createBoxMigrationTask(
 								request, userId, boxFolderId, siteId, migrationId);
-						if (status.containsKey("errorMessage")) {
-							log.info(this + " batch upload call for site id="
-									+ siteId + " error message="
-									+ status.get("errorMessage"));
-						} else if (status.containsKey("migrationId")) {
-							log.info(this + " batch upload call for site id="
-									+ siteId + " migration started id="
-									+ status.get("migrationId"));
-						}
+						log.info(this + " batch upload call for site id=" + siteId
+								+ " migration id=" + (status.containsKey("migrationId")?status.get("migrationId"):"")
+								+ " error message=" + (status.containsKey("errorMessage")?status.get("errorMessage"):""));
 					}
 				}
 			}

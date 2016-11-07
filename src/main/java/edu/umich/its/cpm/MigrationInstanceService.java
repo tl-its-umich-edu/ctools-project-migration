@@ -96,17 +96,17 @@ class MigrationInstanceService {
 
 			// delay for 5 seconds
 			Thread.sleep(5000L);
-	        
-			// get right HttpContext object
-			HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty("username"));
-			HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
-			String sessionId = sessionAttributes != null ? (String) sessionAttributes.get("sessionId"):null;
 			
 			/*********** Box migration tasks ***********/
 			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
 			if (bFiles != null && bFiles.size() > 0)
 			{
+				// get right HttpContext object
+				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty("username"));
+				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
+				String sessionId = sessionAttributes != null ? (String) sessionAttributes.get("sessionId"):null;
+				
 				// process with the Box upload request
 				for(MigrationBoxFile bFile : bFiles)
 				{	
@@ -266,7 +266,8 @@ class MigrationInstanceService {
 			mRepository.setMigrationStatus(statusObject.toString(), mId);
 			
 			// cleanup the added owner of admin user from CTools site
-			removeAddedAdminOwner(mId);
+			String siteId = mRepository.getMigrationSiteId(mId);
+			removeAddedAdminOwner(siteId);
 		}
 	}
 	
@@ -335,10 +336,8 @@ class MigrationInstanceService {
 	 * // cleanup the added owner of admin user from CTools site
 	 * @param migrationId
 	 */
-	private void removeAddedAdminOwner(String migrationId) {
+	protected void removeAddedAdminOwner(String siteId) {
 		String adminUser = env.getProperty("username");
-		
-		String siteId = mRepository.getMigrationSiteId(migrationId);
 		
 		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
 		
@@ -349,7 +348,7 @@ class MigrationInstanceService {
 		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 		// the request string to add user to site with Owner role
 		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/membership/" + adminUser + "::site:" + siteId + "?_sessionId=" + adminSessionId;
+				+ "direct/membership/" + adminUser + "::site:" + siteId + "?_sessionId=" + adminSessionId+ "&userIds=" + adminUser;
 		
 		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
 		HttpClient httpClient = HttpClientBuilder.create().build();
@@ -358,12 +357,12 @@ class MigrationInstanceService {
 		    request.setHeader("Content-Type", "application/x-www-form-urlencoded");
 			HttpResponse response = httpClient.execute(request, httpContext);
 			int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != 201) {
+			if (statusCode != 204) {
 			    log.error(String.format("Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId ));
 			    return;
 			}
 		} catch (IOException e) {
-		    log.error(String.format("Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId) + e);
+		    log.error(String.format("IOException Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId) + e);
 		}
 	}
 
