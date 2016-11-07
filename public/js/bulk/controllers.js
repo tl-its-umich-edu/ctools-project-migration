@@ -6,32 +6,50 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
   function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload, Projects) {
     $scope.boxAuthorized = false;
 
-    // whether the current user authorized app to Box or not
-    var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
-    Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-      if (result.data === 'true') {
-        $scope.boxAuthorized = true;
-      } else {
-        $scope.boxAuthorized = false;
-      }
-      $log.info(' - - - - User authorized to Box: ' + result.data);
+
+    // whether the current user is a member of the admin group or n0t
+    var checkIsAdminUserUrl = $rootScope.urls.isAdminCheckUrl;
+    $log.info("admin url "  + checkIsAdminUserUrl );
+    Projects.checkIsAdminUser(checkIsAdminUserUrl).then(function(result) {
+      $timeout(function() {
+        if (result.data.isAdmin) {
+          $rootScope.isAdminUser = true;
+        } else {
+          $rootScope.isAdminUser = false;
+        }
+        $log.info(' - - - - User is admin: ' + result.data.isAdmin + ' and value is ' + (result.data.isAdmin === true));
+
+        if($rootScope.isAdminUser ===true){
+          // whether the current user authorized app to Box or not
+          var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+          Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+            if (result.data === 'true') {
+              $scope.boxAuthorized = true;
+            } else {
+              $scope.boxAuthorized = false;
+            }
+            $log.info(' - - - - User authorized to Box: ' + result.data);
+            $scope.getOngoingList();
+          });
+        }
+      });
     });
 
-    // handler for a request for user Box account authentication/authorization
-    $scope.boxAuthorize = function() {
-      $log.info('---- in boxAuthorize ');
-      // get the box folder info if it has not been
-      // gotten yet
-      if (!$scope.boxAuthorized) {
-        $log.info(' - - - - GET /box/authorize');
-        var boxUrl = '/box/authorize';
-        Projects.boxAuthorize(boxUrl).then(function(result) {
-          $scope.boxAuthorizeHtml = result.data;
-          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+      // handler for a request for user Box account authentication/authorization
+      $scope.boxAuthorize = function() {
+        $log.info('---- in boxAuthorize ');
+        // get the box folder info if it has not been
+        // gotten yet
+        if (!$scope.boxAuthorized) {
           $log.info(' - - - - GET /box/authorize');
-        });
-      }
-    };
+          var boxUrl = '/box/authorize';
+          Projects.boxAuthorize(boxUrl).then(function(result) {
+            $scope.boxAuthorizeHtml = result.data;
+            $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
+            $log.info(' - - - - GET /box/authorize');
+          });
+        }
+      };
 
     // on dismiss box auth modal, launch a function to check if box auth
     $(document).on('hidden.bs.modal','#boxAuthModal',function() {
@@ -157,7 +175,5 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       });
       return null;
     };
-
-    $scope.getOngoingList();
   }
 ]);

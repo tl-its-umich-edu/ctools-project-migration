@@ -39,7 +39,12 @@
 			</div>
 		</div>
 	</nav>
-	<div class="container-fluid" ng-controller="projectMigrationBatchController">
+  <div class="container-fluid"  ng-show="!isAdminUser" ng-cloak>
+    <div class="alert alert-danger">
+      Only for <strong>admininstrative users</strong>. You do not have access to this section of the application.
+    </div>
+  </div>
+	<div class="container-fluid" ng-controller="projectMigrationBatchController" ng-show="isAdminUser">
     <div class="row">
       <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
       </div>
