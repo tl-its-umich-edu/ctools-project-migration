@@ -124,5 +124,13 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	@Query("SELECT m FROM Migration m where m.bulk_migration_id = ?#{[0]} and m.site_id = ?#{[1]}")
 	public Migration getSiteMigrationInBulkUpload(String bulk_migration_id,
 			String site_id);
+	
+	/**
+	 * return site id for given migration
+	 * @param migration_id
+	 * @return
+	 */
+	@Query("SELECT m.site_id FROM Migration m where m.migration_id = ?#{[0]}")
+	public String getMigrationSiteId(String migration_id);
 
 }

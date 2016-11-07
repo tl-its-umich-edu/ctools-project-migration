@@ -242,34 +242,34 @@ class Utils {
 				// httpContext for next requests.
 				// get the session id
 				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
-				log.info("successfully logged in as user "
-						+ env.getProperty("username") + " with sessionId = "
-						+ sessionId);
 
-				// 2. become the user based on REMOTE_USER setting after CoSign
-				// integration
-				try {
-					// the url should be in the format of
-					// "https://server/direct/session/SESSION_ID.json"
-					requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-							+ "direct/session/becomeuser/" + remoteUser
-							+ ".json?_sessionId=" + sessionId;
-					log.info("becomeuser url: {}",requestUrl);
-
-					HttpGet getRequest = new HttpGet(requestUrl);
-					getRequest.setHeader("Content-Type",
-							"application/x-www-form-urlencoded");
-					HttpResponse r = httpClient
-							.execute(getRequest, httpContext);
-
-					String resultString = EntityUtils.toString(r.getEntity(),
-							"UTF-8");
-					log.info(resultString);
-				} catch (java.io.IOException e) {
-					log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
-
-					// nullify sessionId if become user call is not successful
-					sessionId = null;
+				if (!env.getProperty("username").equals(remoteUser))
+				{
+					// 2. become the user based on REMOTE_USER setting after CoSign
+					// integration, only if REMOTE_USER is different than the admin user
+					try {
+						// the url should be in the format of
+						// "https://server/direct/session/SESSION_ID.json"
+						requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
+								+ "direct/session/becomeuser/" + remoteUser
+								+ ".json?_sessionId=" + sessionId;
+						log.info("becomeuser url: {}",requestUrl);
+	
+						HttpGet getRequest = new HttpGet(requestUrl);
+						getRequest.setHeader("Content-Type",
+								"application/x-www-form-urlencoded");
+						HttpResponse r = httpClient
+								.execute(getRequest, httpContext);
+	
+						String resultString = EntityUtils.toString(r.getEntity(),
+								"UTF-8");
+						log.info("login_becomeuser status=" + resultString);
+					} catch (java.io.IOException e) {
+						log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
+	
+						// nullify sessionId if become user call is not successful
+						sessionId = null;
+					}
 				}
 
 				// populate the session related attributes

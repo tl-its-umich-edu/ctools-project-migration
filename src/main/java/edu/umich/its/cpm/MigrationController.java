@@ -300,11 +300,11 @@ public class MigrationController {
 			log.error(requestUrl + errorMessage);
 		}
 
-	rv.put("projectsString", projectsString);
-	rv.put("errorMessage", errorMessage);
-	rv.put("requestUrl", requestUrl);
-	return rv;
-}
+		rv.put("projectsString", projectsString);
+		rv.put("errorMessage", errorMessage);
+		rv.put("requestUrl", requestUrl);
+		return rv;
+	}
 
 	/**
 	 * retain only the site record where the current user has Owner role inside
@@ -1007,6 +1007,7 @@ public class MigrationController {
 
 			Migration migration = (Migration) saveMigration.get("migration");
 			String migrationId = migration.getMigration_id();
+			
 			HashMap<String, Object> sessionAttributes = Utils
 					.login_becomeuser(env, request, remoteUser);
 
@@ -1720,7 +1721,15 @@ public class MigrationController {
 			HttpServletResponse response, UriComponentsBuilder ucb) {
 		HttpHeaders headers = new HttpHeaders();
 
-		String sessionId = getUserSessionId(request);
+		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+        
+        if(sessionAttributes.isEmpty()){
+        	log.error("Logging into Ctools failed for the admin user.");
+        	return new ResponseEntity<String>("Cannot start batch upload because logging into Ctools failed for the admin user.", headers,
+    				HttpStatus.BAD_REQUEST);
+        }
+        String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+        
 
 		// use the Box admin id
 		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
@@ -1784,7 +1793,6 @@ public class MigrationController {
 			for (String siteId : bulkUploadSiteIds) {
 				// for each site id, start the migration process
 				// associate it with the bulk id
-
 				// 1. get site name
 				String siteName = getSiteName(siteId, sessionId);
 				if (siteName == null)
@@ -1810,48 +1818,61 @@ public class MigrationController {
 					}
 					continue;
 				}
-
-				String toolId = "";
-				String toolName = "";
-
-				// 2. get tool id, tool name
-				HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
-				String pagesString = pagesMap.get("pagesString");
-				JSONArray pagesJSON = new JSONArray(pagesString);
-				for (int pageIndex = 0; pageIndex < pagesJSON.length(); pageIndex++) {
-					JSONObject pageJSON = (JSONObject) pagesJSON.get(pageIndex);
-					// look the tools attribute and find resource tool
-					JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
-					for (int toolIndex = 0; toolIndex < toolsJSON.length(); toolIndex++) {
-						JSONObject toolJSON = (JSONObject) toolsJSON
-								.get(toolIndex);
-						if (migrationToolId.equals(toolJSON.get("toolId"))) {
-							// found Resources tool
-							toolId = (String) toolJSON.get("id");
-							toolName = (String) toolJSON.get("title");
+				
+				try
+				{
+					// add admin user to site with Owner role
+					// will remove the user from site later once migration is done.
+					addAdminAsSiteOwner(ctoolsAdminUserName, siteId, sessionId);
+					
+					String toolId = "";
+					String toolName = "";
+	
+					// 2. get tool id, tool name
+					HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
+					String pagesString = pagesMap.get("pagesString");
+					JSONArray pagesJSON = new JSONArray(pagesString);
+					for (int pageIndex = 0; pageIndex < pagesJSON.length(); pageIndex++) {
+						JSONObject pageJSON = (JSONObject) pagesJSON.get(pageIndex);
+						// look the tools attribute and find resource tool
+						JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
+						for (int toolIndex = 0; toolIndex < toolsJSON.length(); toolIndex++) {
+							JSONObject toolJSON = (JSONObject) toolsJSON
+									.get(toolIndex);
+							if (migrationToolId.equals(toolJSON.get("toolId"))) {
+								// found Resources tool
+								toolId = (String) toolJSON.get("id");
+								toolName = (String) toolJSON.get("title");
+							}
 						}
 					}
+					
+					if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
+					{
+						// bulk migration of resource items into Box
+						siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
+								request, response, userId, bulkMigrationName,
+								bulkMigrationId, siteId, siteName, toolId, toolName, siteBoxMigrationIdMap);
+					}
+					else if (migrationToolId.equals(Utils.MIGRATION_TOOL_EMAILARCHIVE))
+					{
+						// bulk migration of email archive messages into Google Groups
+						handleBulkMessageGoogleMigration(sessionId,
+								request, response, userId, bulkMigrationName,
+								bulkMigrationId, siteId, siteName, toolId, toolName);
+					}
+					else
+					{
+						// wrong tool
+						log.error(" unrecognized migration tool " + migrationToolId);
+					}
 				}
-			
-				if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
+				catch (Exception e)
 				{
-					// bulk migration of resource items into Box
-					siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
-							request, response, userId, bulkMigrationName,
-							bulkMigrationId, siteId, siteName, toolId, toolName, siteBoxMigrationIdMap);
-				}
-				else if (migrationToolId.equals(Utils.MIGRATION_TOOL_EMAILARCHIVE))
-				{
-					// bulk migration of email archive messages into Google Groups
-					log.info(" for email archives");
-					handleBulkMessageGoogleMigration(sessionId,
-							request, response, userId, bulkMigrationName,
-							bulkMigrationId, siteId, siteName, toolId, toolName);
-				}
-				else
-				{
-					// wrong tool
-					log.error(" unrecognized migration tool " + migrationToolId);
+					log.info("uploadBatch exception " + e.getMessage() + " for site " + siteId);
+					
+					// remove added admin user
+					migrationInstanceService.removeAddedAdminOwner(siteId);
 				}
 			}
 			
@@ -1869,20 +1890,13 @@ public class MigrationController {
 					if (siteBoxMigrationIdMap.containsKey(siteId + "_migrationId")) {
 						migrationId = siteBoxMigrationIdMap.get(siteId + "_migrationId");
 					}
-					if (boxFolderId != null && migrationId != null)
-					{
+					if (boxFolderId != null && migrationId != null) {
 						// delegate the actual content migrations to async calls
 						HashMap<String, String> status = createBoxMigrationTask(
 								request, userId, boxFolderId, siteId, migrationId);
-						if (status.containsKey("errorMessage")) {
-							log.info(this + " batch upload call for site id="
-									+ siteId + " error message="
-									+ status.get("errorMessage"));
-						} else if (status.containsKey("migrationId")) {
-							log.info(this + " batch upload call for site id="
-									+ siteId + " migration started id="
-									+ status.get("migrationId"));
-						}
+						log.info(this + " batch upload call for site id=" + siteId
+								+ " migration id=" + (status.containsKey("migrationId")?status.get("migrationId"):"")
+								+ " error message=" + (status.containsKey("errorMessage")?status.get("errorMessage"):""));
 					}
 				}
 			}
@@ -1891,7 +1905,40 @@ public class MigrationController {
 		return new ResponseEntity<String>("Bulk Migration started.", headers,
 				HttpStatus.ACCEPTED);
 	}
-
+	
+	/**
+	 * add user with Owner role into CTools site
+	 * @param adminUserId
+	 * @param siteId
+	 * @param sessionId
+	 */
+	private void addAdminAsSiteOwner(String adminUserId, String siteId, String sessionId)
+	{
+		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+	        
+		if(sessionAttributes.isEmpty()){
+			log.error("Logging into Ctools failed for the admin user.");
+		}
+		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+		// the request string to add user to site with Owner role
+		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/membership/site/" + siteId + "?userSearchValues=" + adminUserId + "&memberRole=" + Utils.ROLE_OWNER + "&_sessionId=" + adminSessionId;
+     	
+		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
+		HttpClient httpClient = HttpClientBuilder.create().build();
+		try {
+			HttpPost request = new HttpPost(requestUrl);
+			request.setHeader("Content-Type", "application/x-www-form-urlencoded");
+			HttpResponse response = httpClient.execute(request, httpContext);
+			int statusCode = response.getStatusLine().getStatusCode();
+			if (statusCode != 200) {
+				log.error(String.format("Failure to add user \"%1$s\" as Owner to site %2$s ", adminUserId, siteId ));
+			}
+		} catch (IOException e) {
+		    log.error(String.format("Failure to add user \"%1$s\" as Owner to site %2$s ", adminUserId, siteId) + e);
+		}
+	}
+	
 	private void handleBulkMessageGoogleMigration(String sessionId,
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,
@@ -2016,9 +2063,11 @@ public class MigrationController {
 					+ siteId + " error message="
 					+ status.get("errorMessage"));
 		} else if (status.containsKey("migrationId")) {
+			String migrationId =  status.get("migrationId");
+			
 			log.info(this + " batch upload call for site id="
 					+ siteId + " migration started id="
-					+ status.get("migrationId"));
+					+ migrationId);
 		}
 
 	}
