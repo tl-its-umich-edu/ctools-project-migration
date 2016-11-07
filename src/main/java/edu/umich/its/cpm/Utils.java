@@ -441,6 +441,11 @@ class Utils {
 			Environment env) {
 		// get CoSign user first
 		String remoteUser = getRemoteUser(request,env);
+		String admin_group_name = env.getProperty(Utils.PROPERTY_ADMIN_GROUP);
+		if (admin_group_name != null && remoteUser.equals(admin_group_name)) {
+			// if this is the Box admin user login
+			return true;
+		}
 
 		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
 		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
