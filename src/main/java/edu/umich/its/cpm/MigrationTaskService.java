@@ -946,7 +946,7 @@ class MigrationTaskService {
 
 			try {
 				// get file content from /access url
-				HttpGet getRequest = new HttpGet(fileAccessUrl + "?_sessionId=" + sessionId);
+				HttpGet getRequest = new HttpGet(fileAccessUrl);
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
