@@ -1735,8 +1735,8 @@ public class MigrationController {
 		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
 
 		// use the CTools server admin credentials
-		String ctoolsAdminUserName = env.getProperty("username");
-		String ctoolsAdminUserPassword = env.getProperty("password");
+		String ctoolsAdminUserName = env.getProperty(Utils.ENV_PROPERTY_USERNAME);
+		String ctoolsAdminUserPassword = env.getProperty(Utils.ENV_PROPERTY_PASSWORD);
 
 		// the bulk migration name based on user input
 		String bulkMigrationName = "Default Bulk Upload Name";
@@ -2131,14 +2131,18 @@ public class MigrationController {
 				//String userEmail = Utils.getUserEmailFromUserId(userEid);
 				String userEmail = getUserEmailFromUserId(userEid);
 
-				BoxUtils.addCollaboration(
-						env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
-						userEmail, userRole, boxFolderId,
-						boxAdminClientId, boxAdminClientSecret, uRepository);
-				// add user email to the owner list
-				if (addUserEmail(siteId, userRole)) 
+				// exclude the temporary added site admin account
+				if (!userEmail.startsWith(env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID)))
 				{
-					allSiteOwners.append(",").append(userEmail);
+					BoxUtils.addCollaboration(
+							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
+							userEmail, userRole, boxFolderId,
+							boxAdminClientId, boxAdminClientSecret, uRepository);
+					// add user email to the owner list
+					if (addUserEmail(siteId, userRole)) 
+					{
+						allSiteOwners.append(",").append(userEmail);
+					}
 				}
 			}
 		}

@@ -1,13 +1,16 @@
 package junit.edu.umich.its.cpmtest;
 
 import edu.umich.its.cpm.AttachmentHandler;
+import edu.umich.its.cpm.Utils;
 import junit.framework.TestCase;
+
 import org.junit.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.core.env.Environment;
 import org.springframework.mock.env.MockEnvironment;
 
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -46,9 +49,9 @@ public class AttachmentHandlerTest extends TestCase {
         MockEnvironment mockEnv = new MockEnvironment();
         Properties props = getProps();
         mockEnv.setProperty("ctools.server.url", (String)props.get("ctools.server.url"));
-        mockEnv.setProperty("username", (String)props.get("username"));
-        mockEnv.setProperty("password", (String)props.get("password"));
-        mockEnv.setProperty("attachment.size.limit", (String)props.get("attachment.size.limit"));
+        mockEnv.setProperty(Utils.ENV_PROPERTY_USERNAME, (String)props.get(Utils.ENV_PROPERTY_USERNAME));
+        mockEnv.setProperty(Utils.ENV_PROPERTY_PASSWORD, (String)props.get(Utils.ENV_PROPERTY_PASSWORD));
+        mockEnv.setProperty(Utils.ENV_PROPERTY_ATTACHMENT_LIMIT, (String)props.get(Utils.ENV_PROPERTY_ATTACHMENT_LIMIT));
         return mockEnv;
     }
 

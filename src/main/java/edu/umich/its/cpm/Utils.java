@@ -119,8 +119,13 @@ class Utils {
 	public static final String LINE_BREAK = "\n";
 
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
-       public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
-    public static final String ENV_ATTACHMENT_LIMIT = "attachment.size.limit" ;
+    
+	// config variables
+	public static final String ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
+    public static final String ENV_PROPERTY_ATTACHMENT_LIMIT = "attachment.size.limit" ;
+	public static final String ENV_PROPERTY_USERNAME = "username";
+	public static final String ENV_PROPERTY_PASSWORD = "password";
+	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
 
 	// status report attributes
 	public static final String REPORT_ATTR_ITEM_STATUS = "item_Status";
@@ -151,9 +156,6 @@ class Utils {
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
-	
-	// constants for environment properties
-	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
 	
 	// Strings for CTools MyWorkspace sites title
 	public static final String CTOOLS_MYWORKSPACE_TITLE="My Workspace";
@@ -215,7 +217,7 @@ class Utils {
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty("username")
+				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
 				+ "&_password=" + env.getProperty("password");
 		log.debug("ctools user url: {}",requestUrl);
 		try {
@@ -243,7 +245,7 @@ class Utils {
 				// get the session id
 				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
 
-				if (!env.getProperty("username").equals(remoteUser))
+				if (!env.getProperty(Utils.ENV_PROPERTY_USERNAME).equals(remoteUser))
 				{
 					// 2. become the user based on REMOTE_USER setting after CoSign
 					// integration, only if REMOTE_USER is different than the admin user
@@ -307,7 +309,7 @@ class Utils {
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty("username")
+				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
 				+ "&_password=" + env.getProperty("password");
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
@@ -333,7 +335,7 @@ class Utils {
 				// get the session id
 				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
 				log.info("successfully logged in as user "
-						+ env.getProperty("username") + " with sessionId = "
+						+ env.getProperty(Utils.ENV_PROPERTY_USERNAME) + " with sessionId = "
 						+ sessionId);
 			}
 		} catch (java.io.IOException e) {
