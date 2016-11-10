@@ -663,10 +663,8 @@ class Utils {
 								+ fileName + " of MIME type = " + type, e);
 			}
 			if (mimeExtension != null 
-				&& (FilenameUtils.getExtension(fileName).isEmpty()
-				|| !fileName.endsWith(mimeExtension))) {	
+				&& FilenameUtils.getExtension(fileName).isEmpty()) {
 				// if file name extension is missing
-				// or different from the default one
 				// add the extension to file name
 				fileName = fileName.concat(mimeExtension);
 			}
