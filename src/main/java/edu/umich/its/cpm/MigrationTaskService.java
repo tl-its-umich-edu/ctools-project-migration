@@ -431,11 +431,12 @@ class MigrationTaskService {
 				content = r.getEntity().getContent();
 			} catch (Exception e) {
 				log.info(e.getMessage());
+				zipFileStatus.append("Cannot get content for " + title + " due to " + e.getMessage());
 			}
 
 			// exit if content stream is null
 			if (content == null)
-				return null;
+				return zipFileStatus.toString();
 
 			try {
 				int length = 0;
@@ -937,9 +938,7 @@ class MigrationTaskService {
 
 			// mark the file as being processed
 			fRepository.setMigrationBoxFileStartTime(id, new Timestamp(System.currentTimeMillis()));
-
-			// record zip status
-			StringBuffer zipFileStatus = new StringBuffer();
+			
 			// create httpclient
 			HttpClient httpClient = HttpClientBuilder.create().build();
 			InputStream content = null;
@@ -972,8 +971,13 @@ class MigrationTaskService {
 					}
 				}
 			} catch (java.io.IOException e) {
-				log.info(this + " uploadFile: cannot get web link contenet "
+				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
+				
+				// update job end time and status
+				// return AsyncResult
+				setUploadJobEndtimeStatus(id, status);
+				return new AsyncResult<String>(status.toString());
 			}
 
 			// update file name
@@ -981,7 +985,14 @@ class MigrationTaskService {
 
 			// exit if content stream is null
 			if (content == null)
-				return null;
+			{
+				status.append(" uploadFile: cannot get content for " + fileName);
+				
+				// update job end time and status
+				// return AsyncResult
+				setUploadJobEndtimeStatus(id, status);
+				return new AsyncResult<String>(status.toString());
+			}
 
 			BufferedInputStream bContent = null;
 			try {
@@ -1065,12 +1076,21 @@ class MigrationTaskService {
 			if (status.length() == 0) {
 				status.append("Box upload successful for file " + fileName + ".");
 			}
+			
+			// update job end time and status
+			// return AsyncResult
+			setUploadJobEndtimeStatus(id, status);
+			return new AsyncResult<String>(status.toString());
+		}
 
-			// update the status and end time for file item
+		/**
+		 * update the status and end time for file item
+		 * @param id
+		 * @param status
+		 */
+		private void setUploadJobEndtimeStatus(String id, StringBuffer status) {
 			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
 			fRepository.setMigrationBoxFileStatus(id, status.toString());
-
-			return new AsyncResult<String>(status.toString());
 		}
 
 		/**
