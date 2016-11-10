@@ -285,13 +285,10 @@
               <ul class="list-group container"  style="width:550px;margin:0">
                 <li class="list-group-item" ng-repeat="item in reportDetails.items">
                   <div class="row">
-                    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle">
+                    <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12" style="vertical-align: middle">
                       <span style="vertical-align: middle;">{{item.item_id}}</span><br>
-                      <small>{{item.message}}</small>
-                    </div>
-                    <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
-                      <span ng-show="item.status_code==='fail'" class="glyphicon glyphicon-info-sign" aria-hidden="true" style="vertical-align: middle;color:#c00"></span>
-                      {{item.item_Status}}
+                      <small ng-show="item.message">{{item.message}}<br></small>
+                      <small ng-show="item.item_Status">{{item.item_Status}}</small>
                     </div>
                   </div>
                 </li>
