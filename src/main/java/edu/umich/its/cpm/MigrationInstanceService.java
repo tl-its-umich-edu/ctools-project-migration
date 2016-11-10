@@ -103,7 +103,7 @@ class MigrationInstanceService {
 			if (bFiles != null && bFiles.size() > 0)
 			{
 				// get right HttpContext object
-				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty("username"));
+				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty(Utils.ENV_PROPERTY_USERNAME));
 				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
 				String sessionId = sessionAttributes != null ? (String) sessionAttributes.get("sessionId"):null;
 				
@@ -337,7 +337,7 @@ class MigrationInstanceService {
 	 * @param migrationId
 	 */
 	protected void removeAddedAdminOwner(String siteId) {
-		String adminUser = env.getProperty("username");
+		String adminUser = env.getProperty(Utils.ENV_PROPERTY_USERNAME);
 		
 		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
 		

@@ -151,7 +151,7 @@ public class EmailFormatter {
     public boolean checkMsgSizeMoreThanExpectedLimit(String rfc822FormatMessage) {
         long rfc822MgsSize = rfc822FormatMessage.length();
         log.debug("Email Message Size: " + rfc822MgsSize + " bytes");
-        String attachLimit = env.getProperty(Utils.ENV_ATTACHMENT_LIMIT);
+        String attachLimit = env.getProperty(Utils.ENV_PROPERTY_ATTACHMENT_LIMIT);
         log.debug("Attachment Size Limit : " + attachLimit + " bytes");
         long attachmentLimit = Long.parseLong(attachLimit);
         if (rfc822MgsSize > attachmentLimit) {

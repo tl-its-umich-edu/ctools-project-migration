@@ -162,7 +162,7 @@ class MigrationTaskService {
 
 					ZipOutputStream out = new ZipOutputStream(
 							response.getOutputStream());
-					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					String compressionLevel = env.getProperty(Utils.ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL);
 					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
 						// set compression level to high by default
 						out.setLevel(9);
@@ -1198,7 +1198,7 @@ class MigrationTaskService {
 							"attachment;filename=\"" + zipFileName + "\"");
 
 					ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
-					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					String compressionLevel = env.getProperty(Utils.ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL);
 					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
 						// set compression level to high by default
 						out.setLevel(9);
@@ -1875,8 +1875,8 @@ class MigrationTaskService {
 		HashMap<String,String> createBasicAuthInfo(String username,String password) {
 
 			HashMap<String,String >authInfo = new HashMap<String,String>();
-			authInfo.put("userName",username);
-			authInfo.put("password",password);
+			authInfo.put(Utils.ENV_PROPERTY_USERNAME,username);
+			authInfo.put(Utils.ENV_PROPERTY_PASSWORD,password);
 			return authInfo;
 		}
 
