@@ -302,7 +302,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       });
     });
     $scope.startMigrationEmail = function(project, destinationType) {
-      $rootScope.mask=true;
+      //add a mask with a modal to not allow more than one download at a time
+      $('#maskModal').modal('show');
       project.processing = true;
 
       $timeout(function() {
@@ -362,8 +363,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           // use promise factory
           // to execute the post
           Migration.getMigrationZip(migrationUrl).then(function(result) {
-            // add a mask to not allow more that on zip request at the time
-            $rootScope.mask=true;
+            // add a mask with a modal to not allow more that on zip request at the time
+            $('#maskModal').modal('show');
             $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos]);
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
@@ -415,8 +416,8 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               // different data
               // than the last one
               if (!angular.equals($scope.migratedProjects,$scope.migratedProjectsShadow)) {
-                // remove the mask
-                $rootScope.mask=false;
+                // remove the modal mask
+                $('#maskModal').modal('hide');
                 $log.info('migrated has changed - call a function to update projects panel');
                 // update
                 // project panel
