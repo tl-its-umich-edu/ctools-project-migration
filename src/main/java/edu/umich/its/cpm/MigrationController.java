@@ -2132,17 +2132,18 @@ public class MigrationController {
 				String userEmail = getUserEmailFromUserId(userEid);
 
 				// exclude the temporary added site admin account
-				if (!userEmail.startsWith(env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID)))
+				if (userEmail.startsWith(env.getProperty(Utils.ENV_PROPERTY_USERNAME)))
 				{
-					BoxUtils.addCollaboration(
-							env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
-							userEmail, userRole, boxFolderId,
-							boxAdminClientId, boxAdminClientSecret, uRepository);
-					// add user email to the owner list
-					if (addUserEmail(siteId, userRole)) 
-					{
-						allSiteOwners.append(",").append(userEmail);
-					}
+					continue;
+				}
+				BoxUtils.addCollaboration(
+						env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
+						userEmail, userRole, boxFolderId,
+						boxAdminClientId, boxAdminClientSecret, uRepository);
+				// add user email to the owner list
+				if (addUserEmail(siteId, userRole))
+				{
+					allSiteOwners.append(",").append(userEmail);
 				}
 			}
 		}
