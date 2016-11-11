@@ -777,6 +777,18 @@ class Utils {
 		String parentFolder = fileName.substring(0,
 				fileName.lastIndexOf(PATH_SEPARATOR) + 1);
 		while (parentFolder != null) {
+			// checks for folder name updates in the path
+			// replace all old folder title with new title
+			if (folderNameMap.containsKey(parentFolder)) {
+			    // if the folder name have / in it then we are not zipping the file with original name instead the folder
+			    // name will contain _ in it
+			    if (!(StringUtils.countOccurrencesOf(folderNameMap.get(parentFolder), "/") > 1)) {
+			        fileName = fileName.replace(parentFolder,
+			                folderNameMap.get(parentFolder));
+			    }
+			
+			    break;
+			}
 
 			// get the next parent folder
 			// remove the trailing "/"
