@@ -1605,7 +1605,11 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + " " + sender+ " "+date+ " "+subject) + "/";
+			String name = messageFolderName + " " + sender + " " + date + " " + subject;
+			if(name.length()>100){
+				name=name.substring(0,100);
+			}
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, name) + "/";
 
 			return messageFolderName;
 		}
