@@ -1236,6 +1236,13 @@ class MigrationTaskService {
 					.type(MediaType.TEXT_PLAIN).build();
 					log.error(errorMessage);
 					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
+				} catch (IOException e) {
+					String errorMessage = Utils.STATUS_FAILURE + " problem adding zip folder for siteId: " + site_id
+							+ " due to " + e.getMessage();
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage)
+							.type(MediaType.TEXT_PLAIN).build();
+					log.error(errorMessage);
+					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 
 				} catch (Exception e) {
 					String errorMessage = Utils.STATUS_FAILURE + " Migration status for " + site_id + " "
@@ -1281,7 +1288,7 @@ class MigrationTaskService {
 		 */
 		private JSONObject getMailArchiveZipContent(Environment env, String site_id,
 				JSONObject downloadStatus, String sessionId,
-				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId)  {
+				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId) throws IOException {
 
 
 			// get all mail channels inside the site
@@ -1308,7 +1315,6 @@ class MigrationTaskService {
 				folderForChannels = true;
 			}
 			JSONArray allChannelMsgItems = new JSONArray();
-			StringBuilder msgBundle = new StringBuilder();
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
 
@@ -1366,43 +1372,40 @@ class MigrationTaskService {
 					}
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
+					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
+					ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
+					out.putNextEntry(fileEntry);
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject message = messages.getJSONObject(iMessage);
-						String date= getProperty(message,Utils.JSON_ATTR_MAIL_DATE);
-						String subject= getProperty(message,Utils.JSON_ATTR_MAIL_SUBJECT);
-						String messageId=date+" "+subject;
+						String date = getProperty(message, Utils.JSON_ATTR_MAIL_DATE);
+						String subject = getProperty(message, Utils.JSON_ATTR_MAIL_SUBJECT);
+						String messageId = date + " " + subject;
 						String emailMessage = message.toString();
 						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 						attachmentHandler.setEnv(env);
 						EmailFormatter emailFormatter = null;
 						try {
-							 emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
-						}catch (IOException e){
+							emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
+							MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
+							String mboxMessage = mboxFormatTextPlusStatus.getMessage();
+							JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
+							if (mboxMessage != null) {
+								allChannelMsgItems.put(singleMboxMsgStatus);
+								out.write(mboxMessage.getBytes());
+							} else {
+								allChannelMsgItems.put(singleMboxMsgStatus);
+								log.error(String.format("Mbox Formatting for message with Id (%s) not successful with migrationid " +
+										"(%s) for site (%s)", messageId, migrationId, site_id));
+							}
+						} catch (IOException e) {
 							String msg = "Mbox zip file could not be downloaded due to bad json response";
-							allChannelMsgItems.put(errHandlingForZiparchive(messageId,msg));
-							log.error(msg +"for message: "+messageId+ " "+ e.getMessage());
+							allChannelMsgItems.put(errHandlingForZiparchive(messageId, msg));
+							log.error(msg + "for message: " + messageId + " " + e.getMessage());
 							continue;
-						}
-						MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
-						String mboxMessage = mboxFormatTextPlusStatus.getMessage();
-						JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
-						if(mboxMessage!=null) {
-							msgBundle.append(mboxMessage);
-							msgBundle.append("\r\n");
-							allChannelMsgItems.put(singleMboxMsgStatus);
-						}else {
-							allChannelMsgItems.put(singleMboxMsgStatus);
-							log.error(String.format("Mbox Formatting for message with Id (%s) not successful with migrationid " +
-									"(%s) for site (%s)",messageId,migrationId,site_id));
 						}
 					}
 
 				}
-			}
-			if (Utils.isItMailArchiveMbox(destination_type)) {
-				String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
-				allChannelMsgItems = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
-						allChannelMsgItems);
 			}
 			downloadStatus = finalReportObjBuilderForMailZipMigration(downloadStatus, allChannelMsgItems);
 			return downloadStatus;
