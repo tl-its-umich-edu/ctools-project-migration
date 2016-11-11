@@ -347,8 +347,21 @@ class MigrationTaskService {
 							// create the zipentry for the sub-folder first
 							String folderName = contentUrl.replace(rootFolderPath,
 									"");
-							folderName = Utils.sanitizeFolderNames(folderName);
+							
+							// update folder name
+							folderNameMap = Utils.updateFolderNameMap(
+									folderNameMap, title, folderName);
+							if (folderNameMap.containsKey(folderName)) {
+								// if the folder name have / in it then we are not zipping the file with original name instead the folder
+								// name will contain _ in it. As having the / will have cause the zip library creating inner folders
+								if (!(StringUtils.countOccurrencesOf(folderNameMap.get(folderName), "/") > 1)) {
+									folderName = folderNameMap.get(folderName);
+								}
+							}
 
+							// deal with special characters
+							folderName = Utils.sanitizeFolderNames(folderName);
+							
 							log.info("download folder " + folderName);
 
 							ZipEntry folderEntry = new ZipEntry(folderName);
@@ -366,7 +379,6 @@ class MigrationTaskService {
 						// get the zip file name with folder path info
 						String zipFileName = container.substring(container
 								.indexOf(rootFolderPath) + rootFolderPath.length());
-						zipFileName = Utils.sanitizeFolderNames(zipFileName);
 						zipFileName = zipFileName.concat(Utils.sanitizeName(type,
 								title));
 						log.info("zip download processing file " + zipFileName);
@@ -449,6 +461,7 @@ class MigrationTaskService {
 					// checks for folder renames
 					fileName = Utils.updateFolderPathForFileName(fileName,
 							folderNameUpdates);
+					fileName = Utils.sanitizeFolderNames(fileName);
 
 					log.info("download file " + fileName + " type=" + type);
 
