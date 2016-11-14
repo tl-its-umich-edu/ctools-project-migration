@@ -3,6 +3,7 @@ package edu.umich.its.cpm;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -433,17 +434,25 @@ class MigrationTaskService {
 
 			// create httpclient
 			HttpClient httpClient = HttpClientBuilder.create().build();
+			
 			InputStream content = null;
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				RequestConfig requestConfig = RequestConfig.custom()
+						  .setSocketTimeout(10000)
+						  .setConnectTimeout(10000)
+						  .setConnectionRequestTimeout(10000)
+						  .build();
+				getRequest.setConfig(requestConfig);
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
 				content = r.getEntity().getContent();
 			} catch (Exception e) {
-				log.info(e.getMessage());
-				zipFileStatus.append("Cannot get content for " + title + " due to " + e.getMessage());
+				String errorMessage = "Cannot get content for " + title + " due to " + e.getMessage();
+				log.info(errorMessage);
+				zipFileStatus.append(errorMessage);
 			}
 
 			// exit if content stream is null
@@ -959,6 +968,12 @@ class MigrationTaskService {
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				RequestConfig requestConfig = RequestConfig.custom()
+						  .setSocketTimeout(10000)
+						  .setConnectTimeout(10000)
+						  .setConnectionRequestTimeout(10000)
+						  .build();
+				getRequest.setConfig(requestConfig);
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
@@ -975,7 +990,7 @@ class MigrationTaskService {
 						// special handling of Web Links resources
 						content = new ByteArrayInputStream(Utils.getWebLinkContent(
 								fileName, webLinkUrl).getBytes());
-					} catch (java.net.MalformedURLException e) {
+					} catch (Exception e) {
 						// return status with error message
 						status.append("Link "
 								+ fileName
