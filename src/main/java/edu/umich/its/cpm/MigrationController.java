@@ -812,27 +812,14 @@ public class MigrationController {
 
 		// 2. check to see whether the site_id and tool_id is valid and
 		// associated with current user
-		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
-		String projectsString = projectsMap.get("projectsString");
-		if (projectsString == null){
-			rv.put("errorMessage", "null value of projectsString for site " + siteId + " for user "
-					+ remoteUser);
+		HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
+		String pagesString = pagesMap.containsKey("pagesString") ? pagesMap.get("pagesString") : null;
+		if (pagesString != null && pagesString.indexOf(toolId) == -1) {
+			rv.put("errorMessage", "Invalid tool id = " + toolId
+					+ " for site id= " + siteId + " for user " + remoteUser);
 			return rv;
 		}
-		else if (projectsString.indexOf(siteId) == -1) {
-			rv.put("errorMessage", "Invalid site id = " + siteId + " for user "
-					+ remoteUser);
-			return rv;
-		} else {
-			HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
-			String pagesString = pagesMap.get("pagesString");
-			if (pagesString.indexOf(toolId) == -1) {
-				rv.put("errorMessage", "Invalid tool id = " + toolId
-						+ " for site id= " + siteId + " for user " + remoteUser);
-				return rv;
-			}
-		}
-
+		
 		// 3. check if there is an ongoing migration for the same site and tool
 		boolean valid_migration_request = true;
 		List<Migration> migratingSiteTools = repository
