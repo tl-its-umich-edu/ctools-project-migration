@@ -814,7 +814,8 @@ public class MigrationController {
 		// associated with current user
 		HashMap<String, String> pagesMap = get_user_project_site_tools(siteId, sessionId);
 		String pagesString = pagesMap.containsKey("pagesString") ? pagesMap.get("pagesString") : null;
-		if (pagesString != null && pagesString.indexOf(toolId) == -1) {
+		if (pagesString == null || 
+			(pagesString != null && pagesString.indexOf(toolId) == -1)) {
 			rv.put("errorMessage", "Invalid tool id = " + toolId
 					+ " for site id= " + siteId + " for user " + remoteUser);
 			return rv;
