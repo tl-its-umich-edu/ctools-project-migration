@@ -352,11 +352,7 @@ class MigrationTaskService {
 							folderNameMap = Utils.updateFolderNameMap(
 									folderNameMap, title, folderName);
 							if (folderNameMap.containsKey(folderName)) {
-								// if the folder name have / in it then we are not zipping the file with original name instead the folder
-								// name will contain _ in it. As having the / will have cause the zip library creating inner folders
-								if (!(StringUtils.countOccurrencesOf(folderNameMap.get(folderName), "/") > 1)) {
 									folderName = folderNameMap.get(folderName);
-								}
 							}
 
 							// deal with special characters

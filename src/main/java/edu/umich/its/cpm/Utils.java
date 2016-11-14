@@ -1,15 +1,5 @@
 package edu.umich.its.cpm;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -22,15 +12,15 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -40,9 +30,14 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-
-import org.apache.tika.config.TikaConfig;
-import org.springframework.util.StringUtils;
+import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Configuration
 public 
@@ -193,8 +188,7 @@ class Utils {
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(Environment env,
-			HttpServletRequest request, String remoteUser) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request, String remoteUser) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
@@ -624,7 +618,10 @@ class Utils {
 	}
     // Windows Explorer don't like below special characters in Folder names so zip extraction fails. Replacing with _
 	public static String sanitizeFolderNames(String zipFileName) {
-		return zipFileName.replaceAll("[?>|<:]", "_");
+		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
+		// backslash in the string.
+		zipFileName=zipFileName.replace('\\','_');
+		return zipFileName.replaceAll("[?>|*<:]", "_");
 	}
 
 	/**
@@ -707,6 +704,9 @@ class Utils {
 		// update folder name if there is any parent folder renaming
 		// checks for folder name updates in the path
 		// replace all old folder title with new title
+		if (title.contains("/")) {
+			title = title.replace('/', '_');
+		}
 		String currentFolderName = folderName;
 		for (String oldFolderName : folderNameUpdates.keySet()) {
 			if (folderName.startsWith(oldFolderName)) {
@@ -780,13 +780,8 @@ class Utils {
 			// checks for folder name updates in the path
 			// replace all old folder title with new title
 			if (folderNameMap.containsKey(parentFolder)) {
-			    // if the folder name have / in it then we are not zipping the file with original name instead the folder
-			    // name will contain _ in it
-			    if (!(StringUtils.countOccurrencesOf(folderNameMap.get(parentFolder), "/") > 1)) {
 			        fileName = fileName.replace(parentFolder,
 			                folderNameMap.get(parentFolder));
-			    }
-			
 			    break;
 			}
 
