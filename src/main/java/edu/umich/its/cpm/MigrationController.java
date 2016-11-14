@@ -412,11 +412,10 @@ public class MigrationController {
 	public void getProjectSitePages(@PathVariable String site_id,
 			HttpServletRequest request, HttpServletResponse response) {
 		String sessionId = getUserSessionId(request);
-		HashMap<String, String> pagesMap = get_user_project_site_tools(site_id, sessionId);
+		HashMap<String, String> pagesMap = get_user_project_site_tools(site_id, sessionId, true);
 		JSON_response(response, pagesMap.get("pagesString"),
 				pagesMap.get("errorMessage"), pagesMap.get("requestUrl"));
 	}
-
 	/**
 	 * REST API call to get CTools site pages and tools
 	 *
@@ -424,6 +423,19 @@ public class MigrationController {
 	 * @return
 	 */
 	private HashMap<String, String> get_user_project_site_tools(String site_id, String sessionId) {
+		// default the value of checkContentItem to be false
+		// when we do not need to check for whether site has any resource items
+		return get_user_project_site_tools(site_id, sessionId, false);
+	}
+
+
+	/**
+	 * REST API call to get CTools site pages and tools
+	 *
+	 * @param site_id
+	 * @return
+	 */
+	private HashMap<String, String> get_user_project_site_tools(String site_id, String sessionId, boolean checkContentItem) {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
 		String pagesString = "";
@@ -451,7 +463,7 @@ public class MigrationController {
 			// generate error when there is no JSON feed for site pages
 			errorMessage += "Cannot find site pages by siteId: " + site_id + ". Maybe user do not have access to that site?";
 		}
-		else
+		else if (checkContentItem)
 		{
 			pagesString = siteHasContentItems(site_id, pagesString, sessionId);
 		}
