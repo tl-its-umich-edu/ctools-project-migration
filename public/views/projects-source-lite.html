@@ -19,15 +19,20 @@
 				ng-if="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''"
 				id="project{{project.site_id}}" tabindex="-1">
 				<div class="row">
-					<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+					<div class="col-md-7 col-lg-7 col-sm-7 col-xs-7">
 						<h4 class="site-header">
 							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
               <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
 							<small class="bigSmall" ng-show="project.last_migrated">last
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
+
 					</div>
+          <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+            <span class="spinner" ng-show="project.loadingTools"></span>
+          </div>
 					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+
 						<a ng-click="getTools(project.site_id)" href=""
 							ng-show="!project.stateHasTools && !project.migrating"> Download Options
                <span class="sr-only">for site {{project.site_name}}</span>

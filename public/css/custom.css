@@ -232,6 +232,40 @@ a {
 #ie {
       display: none
     }
+
+    .toolRow.ng-move,
+    .toolRow.ng-enter,
+    .toolRow.ng-leave {
+      -webkit-transition:all .5s ease;
+       -moz-transition: all .5s ease;
+       -o-transition: all .5s ease;
+       opacity:0.5;
+       position:relative;
+       opacity:0;
+       top:0px;
+       left:20px;
+
+
+      /*-webkit-transition:all linear .75s;
+      transition:all linear .75s;*/
+    }
+
+    .toolRow.ng-leave.ng-leave-active,
+    .toolRow.ng-move,
+    .toolRow.ng-enter {
+      opacity:0;
+    }
+
+    .toolRow.ng-leave,
+    .toolRow.ng-move.ng-move-active,
+    .toolRow.ng-enter.ng-enter-active {
+      top:0;
+      left:0;
+      opacity: 1;
+
+
+    }
+
 /*for ie edge*/
 @supports (-ms-accelerator:true) {
   #ie {
