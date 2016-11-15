@@ -1626,10 +1626,27 @@ public class MigrationController {
 				else
 				{
 					JSONObject siteStatusJson = new JSONObject(siteStatusString);
+<<<<<<< HEAD
 					String siteStatus = (String) siteStatusJson.get(Utils.REPORT_ATTR_STATUS);
 					if (Utils.REPORT_STATUS_ERROR.equals(siteStatus))
 					{
 						errorSiteCount++;
+=======
+					// look the tools attribute and find resource tool
+					JSONArray itemizedJSONArray = (JSONArray) siteStatusJson.get(Utils.REPORT_ATTR_ITEMS);
+					for (int iItem = 0; itemizedJSONArray != null && iItem < itemizedJSONArray.length(); ++iItem) {
+						JSONObject itemJSON = itemizedJSONArray.getJSONObject(iItem);
+						String status = itemJSON.getString(Utils.REPORT_ATTR_ITEM_STATUS);
+						if (status.indexOf("Box upload successful for file") == -1)
+						{
+							// file path did not end with "/"
+							// and if there is error, status message won't have String "Box upload successful for file"
+							// set the site migration status to be failure
+							siteStatus = Utils.STATUS_FAILURE;
+							errorSiteCount++;
+							break;
+						}
+>>>>>>> 97e4b5bdbbc7baca7b12abac885adb2ad8db4778
 					}
 					siteMap.put("id", siteId);
 					siteMap.put("name", m.getSite_name());

@@ -934,7 +934,14 @@ class MigrationTaskService {
 		 * @return
 		 */
 		@Async
+<<<<<<< HEAD
 		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext, String sessionId) {
+=======
+		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext) {
+			
+			// status string
+			StringBuffer status = new StringBuffer();
+>>>>>>> 97e4b5bdbbc7baca7b12abac885adb2ad8db4778
 			
 			// get all bFile params
 			String id = bFile.getId();
@@ -949,6 +956,7 @@ class MigrationTaskService {
 			String fileAuthor = bFile.getAuthor();
 			String fileCopyrightAlert = bFile.getCopyright_alert();
 			final long fileSize = bFile.getFile_size();
+<<<<<<< HEAD
 
 			BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
 
@@ -996,8 +1004,62 @@ class MigrationTaskService {
 								+ fileName
 								+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
 						return new AsyncResult<String>(status.toString());
+=======
+			
+			try
+			{
+				// mark the file as being processed
+				fRepository.setMigrationBoxFileStartTime(id, new Timestamp(System.currentTimeMillis()));
+	
+				BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
+	
+				log.info("begin to upload file " + fileName + " to box folder "
+						+ boxFolderId + " " + fileAccessUrl);
+	
+				// record zip status
+				StringBuffer zipFileStatus = new StringBuffer();
+				// create httpclient
+				HttpClient httpClient = HttpClientBuilder.create().build();
+				InputStream content = null;
+	
+				try {
+					// get file content from /access url
+					HttpGet getRequest = new HttpGet(fileAccessUrl);
+					getRequest.setHeader("Content-Type",
+							"application/x-www-form-urlencoded");
+					HttpResponse r = httpClient.execute(getRequest, httpContext);
+	
+					content = r.getEntity().getContent();
+	
+					if (Utils.isOfURLMIMEType(type)) {
+						if (webLinkUrl == null || webLinkUrl.isEmpty())
+						{
+							status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
+	
+							return returnAsyncStatus(id, status);
+						}
+						try {
+							// special handling of Web Links resources
+							content = new ByteArrayInputStream(Utils.getWebLinkContent(
+									fileName, webLinkUrl).getBytes());
+						} catch (java.net.MalformedURLException e) {
+							// return status with error message
+							status.append("Link "
+									+ fileName
+									+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+	
+							return returnAsyncStatus(id, status);
+						}
+>>>>>>> 97e4b5bdbbc7baca7b12abac885adb2ad8db4778
 					}
+				} catch (java.io.IOException e) {
+					String errorString = "Cannot get web link content for " + fileName + " " + e.getMessage();
+					log.info(errorString);
+					status.append(errorString);
+	
+					return returnAsyncStatus(id, status);
 				}
+<<<<<<< HEAD
 			} catch (java.io.IOException e) {
 				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
@@ -1036,74 +1098,111 @@ class MigrationTaskService {
 							long totalBytes) {
 						log.debug(numBytes + " out of total bytes "
 								+ totalBytes);
-					}
-				});
-
-				// get the BoxFile object, get BoxFile.Info object, set description,
-				// and commit change
-				BoxFile newFile = newFileInfo.getResource();
-				newFileInfo.setDescription(fileDescription);
-				newFile.updateInfo(newFileInfo);
-
-				// assign meta data
-				Metadata metaData = new Metadata();
-				metaData.add("/copyrightAlert",
-						fileCopyrightAlert == null ? "false" : "true");
-				metaData.add("/author", fileAuthor);
-				newFile.createMetadata(metaData);
-
-				log.info("upload success for file " + fileName);
-			} catch (BoxAPIException e) {
-				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
-					// 409 means name conflict - item already existed
-					String conflictString = "There is already a file with name "
-							+ fileName + " - file was not added to Box";
-					log.info(conflictString);
-					status.append(conflictString + Utils.LINE_BREAK);
+=======
+	
+				// update file name
+				fileName = Utils.modifyFileNameOnType(type, fileName);
+	
+				// exit if content stream is null
+				if (content == null)
+				{
+					status.append("No content stream found for file " + fileName);
+					return returnAsyncStatus(id, status);
 				}
-				log.error(this + "uploadFile fileName=" + fileName
-						+ e.getResponse());
-			} catch (IllegalArgumentException iException) {
-				String ilExceptionString = "problem creating BufferedInputStream for file "
-						+ fileName
-						+ " with content and length "
-						+ fileSize
-						+ iException;
-				log.warn(ilExceptionString);
-				status.append(ilExceptionString + Utils.LINE_BREAK);
-			} catch (Exception e) {
-				String ilExceptionString = "problem creating BufferedInputStream for file "
-						+ fileName + " with content and length " + fileSize + e;
-				log.warn(ilExceptionString);
-				status.append(ilExceptionString + Utils.LINE_BREAK);
-			} finally {
-				if (bContent != null) {
+	
+				BufferedInputStream bContent = null;
+				try {
+	
+					bContent = new BufferedInputStream(content);
+					BoxFolder folder = new BoxFolder(api, boxFolderId);
+					log.info("upload file size " + fileSize + " to folder " + folder.getID());
+	
+					BoxFile.Info newFileInfo = folder.uploadFile(bContent,
+							Utils.sanitizeName(type, fileName),
+							fileSize, new ProgressListener() {
+						public void onProgressChanged(long numBytes,
+								long totalBytes) {
+							log.info(numBytes + " out of total bytes "
+									+ totalBytes);
+						}
+					});
+	
+					// get the BoxFile object, get BoxFile.Info object, set description,
+					// and commit change
+					BoxFile newFile = newFileInfo.getResource();
+					newFileInfo.setDescription(fileDescription);
+					newFile.updateInfo(newFileInfo);
+	
+					// assign meta data
+					Metadata metaData = new Metadata();
+					metaData.add("/copyrightAlert",
+							fileCopyrightAlert == null ? "false" : "true");
+					metaData.add("/author", fileAuthor);
+					newFile.createMetadata(metaData);
+	
+					log.info("upload success for file " + fileName);
+				} catch (BoxAPIException e) {
+					if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+						// 409 means name conflict - item already existed
+						String conflictString = "There is already a file with name "
+								+ fileName + " - file was not added to Box";
+						log.info(conflictString);
+						status.append(conflictString + Utils.LINE_BREAK);
+					}
+					log.error(this + "uploadFile fileName=" + fileName
+							+ e.getMessage());
+					status.append(" BoxAPIException with " + fileName + " " + e.getMessage());
+				} catch (IllegalArgumentException iException) {
+					String ilExceptionString = "problem creating BufferedInputStream for file "
+							+ fileName
+							+ " with content and length "
+							+ fileSize
+							+ iException;
+					log.warn(ilExceptionString);
+					status.append(ilExceptionString + Utils.LINE_BREAK);
+				} catch (Exception e) {
+					String ilExceptionString = "problem creating BufferedInputStream for file "
+							+ fileName + " with content and length " + fileSize + e;
+					log.warn(ilExceptionString);
+					status.append(ilExceptionString + Utils.LINE_BREAK);
+				} finally {
+					if (bContent != null) {
+						try {
+							bContent.close(); // The BufferedInputStream needs to be
+							// closed
+						} catch (IOException ioException) {
+							String ioExceptionString = "problem closing FileChannel for file "
+									+ fileName + " " + ioException;
+							log.error(ioExceptionString);
+							status.append(ioExceptionString + Utils.LINE_BREAK);
+						}
+>>>>>>> 97e4b5bdbbc7baca7b12abac885adb2ad8db4778
+					}
+				}
+				if (content != null) {
 					try {
-						bContent.close(); // The BufferedInputStream needs to be
-						// closed
+						content.close(); // The input stream needs to be closed
 					} catch (IOException ioException) {
-						String ioExceptionString = "problem closing FileChannel for file "
+						String ioExceptionString = "zipFiles: problem closing Inputstream content for file "
 								+ fileName + " " + ioException;
 						log.error(ioExceptionString);
 						status.append(ioExceptionString + Utils.LINE_BREAK);
 					}
 				}
 			}
-			if (content != null) {
-				try {
-					content.close(); // The input stream needs to be closed
-				} catch (IOException ioException) {
-					String ioExceptionString = "zipFiles: problem closing Inputstream content for file "
-							+ fileName + " " + ioException;
-					log.error(ioExceptionString);
-					status.append(ioExceptionString + Utils.LINE_BREAK);
+			catch (Exception e)
+			{
+				status.append("Problem for " + fileName + " " + e.getMessage());
+			}
+			finally
+			{
+				// box upload success
+				if (status.length() == 0) {
+					status.append("Box upload successful for file " + fileName + ".");
 				}
+				return returnAsyncStatus(id, status);
 			}
-
-			// box upload success
-			if (status.length() == 0) {
-				status.append("Box upload successful for file " + fileName + ".");
-			}
+<<<<<<< HEAD
 			
 			// update job end time and status
 			// return AsyncResult
@@ -1119,6 +1218,22 @@ class MigrationTaskService {
 		private void setUploadJobEndtimeStatus(String id, StringBuffer status) {
 			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
 			fRepository.setMigrationBoxFileStatus(id, status.toString());
+=======
+		}
+
+		/**
+		 * return status and mark the file item migration ended
+		 * @param id
+		 * @param status
+		 * @return
+		 */
+		private Future<String> returnAsyncStatus(String id, StringBuffer status) {
+			// update the status and end time for file item
+			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
+			fRepository.setMigrationBoxFileStatus(id, status != null ? status.toString() : "");
+
+			return new AsyncResult<String>(status.toString());
+>>>>>>> 97e4b5bdbbc7baca7b12abac885adb2ad8db4778
 		}
 
 		/**
