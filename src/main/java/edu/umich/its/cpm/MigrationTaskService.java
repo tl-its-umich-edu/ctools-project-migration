@@ -439,12 +439,7 @@ class MigrationTaskService {
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
-				RequestConfig requestConfig = RequestConfig.custom()
-						  .setSocketTimeout(10000)
-						  .setConnectTimeout(10000)
-						  .setConnectionRequestTimeout(10000)
-						  .build();
-				getRequest.setConfig(requestConfig);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
@@ -567,6 +562,19 @@ class MigrationTaskService {
 			}
 
 			return zipFileStatus.toString();
+		}
+
+		/**
+		 * return a RequestConfig Object with Timeout params set
+		 * @return
+		 */
+		private RequestConfig getRequestConfigWithTimeouts() {
+			RequestConfig requestConfig = RequestConfig.custom()
+					  .setSocketTimeout(10000)
+					  .setConnectTimeout(10000)
+					  .setConnectionRequestTimeout(10000)
+					  .build();
+			return requestConfig;
 		}
 
 		/*************** Box Migration ********************/
@@ -968,12 +976,7 @@ class MigrationTaskService {
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
-				RequestConfig requestConfig = RequestConfig.custom()
-						  .setSocketTimeout(10000)
-						  .setConnectTimeout(10000)
-						  .setConnectionRequestTimeout(10000)
-						  .build();
-				getRequest.setConfig(requestConfig);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
