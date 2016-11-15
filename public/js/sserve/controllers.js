@@ -96,13 +96,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.getTools = function(projectId) {
       //  cannot refactor this one as it takes parameters
       var projectUrl = $rootScope.urls.projectUrl + projectId;
+      var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
+      $scope.sourceProjects[targetProjPos].loadingTools = true;
       Projects.getProject(projectUrl).then(function(result) {
         if(!$scope.migratingActive && result.data) {
           if(!$scope.migratingActive){
             result.data = $scope.toolStatus(result.data);
           }
         }
-        var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
+
         // add the tools after theproject object
         $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1,0].concat(result.data));
         // get a handle on the first
@@ -115,6 +117,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         });
         // state management
         $scope.sourceProjects[targetProjPos].stateHasTools = true;
+        $scope.sourceProjects[targetProjPos].loadingTools = false;
         $log.info(moment().format('h:mm:ss') + ' - tools requested for project ' + $scope.sourceProjects[targetProjPos].entityTitle + ' ( site ID: s' + projectId + ')');
         $log.info(' - - - - GET /projects/' + projectId);
       });
