@@ -984,7 +984,7 @@ class MigrationTaskService {
 					if (webLinkUrl == null || webLinkUrl.isEmpty())
 					{
 						status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
-						return new AsyncResult<String>(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 					try {
 						// special handling of Web Links resources
@@ -995,17 +995,16 @@ class MigrationTaskService {
 						status.append("Link "
 								+ fileName
 								+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-						return new AsyncResult<String>(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 				}
-			} catch (java.io.IOException e) {
+			} catch (Exception e) {
 				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
 				
 				// update job end time and status
 				// return AsyncResult
-				setUploadJobEndtimeStatus(id, status);
-				return new AsyncResult<String>(status.toString());
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
 
 			// update file name
@@ -1018,8 +1017,7 @@ class MigrationTaskService {
 				
 				// update job end time and status
 				// return AsyncResult
-				setUploadJobEndtimeStatus(id, status);
-				return new AsyncResult<String>(status.toString());
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
 
 			BufferedInputStream bContent = null;
@@ -1107,8 +1105,7 @@ class MigrationTaskService {
 			
 			// update job end time and status
 			// return AsyncResult
-			setUploadJobEndtimeStatus(id, status);
-			return new AsyncResult<String>(status.toString());
+			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 		}
 
 		/**
@@ -1116,9 +1113,10 @@ class MigrationTaskService {
 		 * @param id
 		 * @param status
 		 */
-		private void setUploadJobEndtimeStatus(String id, StringBuffer status) {
+		private String setUploadJobEndtimeStatus(String id, StringBuffer status) {
 			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
 			fRepository.setMigrationBoxFileStatus(id, status.toString());
+			return status.toString();
 		}
 
 		/**
