@@ -126,6 +126,7 @@ class Utils {
 	public static final String ENV_PROPERTY_USERNAME = "username";
 	public static final String ENV_PROPERTY_PASSWORD = "password";
 	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
+	public static final String ENV_PROPERTY_TIMEOUT_MINISECOND = "timeout_minisecond";
 
 	// status report attributes
 	public static final String REPORT_ATTR_ITEM_STATUS = "item_Status";
