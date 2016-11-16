@@ -569,10 +569,22 @@ class MigrationTaskService {
 		 * @return
 		 */
 		private RequestConfig getRequestConfigWithTimeouts() {
+			// default time out to be 10 seconds
+			int timeout_miniseconds = 1000;
+			if (env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)!=null) {
+				// override from property setting
+				try
+				{
+					timeout_miniseconds = Integer.valueOf(env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)).intValue();
+				} catch (NumberFormatException e)
+				{
+					log.error("Environment setting " + Utils.ENV_PROPERTY_TIMEOUT_MINISECOND + " is not an integer value. ");
+				}
+			}
 			RequestConfig requestConfig = RequestConfig.custom()
-					  .setSocketTimeout(10000)
-					  .setConnectTimeout(10000)
-					  .setConnectionRequestTimeout(10000)
+					  .setSocketTimeout(timeout_miniseconds)
+					  .setConnectTimeout(timeout_miniseconds)
+					  .setConnectionRequestTimeout(timeout_miniseconds)
 					  .build();
 			return requestConfig;
 		}
