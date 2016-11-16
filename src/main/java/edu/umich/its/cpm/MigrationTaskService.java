@@ -3,6 +3,7 @@ package edu.umich.its.cpm;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -201,7 +202,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadZippedFile ", e);
+					log.error(errorMessage);
 					downloadStatus.append(errorMessage + Utils.LINE_BREAK);
 				}
 			} else {
@@ -429,17 +430,20 @@ class MigrationTaskService {
 
 			// create httpclient
 			HttpClient httpClient = HttpClientBuilder.create().build();
+			
 			InputStream content = null;
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
 				content = r.getEntity().getContent();
 			} catch (Exception e) {
-				log.info(e.getMessage());
-				zipFileStatus.append("Cannot get content for " + title + " due to " + e.getMessage());
+				String errorMessage = "Cannot get content for " + title + " due to " + e.getMessage();
+				log.error(errorMessage);
+				zipFileStatus.append(errorMessage);
 			}
 
 			// exit if content stream is null
@@ -478,10 +482,10 @@ class MigrationTaskService {
 								out.write(webLinkContent.getBytes());
 							}  catch (Exception e) {
 								// return status with error message
-								zipFileStatus
-								.append(e.getMessage() + "Link "
-										+ title
-										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
+								String errorMessage = e.getMessage() + "Link " + title
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.";
+								zipFileStatus.append(errorMessage);
+								log.error(errorMessage);
 							}
 						}
 					} else {
@@ -543,7 +547,9 @@ class MigrationTaskService {
 				try {
 					out.flush();
 				} catch (Exception e) {
-					log.warn(this + " zipFiles: exception " + e.getMessage());
+					String errorMessage = "problem with zip downloading " + fileName + " " + e.getMessage();
+					zipFileStatus.append(errorMessage);
+					log.error(errorMessage);
 				}
 			}
 
@@ -554,6 +560,31 @@ class MigrationTaskService {
 			}
 
 			return zipFileStatus.toString();
+		}
+
+		/**
+		 * return a RequestConfig Object with Timeout params set
+		 * @return
+		 */
+		private RequestConfig getRequestConfigWithTimeouts() {
+			// default time out to be 10 seconds
+			int timeout_milliseconds = 1000;
+			if (env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)!=null) {
+				// override from property setting
+				try
+				{
+					timeout_milliseconds = Integer.valueOf(env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)).intValue();
+				} catch (NumberFormatException e)
+				{
+					log.error("Environment setting " + Utils.ENV_PROPERTY_TIMEOUT_MINISECOND + " is not an integer value. ");
+				}
+			}
+			RequestConfig requestConfig = RequestConfig.custom()
+					  .setSocketTimeout(timeout_milliseconds)
+					  .setConnectTimeout(timeout_milliseconds)
+					  .setConnectionRequestTimeout(timeout_milliseconds)
+					  .build();
+			return requestConfig;
 		}
 
 		/*************** Box Migration ********************/
@@ -955,6 +986,7 @@ class MigrationTaskService {
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
@@ -965,28 +997,29 @@ class MigrationTaskService {
 					if (webLinkUrl == null || webLinkUrl.isEmpty())
 					{
 						status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
-						return new AsyncResult<String>(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 					try {
 						// special handling of Web Links resources
 						content = new ByteArrayInputStream(Utils.getWebLinkContent(
 								fileName, webLinkUrl).getBytes());
-					} catch (java.net.MalformedURLException e) {
+					} catch (Exception e) {
 						// return status with error message
 						status.append("Link "
 								+ fileName
 								+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-						return new AsyncResult<String>(status.toString());
+						log.error(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 				}
-			} catch (java.io.IOException e) {
+			} catch (Exception e) {
 				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
+				log.error(status.toString());
 				
 				// update job end time and status
 				// return AsyncResult
-				setUploadJobEndtimeStatus(id, status);
-				return new AsyncResult<String>(status.toString());
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
 
 			// update file name
@@ -999,8 +1032,7 @@ class MigrationTaskService {
 				
 				// update job end time and status
 				// return AsyncResult
-				setUploadJobEndtimeStatus(id, status);
-				return new AsyncResult<String>(status.toString());
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
 
 			BufferedInputStream bContent = null;
@@ -1050,12 +1082,12 @@ class MigrationTaskService {
 						+ " with content and length "
 						+ fileSize
 						+ iException;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} catch (Exception e) {
 				String ilExceptionString = "problem creating BufferedInputStream for file "
 						+ fileName + " with content and length " + fileSize + e;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} finally {
 				if (bContent != null) {
@@ -1088,8 +1120,7 @@ class MigrationTaskService {
 			
 			// update job end time and status
 			// return AsyncResult
-			setUploadJobEndtimeStatus(id, status);
-			return new AsyncResult<String>(status.toString());
+			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 		}
 
 		/**
@@ -1097,9 +1128,10 @@ class MigrationTaskService {
 		 * @param id
 		 * @param status
 		 */
-		private void setUploadJobEndtimeStatus(String id, StringBuffer status) {
+		private String setUploadJobEndtimeStatus(String id, StringBuffer status) {
 			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
 			fRepository.setMigrationBoxFileStatus(id, status.toString());
+			return status.toString();
 		}
 
 		/**
@@ -1246,7 +1278,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadMailArchiveZipFile ", e);
+					log.error(errorMessage);
 					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 				}
 			} else {
