@@ -202,7 +202,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadZippedFile ", e);
+					log.error(errorMessage);
 					downloadStatus.append(errorMessage + Utils.LINE_BREAK);
 				}
 			} else {
@@ -446,7 +446,7 @@ class MigrationTaskService {
 				content = r.getEntity().getContent();
 			} catch (Exception e) {
 				String errorMessage = "Cannot get content for " + title + " due to " + e.getMessage();
-				log.info(errorMessage);
+				log.error(errorMessage);
 				zipFileStatus.append(errorMessage);
 			}
 
@@ -486,10 +486,10 @@ class MigrationTaskService {
 								out.write(webLinkContent.getBytes());
 							}  catch (Exception e) {
 								// return status with error message
-								zipFileStatus
-								.append(e.getMessage() + "Link "
-										+ title
-										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
+								String errorMessage = e.getMessage() + "Link " + title
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.";
+								zipFileStatus.append(errorMessage);
+								log.error(errorMessage);
 							}
 						}
 					} else {
@@ -551,7 +551,9 @@ class MigrationTaskService {
 				try {
 					out.flush();
 				} catch (Exception e) {
-					log.warn(this + " zipFiles: exception " + e.getMessage());
+					String errorMessage = "problem with zip downloading " + fileName + " " + e.getMessage();
+					zipFileStatus.append(errorMessage);
+					log.error(errorMessage);
 				}
 			}
 
@@ -570,21 +572,21 @@ class MigrationTaskService {
 		 */
 		private RequestConfig getRequestConfigWithTimeouts() {
 			// default time out to be 10 seconds
-			int timeout_miniseconds = 1000;
+			int timeout_milliseconds = 1000;
 			if (env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)!=null) {
 				// override from property setting
 				try
 				{
-					timeout_miniseconds = Integer.valueOf(env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)).intValue();
+					timeout_milliseconds = Integer.valueOf(env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)).intValue();
 				} catch (NumberFormatException e)
 				{
 					log.error("Environment setting " + Utils.ENV_PROPERTY_TIMEOUT_MINISECOND + " is not an integer value. ");
 				}
 			}
 			RequestConfig requestConfig = RequestConfig.custom()
-					  .setSocketTimeout(timeout_miniseconds)
-					  .setConnectTimeout(timeout_miniseconds)
-					  .setConnectionRequestTimeout(timeout_miniseconds)
+					  .setSocketTimeout(timeout_milliseconds)
+					  .setConnectTimeout(timeout_milliseconds)
+					  .setConnectionRequestTimeout(timeout_milliseconds)
 					  .build();
 			return requestConfig;
 		}
@@ -1010,12 +1012,14 @@ class MigrationTaskService {
 						status.append("Link "
 								+ fileName
 								+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
+						log.error(status.toString());
 						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 				}
 			} catch (Exception e) {
 				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
+				log.error(status.toString());
 				
 				// update job end time and status
 				// return AsyncResult
@@ -1082,12 +1086,12 @@ class MigrationTaskService {
 						+ " with content and length "
 						+ fileSize
 						+ iException;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} catch (Exception e) {
 				String ilExceptionString = "problem creating BufferedInputStream for file "
 						+ fileName + " with content and length " + fileSize + e;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} finally {
 				if (bContent != null) {
@@ -1278,7 +1282,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadMailArchiveZipFile ", e);
+					log.error(errorMessage);
 					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 				}
 			} else {
