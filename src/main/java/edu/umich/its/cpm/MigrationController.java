@@ -40,6 +40,7 @@ import javax.ws.rs.core.Response;
 import javax.ws.rs.core.Response.ResponseBuilder;
 import javax.inject.Inject;
 
+import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
@@ -103,6 +104,7 @@ import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
 //import static org.junit.Assert.assertTrue;
+
 
 
 
@@ -173,28 +175,41 @@ public class MigrationController {
 	 */
 	private HashMap<String, String> getUserAllSitesMap(
 			HttpServletRequest request) {
+		
+		// default site types to be included in CPM tool
+		List<String> allowedSiteTypes = Arrays.asList("project", "myworkspace", "specialized_projects");
+		if (env.getProperty(Utils.ENV_PROPERTY_ALLOWED_SITE_TYPES) != null)
+		{
+			//get the property setting for site types to be included in CPM tool
+			allowedSiteTypes = Arrays.asList(env.getProperty(Utils.ENV_PROPERTY_ALLOWED_SITE_TYPES).split(","));
+		}
+		
 		String userEid = Utils.getCurrentUserId(request, env);
 		// get session id
 		String sessionId = getUserSessionId(request);
 
-		HashMap<String, String> projectsMap = get_user_sites(userEid, sessionId);
+		HashMap<String, String> projectsMap = get_user_sites(userEid, sessionId, allowedSiteTypes);
 
 		// this is a json value contains non-MyWorkspace sites
 		String sitesJson = projectsMap.get("projectsString");
-		// get the json value for user MyWorkspace site
-		String myworkspaceJson = get_user_myworkspace_site_json(userEid, sessionId);
-		if (myworkspaceJson != null) {
-			// insert the MyWorkspace json into the other-sites json
-			try {
-				JSONObject sitesJSONObject = new JSONObject(sitesJson);
-				sitesJSONObject.append(JSON_ATTR_SITE_COLLECTION, new JSONObject(
-						myworkspaceJson));
-				// get the updated sites json string with MyWorkspace info
-				// inserted
-				projectsMap.put("projectsString", sitesJSONObject.toString());
-			} catch (JSONException e) {
-				log.error(this + " error parsing sites JSON value " + sitesJson);
+		try {
+			JSONObject sitesJSONObject = new JSONObject(sitesJson);
+			// get the json value for user MyWorkspace site
+			String myworkspaceJson = get_user_myworkspace_site_json(userEid, sessionId);
+			if (myworkspaceJson != null) {
+				JSONObject mwJSONObject = new JSONObject(myworkspaceJson);
+				// check site type
+				if (mwJSONObject != null && mwJSONObject.get("type") != null 
+						&& allowedSiteTypes.contains(mwJSONObject.get("type")))
+				{
+					// insert the MyWorkspace json into the other-sites JSON
+					sitesJSONObject.append(JSON_ATTR_SITE_COLLECTION, mwJSONObject);
+				}
 			}
+			// get the updated sites json string with MyWorkspace info inserted
+			projectsMap.put("projectsString", sitesJSONObject.toString());
+		} catch (JSONException e) {
+			log.error(this + " error parsing sites JSON value " + sitesJson);
 		}
 		return projectsMap;
 	}
@@ -274,7 +289,7 @@ public class MigrationController {
 	 * @param req
 	 * @return
 	 */
-	private HashMap<String, String> get_user_sites(String currentUserId, String sessionId) {
+	private HashMap<String, String> get_user_sites(String currentUserId, String sessionId, List<String> allowedSiteTypes) {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
 		String projectsString = "";
@@ -294,7 +309,7 @@ public class MigrationController {
 					String.class);
 
 			// update the projectString by filtering based on site Owner role
-			projectsString = filterForSitesWithOwnerRole(projectsString, currentUserId, sessionId);
+			projectsString = filterForSitesWithOwnerRole(projectsString, currentUserId, sessionId, allowedSiteTypes);
 		} catch (RestClientException e) {
 			errorMessage = e.getMessage();
 			log.error(requestUrl + errorMessage);
@@ -313,7 +328,7 @@ public class MigrationController {
 	 * @param currentUserId
 	 * @return
 	 */
-	private String filterForSitesWithOwnerRole(String projectsString, String currentUserId, String sessionId) {
+	private String filterForSitesWithOwnerRole(String projectsString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
 		JSONArray ownerSitesJSONArray = new JSONArray();
 		try {
 			JSONObject sitesJSONObject = new JSONObject(projectsString);
@@ -324,6 +339,10 @@ public class MigrationController {
 			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); iSite++) {
 				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
 				String siteId = siteJSON.getString("id");
+				String siteType = siteJSON.getString("type");
+				if (!allowedSiteTypes.contains(siteType))
+					// if not the wanted type, bypass the site
+					continue;
 				try
 				{
 					// get all site members
