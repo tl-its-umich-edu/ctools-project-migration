@@ -1844,9 +1844,6 @@ class MigrationTaskService {
 			}
 
 			String archiveEmail = extractArchiveEmailName(archiveJson);
-			if(archiveEmail.isEmpty()){
-				return null;
-			}
 			String suffix = env.getProperty(Utils.GGB_GOOGLE_GROUP_DOMAIN);
 			if (suffix == null) {
 				log.warn("no google suffix provided. Property name is: {}",Utils.GGB_GOOGLE_GROUP_DOMAIN);
@@ -1860,43 +1857,59 @@ class MigrationTaskService {
 		}
 
 		// Breakout the email name used in CTools for this archive.
-		protected String extractArchiveEmailName(String emailArchive) {
+		static public String extractArchiveEmailName(String emailArchive) {
+			String archive_email_name = null;
 			JSONObject jo = new JSONObject(emailArchive);
 			JSONArray ja = jo.getJSONArray("mailarchive_collection");
-			JSONArray firstHeaders = (JSONArray) ((JSONObject)ja.get(0)).get("headers");
-
-			int myJsonArraySize = firstHeaders.length();
-			String archive_email_name = null;
-
-			for (int i = 0; i < myJsonArraySize && archive_email_name == null; i++) {
-				String header  = (String) firstHeaders.get(i);
-				// look for the To: header
-				if (! header.startsWith("To: ")) {
-					continue;
+			outerloop:
+			for(int j=0;j<ja.length();j++) {
+				JSONArray allHeaders = (JSONArray) ((JSONObject) ja.get(j)).get("headers");
+				int myJsonArraySize = allHeaders.length();
+				for (int i = 0; i < myJsonArraySize && archive_email_name == null; i++) {
+					String header = (String) allHeaders.get(i);
+					// look for the To: header
+					if (!header.startsWith("To: ")) {
+						continue;
+					}
+					// Pull out the email name used by the old archive.
+					log.debug("aAEN: To header: {}", header);
+					archive_email_name = extractEmailFromToHeader(header);
+					if (archive_email_name == null) {
+						// breakout of inner for loop
+						break;
+					} else {
+						//found qualified google group name
+						break outerloop;
+					}
 				}
-				// Pull out the email name used by the old archive.
-				log.debug("aAEN: To header: {}",header);
-				archive_email_name = extractEmailFromToHeader(header);
-				break;
+			}
+			if(archive_email_name == null){
+				archive_email_name = (String)((JSONObject)ja.get(0)).get("siteId");
 			}
 			log.debug("eAEN: returning: {}",archive_email_name);
 			return archive_email_name;
 		}
 
 		static public String extractEmailFromToHeader(String header) {
-			String archive_email_name = "";
+			String archive_email_name = null;
 			try {
 				header = header.split("To: ")[1].trim();
-				int i = header.indexOf('<');
-				if (i == -1) {
+				String[] multipleEmailId = header.split(",");
+
+				for (String emailId : multipleEmailId) {
+					int i = emailId.indexOf('<');
+					if (i != -1) {
+						// To: <jennlove-test-project@ctqa.dsc.umich.edu>
+						// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
+						// To: Email Archive Test Site <ctqa-email-archive-1@ctqa.dsc.umich.edu>
+						emailId = emailId.substring(i + 1, emailId.indexOf('>'));
+					}
 					// To: ctqa-mbox@ctqa.dsc.umich.edu
-					archive_email_name = header.substring(0, header.indexOf('@'));
-				} else {
-					// To: <jennlove-test-project@ctqa.dsc.umich.edu>
-					// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
-					// To: Email Archive Test Site <ctqa-email-archive-1@discussions-dev.its.umich.edu>
-					archive_email_name = header.substring(i + 1, header.indexOf('>'));
-					archive_email_name = archive_email_name.substring(0, archive_email_name.indexOf('@'));
+					if (isEmailSignatureValid(emailId)) {
+						archive_email_name = emailId.substring(0, emailId.indexOf('@'));
+						break;
+					}
+
 				}
 			} catch (Exception e) {
 				log.error("Failure in getting the error google group id from " + header + "failed due to " + e.getMessage());
@@ -1905,7 +1918,18 @@ class MigrationTaskService {
 			return archive_email_name;
 		}
 
-		/**
+      // Eg.,emailId = ctqa-mbox@ctqa.dsc.umich.edu
+	public static boolean isEmailSignatureValid(String emailId) {
+		String emailSignature = emailId.substring(emailId.indexOf('@')+1);
+		String regex = "^ct[A-Za-z.]+.umich.edu$";
+		if(emailSignature.matches(regex)){
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 		 * TODO
 		 * call GG microservice to get Group Groups settings for given site id
 		 * @param siteId
