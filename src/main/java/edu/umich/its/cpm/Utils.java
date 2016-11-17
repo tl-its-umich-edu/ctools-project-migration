@@ -1,15 +1,5 @@
 package edu.umich.its.cpm;
 
-import java.io.UnsupportedEncodingException;
-import java.net.URLDecoder;
-import java.net.MalformedURLException;
-import java.util.HashMap;
-import java.util.Hashtable;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import javax.servlet.http.HttpServletRequest;
-
 import org.apache.commons.io.FilenameUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
@@ -22,15 +12,15 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
 import org.json.JSONArray;
 import org.json.JSONObject;
-
-import org.springframework.context.annotation.Configuration;
-import org.springframework.core.env.Environment;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Configuration;
+import org.springframework.core.env.Environment;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
@@ -40,9 +30,14 @@ import javax.naming.directory.DirContext;
 import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
-
-import org.apache.tika.config.TikaConfig;
-import org.springframework.util.StringUtils;
+import javax.servlet.http.HttpServletRequest;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URLDecoder;
+import java.util.HashMap;
+import java.util.Hashtable;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 @Configuration
 public 
@@ -119,8 +114,14 @@ class Utils {
 	public static final String LINE_BREAK = "\n";
 
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
-       public static final String ENV_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
-    public static final String ENV_ATTACHMENT_LIMIT = "attachment.size.limit" ;
+    
+	// config variables
+	public static final String ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL = "zip.compression.level";
+    public static final String ENV_PROPERTY_ATTACHMENT_LIMIT = "attachment.size.limit" ;
+	public static final String ENV_PROPERTY_USERNAME = "username";
+	public static final String ENV_PROPERTY_PASSWORD = "password";
+	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
+	public static final String ENV_PROPERTY_TIMEOUT_MINISECOND = "timeout_minisecond";
 
 	// status report attributes
 	public static final String REPORT_ATTR_ITEM_STATUS = "item_Status";
@@ -151,9 +152,6 @@ class Utils {
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
-	
-	// constants for environment properties
-	public static final String ENV_PROPERTY_CTOOLS_SERVER_URL = "ctools.server.url";
 	
 	// Strings for CTools MyWorkspace sites title
 	public static final String CTOOLS_MYWORKSPACE_TITLE="My Workspace";
@@ -191,8 +189,7 @@ class Utils {
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(Environment env,
-			HttpServletRequest request, String remoteUser) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request, String remoteUser) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
@@ -215,7 +212,7 @@ class Utils {
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty("username")
+				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
 				+ "&_password=" + env.getProperty("password");
 		log.debug("ctools user url: {}",requestUrl);
 		try {
@@ -242,34 +239,34 @@ class Utils {
 				// httpContext for next requests.
 				// get the session id
 				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
-				log.info("successfully logged in as user "
-						+ env.getProperty("username") + " with sessionId = "
-						+ sessionId);
 
-				// 2. become the user based on REMOTE_USER setting after CoSign
-				// integration
-				try {
-					// the url should be in the format of
-					// "https://server/direct/session/SESSION_ID.json"
-					requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-							+ "direct/session/becomeuser/" + remoteUser
-							+ ".json?_sessionId=" + sessionId;
-					log.info("becomeuser url: {}",requestUrl);
-
-					HttpGet getRequest = new HttpGet(requestUrl);
-					getRequest.setHeader("Content-Type",
-							"application/x-www-form-urlencoded");
-					HttpResponse r = httpClient
-							.execute(getRequest, httpContext);
-
-					String resultString = EntityUtils.toString(r.getEntity(),
-							"UTF-8");
-					log.info(resultString);
-				} catch (java.io.IOException e) {
-					log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
-
-					// nullify sessionId if become user call is not successful
-					sessionId = null;
+				if (!env.getProperty(Utils.ENV_PROPERTY_USERNAME).equals(remoteUser))
+				{
+					// 2. become the user based on REMOTE_USER setting after CoSign
+					// integration, only if REMOTE_USER is different than the admin user
+					try {
+						// the url should be in the format of
+						// "https://server/direct/session/SESSION_ID.json"
+						requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
+								+ "direct/session/becomeuser/" + remoteUser
+								+ ".json?_sessionId=" + sessionId;
+						log.info("becomeuser url: {}",requestUrl);
+	
+						HttpGet getRequest = new HttpGet(requestUrl);
+						getRequest.setHeader("Content-Type",
+								"application/x-www-form-urlencoded");
+						HttpResponse r = httpClient
+								.execute(getRequest, httpContext);
+	
+						String resultString = EntityUtils.toString(r.getEntity(),
+								"UTF-8");
+						log.info("login_becomeuser status=" + resultString);
+					} catch (java.io.IOException e) {
+						log.error("becomeuser failed: {} e: {}",requestUrl,e.getMessage());
+	
+						// nullify sessionId if become user call is not successful
+						sessionId = null;
+					}
 				}
 
 				// populate the session related attributes
@@ -307,7 +304,7 @@ class Utils {
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
 		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty("username")
+				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
 				+ "&_password=" + env.getProperty("password");
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
@@ -333,7 +330,7 @@ class Utils {
 				// get the session id
 				sessionId = EntityUtils.toString(response.getEntity(), "UTF-8");
 				log.info("successfully logged in as user "
-						+ env.getProperty("username") + " with sessionId = "
+						+ env.getProperty(Utils.ENV_PROPERTY_USERNAME) + " with sessionId = "
 						+ sessionId);
 			}
 		} catch (java.io.IOException e) {
@@ -441,6 +438,11 @@ class Utils {
 			Environment env) {
 		// get CoSign user first
 		String remoteUser = getRemoteUser(request,env);
+		String admin_group_name = env.getProperty(Utils.PROPERTY_ADMIN_GROUP);
+		if (admin_group_name != null && remoteUser.equals(admin_group_name)) {
+			// if this is the Box admin user login
+			return true;
+		}
 
 		String propLdapServerUrl = env.getProperty(PROPERTY_LDAP_SERVER_URL);
 		String propAdminMCommGroup = env.getProperty(PROPERTY_ADMIN_GROUP);
@@ -617,7 +619,10 @@ class Utils {
 	}
     // Windows Explorer don't like below special characters in Folder names so zip extraction fails. Replacing with _
 	public static String sanitizeFolderNames(String zipFileName) {
-		return zipFileName.replaceAll("[?>|<:]", "_");
+		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
+		// backslash in the string.
+		zipFileName=zipFileName.replace('\\','_');
+		return zipFileName.replaceAll("[?>|*<:]", "_");
 	}
 
 	/**
@@ -658,10 +663,8 @@ class Utils {
 								+ fileName + " of MIME type = " + type, e);
 			}
 			if (mimeExtension != null 
-				&& (FilenameUtils.getExtension(fileName).isEmpty()
-				|| !fileName.endsWith(mimeExtension))) {	
+				&& FilenameUtils.getExtension(fileName).isEmpty()) {
 				// if file name extension is missing
-				// or different from the default one
 				// add the extension to file name
 				fileName = fileName.concat(mimeExtension);
 			}
@@ -702,6 +705,9 @@ class Utils {
 		// update folder name if there is any parent folder renaming
 		// checks for folder name updates in the path
 		// replace all old folder title with new title
+		if (title.contains("/")) {
+			title = title.replace('/', '_');
+		}
 		String currentFolderName = folderName;
 		for (String oldFolderName : folderNameUpdates.keySet()) {
 			if (folderName.startsWith(oldFolderName)) {
@@ -772,6 +778,13 @@ class Utils {
 		String parentFolder = fileName.substring(0,
 				fileName.lastIndexOf(PATH_SEPARATOR) + 1);
 		while (parentFolder != null) {
+			// checks for folder name updates in the path
+			// replace all old folder title with new title
+			if (folderNameMap.containsKey(parentFolder)) {
+			        fileName = fileName.replace(parentFolder,
+			                folderNameMap.get(parentFolder));
+			    break;
+			}
 
 			// get the next parent folder
 			// remove the trailing "/"

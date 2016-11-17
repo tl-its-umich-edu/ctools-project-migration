@@ -35,6 +35,8 @@ public class EmailFormatter {
     public static final String FROM = "From ";
     public static final String SUBJECT_WITH_COLON = "Subject:";
     public AttachmentHandler attachmentHandler;
+    public static final String FORMAT_TYPE_RFC822 = "rfc822";
+    public static final String FORMAT_TYPE_MBOX = "mbox";
 
     public Environment getEnv() {
         return env;
@@ -136,7 +138,7 @@ public class EmailFormatter {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        MailResultPair emailTextAndStatusObject = getEmailText();
+        MailResultPair emailTextAndStatusObject = getEmailText(FORMAT_TYPE_RFC822);
         String emailText =  emailTextAndStatusObject.getMessage();
         if (emailText == null) {
             return emailTextAndStatusObject;
@@ -151,7 +153,7 @@ public class EmailFormatter {
     public boolean checkMsgSizeMoreThanExpectedLimit(String rfc822FormatMessage) {
         long rfc822MgsSize = rfc822FormatMessage.length();
         log.debug("Email Message Size: " + rfc822MgsSize + " bytes");
-        String attachLimit = env.getProperty(Utils.ENV_ATTACHMENT_LIMIT);
+        String attachLimit = env.getProperty(Utils.ENV_PROPERTY_ATTACHMENT_LIMIT);
         log.debug("Attachment Size Limit : " + attachLimit + " bytes");
         long attachmentLimit = Long.parseLong(attachLimit);
         if (rfc822MgsSize > attachmentLimit) {
@@ -167,26 +169,14 @@ public class EmailFormatter {
             emailFormat.append(header);
             emailFormat.append(NEW_LINE);
         }
-        MailResultPair emailTextAndStatusObject = getEmailText();
+        MailResultPair emailTextAndStatusObject = getEmailText(FORMAT_TYPE_MBOX);
         String emailText = emailTextAndStatusObject.getMessage();
         if (emailText == null) {
             return emailTextAndStatusObject;
         }
         String bodyAndAttachment = emailTextWithBodyAndAttachment(emailText);
-        ArrayList<String> pureBodyText = mboxBodyFormatting(bodyAndAttachment);
-        String[] split = bodyAndAttachment.split(NEW_LINE);
-        List<String> formattedBodyAndAttachment = Arrays.asList(split);
-        for (int i = 0; i < 4; i++) {
-            pureBodyText.add(i, formattedBodyAndAttachment.get(i));
-        }
-
-        for (int i = 0; i < pureBodyText.size(); i++) {
-            formattedBodyAndAttachment.set(i, pureBodyText.get(i));
-        }
-        for (String format : formattedBodyAndAttachment) {
-            emailFormat.append(format);
-            emailFormat.append(NEW_LINE);
-        }
+        emailFormat.append(bodyAndAttachment);
+        emailFormat.append(NEW_LINE);
         emailTextAndStatusObject.setMessage(emailFormat.toString());
         return emailTextAndStatusObject;
     }
@@ -218,8 +208,14 @@ public class EmailFormatter {
         return modifiedSplit;
     }
 
-    public String getBody() {
-        return (String) messageMap.get("body");
+    public String getBody(String formatType) {
+        String body = (String)messageMap.get("body");
+        if(formatType == FORMAT_TYPE_MBOX){
+            if(body.contains(FROM)){
+                body=body.replaceAll(FROM, ">From ");
+            }
+        }
+        return body;
     }
 
     public ArrayList<String> getHeaders() {
@@ -286,7 +282,7 @@ public class EmailFormatter {
                     // Wed Aug 24 14:04:47 2016
                     date = ascTimePattern.format(new Date(epochTime));
                 } catch (java.text.ParseException e) {
-                    log.error("Error occurred while parsing the Date: " + dateTemp + " due to" + e.getMessage());
+                    log.error("Error occurred while parsing the Date: " + dateTemp + " due to " + e.getMessage());
                 }
 
             }
@@ -324,7 +320,7 @@ public class EmailFormatter {
      Mime format.
      */
 
-    public MailResultPair getEmailText() {
+    public MailResultPair getEmailText(String formatType) {
         Session session = null;
         MimeMessage message = new MimeMessage(session);
         String emailText = null;
@@ -336,7 +332,7 @@ public class EmailFormatter {
 
             //Body of the email
             BodyPart msgBodyPart = new MimeBodyPart();
-            String body = getBody();
+            String body = getBody(formatType);
             if (!body.isEmpty()) {
                 msgBodyPart.setContent(body, "text/plain; charset=UTF-8");
                 multipart.addBodyPart(msgBodyPart);

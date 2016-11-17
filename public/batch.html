@@ -39,7 +39,12 @@
 			</div>
 		</div>
 	</nav>
-	<div class="container-fluid" ng-controller="projectMigrationBatchController">
+  <div class="container-fluid"  ng-show="!isAdminUser" ng-cloak>
+    <div class="alert alert-danger">
+      Only for <strong>admininstrative users</strong>. You do not have access to this section of the application.
+    </div>
+  </div>
+	<div class="container-fluid" ng-controller="projectMigrationBatchController" ng-show="isAdminUser">
     <div class="row">
       <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
       </div>
@@ -252,15 +257,38 @@
                   <a href="https://its.umich.edu/projects/ctools-project-sites/?q=node/43#" target="_blank">See documentation for assistance on specific errors.</a>
                 </p>
               </div>
+              <div style="width:535px" ng-show="reportDetails.details.add_members">
+                <strong>Members added</strong>
+                {{reportDetails.details.add_members.counts.successes}} added users.
+                {{reportDetails.details.add_members.counts.partial_successes}} partial.
+                {{reportDetails.details.add_members.counts.errors}} errors.
+              </div>
+              <div style="width:535px" ng-show="reportDetails.details.add_members.items">
+                <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" >
+                  <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                      {{item.item_id.id}}
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                      {{item.item_id.role}}
+                    </div>
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                      {{item.message}}
+                    </div>
+                    <div class="col-lg-2 col-md-2 col-sm-2 col-xs-2">
+                      {{item.item_Status}}
+                    </div>
+
+                  </li>
+                </ul>
+              </div>
               <ul class="list-group container"  style="width:550px;margin:0">
                 <li class="list-group-item" ng-repeat="item in reportDetails.items">
                   <div class="row">
-                    <div class="col-md-10 col-lg-10 col-sm-10 col-xs-10" style="vertical-align: middle">
+                    <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12" style="vertical-align: middle">
                       <span style="vertical-align: middle;">{{item.item_id}}</span><br>
-                      <small>{{item.item_Status}}</small>
-                    </div>
-                    <div class="col-md-2 col-lg-2 col-sm-2 col-xs-2" style="text-align:right">
-                      <span ng-show="item.status_code==='fail'" class="glyphicon glyphicon-info-sign" aria-hidden="true" style="vertical-align: middle;color:#c00"></span>
+                      <small ng-show="item.message">{{item.message}}<br></small>
+                      <small ng-show="item.item_Status">{{item.item_Status}}</small>
                     </div>
                   </div>
                 </li>

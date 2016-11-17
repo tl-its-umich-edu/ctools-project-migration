@@ -4,8 +4,6 @@ import edu.umich.its.cpm.AttachmentHandler;
 import edu.umich.its.cpm.EmailFormatter;
 import edu.umich.its.cpm.MailResultPair;
 import junit.framework.TestCase;
-import org.apache.commons.lang3.StringUtils;
-import org.json.JSONArray;
 import org.junit.After;
 import org.junit.AfterClass;
 import org.junit.Before;
@@ -17,7 +15,10 @@ import java.nio.charset.Charset;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * Created by pushyami on 8/17/16.
@@ -59,7 +60,7 @@ public class EmailFormatterTest extends TestCase {
     }
 
     public void testMessageBody() {
-        String body = formatter.getBody();
+        String body = formatter.getBody(formatter.FORMAT_TYPE_RFC822);
         assertEquals("This is so awesome to find out and unbelievable", body);
     }
 

@@ -3,6 +3,7 @@ package edu.umich.its.cpm;
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
+import org.apache.http.client.config.RequestConfig;
 import org.apache.http.client.methods.HttpGet;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
@@ -162,7 +163,7 @@ class MigrationTaskService {
 
 					ZipOutputStream out = new ZipOutputStream(
 							response.getOutputStream());
-					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					String compressionLevel = env.getProperty(Utils.ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL);
 					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
 						// set compression level to high by default
 						out.setLevel(9);
@@ -201,7 +202,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadZippedFile ", e);
+					log.error(errorMessage);
 					downloadStatus.append(errorMessage + Utils.LINE_BREAK);
 				}
 			} else {
@@ -347,8 +348,17 @@ class MigrationTaskService {
 							// create the zipentry for the sub-folder first
 							String folderName = contentUrl.replace(rootFolderPath,
 									"");
-							folderName = Utils.sanitizeFolderNames(folderName);
+							
+							// update folder name
+							folderNameMap = Utils.updateFolderNameMap(
+									folderNameMap, title, folderName);
+							if (folderNameMap.containsKey(folderName)) {
+									folderName = folderNameMap.get(folderName);
+							}
 
+							// deal with special characters
+							folderName = Utils.sanitizeFolderNames(folderName);
+							
 							log.info("download folder " + folderName);
 
 							ZipEntry folderEntry = new ZipEntry(folderName);
@@ -366,7 +376,6 @@ class MigrationTaskService {
 						// get the zip file name with folder path info
 						String zipFileName = container.substring(container
 								.indexOf(rootFolderPath) + rootFolderPath.length());
-						zipFileName = Utils.sanitizeFolderNames(zipFileName);
 						zipFileName = zipFileName.concat(Utils.sanitizeName(type,
 								title));
 						log.info("zip download processing file " + zipFileName);
@@ -421,21 +430,25 @@ class MigrationTaskService {
 
 			// create httpclient
 			HttpClient httpClient = HttpClientBuilder.create().build();
+			
 			InputStream content = null;
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
 				content = r.getEntity().getContent();
 			} catch (Exception e) {
-				log.info(e.getMessage());
+				String errorMessage = "Cannot get content for " + title + " due to " + e.getMessage();
+				log.error(errorMessage);
+				zipFileStatus.append(errorMessage);
 			}
 
 			// exit if content stream is null
 			if (content == null)
-				return null;
+				return zipFileStatus.toString();
 
 			try {
 				int length = 0;
@@ -448,6 +461,7 @@ class MigrationTaskService {
 					// checks for folder renames
 					fileName = Utils.updateFolderPathForFileName(fileName,
 							folderNameUpdates);
+					fileName = Utils.sanitizeFolderNames(fileName);
 
 					log.info("download file " + fileName + " type=" + type);
 
@@ -468,10 +482,10 @@ class MigrationTaskService {
 								out.write(webLinkContent.getBytes());
 							}  catch (Exception e) {
 								// return status with error message
-								zipFileStatus
-								.append(e.getMessage() + "Link "
-										+ title
-										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.");
+								String errorMessage = e.getMessage() + "Link " + title
+										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.";
+								zipFileStatus.append(errorMessage);
+								log.error(errorMessage);
 							}
 						}
 					} else {
@@ -533,7 +547,9 @@ class MigrationTaskService {
 				try {
 					out.flush();
 				} catch (Exception e) {
-					log.warn(this + " zipFiles: exception " + e.getMessage());
+					String errorMessage = "problem with zip downloading " + fileName + " " + e.getMessage();
+					zipFileStatus.append(errorMessage);
+					log.error(errorMessage);
 				}
 			}
 
@@ -544,6 +560,31 @@ class MigrationTaskService {
 			}
 
 			return zipFileStatus.toString();
+		}
+
+		/**
+		 * return a RequestConfig Object with Timeout params set
+		 * @return
+		 */
+		private RequestConfig getRequestConfigWithTimeouts() {
+			// default time out to be 10 seconds
+			int timeout_milliseconds = 1000;
+			if (env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)!=null) {
+				// override from property setting
+				try
+				{
+					timeout_milliseconds = Integer.valueOf(env.getProperty(Utils.ENV_PROPERTY_TIMEOUT_MINISECOND)).intValue();
+				} catch (NumberFormatException e)
+				{
+					log.error("Environment setting " + Utils.ENV_PROPERTY_TIMEOUT_MINISECOND + " is not an integer value. ");
+				}
+			}
+			RequestConfig requestConfig = RequestConfig.custom()
+					  .setSocketTimeout(timeout_milliseconds)
+					  .setConnectTimeout(timeout_milliseconds)
+					  .setConnectionRequestTimeout(timeout_milliseconds)
+					  .build();
+			return requestConfig;
 		}
 
 		/*************** Box Migration ********************/
@@ -911,8 +952,8 @@ class MigrationTaskService {
 		 * @return
 		 */
 		@Async
-		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext) {
-
+		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext, String sessionId) {
+			
 			// get all bFile params
 			String id = bFile.getId();
 			String userId = bFile.getUser_id();
@@ -937,9 +978,7 @@ class MigrationTaskService {
 
 			// mark the file as being processed
 			fRepository.setMigrationBoxFileStartTime(id, new Timestamp(System.currentTimeMillis()));
-
-			// record zip status
-			StringBuffer zipFileStatus = new StringBuffer();
+			
 			// create httpclient
 			HttpClient httpClient = HttpClientBuilder.create().build();
 			InputStream content = null;
@@ -947,6 +986,7 @@ class MigrationTaskService {
 			try {
 				// get file content from /access url
 				HttpGet getRequest = new HttpGet(fileAccessUrl);
+				getRequest.setConfig(getRequestConfigWithTimeouts());
 				getRequest.setHeader("Content-Type",
 						"application/x-www-form-urlencoded");
 				HttpResponse r = httpClient.execute(getRequest, httpContext);
@@ -957,23 +997,29 @@ class MigrationTaskService {
 					if (webLinkUrl == null || webLinkUrl.isEmpty())
 					{
 						status.append("Link "+ fileName + " could not be migrated due to empty URL link. ");
-						return new AsyncResult<String>(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 					try {
 						// special handling of Web Links resources
 						content = new ByteArrayInputStream(Utils.getWebLinkContent(
 								fileName, webLinkUrl).getBytes());
-					} catch (java.net.MalformedURLException e) {
+					} catch (Exception e) {
 						// return status with error message
 						status.append("Link "
 								+ fileName
 								+ " could not be migrated. Please change the link name to be the complete URL and migrate the site again.");
-						return new AsyncResult<String>(status.toString());
+						log.error(status.toString());
+						return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 					}
 				}
-			} catch (java.io.IOException e) {
-				log.info(this + " uploadFile: cannot get web link contenet "
+			} catch (Exception e) {
+				status.append("Cannot get content for " + fileName + " "
 						+ e.getMessage());
+				log.error(status.toString());
+				
+				// update job end time and status
+				// return AsyncResult
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
 
 			// update file name
@@ -981,7 +1027,13 @@ class MigrationTaskService {
 
 			// exit if content stream is null
 			if (content == null)
-				return null;
+			{
+				status.append(" uploadFile: cannot get content for " + fileName);
+				
+				// update job end time and status
+				// return AsyncResult
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+			}
 
 			BufferedInputStream bContent = null;
 			try {
@@ -995,7 +1047,7 @@ class MigrationTaskService {
 						fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
 							long totalBytes) {
-						log.info(numBytes + " out of total bytes "
+						log.debug(numBytes + " out of total bytes "
 								+ totalBytes);
 					}
 				});
@@ -1030,12 +1082,12 @@ class MigrationTaskService {
 						+ " with content and length "
 						+ fileSize
 						+ iException;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} catch (Exception e) {
 				String ilExceptionString = "problem creating BufferedInputStream for file "
 						+ fileName + " with content and length " + fileSize + e;
-				log.warn(ilExceptionString);
+				log.error(ilExceptionString);
 				status.append(ilExceptionString + Utils.LINE_BREAK);
 			} finally {
 				if (bContent != null) {
@@ -1065,12 +1117,21 @@ class MigrationTaskService {
 			if (status.length() == 0) {
 				status.append("Box upload successful for file " + fileName + ".");
 			}
+			
+			// update job end time and status
+			// return AsyncResult
+			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+		}
 
-			// update the status and end time for file item
+		/**
+		 * update the status and end time for file item
+		 * @param id
+		 * @param status
+		 */
+		private String setUploadJobEndtimeStatus(String id, StringBuffer status) {
 			fRepository.setMigrationBoxFileEndTime(id, new java.sql.Timestamp(System.currentTimeMillis()));
 			fRepository.setMigrationBoxFileStatus(id, status.toString());
-
-			return new AsyncResult<String>(status.toString());
+			return status.toString();
 		}
 
 		/**
@@ -1178,7 +1239,7 @@ class MigrationTaskService {
 							"attachment;filename=\"" + zipFileName + "\"");
 
 					ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
-					String compressionLevel = env.getProperty(Utils.ENV_ZIP_COMPRESSSION_LEVEL);
+					String compressionLevel = env.getProperty(Utils.ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL);
 					if ((compressionLevel == null) || (compressionLevel.isEmpty())) {
 						// set compression level to high by default
 						out.setLevel(9);
@@ -1203,6 +1264,13 @@ class MigrationTaskService {
 					.type(MediaType.TEXT_PLAIN).build();
 					log.error(errorMessage);
 					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
+				} catch (IOException e) {
+					String errorMessage = Utils.STATUS_FAILURE + " problem adding zip folder for siteId: " + site_id
+							+ " due to " + e.getMessage();
+					Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(errorMessage)
+							.type(MediaType.TEXT_PLAIN).build();
+					log.error(errorMessage);
+					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 
 				} catch (Exception e) {
 					String errorMessage = Utils.STATUS_FAILURE + " Migration status for " + site_id + " "
@@ -1210,7 +1278,7 @@ class MigrationTaskService {
 					Response.status(Response.Status.INTERNAL_SERVER_ERROR)
 					.entity(errorMessage).type(MediaType.TEXT_PLAIN)
 					.build();
-					log.error("downloadMailArchiveZipFile ", e);
+					log.error(errorMessage);
 					downloadStatus= errHandlingInDownloadMailArchiveZipFile(site_id, downloadStatus, errorMessage);
 				}
 			} else {
@@ -1248,7 +1316,7 @@ class MigrationTaskService {
 		 */
 		private JSONObject getMailArchiveZipContent(Environment env, String site_id,
 				JSONObject downloadStatus, String sessionId,
-				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId)  {
+				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId) throws IOException {
 
 
 			// get all mail channels inside the site
@@ -1275,7 +1343,6 @@ class MigrationTaskService {
 				folderForChannels = true;
 			}
 			JSONArray allChannelMsgItems = new JSONArray();
-			StringBuilder msgBundle = new StringBuilder();
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
 
@@ -1333,43 +1400,40 @@ class MigrationTaskService {
 					}
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
+					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
+					ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
+					out.putNextEntry(fileEntry);
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject message = messages.getJSONObject(iMessage);
-						String date= getProperty(message,Utils.JSON_ATTR_MAIL_DATE);
-						String subject= getProperty(message,Utils.JSON_ATTR_MAIL_SUBJECT);
-						String messageId=date+" "+subject;
+						String date = getProperty(message, Utils.JSON_ATTR_MAIL_DATE);
+						String subject = getProperty(message, Utils.JSON_ATTR_MAIL_SUBJECT);
+						String messageId = date + " " + subject;
 						String emailMessage = message.toString();
 						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
 						attachmentHandler.setEnv(env);
 						EmailFormatter emailFormatter = null;
 						try {
-							 emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
-						}catch (IOException e){
+							emailFormatter = new EmailFormatter(emailMessage, attachmentHandler);
+							MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
+							String mboxMessage = mboxFormatTextPlusStatus.getMessage();
+							JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
+							if (mboxMessage != null) {
+								allChannelMsgItems.put(singleMboxMsgStatus);
+								out.write(mboxMessage.getBytes());
+							} else {
+								allChannelMsgItems.put(singleMboxMsgStatus);
+								log.error(String.format("Mbox Formatting for message with Id (%s) not successful with migrationid " +
+										"(%s) for site (%s)", messageId, migrationId, site_id));
+							}
+						} catch (IOException e) {
 							String msg = "Mbox zip file could not be downloaded due to bad json response";
-							allChannelMsgItems.put(errHandlingForZiparchive(messageId,msg));
-							log.error(msg +"for message: "+messageId+ " "+ e.getMessage());
+							allChannelMsgItems.put(errHandlingForZiparchive(messageId, msg));
+							log.error(msg + "for message: " + messageId + " " + e.getMessage());
 							continue;
-						}
-						MailResultPair mboxFormatTextPlusStatus = emailFormatter.mboxFormat();
-						String mboxMessage = mboxFormatTextPlusStatus.getMessage();
-						JSONObject singleMboxMsgStatus = mboxFormatTextPlusStatus.getReport().getJsonReportObject();
-						if(mboxMessage!=null) {
-							msgBundle.append(mboxMessage);
-							msgBundle.append("\r\n");
-							allChannelMsgItems.put(singleMboxMsgStatus);
-						}else {
-							allChannelMsgItems.put(singleMboxMsgStatus);
-							log.error(String.format("Mbox Formatting for message with Id (%s) not successful with migrationid " +
-									"(%s) for site (%s)",messageId,migrationId,site_id));
 						}
 					}
 
 				}
-			}
-			if (Utils.isItMailArchiveMbox(destination_type)) {
-				String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
-				allChannelMsgItems = handleMailArchiveMboxMessage(out, msgBundle.toString(), messageFolderName,
-						allChannelMsgItems);
 			}
 			downloadStatus = finalReportObjBuilderForMailZipMigration(downloadStatus, allChannelMsgItems);
 			return downloadStatus;
@@ -1569,7 +1633,11 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + " " + sender+ " "+date+ " "+subject) + "/";
+			String name = messageFolderName + " " + sender + " " + date + " " + subject;
+			if(name.length()>100){
+				name=name.substring(0,100);
+			}
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, name) + "/";
 
 			return messageFolderName;
 		}
@@ -1870,8 +1938,8 @@ class MigrationTaskService {
 		HashMap<String,String> createBasicAuthInfo(String username,String password) {
 
 			HashMap<String,String >authInfo = new HashMap<String,String>();
-			authInfo.put("userName",username);
-			authInfo.put("password",password);
+			authInfo.put(Utils.ENV_PROPERTY_USERNAME,username);
+			authInfo.put(Utils.ENV_PROPERTY_PASSWORD,password);
 			return authInfo;
 		}
 

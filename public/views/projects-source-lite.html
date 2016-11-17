@@ -1,10 +1,3 @@
-<div class="mask" ng-show="mask" ng-cloak>
-  <div class="loader"></div>
-  <p class="maskMessage">
-    Download should begin shortly.
-  </p>
-</div>
-
 <div style="text-align: right">
   <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button><br>
   <br>
@@ -26,15 +19,20 @@
 				ng-if="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''"
 				id="project{{project.site_id}}" tabindex="-1">
 				<div class="row">
-					<div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+					<div class="col-md-7 col-lg-7 col-sm-7 col-xs-7">
 						<h4 class="site-header">
 							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
               <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
 							<small class="bigSmall" ng-show="project.last_migrated">last
 								migrated: {{project.last_migrated | date:'MM/dd h:mma'}}</small>
 						</h4>
+
 					</div>
+          <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+            <span class="spinner" ng-show="project.loadingTools"></span>
+          </div>
 					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+
 						<a ng-click="getTools(project.site_id)" href=""
 							ng-show="!project.stateHasTools && !project.migrating"> Download Options
                <span class="sr-only">for site {{project.site_name}}</span>
@@ -69,7 +67,12 @@
                 </small>
               </h5>
               <div ng-show="!project.doNotMigrateStatus">
-                <div class="panel panel-default">
+                <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===false">
+                  <div class="panel-body">
+                      There are no resource items to download.
+                  </div>
+                </div>
+                <div class="panel panel-default"  ng-show="project.tool_type ==='sakai.mailbox' || (project.tool_type==='sakai.resources' && project.hasContentItem===true)">
                   <div class="panel-body">
                     <p>
                       <small>
@@ -103,7 +106,7 @@
 					<div class="row noFocus"
 						id="toolSelDest{{project.tool_id}}" tabindex="-1">
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink">
-              <a ng-show="project.tool_type==='sakai.resources'" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zip file</a>
+              <a ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zip file</a>
               <div ng-show="project.tool_type==='sakai.mailbox'">
                 <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped .mbox file</a></div>
 						</div>

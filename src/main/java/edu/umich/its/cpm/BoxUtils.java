@@ -336,14 +336,15 @@ public class BoxUtils implements EnvironmentAware {
 				
 				// test the newly created object
 				// and watch for any BoxAPIException
-				for (Info c : rootFolder.getChildren()) {
+				for (Info c : rootFolder.getChildren("name", "description")) {
 					if (newBoxFolderName.equals(c.getName()))
 					{
+						
 						if (siteId.equals(c.getDescription())) {
 							// if the Box folder name matches site title, 
 							// AND Box folder description matches site id
-							// reuse the Box folder
-							newFolderInfo = (BoxFolder.Info) c;
+							// return null to mark the Box folder already exist
+							return null;
 						}
 						else
 						{

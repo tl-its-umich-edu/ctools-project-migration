@@ -106,8 +106,8 @@ public class GGBApiWrapper {
 
 		if (authInfo == null) {
 			authInfo = new HashMap<String, String>();
-			authInfo.put("userName", default_userName);
-			authInfo.put("password", default_password);
+			authInfo.put(Utils.ENV_PROPERTY_USERNAME, default_userName);
+			authInfo.put(Utils.ENV_PROPERTY_PASSWORD, default_password);
 		}
 
 		this.authInfo = authInfo;
@@ -122,7 +122,7 @@ public class GGBApiWrapper {
 			// TODO: don't use AuthScope.ANY
 			log.warn("don't use AuthScope.ANY for GGB basicAuth");
 			credentialsProvider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(
-					(String) this.authInfo.get("userName"), (String) this.authInfo.get("password")));
+					(String) this.authInfo.get(Utils.ENV_PROPERTY_USERNAME), (String) this.authInfo.get(Utils.ENV_PROPERTY_PASSWORD)));
 
 			this.httpClient = HttpClients.custom().setSSLHostnameVerifier(new NoopHostnameVerifier())
 					.setSslcontext(new SSLContextBuilder().loadTrustMaterial(null, trusting()).build())

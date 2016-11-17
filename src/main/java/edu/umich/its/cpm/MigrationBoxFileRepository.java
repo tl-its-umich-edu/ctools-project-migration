@@ -20,9 +20,10 @@ public interface MigrationBoxFileRepository extends CrudRepository<MigrationBoxF
 
 	/**
 	 * Finds next unprocessed Box file migration request
+	 * select the files with least file size first
 	 * @return
 	 */
-	@Query("SELECT bFile FROM MigrationBoxFile bFile WHERE bFile.start_time is null order by bFile.migration_id desc")
+	@Query("SELECT bFile FROM MigrationBoxFile bFile WHERE bFile.start_time is null order by bFile.file_size asc")
 	public List<MigrationBoxFile> findNextNewMigrationBoxFile();
 	
 	/**
