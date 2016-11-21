@@ -88,11 +88,11 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
     $scope.bulkUpload = function() {
       $('.has-error').removeClass('has-error');
       if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource){
+        if(!$scope.upload || $scope.upload.name ===''){
+          $('.bulkUploadName').addClass('has-error');
+        }
         if(!$scope.bulkUploadFile) {
           $('.bulkUploadFile').addClass('has-error');
-        }
-        if(!$scope.upload){
-          $('.bulkUploadName').addClass('has-error');
         }
         if(!$scope.uploadSource){
           $('.uploadSource').addClass('has-error');
