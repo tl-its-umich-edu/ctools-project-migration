@@ -338,6 +338,21 @@ public class MigrationController {
 			// filter out those sites that current user has role "Owner" in it
 			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); iSite++) {
 				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
+				
+				// check for site id
+				if (siteJSON.isNull("id"))
+				{
+					log.error(this + " null site id for JSON value " + siteJSON);
+					continue;
+				}
+				
+				// check for site type
+				if (siteJSON.isNull("type"))
+				{
+					log.error(this + " null site type for JSON value " + siteJSON);
+					continue;
+				}
+				
 				String siteId = siteJSON.getString("id");
 				String siteType = siteJSON.getString("type");
 				if (!allowedSiteTypes.contains(siteType))
