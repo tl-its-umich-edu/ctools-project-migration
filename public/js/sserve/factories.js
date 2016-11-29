@@ -116,10 +116,7 @@ projectMigrationApp.factory('Projects', function($http) {
 			}).then(function success(result) {
 				// filter everything course sites
 
-				var sourceProjects = _.filter(result.data.site_collection,
-					function(site){
-					return (site.type !== 'course' && site.type !== 'specialized_courses' && site.type !== 'GradToolsStudent');
-				});
+				var sourceProjects = result.data.site_collection;
 				// use a transform to make project data mirror data in
 				// migrations and migrated
 				var siteList = transformProjects(sourceProjects);
