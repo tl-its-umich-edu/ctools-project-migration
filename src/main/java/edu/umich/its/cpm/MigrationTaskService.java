@@ -1861,6 +1861,9 @@ class MigrationTaskService {
 			String archive_email_name = null;
 			JSONObject jo = new JSONObject(emailArchive);
 			JSONArray ja = jo.getJSONArray("mailarchive_collection");
+
+			//this loop will make sure that archive_email_name is set to one of
+			//a valid group name based on the first To: header it finds or null
 			outerloop:
 			for(int j=0;j<ja.length();j++) {
 				JSONArray allHeaders = (JSONArray) ((JSONObject) ja.get(j)).get("headers");
@@ -1885,6 +1888,7 @@ class MigrationTaskService {
 			}
 			if(archive_email_name == null){
 				archive_email_name = (String)((JSONObject)ja.get(0)).get("siteId");
+				log.warn("No valid google group name found so substituting with siteId "+archive_email_name);
 			}
 			log.debug("eAEN: returning: {}",archive_email_name);
 			return archive_email_name;
@@ -1905,7 +1909,7 @@ class MigrationTaskService {
 						emailId = emailId.substring(i + 1, emailId.indexOf('>'));
 					}
 					// To: ctqa-mbox@ctqa.dsc.umich.edu
-					if (isEmailSignatureValid(emailId)) {
+					if (isCToolsDomainValid(emailId)) {
 						archive_email_name = emailId.substring(0, emailId.indexOf('@'));
 						break;
 					}
@@ -1918,8 +1922,8 @@ class MigrationTaskService {
 			return archive_email_name;
 		}
 
-      // Eg.,emailId = ctqa-mbox@ctqa.dsc.umich.edu
-	public static boolean isEmailSignatureValid(String emailId) {
+      // Eg.,emailId = ctqa-mbox@ctqa.dsc.umich.edu, Unit test are written in MigrationTaskServiceTest class
+	public static boolean isCToolsDomainValid(String emailId) {
 		String emailSignature = emailId.substring(emailId.indexOf('@')+1);
 		String regex = "^ct[A-Za-z.]+.umich.edu$";
 		if(emailSignature.matches(regex)){

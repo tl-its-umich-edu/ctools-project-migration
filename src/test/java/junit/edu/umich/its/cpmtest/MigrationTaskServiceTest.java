@@ -56,13 +56,13 @@ public class MigrationTaskServiceTest {
 	}
 
 	@Test
-	public void test_ExtractEmail2() {
+	public void test_ExtractEmailWithOldTypicalCtoolsDomainName() {
 		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: \"HOWDY@HARVARD.edu\" <HOWDY@ctng.ummu.umich.edu>");
 		assertEquals("HOWDY",email_addr);
 	}
 
 	@Test
-	public void test_ExtractEmail3() {
+	public void test_ExtractEmailForNotValidDomainNamesForEmailArchive() {
 		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: HOWDY Test Site <HOWDY@HARVARD.edu>");
 		assertNull(email_addr);
 
@@ -71,7 +71,7 @@ public class MigrationTaskServiceTest {
 	}
 
 	@Test
-	public void test_ExtractEmail4() {
+	public void test_ExtractEmailForBadName() {
 		String email_addr = MigrationTaskService.extractEmailFromToHeader("To: undisclosed-recipients:;");
 		assertNull(email_addr);
 	}
@@ -83,36 +83,36 @@ public class MigrationTaskServiceTest {
 	}
 
 	@Test
-    public void testIsEmailSignatureValid(){
+    public void testIsCToolsDomainValid(){
 
-		boolean ac2 = MigrationTaskService.isEmailSignatureValid("ctqa-mbox@ctools.umich.edu");
+		boolean ac2 = MigrationTaskService.isCToolsDomainValid("ctqa-mbox@ctools.umich.edu");
 		assertEquals(true,ac2);
 
-		boolean ac3 = MigrationTaskService.isEmailSignatureValid("ctqa-mbox@ctdev.umich.edu");
+		boolean ac3 = MigrationTaskService.isCToolsDomainValid("ctqa-mbox@ctdev.umich.edu");
 		assertEquals(true,ac3);
 
-		boolean ac4 = MigrationTaskService.isEmailSignatureValid("ctqa-mbox@ctqa.umich.edu");
+		boolean ac4 = MigrationTaskService.isCToolsDomainValid("ctqa-mbox@ctqa.umich.edu");
 		assertEquals(true,ac4);
 
-		boolean ac5 = MigrationTaskService.isEmailSignatureValid("1069863172027-577274@ctng.ummu.umich.edu");
+		boolean ac5 = MigrationTaskService.isCToolsDomainValid("1069863172027-577274@ctng.ummu.umich.edu");
 		assertEquals(true,ac5);
 
-		boolean ac9 = MigrationTaskService.isEmailSignatureValid("hai@ct.ummn.dsc.umich.edu");
+		boolean ac9 = MigrationTaskService.isCToolsDomainValid("hai@ct.ummn.dsc.umich.edu");
 		assertEquals(true,ac9);
 
-		boolean actual = MigrationTaskService.isEmailSignatureValid("ctqa-mbox@umich.edu");
+		boolean actual = MigrationTaskService.isCToolsDomainValid("ctqa-mbox@umich.edu");
 		assertEquals(false,actual);
 
-		boolean ac6 = MigrationTaskService.isEmailSignatureValid("example@harvard.edu");
+		boolean ac6 = MigrationTaskService.isCToolsDomainValid("example@harvard.edu");
 		assertEquals(false,ac6);
 
-		boolean ac7 = MigrationTaskService.isEmailSignatureValid("hai@gmail.com");
+		boolean ac7 = MigrationTaskService.isCToolsDomainValid("hai@gmail.com");
 		assertEquals(false,ac7);
 
-		boolean ac8 = MigrationTaskService.isEmailSignatureValid("hai@ct.ummn.dsc.edu");
+		boolean ac8 = MigrationTaskService.isCToolsDomainValid("hai@ct.ummn.dsc.edu");
 		assertEquals(false,ac8);
 
-		boolean ac10 = MigrationTaskService.isEmailSignatureValid("To: undisclosed-recipients:;");
+		boolean ac10 = MigrationTaskService.isCToolsDomainValid("To: undisclosed-recipients:;");
 		assertEquals(false,ac10);
 	}
 
