@@ -52,13 +52,18 @@ main:
 
    open OUTFILE, "> $outFile" or die "$!";
 
+   ## set up count value
+   my $count = 0;
    SITE: foreach $_ (@sites)
    {
+       $count = $count + 1;
+       
+       $_ =~ s/\r?\n$//;
        chomp;
        next SITE if ( !$_ );
        my $sql;
        
-       print OUTFILE "-- for site id = $_\n";
+       print OUTFILE "-- Site $count: for site id = $_\n";
        $sql = $ARCHIVE_SAKAI_SITE_USER_ROLE_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
