@@ -1857,40 +1857,83 @@ class MigrationTaskService {
 		}
 
 		// Breakout the email name used in CTools for this archive.
-		protected String extractArchiveEmailName(String emailArchive) {
+		static public String extractArchiveEmailName(String emailArchive) {
+			String archive_email_name = null;
 			JSONObject jo = new JSONObject(emailArchive);
 			JSONArray ja = jo.getJSONArray("mailarchive_collection");
-			JSONArray firstHeaders = (JSONArray) ((JSONObject)ja.get(0)).get("headers");
 
-			int myJsonArraySize = firstHeaders.length();
-			String archive_email_name = null;
-
-			for (int i = 0; i < myJsonArraySize && archive_email_name == null; i++) {
-				String header  = (String) firstHeaders.get(i);
-				// look for the To: header
-				if (! header.startsWith("To: ")) {
-					continue;
+			//this loop will make sure that archive_email_name is set to one of
+			//a valid group name based on the first To: header it finds or null
+			outerloop:
+			for(int j=0;j<ja.length();j++) {
+				JSONArray allHeaders = (JSONArray) ((JSONObject) ja.get(j)).get("headers");
+				int myJsonArraySize = allHeaders.length();
+				for (int i = 0; i < myJsonArraySize && archive_email_name == null; i++) {
+					String header = (String) allHeaders.get(i);
+					// look for the To: header
+					if (!header.startsWith("To: ")) {
+						continue;
+					}
+					// Pull out the email name used by the old archive.
+					log.debug("aAEN: To header: {}", header);
+					archive_email_name = extractEmailFromToHeader(header);
+					if (archive_email_name == null) {
+						// breakout of inner for loop
+						break;
+					} else {
+						//found qualified google group name
+						break outerloop;
+					}
 				}
-				// Pull out the email name used by the old archive.
-				log.debug("aAEN: To header: {}",header);
-				archive_email_name = extractEmailFromToHeader(header);
-				break;
+			}
+			if(archive_email_name == null){
+				archive_email_name = (String)((JSONObject)ja.get(0)).get("siteId");
+				log.warn("No valid google group name found so substituting with siteId "+archive_email_name);
 			}
 			log.debug("eAEN: returning: {}",archive_email_name);
 			return archive_email_name;
 		}
 
 		static public String extractEmailFromToHeader(String header) {
-			String archive_email_name;
-			// Need to remove this if present.
-			header = header.replace("<","");
-			int at_index = header.indexOf("@");
-			int to_index = header.indexOf("To: ");
-			archive_email_name = header.substring(to_index+4,at_index);
+			String archive_email_name = null;
+			try {
+				header = header.split("To: ")[1].trim();
+				String[] multipleEmailId = header.split(",");
+
+				for (String emailId : multipleEmailId) {
+					int i = emailId.indexOf('<');
+					if (i != -1) {
+						// To: <jennlove-test-project@ctqa.dsc.umich.edu>
+						// To: "jennlove-test-project@ctqa.dsc.umich.edu" <jennlove-test-project@ctqa.dsc.umich.edu>
+						// To: Email Archive Test Site <ctqa-email-archive-1@ctqa.dsc.umich.edu>
+						emailId = emailId.substring(i + 1, emailId.indexOf('>'));
+					}
+					// To: ctqa-mbox@ctqa.dsc.umich.edu
+					if (isCToolsDomainValid(emailId)) {
+						archive_email_name = emailId.substring(0, emailId.indexOf('@'));
+						break;
+					}
+
+				}
+			} catch (Exception e) {
+				log.error("Failure in getting the error google group id from " + header + "failed due to " + e.getMessage());
+			}
+
 			return archive_email_name;
 		}
 
-		/**
+      // Eg.,emailId = ctqa-mbox@ctqa.dsc.umich.edu, Unit test are written in MigrationTaskServiceTest class
+	public static boolean isCToolsDomainValid(String emailId) {
+		String emailSignature = emailId.substring(emailId.indexOf('@')+1);
+		String regex = "^ct[A-Za-z.]+.umich.edu$";
+		if(emailSignature.matches(regex)){
+			return true;
+		}
+
+		return false;
+	}
+
+	/**
 		 * TODO
 		 * call GG microservice to get Group Groups settings for given site id
 		 * @param siteId
