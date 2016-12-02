@@ -1,7 +1,17 @@
-<div style="text-align: right">
-  <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button><br>
-  <br>
+<div class="container-fluid">
+  <div class="row">
+    <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12" style="padding-left:0">
+        <div ng-show="sourceProjects.length">
+          <input type="text" name="" value="" class="form-control" placeholder="Search project site names..." id="searchProject" ng-model="projectQuery">
+          <label for="searchProject" class="sr-only">Search for projects</label>
+        </div>
+    </div>
+    <div class="col-lg-4 col-md-4 col-sm-12 col-cs-12" style="text-align:right;padding-right:0">
+      <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button>
+    </div>
+  </div>
 </div>
+<br>
 <div class="no-items" ng-show="loadingProjects">
 	<span class="spinner"></span> <span> Loading projects from
 		CTools...</span>
@@ -10,7 +20,7 @@
 	sites available.</div>
 <div ng-show="sourceProjects.length">
 	<ul class="list-group" style="margin-bottom: 0">
-		<li ng-repeat="project in sourceProjects"
+		<li ng-repeat="project in sourceProjects | filter:{site_name:projectQuery}"
 			ng-class="project.tool_id !== '' ? 'myworkspace list-group-item toolRow noFocus' : 'myworkspace list-group-item projectRow noFocus'"
 			ng-hide="project.hideTools && project.tool"
 			id="toolSel{{project.tool_id}}" tabindex="-1">
