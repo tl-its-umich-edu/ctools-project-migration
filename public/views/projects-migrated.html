@@ -8,67 +8,80 @@
 </div>
 
 <div ng-if="migratedProjects.length && !migratedProjectsError">
-  <h4>Last 5 migrations</h4>
+  <div ng-show="recentlyMigratedProjects.length && recentlyMigratedProjectsShow">
+    <h4>Last 5 migrations</h4>
+    <ul class="list-group" style="margin-bottom:0">
+    	<li class="list-group-item" ng-repeat="migratedProject in recentlyMigratedProjects">
+        <!--//this is not very good, but leaves the model untouched for polling needs
+        and presents a categorized view -->
+        <div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratedProject.site_id !== migratedProjects[$index - 1].site_id">
+          <h4 class="site-header">{{migratedProject.site_name}}</h4>
+        </div>
+        <div class="row">
+          <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+              {{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
+          </div>
+        </div>
+        <div class="row">
+          <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
+            <small>
+              {{migratedProject.status.type | readableExportType}}
+              <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
+            </small>
+          </div>
+          <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
+            <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0 && migratedProject.status.counts.partial_successes ===0">
+              Nothing got migrated.
+            </small>
+            <small ng-show="migratedProject.status.counts.successes && migratedProject.status.counts.successes !==0">
+              {{migratedProject.status.counts.successes}}
+              <span ng-show="migratedProject.status.counts.successes === 1">success</span>
+              <span ng-show="migratedProject.status.counts.successes > 1">successes</span>
+            </small>
+            <small ng-show="migratedProject.status.counts.partial_successes && migratedProject.status.counts.partial_successes !==0">
+              {{migratedProject.status.counts.partial_successes}} partial
+              <span ng-show="migratedProject.status.counts.partial_successes === 1">success</span>
+              <span ng-show="migratedProject.status.counts.partial_successes > 1">successes</span>
+            </small>
+            <small ng-show="migratedProject.status.counts.errors && migratedProject.status.counts.errors !==0">
+              {{migratedProject.status.counts.errors}}
+              <span ng-show="migratedProject.status.counts.errors === 1">error</span>
+              <span ng-show="migratedProject.status.counts.errors > 1">errors</span>
+            </small>
+            <!-- First member of OR checks for global GG failures or ITEMS - in both cases we have a report to show.bs.modal source
+            so we display a link to it. Second part of the OR discounts old report data formats -  do not provide a link if status.data (old report format) or is status is an array -->
+            <small ng-show="((migratedProject.status.details && migratedProject.status.details !=='OK') || migratedProject.status.items.length)
+            && !migratedProject.status.data && !migratedProject.status.counts.length">
+              <br>
+              <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
+                See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+            </small>
+            &nbsp;
+            <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
+            <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0)" class="glyphicon glyphicon-ok"></span>
+            <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
+            <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-warning-sign"></span>
+          </div>
+          </div>
+        </div>
+      </li>
+    </ul>
+  </div>
+  <div class="container-fluid">
+    <div class="row">
+      <h4 ng-show="migratedProjects.length && recentlyMigratedProjectsShow">Complete list</h4>
+      <div class="col-lg-8 col-md-8 col-sm-10 col-xs-8" style="padding-left:0">
+        <input type="text" name="" value="" class="form-control" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
+      </div>
+      <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="padding-right:0">
+        <input type="checkbox" name="" value="" ng-model="recentlyMigratedProjectsShow" id="showLastFive">
+        <label for="showLastFive">Show last 5</label>
+      </div>
+    </div>
+  </div>
+  <br>
   <ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratedProject in recentlyMigratedProjects">
-      <!--//this is not very good, but leaves the model untouched for polling needs
-      and presents a categorized view -->
-      <div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratedProject.site_id !== migratedProjects[$index - 1].site_id">
-        <h4 class="site-header">{{migratedProject.site_name}}</h4>
-      </div>
-      <div class="row">
-        <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-            {{migratedProject.tool_name}} <small class="muted">({{migratedProject.end_time | date:'MM/dd h:mma'}})</small>
-        </div>
-      </div>
-      <div class="row">
-        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6">
-          <small>
-            {{migratedProject.status.type | readableExportType}}
-            <span ng-show="migratedProject.migrated_by"> by {{migratedProject.migrated_by}}</span>
-          </small>
-        </div>
-        <div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
-          <small ng-show="migratedProject.status.counts.successes ===0 && migratedProject.status.counts.errors ===0 && migratedProject.status.counts.partial_successes ===0">
-            Nothing got migrated.
-          </small>
-          <small ng-show="migratedProject.status.counts.successes && migratedProject.status.counts.successes !==0">
-            {{migratedProject.status.counts.successes}}
-            <span ng-show="migratedProject.status.counts.successes === 1">success</span>
-            <span ng-show="migratedProject.status.counts.successes > 1">successes</span>
-          </small>
-          <small ng-show="migratedProject.status.counts.partial_successes && migratedProject.status.counts.partial_successes !==0">
-            {{migratedProject.status.counts.partial_successes}} partial
-            <span ng-show="migratedProject.status.counts.partial_successes === 1">success</span>
-            <span ng-show="migratedProject.status.counts.partial_successes > 1">successes</span>
-          </small>
-          <small ng-show="migratedProject.status.counts.errors && migratedProject.status.counts.errors !==0">
-            {{migratedProject.status.counts.errors}}
-            <span ng-show="migratedProject.status.counts.errors === 1">error</span>
-            <span ng-show="migratedProject.status.counts.errors > 1">errors</span>
-          </small>
-          <!-- First member of OR checks for global GG failures or ITEMS - in both cases we have a report to show.bs.modal source
-          so we display a link to it. Second part of the OR discounts old report data formats -  do not provide a link if status.data (old report format) or is status is an array -->
-          <small ng-show="((migratedProject.status.details && migratedProject.status.details !=='OK') || migratedProject.status.items.length)
-          && !migratedProject.status.data && !migratedProject.status.counts.length">
-            <br>
-            <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
-              See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
-          </small>
-          &nbsp;
-          <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
-          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0)" class="glyphicon glyphicon-ok"></span>
-          <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
-          <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-warning-sign"></span>
-        </div>
-        </div>
-      </div>
-    </li>
-  </ul>
-
-<h4>Complete list</h4>
-  <ul class="list-group" style="margin-bottom:0">
-  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects">
+  	<li class="list-group-item" ng-repeat="migratedProject in migratedProjects | filter:{site_name:completedMigrationsFilter}">
   		<!--//this is not very good, but leaves the model untouched for polling needs
   		and presents a categorized view -->
   		<div style="border-bottom: 1px solid #ddd;margin:-6px -13px 10px;padding:0 5px 5px 5px" ng-if ="migratedProject.site_id !== migratedProjects[$index - 1].site_id">
