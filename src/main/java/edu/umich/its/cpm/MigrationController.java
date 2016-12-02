@@ -1080,6 +1080,7 @@ public class MigrationController {
 		try {
 			// output json
 			response.setContentType(MediaType.APPLICATION_JSON);
+			response.setCharacterEncoding("UTF-8");
 			if (jsonValue == null) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().write(errorMessage == null? "":errorMessage);
