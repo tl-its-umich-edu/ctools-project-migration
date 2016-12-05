@@ -72,7 +72,14 @@
                       There are no resource items to download.
                   </div>
                 </div>
-                <div class="panel panel-default"  ng-show="project.tool_type ==='sakai.mailbox' || (project.tool_type==='sakai.resources' && project.hasContentItem===true)">
+                <div class="panel panel-default"  ng-show="project.tool_type==='sakai.mailbox' && project.hasContentItem===false">
+                  <div class="panel-body">
+                      Email archive has no emails to download.
+                  </div>
+                </div>
+                <!-- convoluted logc below due to the fact that
+                email.archive does not have project.hasContentItem key/value pair as of yet -->
+                <div class="panel panel-default"  ng-show="(project.tool_type ==='sakai.mailbox' && (project.hasContentItem===true || !project.hasContentItem)) || (project.tool_type==='sakai.resources' && project.hasContentItem===true)">
                   <div class="panel-body">
                     <p>
                       <small>
