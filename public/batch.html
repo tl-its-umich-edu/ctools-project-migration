@@ -167,8 +167,15 @@
 									</li>
 								</ul>
 							</div>
-							<div role="tabpanel" class="tab-pane" id="concluded">
-								<h3 class="panel-title panel-title-batch">Concluded</h3>
+							<div role="tabpanel" class="tab-pane container-fluid" id="concluded">
+                <div class="row">
+                  <div class="col-lg-4 col-md-4 col-sm-4  col-xs-12">
+                    <h3 class="panel-title panel-title-batch">Concluded</h3>
+                  </div>
+                  <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12" style="margin:13px -12px">
+                    <input type="text" class="form-control" placeholder="Search batch names" ng-model="searchBatchNames">
+                  </div>
+                </div>
 								<ul class="list-group" style="margin: 0 15px 0">
                   <li ng-show="concluded.length ===0" class="list-group-item">
                     <div class=" row">
@@ -177,7 +184,7 @@
                       </div>
                     </div>
                   </li>
-									<li class="list-group-item row" ng-repeat="concludedBatch in concluded">
+									<li class="list-group-item row" ng-repeat="concludedBatch in concluded | filter:searchBatchNames">
                     <div class="row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
                         <h4 class="site-header">{{concludedBatch[0]}}</h4>
