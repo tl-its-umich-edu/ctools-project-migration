@@ -186,6 +186,7 @@ public class BoxUtils implements EnvironmentAware {
 					String.class);
 			// open window with resultString
 			response.setContentType("text/html");
+			response.setCharacterEncoding("UTF-8");
 			response.getWriter().println(resultString);
 			response.flushBuffer();
 			response.getWriter().close();
