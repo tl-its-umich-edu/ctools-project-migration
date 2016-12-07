@@ -80,6 +80,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     Migrated.getMigrated(migratedUrl).then(function(result) {
       if (result.status === 200) {
         result = transformMigrated(result);
+        $scope.recentlyMigratedProjects = _.last(_.sortBy(result.data.entity,'end_time'), 5).reverse();
         $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
         $rootScope.status.migrated = moment().format('h:mm:ss');
         $log.info(moment().format('h:mm:ss') + ' - migrated projects loaded');
@@ -415,6 +416,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
             if (result.data.status === 200) {
               result = transformMigrated(result);
               $scope.migratedProjects = _.sortBy(result.data.entity,'site_name');
+              $scope.recentlyMigratedProjects = _.last(_.sortBy(result.data.entity,'end_time'), 5).reverse();
               // this poll has
               // different data
               // than the last one
