@@ -157,6 +157,7 @@ class MigrationTaskService {
 					// choose what action will he do to the sent content.
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
+					response.setCharacterEncoding("UTF-8");
 					String zipFileName = site_id + "_content.zip";
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
@@ -1227,6 +1228,7 @@ class MigrationTaskService {
 					// choose what action will he do to the sent content.
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
+					response.setCharacterEncoding("UTF-8");
 					String zipFileName = null;
 					if (Utils.isItMailArchiveZip(destination_type)) {
 						zipFileName = site_id + "_mailarchive.zip";
