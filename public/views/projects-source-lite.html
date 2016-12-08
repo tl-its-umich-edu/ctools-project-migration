@@ -42,7 +42,7 @@
         <br>
         <div class="row">
           <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-            <div ng-hide="project.deleteStatus">
+            <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
               <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
             </div>
             <div  ng-show="project.deleteStatus">
