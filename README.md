@@ -5,7 +5,7 @@
 This project servers as a standalone tool that helps CTools user to transfer CTools project site contents (Resources files, Email Archive messages, etc.) to outside environments 
 (Box, Google, local disk, etc). Here is a brief description of the migration workflow:
 
-* Upon login, the user will be presented with a list of CTools project sites where he has "site.upd" permission, and tools (Resources, Email Archive, et) within those sites;
+* Upon login, the user will be presented with a list of CTools project sites where he has Owner role, and tools (Resources, Email Archive, et) within those sites;
 * User picks the tool(s) he want to migrate, choose the migration destination,  and start the migrate process
 * The migration record is recorded in the tool database, with information of related CTools project site, tools to migrate, destination, start and end time;
 * The tool UI shows the migration status based on the migration records in database.

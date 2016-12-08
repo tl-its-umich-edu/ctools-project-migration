@@ -119,6 +119,8 @@ import org.springframework.scheduling.annotation.EnableAsync;
 @RestController
 public class MigrationController {
 
+	private static final String JSON_ATTR_MEMBERSHIP_COLLECTION = "membership_collection";
+	
 	private static final String JSON_ATTR_SITE_COLLECTION = "site_collection";
 
 	private static final String BOX_AUTHORIZED_HTML = "<link rel=\"stylesheet\" href=\"vendors/bootstrap/bootstrap.min.css\"><div class=\"jumbotron\" style=\"background:#fff\"><h1 role=\"alert\">Authorized</h1><p>You can now select a Box folder and migrate project sites to it.</p><p><a onclick=\"window.parent.closeBoxAuthModal()\" href=\"#\">Close</a></p></div>";
@@ -149,7 +151,7 @@ public class MigrationController {
 	private MigrationInstanceService migrationInstanceService;
 
 	/**
-	 * get all CTools sites where user have site.upd permission
+	 * get all CTools sites where user have Owner role inside
 	 *
 	 * @return
 	 */
@@ -158,7 +160,7 @@ public class MigrationController {
 	public void getProjectSites(HttpServletRequest request,
 			HttpServletResponse response) {
 
-		// get non-course sites that user have site.upd permission
+		// get non-course sites that user has Owner role inside
 		HashMap<String, String> projectsMap = getUserAllSitesMap(request);
 
 		// JSON response
@@ -167,7 +169,7 @@ public class MigrationController {
 	}
 
 	/**
-	 * return HashMap object with non-course sites that user have site.upd
+	 * return HashMap object with non-course sites that user has Owner role inside
 	 * permission
 	 *
 	 * @param request
@@ -296,20 +298,18 @@ public class MigrationController {
 		String errorMessage = "";
 		String requestUrl = "";
 
-		// get all sites that user have permission site.upd
+		// get all sites that user is of Owner role
 		RestTemplate restTemplate = new RestTemplate();
-		// the url should be in the format of
-		// "https://server/direct/site/withPerm/.json?permission=site.upd"
 		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/site/withPerm/.json?permission=site.upd&_sessionId="
+				+ "direct/membership.json?role=Owner&_sessionId="
 				+ sessionId;
 		log.info(this + " get_user_sites " + requestUrl);
 		try {
-			projectsString = restTemplate.getForObject(requestUrl,
+			String membershipString = restTemplate.getForObject(requestUrl,
 					String.class);
 
 			// update the projectString by filtering based on site Owner role
-			projectsString = filterForSitesWithOwnerRole(projectsString, currentUserId, sessionId, allowedSiteTypes);
+			projectsString = filterOutEvalOnlySites(membershipString, currentUserId, sessionId, allowedSiteTypes);
 		} catch (RestClientException e) {
 			errorMessage = e.getMessage();
 			log.error(requestUrl + errorMessage);
@@ -322,82 +322,102 @@ public class MigrationController {
 	}
 
 	/**
-	 * retain only the site record where the current user has Owner role inside
+	 * filter out those sites with only evaluation tool inside
 	 * @param request
-	 * @param projectsString
+	 * @param membershipString
 	 * @param currentUserId
 	 * @return
 	 */
-	private String filterForSitesWithOwnerRole(String projectsString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
+	private String filterOutEvalOnlySites(String membershipString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
 		JSONArray ownerSitesJSONArray = new JSONArray();
+		JSONObject membershipsObject = new JSONObject();
 		try {
-			JSONObject sitesJSONObject = new JSONObject(projectsString);
-			// get site array
-			JSONArray sitesJSONArray = sitesJSONObject.getJSONArray(JSON_ATTR_SITE_COLLECTION);
+			membershipsObject = new JSONObject(membershipString);
+			// the JSON format as follows:
+			// "entityPrefix": "membership"
+			// "site_collection": <the myworkspace site>
+			// "membership_collection": <the sites that user is member of>
+		} catch (JSONException e) {
+			log.error(this + " error parsing sites JSON value " + membershipString);
+			return "";
+		}
+			
+		// get site array
+		JSONArray membershipsJSONArray = membershipsObject.getJSONArray(JSON_ATTR_MEMBERSHIP_COLLECTION);
 
-			// filter out those sites that current user has role "Owner" in it
-			for (int iSite = 0; sitesJSONArray != null && iSite < sitesJSONArray.length(); iSite++) {
-				JSONObject siteJSON = sitesJSONArray.getJSONObject(iSite);
-				
-				// check for site id
-				if (siteJSON.isNull("id"))
+		for (int iMembership = 0; membershipsJSONArray != null && iMembership < membershipsJSONArray.length(); iMembership++) {
+			JSONObject membershipJSON = membershipsJSONArray.getJSONObject(iMembership);
+			
+			// entityId: 9124db8a-171a-46a9-bcf3-5b126842c54f::site:1065049660132-200130
+			// check for site id
+			if (membershipJSON.isNull("entityId"))
+			{
+				log.error(this + " no entityId field in " + membershipJSON);
+				continue;
+			}
+			
+			String entityId = membershipJSON.getString("entityId");
+			String[] siteIdParts = entityId.split("::site:");
+			// entityId: 9124db8a-171a-46a9-bcf3-5b126842c54f::site:1065049660132-200130
+			if (siteIdParts.length != 2)
+			{
+				log.error(this + " entityId value not in right format user_id::site:site_id in " + membershipJSON);
+				continue; 
+			}
+			
+			String siteId = siteIdParts[1];
+			
+			// now we need to get site information
+			// get all sites that user is of Owner role
+			RestTemplate restTemplate = new RestTemplate();
+			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+					+ "direct/site/" + siteId + ".json?_sessionId="
+					+ sessionId;
+			log.info(this + " get site " + requestUrl);
+			JSONObject siteJSON = new JSONObject();
+			try {
+				siteJSON = new JSONObject(restTemplate.getForObject(requestUrl,
+						String.class));
+
+			} catch (RestClientException e) {
+				log.error(this + requestUrl + e.getMessage());
+			}
+			
+			String siteType = (siteJSON.has("type") && !siteJSON.isNull("type")) ? siteJSON.getString("type"):null;
+			if (!allowedSiteTypes.contains(siteType))
+				// if not the wanted type, bypass the site
+				continue;
+			try
+			{
+				// check whether this site is automatically created from Canvas
+				// and with only one Evaluation tool inside
+				if (!isEvalProjectSite(sessionId, siteId))
 				{
-					log.error(this + " null site id for JSON value " + siteJSON);
-					continue;
-				}
-				
-				// check for site type
-				if (siteJSON.isNull("type"))
-				{
-					log.error(this + " null site type for JSON value " + siteJSON);
-					continue;
-				}
-				
-				String siteId = siteJSON.getString("id");
-				String siteType = siteJSON.getString("type");
-				if (!allowedSiteTypes.contains(siteType))
-					// if not the wanted type, bypass the site
-					continue;
-				try
-				{
-					// get all site members
-					HashMap<String, String> userRoles = get_site_members(siteId, sessionId);
-					String userRole = userRoles.get(currentUserId);
-					if (Utils.ROLE_OWNER.equals(userRole))
-					{
-						
-						// check whether this site is automatically created from Canvas
-						// and with only one Evaluation tool inside
-						if (!isEvalProjectSite(sessionId, siteId))
-						{
-							// keep the site JSON if current user has Owner role in this site
-							ownerSitesJSONArray.put(siteJSON);
-						}
-					}
-				}
-				catch (RestClientException e)
-				{
-					// sometimes there is problem getting site member roles
-					// in this case, we will add the site json
-					// and document the exception
+					// keep the site JSON if current user has Owner role in this site
 					ownerSitesJSONArray.put(siteJSON);
-					log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
-				}
-				catch (JSONException e)
-				{
-					// sometimes there is problem getting site member roles
-					// in this case, we will add the site json
-					// and document the exception
-					ownerSitesJSONArray.put(siteJSON);
-					log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
 				}
 			}
-			sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, ownerSitesJSONArray);
-			projectsString = sitesJSONObject.toString();
-		} catch (JSONException e) {
-			log.error(this + " error parsing sites JSON value " + projectsString);
+			catch (RestClientException e)
+			{
+				// sometimes there is problem getting site member roles
+				// in this case, we will add the site json
+				// and document the exception
+				ownerSitesJSONArray.put(siteJSON);
+				log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+			}
+			catch (JSONException e)
+			{
+				// sometimes there is problem getting site member roles
+				// in this case, we will add the site json
+				// and document the exception
+				ownerSitesJSONArray.put(siteJSON);
+				log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
+			}
 		}
-		return projectsString;
+		
+		JSONObject sitesJSONObject = new JSONObject();
+		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, ownerSitesJSONArray);
+		return sitesJSONObject.toString();
 	}
 
 	/**
@@ -2275,7 +2295,6 @@ public class MigrationController {
 	 */
 	private String getSiteName(String siteId, String sessionId) {
 		String siteName = null;
-		// get all sites that user have permission site.upd
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"

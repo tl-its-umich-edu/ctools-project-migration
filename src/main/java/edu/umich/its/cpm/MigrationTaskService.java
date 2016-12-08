@@ -132,7 +132,7 @@ class MigrationTaskService {
 				HttpContext httpContext = (HttpContext) sessionAttributes
 						.get("httpContext");
 
-				// 3. get all sites that user have permission site.upd
+				// 3. get site information
 				RestTemplate restTemplate = new RestTemplate();
 				// the url should be in the format of
 				// "https://server/direct/site/SITE_ID.json"
