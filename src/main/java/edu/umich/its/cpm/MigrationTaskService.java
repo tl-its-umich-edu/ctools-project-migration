@@ -136,9 +136,7 @@ class MigrationTaskService {
 				RestTemplate restTemplate = new RestTemplate();
 				// the url should be in the format of
 				// "https://server/direct/site/SITE_ID.json"
-				String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-						+ "direct/content/site/" + site_id + ".json?_sessionId="
-						+ sessionId;
+				String requestUrl = Utils.directCallUrl(env, "content/site/" + site_id + ".json?", sessionId);
 				String siteResourceJson = null;
 				try {
 					siteResourceJson = restTemplate.getForObject(requestUrl,
@@ -1323,9 +1321,7 @@ class MigrationTaskService {
 
 			// get all mail channels inside the site
 			RestTemplate restTemplate = new RestTemplate();
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+ "direct/mailarchive/siteChannels/" + site_id + ".json?_sessionId="
-					+ sessionId;
+			String requestUrl = Utils.directCallUrl(env, "mailarchive/siteChannels/" + site_id + ".json?", sessionId);
 			JSONObject channelsJSON = null;
 			channelsJSON = new JSONObject(restTemplate.getForObject(requestUrl,
 					String.class));
@@ -1367,9 +1363,7 @@ class MigrationTaskService {
 				}
 
 				// get all email messages in the channel
-				requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-						+ "direct/mailarchive/channelMessages/" + site_id + "/" + channelId + ".json?_sessionId="
-						+ sessionId;
+				requestUrl = Utils.directCallUrl(env, "mailarchive/channelMessages/" + site_id + "/" + channelId + ".json?", sessionId);
 				JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
 						String.class));
 				JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
@@ -1700,9 +1694,7 @@ class MigrationTaskService {
 
 			// get all mail channels inside the site
 			RestTemplate restTemplate = new RestTemplate();
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+ "direct/mailarchive/siteChannels/" + siteId + ".json?_sessionId="
-					+ sessionId;
+			String requestUrl = Utils.directCallUrl(env, "mailarchive/siteChannels/" + siteId + ".json?", sessionId);
 			JSONObject channelsJSON = null;
 			channelsJSON = new JSONObject(restTemplate.getForObject(requestUrl,
 					String.class));
@@ -1721,9 +1713,7 @@ class MigrationTaskService {
 				String channelName = channel.getString("displayTitle");
 
 				// get all email messages in the channel
-				requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-						+ "direct/mailarchive/channelMessages/" + siteId + "/" + channelId + ".json?_sessionId="
-						+ sessionId;
+				requestUrl = Utils.directCallUrl(env, "mailarchive/channelMessages/" + siteId + "/" + channelId + ".json?", sessionId);
 				JSONObject messagesJSON = new JSONObject(restTemplate.getForObject(requestUrl,
 						String.class));
 				JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
@@ -1781,8 +1771,7 @@ class MigrationTaskService {
 			RestTemplate restTemplate = new RestTemplate();
 			// the url should be in the format of
 			// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+			String requestUrl = Utils.directCallUrl(env, "site/" + siteId + ".json?", sessionId);
 			log.debug("siteInfo url: " + requestUrl);
 			try {
 				String siteJson = restTemplate.getForObject(requestUrl,
@@ -1835,8 +1824,7 @@ class MigrationTaskService {
 		// Get the new Google email address based on the email name available in the archive.
 		protected String getArchiveEmail(String sessionId, String siteId) {
 			RestTemplate restTemplate = new RestTemplate();
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+"/direct/mailarchive/siteMessages/"+siteId+".json?_sessionId=" + sessionId;
+			String requestUrl = Utils.directCallUrl(env, "mailarchive/siteMessages/"+siteId+".json?", sessionId);
 			String archiveJson = null;
 			try {
 				archiveJson = restTemplate.getForObject(requestUrl,String.class);
