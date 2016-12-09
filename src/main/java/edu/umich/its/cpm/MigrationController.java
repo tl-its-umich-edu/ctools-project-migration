@@ -234,8 +234,7 @@ public class MigrationController {
 		// format unavailable
 		// user MyWorkspace site ID could be two forms
 		// 1. try "~<user_id>" first
-		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL) + "direct/site/~"
-				+ userEid + ".json?_sessionId=" + sessionId;
+		requestUrl = Utils.directCallUrl(env, "site/~" + userEid + ".json?", sessionId);
 		log.info(this + " get_user_myworkspace_site_json " + requestUrl);
 		try {
 			ResponseEntity<String> siteEntity = restTemplate.getForEntity(
@@ -253,9 +252,7 @@ public class MigrationController {
 				// "https://server/direct/user/<eid>.json?_sessionId=<sessionId>"
 				// Response Code Details: 200 plus data; 404 if not found,
 				// 406 if format unavailable
-				requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-						+ "direct/user/" + userEid + ".json?_sessionId="
-						+ sessionId;
+				requestUrl = Utils.directCallUrl(env, "user/" + userEid + ".json?", sessionId);
 				log.info(this + " get_user_myworkspace_site_json "
 						+ requestUrl);
 				ResponseEntity<String> userEntity = restTemplate
@@ -265,9 +262,7 @@ public class MigrationController {
 							userEntity.getBody());
 					String userId = (String) userObject.get("id");
 					// use this userId to form user myworkspace id
-					requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-							+ "direct/site/~" + userId
-							+ ".json?_sessionId=" + sessionId;
+					requestUrl = Utils.directCallUrl(env, "site/~" + userId + ".json?", sessionId);
 					log.info(this + " get_user_myworkspace_site_json "
 							+ requestUrl);
 					ResponseEntity<String> siteEntity = restTemplate
@@ -300,16 +295,14 @@ public class MigrationController {
 
 		// get all sites that user is of Owner role
 		RestTemplate restTemplate = new RestTemplate();
-		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/membership.json?role=Owner&_sessionId="
-				+ sessionId;
+		requestUrl = Utils.directCallUrl(env, "membership.json?role=" + Utils.ROLE_OWNER + "&", sessionId);
 		log.info(this + " get_user_sites " + requestUrl);
 		try {
 			String membershipString = restTemplate.getForObject(requestUrl,
 					String.class);
 
 			// update the projectString by filtering based on site Owner role
-			projectsString = filterOutEvalOnlySites(membershipString, currentUserId, sessionId, allowedSiteTypes);
+			projectsString = filterSites(membershipString, currentUserId, sessionId, allowedSiteTypes);
 		} catch (RestClientException e) {
 			errorMessage = e.getMessage();
 			log.error(requestUrl + errorMessage);
@@ -328,7 +321,7 @@ public class MigrationController {
 	 * @param currentUserId
 	 * @return
 	 */
-	private String filterOutEvalOnlySites(String membershipString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
+	private String filterSites(String membershipString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
 		JSONArray ownerSitesJSONArray = new JSONArray();
 		JSONObject membershipsObject = new JSONObject();
 		try {
@@ -370,9 +363,7 @@ public class MigrationController {
 			// now we need to get site information
 			// get all sites that user is of Owner role
 			RestTemplate restTemplate = new RestTemplate();
-			String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-					+ "direct/site/" + siteId + ".json?_sessionId="
-					+ sessionId;
+			String requestUrl = Utils.directCallUrl(env, "site/" + siteId + ".json?", sessionId);
 			log.info(this + " get site " + requestUrl);
 			JSONObject siteJSON = new JSONObject();
 			try {
@@ -500,8 +491,7 @@ public class MigrationController {
 		// the url should be in the format of
 		// "https://server/direct/site/SITE_ID/pages.json"
 		RestTemplate restTemplate = new RestTemplate();
-		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL) + "direct/site/"
-				+ site_id + "/pages.json?_sessionId=" + sessionId;
+		requestUrl = Utils.directCallUrl(env, "site/" + site_id + "/pages.json?", sessionId);
 		log.info(requestUrl);
 		try {
 			pagesString = restTemplate.getForObject(requestUrl,
@@ -582,9 +572,7 @@ public class MigrationController {
 		String requestUrl = "";
 
 		RestTemplate restTemplate = new RestTemplate();
-		requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/membership/site/" + site_id + ".json?_sessionId="
-				+ sessionId;
+		requestUrl = Utils.directCallUrl(env, "membership/site/" + site_id + ".json?", sessionId);
 		log.debug("get_site_members: url:[{}] ",requestUrl);
 		try {
 			membersString = restTemplate.getForObject(requestUrl, String.class);
@@ -638,9 +626,7 @@ public class MigrationController {
 		String userId = site_id.substring(1);
 		
 		RestTemplate restTemplate = new RestTemplate();
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/user/" + userId + ".json?_sessionId="
-				+ sessionId;
+		String requestUrl = Utils.directCallUrl(env, "user/" + userId + ".json?", sessionId);
 		log.info("get user info: ",requestUrl);
 		// found user
 		String userString = "";
@@ -689,11 +675,7 @@ public class MigrationController {
 							&& "sakai.resources".equals(tool.get("toolId"))) {
 						// found Resource tool
 						restTemplate = new RestTemplate();
-						String resourceToolRequestUrl = env
-								.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-								+ "direct/content/site/"
-								+ site_id
-								+ ".json?_sessionId=" + sessionId;
+						String resourceToolRequestUrl = Utils.directCallUrl(env, "content/site/" + site_id + ".json?", sessionId);
 
 						try {
 							JSONObject resourceToolResultString = new JSONObject(
@@ -1000,9 +982,7 @@ public class MigrationController {
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/site/SITE_ID.json"
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/content/site/" + siteId + ".json?_sessionId="
-				+ sessionId;
+		String requestUrl = Utils.directCallUrl(env, "content/site/" + siteId + ".json?", sessionId);
 		String siteResourceJson = null;
 		try {
 			siteResourceJson = restTemplate.getForObject(requestUrl,
@@ -1976,8 +1956,7 @@ public class MigrationController {
 		}
 		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 		// the request string to add user to site with Owner role
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/membership/site/" + siteId + "?userSearchValues=" + adminUserId + "&memberRole=" + Utils.ROLE_OWNER + "&_sessionId=" + adminSessionId;
+		String requestUrl = Utils.directCallUrl(env, "membership/site/" + siteId + "?userSearchValues=" + adminUserId + "&memberRole=" + Utils.ROLE_OWNER + "&", adminSessionId);
      	
 		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
 		HttpClient httpClient = HttpClientBuilder.create().build();
@@ -2298,8 +2277,7 @@ public class MigrationController {
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+		String requestUrl = Utils.directCallUrl(env, "site/" + siteId + ".json?", sessionId);
 		log.info(this + requestUrl);
 		try {
 			String siteJson = restTemplate.getForObject(requestUrl,
@@ -2335,8 +2313,7 @@ public class MigrationController {
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/site/" + siteId + ".json?_sessionId=" + sessionId;
+		String requestUrl = Utils.directCallUrl(env, "site/" + siteId + ".json?", sessionId);
 		log.info("siteInfo url: " + requestUrl);
 		try {
 			String siteJson = restTemplate.getForObject(requestUrl,

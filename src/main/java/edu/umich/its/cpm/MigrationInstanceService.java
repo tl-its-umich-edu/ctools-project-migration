@@ -14,7 +14,6 @@ import java.util.List;
 import java.util.concurrent.Future;
 import java.util.Iterator;
 import java.io.IOException;
-
 import java.sql.Timestamp;
 
 import javax.servlet.http.HttpServletRequest;
@@ -347,8 +346,7 @@ class MigrationInstanceService {
 		
 		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 		// the request string to add user to site with Owner role
-		String requestUrl = env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/membership/" + adminUser + "::site:" + siteId + "?_sessionId=" + adminSessionId+ "&userIds=" + adminUser;
+		String requestUrl = Utils.directCallUrl(env, "membership/" + adminUser + "::site:" + siteId + "?userIds=" + adminUser + "&", adminSessionId);
 		
 		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
 		HttpClient httpClient = HttpClientBuilder.create().build();
