@@ -31,6 +31,7 @@ import javax.naming.directory.InitialDirContext;
 import javax.naming.directory.SearchControls;
 import javax.naming.directory.SearchResult;
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
@@ -212,9 +213,8 @@ class Utils {
 		// 1. create a session based on user id and password
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
-		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
-				+ "&_password=" + env.getProperty("password");
+		String requestUrl = Utils.directCallUrl(env, "session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
+				+ "&_password=" + env.getProperty("password"), null);
 		log.debug("ctools user url: {}",requestUrl);
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
@@ -248,9 +248,8 @@ class Utils {
 					try {
 						// the url should be in the format of
 						// "https://server/direct/session/SESSION_ID.json"
-						requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-								+ "direct/session/becomeuser/" + remoteUser
-								+ ".json?_sessionId=" + sessionId;
+						requestUrl = Utils.directCallUrl(env, "session/becomeuser/" + remoteUser
+								+ ".json?", sessionId);
 						log.info("becomeuser url: {}",requestUrl);
 	
 						HttpGet getRequest = new HttpGet(requestUrl);
@@ -304,9 +303,8 @@ class Utils {
 		// 1. create a session based on user id and password
 		// the url should be in the format of
 		// "https://server/direct/session?_username=USERNAME&_password=PASSWORD"
-		String requestUrl = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
-				+ "direct/session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
-				+ "&_password=" + env.getProperty("password");
+		String requestUrl = Utils.directCallUrl(env, "session?_username=" + env.getProperty(Utils.ENV_PROPERTY_USERNAME)
+				+ "&_password=" + env.getProperty("password"), null);
 		try {
 			HttpPost postRequest = new HttpPost(requestUrl);
 			postRequest.setHeader("Content-Type",
@@ -822,8 +820,22 @@ class Utils {
         return destination_type.equals(MAILARCHIVEMBOX);
     }
 
-
-
+    /**
+     * construct the /direct call URL
+     * @param env
+     * @param urlPart
+     * @param sessionId
+     * @return
+     */
+    public static String directCallUrl(Environment env, String urlPart, String sessionId) {
+        String rv = env.getProperty(ENV_PROPERTY_CTOOLS_SERVER_URL)
+				+ "direct/" + urlPart;
+        if (sessionId != null)
+        {
+        	rv = rv + "_sessionId=" + sessionId;
+        }
+        return rv;
+    }
 
 
 
