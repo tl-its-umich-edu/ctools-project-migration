@@ -691,8 +691,40 @@ public class MigrationController {
 										.get("content_collection");
 								// insert the "hasContentItem" attribute to JSON
 								// object
-								page.put("hasContentItem", resourceList != null
+								page.put(Utils.HAS_CONTENT_ITEM, resourceList != null
 										&& resourceList.length() > 1);
+							}
+						} catch (RestClientException e) {
+							log.error("Cannot find site content by siteId: "
+									+ site_id + " " + e.getMessage());
+						}
+					}
+
+					if (tool != null && tool.has("toolId")
+							&& "sakai.mailbox".equals(tool.get("toolId"))) {
+						// found email archive tool
+						restTemplate = new RestTemplate();
+						String emailArchiveRequestUrl = env
+								.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)
+								+ "direct/mailarchive/siteMessages/"
+								+ site_id
+								+ ".json?_sessionId=" + sessionId;
+
+						try {
+							JSONObject emailArchiveToolResultString = new JSONObject(
+									restTemplate.getForObject(
+											emailArchiveRequestUrl,
+											String.class));
+							if (emailArchiveToolResultString != null
+									&& emailArchiveToolResultString
+									.has("mailarchive_collection")) {
+								// find the email messages in
+								// mailarchive_collection
+								JSONArray emailMsgs = (JSONArray) emailArchiveToolResultString
+										.get("mailarchive_collection");
+								// insert the "hasContentItem" attribute to JSON
+								// object
+								page.put(Utils.HAS_CONTENT_ITEM, emailMsgs != null && emailMsgs.length() > 0);
 							}
 						} catch (RestClientException e) {
 							log.error("Cannot find site content by siteId: "
