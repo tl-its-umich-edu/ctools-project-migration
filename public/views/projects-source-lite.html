@@ -3,12 +3,12 @@
     <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
         <div ng-show="sourceProjects.length">
           <input type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
-          <span ng-show="projectSearchFilter !==''">&nbsp;<button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">&times;<span class="sr-only">Reset site search filter</span></button></span>
+          <span ng-show="projectSearchFilter !==''">&nbsp;<button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default"><span aria-hidden="true">&times;</span><span class="sr-only">Reset site search filter</span></button></span>
           <label for="searchProject" class="sr-only">Search for projects</label>
         </div>
     </div>
     <div class="col-lg-4 col-md-4 col-sm-12 col-cs-12" style="text-align:right;padding-right:0">
-      <button type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" ng-disabled="!selectionIsMade">Save changes</button>
+      <button accesskey="s" type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" aria-disabled="{{!selectionIsMade}}" ng-disabled="!selectionIsMade">Save changes</button>
     </div>
   </div>
 </div>
@@ -115,7 +115,7 @@
                   <span ng-if="project.tool_type==='sakai.resources'"> this content not be moved to Box</span>
                   <span ng-if="project.tool_type==='sakai.mailbox'"> this email archive not be moved to Google Groups</span> on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
                   </small>
-                  <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request?</a>
+                  <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request<span class="sr-only"> that {{project.tool_name}} for site {{project.site_name}} not be migrated</span>?</a>
                 </p>
               </div>
 						</div>
