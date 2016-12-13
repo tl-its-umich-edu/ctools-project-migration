@@ -604,9 +604,16 @@ class Utils {
 	 * @return
 	 */
 	public static String sanitizeName(String type, String name) {
+		String oldName = name;
+		
 		// fix file extension
 		if (!COLLECTION_TYPE.equals(type)) {
 			name = modifyFileNameOnType(type, name);
+		}
+		if (name == null)
+		{
+			log.error(" sanitizeName to be null for name=" + oldName);
+			return null;
 		}
 
 		// only look for ":" and "/" as of now
