@@ -188,6 +188,10 @@ class Utils {
 	// the Sakai Evaluation tool id
 	public static final String SAKAI_EVALUATION_TOOL_ID = "sakai.rsf.evaluation";
 	
+	public static final String PARAM_ITEM_STATUS = "itemStatus";
+	public static final String PARAM_CONTAINER_STACK = "containerStack";
+	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */

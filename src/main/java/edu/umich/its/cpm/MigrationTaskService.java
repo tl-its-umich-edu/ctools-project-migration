@@ -691,14 +691,14 @@ class MigrationTaskService {
 									description, contentItem, httpContext,
 									webLinkUrl, contentAccessUrl, author,
 									copyrightAlert, sessionId);
-							itemStatus = (StringBuffer) rvValues.get("itemStatus");
+							itemStatus = (StringBuffer) rvValues.get(Utils.PARAM_ITEM_STATUS);
 							containerStack = (java.util.Stack<String>) rvValues
-									.get("containerStack");
+									.get(Utils.PARAM_CONTAINER_STACK);
 							boxFolderIdStack = (java.util.Stack<String>) rvValues
-									.get("boxFolderIdStack");
-							log.debug("containerStack length="
+									.get(Utils.PARAM_BOX_FOLDER_ID_STACK);
+							log.debug(Utils.PARAM_CONTAINER_STACK + " length="
 									+ containerStack.size());
-							log.debug("boxFolderStack length="
+							log.debug(Utils.PARAM_BOX_FOLDER_ID_STACK + " length="
 									+ boxFolderIdStack.size());
 						} catch (BoxAPIException e) {
 							log.error(this + " boxUploadSiteContent "
@@ -842,21 +842,15 @@ class MigrationTaskService {
 					// returning all changed variables
 					itemStatus.append("Cannot create Box folder for folder " + title);
 					
-					HashMap<String, Object> rv = new HashMap<String, Object>();
-					rv.put("itemStatus", itemStatus);
-					rv.put("containerStack", containerStack);
-					rv.put("boxFolderIdStack", boxFolderIdStack);
-					return rv;
+					return returnMapWithStatus(
+							containerStack, boxFolderIdStack, itemStatus);
 				}
 
 				if (title == null) {
 					// exit if folder title is null
 					itemStatus.append("Cannot create Box folder for null folder title");
-					HashMap<String, Object> rv = new HashMap<String, Object>();
-					rv.put("itemStatus", itemStatus);
-					rv.put("containerStack", containerStack);
-					rv.put("boxFolderIdStack", boxFolderIdStack);
-					return rv;
+					return returnMapWithStatus(
+							containerStack, boxFolderIdStack, itemStatus);
 				}
 				
 				// create box folder
@@ -937,11 +931,19 @@ class MigrationTaskService {
 				}
 			}
 
-			// returning all changed variables
+			HashMap<String, Object> rv = returnMapWithStatus(containerStack,
+					boxFolderIdStack, itemStatus);
+			return rv;
+		}
+
+		private HashMap<String, Object> returnMapWithStatus(
+				java.util.Stack<String> containerStack,
+				java.util.Stack<String> boxFolderIdStack,
+				StringBuffer itemStatus) {
 			HashMap<String, Object> rv = new HashMap<String, Object>();
-			rv.put("itemStatus", itemStatus);
-			rv.put("containerStack", containerStack);
-			rv.put("boxFolderIdStack", boxFolderIdStack);
+			rv.put(Utils.PARAM_ITEM_STATUS, itemStatus);
+			rv.put(Utils.PARAM_CONTAINER_STACK, containerStack);
+			rv.put(Utils.PARAM_BOX_FOLDER_ID_STACK, boxFolderIdStack);
 			return rv;
 		}
 
