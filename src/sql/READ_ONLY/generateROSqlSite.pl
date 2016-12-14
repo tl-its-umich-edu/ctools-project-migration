@@ -41,6 +41,13 @@ sub writeRRFTableBackupSql {
 
 }
 
+sub writeCALReadOnlyUpdate {
+  my($siteId) = shift;
+  #  insert into CTDEV_USER.CPM_ACTION_LOG VALUES(CURRENT_TIMESTAMP,SITE_ID,'READ_ONLY');
+  print "/****** update log table *******/\n";
+  print "insert into ${DB_USER}.CPM_ACTION_LOG VALUES(CURRENT_TIMESTAMP,'${siteId}','READ_ONLY');\n";
+}
+
 # Count matching realms, both exact and prefix.
 sub writeSqlRealmCounts {
   my($site,$role,$function) = @_;
@@ -106,6 +113,8 @@ sub printSiteSql {
 sub printForSite {
   my ($s) = @_;
 
+  writeCALReadOnlyUpdate($s);
+  
   print "/***** initial count for site: $s ******/\n";
   print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n"; 
 
