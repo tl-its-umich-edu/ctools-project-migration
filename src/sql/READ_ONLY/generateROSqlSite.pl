@@ -1,5 +1,6 @@
 #!/usr/bin/env perl
 use YAML qw'LoadFile';
+use POSIX qw(strftime);
 
 ## Generate sql to delete permissions based on sites, roles, and list of permissions
 ## to delete.  These are configured in a yml file.
@@ -31,6 +32,14 @@ my @functions = @{$db->{functions}};
 
 my @roles=@{$db->{roles}};
 
+
+sub writeRRFTableBackupSql {
+  my $timeStamp = strftime '%Y%m%d', gmtime();
+  print "/****** make backup table ********/\n";
+  print "/* script creation time and backup table id: $timeStamp */\n";
+  print "create table ${DB_USER}.SAKAI_REALM_RL_FN_${timeStamp} as select * from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
+
+}
 
 # Count matching realms, both exact and prefix.
 sub writeSqlRealmCounts {
@@ -151,7 +160,10 @@ sub combineAll {
 
 ##### Main driver reads from stdin #######
 sub readFromStdin {
-  
+
+  # make a backup table.
+  writeRRFTableBackupSql;
+
   print "/***** initial count ******/\n";
   print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
   
