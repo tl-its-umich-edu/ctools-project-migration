@@ -691,14 +691,14 @@ class MigrationTaskService {
 									description, contentItem, httpContext,
 									webLinkUrl, contentAccessUrl, author,
 									copyrightAlert, sessionId);
-							itemStatus = (StringBuffer) rvValues.get("itemStatus");
+							itemStatus = (StringBuffer) rvValues.get(Utils.PARAM_ITEM_STATUS);
 							containerStack = (java.util.Stack<String>) rvValues
-									.get("containerStack");
+									.get(Utils.PARAM_CONTAINER_STACK);
 							boxFolderIdStack = (java.util.Stack<String>) rvValues
-									.get("boxFolderIdStack");
-							log.debug("containerStack length="
+									.get(Utils.PARAM_BOX_FOLDER_ID_STACK);
+							log.debug(Utils.PARAM_CONTAINER_STACK + " length="
 									+ containerStack.size());
-							log.debug("boxFolderStack length="
+							log.debug(Utils.PARAM_BOX_FOLDER_ID_STACK + " length="
 									+ boxFolderIdStack.size());
 						} catch (BoxAPIException e) {
 							log.error(this + " boxUploadSiteContent "
@@ -840,13 +840,19 @@ class MigrationTaskService {
 				if (api == null) {
 					// exit if no Box API connection could be made
 					// returning all changed variables
-					HashMap<String, Object> rv = new HashMap<String, Object>();
-					rv.put("itemStatus", "Cannot create Box folder for folder " + title);
-					rv.put("containerStack", containerStack);
-					rv.put("boxFolderIdStack", boxFolderIdStack);
-					return rv;
+					itemStatus.append("Cannot create Box folder for folder " + title);
+					
+					return returnMapWithStatus(
+							containerStack, boxFolderIdStack, itemStatus);
 				}
 
+				if (title == null) {
+					// exit if folder title is null
+					itemStatus.append("Cannot create Box folder for null folder title");
+					return returnMapWithStatus(
+							containerStack, boxFolderIdStack, itemStatus);
+				}
+				
 				// create box folder
 				BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
 				String sanitizedTitle = Utils.sanitizeName(type, title);
@@ -872,20 +878,9 @@ class MigrationTaskService {
 						// 409 means name conflict - item already existed
 						itemStatus.append("There is already a folder with name "
 								+ title + "- folder was not created in Box");
-
-						String exisingFolderId = getExistingBoxFolderIdFromBoxException(
-								e, sanitizedTitle);
-						if (exisingFolderId != null) {
-							// push the current folder id into the stack
-							containerStack.push(contentUrl);
-							boxFolderIdStack.push(exisingFolderId);
-							log.error("top of stack folder id = "
-									+ containerStack.peek() + " "
-									+ " container folder id=" + container);
-						} else {
-							log.error("Cannot find conflicting Box folder id for folder name "
-									+ sanitizedTitle);
-						}
+						// push the current folder id into the stack
+						containerStack.push(contentUrl);
+						boxFolderIdStack.push("title -- conflict with existing Box folder");
 					} else {
 						// log the exception message
 						log.error(e.getResponse() + " for " + title);
@@ -936,11 +931,19 @@ class MigrationTaskService {
 				}
 			}
 
-			// returning all changed variables
+			HashMap<String, Object> rv = returnMapWithStatus(containerStack,
+					boxFolderIdStack, itemStatus);
+			return rv;
+		}
+
+		private HashMap<String, Object> returnMapWithStatus(
+				java.util.Stack<String> containerStack,
+				java.util.Stack<String> boxFolderIdStack,
+				StringBuffer itemStatus) {
 			HashMap<String, Object> rv = new HashMap<String, Object>();
-			rv.put("itemStatus", itemStatus);
-			rv.put("containerStack", containerStack);
-			rv.put("boxFolderIdStack", boxFolderIdStack);
+			rv.put(Utils.PARAM_ITEM_STATUS, itemStatus);
+			rv.put(Utils.PARAM_CONTAINER_STACK, containerStack);
+			rv.put(Utils.PARAM_BOX_FOLDER_ID_STACK, boxFolderIdStack);
 			return rv;
 		}
 
@@ -952,6 +955,8 @@ class MigrationTaskService {
 		 */
 		@Async
 		protected Future<String> uploadBoxFile(MigrationBoxFile bFile, HttpContext httpContext, String sessionId) {
+			// status string
+			StringBuffer status = new StringBuffer();
 			
 			// get all bFile params
 			String id = bFile.getId();
@@ -959,7 +964,15 @@ class MigrationTaskService {
 			String type = bFile.getType();
 			String boxFolderId = bFile.getBox_folder_id();
 			String fileName = bFile.getTitle();
-
+			
+			if (fileName == null || fileName.isEmpty())
+			{
+				status.append(" uploadFile: file name is null or empty. ");
+				// update job end time and status
+				// return AsyncResult
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+			}
+			
 			String webLinkUrl = bFile.getWeb_link_url();
 			String fileAccessUrl = bFile.getFile_access_url();
 			String fileDescription = bFile.getDescription();
@@ -968,9 +981,6 @@ class MigrationTaskService {
 			final long fileSize = bFile.getFile_size();
 
 			BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
-
-			// status string
-			StringBuffer status = new StringBuffer();
 
 			log.info("begin to upload file " + fileName + " to box folder "
 					+ boxFolderId + " " + fileAccessUrl);
@@ -1070,11 +1080,16 @@ class MigrationTaskService {
 					// 409 means name conflict - item already existed
 					String conflictString = "There is already a file with name "
 							+ fileName + " - file was not added to Box";
-					log.info(conflictString);
+					log.error(conflictString);
 					status.append(conflictString + Utils.LINE_BREAK);
 				}
-				log.error(this + "uploadFile fileName=" + fileName
-						+ e.getResponse());
+				else
+				{
+					String errorString = "uploadFile fileName=" + fileName
+							+ e.getResponse();
+					log.error(this + errorString);
+					status.append(errorString + Utils.LINE_BREAK);
+				}
 			} catch (IllegalArgumentException iException) {
 				String ilExceptionString = "problem creating BufferedInputStream for file "
 						+ fileName
@@ -1164,28 +1179,35 @@ class MigrationTaskService {
 			// }
 			if (e.getResponse() == null)
 				return null;
-			JSONObject boxException = new JSONObject(e.getResponse());
-			if (boxException == null)
-				return null;
-			JSONObject context_info = boxException.getJSONObject("context_info");
-			if (context_info == null)
-				return null;
-			JSONArray conflicts = context_info.getJSONArray("conflicts");
-			if (conflicts == null)
-				return null;
-
-			for (int index = 0; index < conflicts.length(); index++) {
-				JSONObject conflict = conflicts.getJSONObject(index);
-				String conflictType = conflict.getString("type");
-				if (conflictType != null && conflictType.equals("folder")) {
-					String folderId = conflict.getString("id");
-					String folderName = conflict.getString("name");
-					if (folderName != null && folderName.equals(folderTitle)) {
-						// found the existing folder id, break
-						existingFolderId = folderId;
-						break;
+			try
+			{
+				JSONObject boxException = new JSONObject(e.getResponse());
+				if (boxException == null)
+					return null;
+				JSONObject context_info = boxException.getJSONObject("context_info");
+				if (context_info == null)
+					return null;
+				JSONArray conflicts = context_info.getJSONArray("conflicts");
+				if (conflicts == null)
+					return null;
+	
+				for (int index = 0; index < conflicts.length(); index++) {
+					JSONObject conflict = conflicts.getJSONObject(index);
+					String conflictType = conflict.getString("type");
+					if (conflictType != null && conflictType.equals("folder")) {
+						String folderId = conflict.getString("id");
+						String folderName = conflict.getString("name");
+						if (folderName != null && folderName.equals(folderTitle)) {
+							// found the existing folder id, break
+							existingFolderId = folderId;
+							break;
+						}
 					}
 				}
+			}
+			catch (org.json.JSONException jsonException)
+			{
+				log.error("Problem parsing JSON object based on " + e.getResponse());
 			}
 			return existingFolderId;
 		}
