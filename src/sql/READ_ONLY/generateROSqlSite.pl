@@ -44,7 +44,7 @@ sub writeRRFTableBackupSql {
 # Count matching realms, both exact and prefix.
 sub writeSqlRealmCounts {
   my($site,$role,$function) = @_;
-  
+
   my $sql = " select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN "
     . "where realm_key = "
     ." (select realm_key from ${DB_USER}.SAKAI_REALM where SAKAI_REALM.realm_id = "
@@ -60,20 +60,20 @@ sub writeSqlRealmCounts {
     ;
 
   print "/********* realm like ********/\n$sql\n";
-  
+
   my $sql = " select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN "
     . "where realm_key = "
     ." (select realm_key from ${DB_USER}.SAKAI_REALM where SAKAI_REALM.realm_id like "
     ."'/site/${site}%')"
     ;
-  
+
   print "/******* realm wildcard ********/\n$sql\n";
-  
+
 }
 
 
 # sample simple delete statement
-# delete from CTDEV_USER.SAKAI_REALM_RL_FN 
+# delete from CTDEV_USER.SAKAI_REALM_RL_FN
 # 	where realm_key = (select realm_key from CTDEV_USER.SAKAI_REALM where SAKAI_REALM.realm_id like '/site/17450978-d5b2-48e2-8142-83e1526b1722')
 # 	and role_key = (select role_key From CTDEV_USER.SAKAI_REALM_ROLE where role_name = 'Owner')
 # 	and function_key = (select function_key From CTDEV_USER.SAKAI_REALM_FUNCTION where function_name = 'signup.create.group')
@@ -107,7 +107,7 @@ sub printForSite {
   my ($s) = @_;
 
   print "/***** initial count for site: $s ******/\n";
-  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n"; 
+  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
 
   foreach $r (@roles) {
     print "/**************** role: $r ******/\n";
@@ -117,7 +117,7 @@ sub printForSite {
     }
   }
   print "/***** final count for site: $s ******/\n";
-  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n"; 
+  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
 }
 
 sub parseSiteLine {
@@ -140,7 +140,7 @@ sub printMsg {
 
 sub combineAll {
   print "/***** initial count ******/\n";
-  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n"; 
+  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
 
   foreach $s (@sites) {
     print "/******* site: $s ******/\n";
@@ -154,7 +154,7 @@ sub combineAll {
     }
   }
   print "/***** final count ******/\n";
-  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n"; 
+  print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
 }
 
 
@@ -166,7 +166,7 @@ sub readFromStdin {
 
   print "/***** initial count ******/\n";
   print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n";
-  
+
   while (<>) {
     chomp;
     my(@P) = parseSiteLine $_;
