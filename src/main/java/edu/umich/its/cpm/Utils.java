@@ -147,6 +147,7 @@ class Utils {
 	public static final String REPORT_ATTR_COUNT_PARTIALS = "partial_successes";
 	public static final String REPORT_ATTR_ID = "id";
 	public static final String REPORT_ATTR_ROLE = "role";
+	public static final String HAS_CONTENT_ITEM = "hasContentItem";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
