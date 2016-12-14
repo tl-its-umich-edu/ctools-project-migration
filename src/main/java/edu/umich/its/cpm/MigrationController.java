@@ -2169,6 +2169,8 @@ public class MigrationController {
 		String boxAdminClientId = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_ID);
 		String boxAdminClientSecret = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_SECRET);
 		String boxSiteFolderName = "CTools - " + siteName;
+		boxSiteFolderName = getMyworkspaceRootFolder(sessionId, siteId,
+				siteName, boxSiteFolderName);
 		
 		Info boxFolder = BoxUtils.createNewFolderAtRootLevel(userId,
 				boxAdminClientId, 
@@ -2238,6 +2240,43 @@ public class MigrationController {
 		siteBoxMigrationIdMap.put(siteId + "_migrationId", migrationId);
 		
 		return siteBoxMigrationIdMap;
+	}
+
+	/**
+	 * update Box root folder name for MyWorkspace sites
+	 * @param sessionId
+	 * @param userId
+	 * @param siteName
+	 * @param boxSiteRootFolderName
+	 * @return
+	 */
+	private String getMyworkspaceRootFolder(String sessionId, String siteId,
+			String siteName, String boxSiteRootFolderName) {
+		if (Utils.CTOOLS_MYWORKSPACE_TITLE.equals(siteName))
+		{
+			// get the user id from site id by removing the ~ char
+			String userId = siteId.replaceAll(Utils.CTOOLS_SITE_TYPE_MYWORKSPACE_PREFIX, "");
+			
+			// get user uniqname
+			String requestUrl = Utils.directCallUrl(env, "user/" + userId + ".json?", sessionId);
+			RestTemplate restTemplate = new RestTemplate();
+			try {
+				// get user eid based on user id
+				log.info(this + "get user eid"+ requestUrl);
+				ResponseEntity<String> userEntity = restTemplate
+						.getForEntity(requestUrl, String.class);
+				if (userEntity.getStatusCode().is2xxSuccessful()) {
+					JSONObject userObject = new JSONObject(
+							userEntity.getBody());
+					String userEid = (String) userObject.get("eid");
+					boxSiteRootFolderName = "CTools - " + Utils.CTOOLS_MYWORKSPACE_TITLE + " - " + userEid;
+				}
+			} catch (RestClientException e2) {
+				log.warn(this + requestUrl + e2.getMessage());
+				boxSiteRootFolderName = "CTools - " + Utils.CTOOLS_MYWORKSPACE_TITLE + " - " + userId;
+			}
+		}
+		return boxSiteRootFolderName;
 	}
 
 	private void handleBulkResourceBoxRootFolderError(String userId,
