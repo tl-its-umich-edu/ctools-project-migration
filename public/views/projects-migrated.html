@@ -53,7 +53,7 @@
             <small ng-show="((migratedProject.status.details && migratedProject.status.details !=='OK') || migratedProject.status.items.length)
             && !migratedProject.status.data && !migratedProject.status.counts.length">
               <br>
-              <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
+              <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails(migratedProject.migration_id, migratedProject.site_name, migratedProject.destination_type )">
                 See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
             </small>
             &nbsp;
@@ -124,7 +124,7 @@
           <small ng-show="((migratedProject.status.details && migratedProject.status.details !=='OK') || migratedProject.status.items.length)
           && !migratedProject.status.data && !migratedProject.status.counts.length">
             <br>
-            <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails($index, migratedProject.site_name, migratedProject.destination_type )">
+            <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails(migratedProject.migration_id, migratedProject.site_name, migratedProject.destination_type )">
               See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;

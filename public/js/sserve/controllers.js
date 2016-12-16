@@ -280,9 +280,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       });
     };
     // handler for showing the details of a migrated thing
-    $scope.showDetails = function(index, site_title) {
-      var reportDetails = $scope.migratedProjects[index].status;
-      var destination = $scope.migratedProjects[index].destination_type;
+    $scope.showDetails = function(migration_id, site_title) {
+      var targetMigrationPos = $scope.migratedProjects.indexOf(_.findWhere($scope.migratedProjects, {migration_id: migration_id}));
+      var reportDetails = $scope.migratedProjects[targetMigrationPos].status;
+      var destination = $scope.migratedProjects[targetMigrationPos].destination_type;
       reportDetails.title = site_title;
       $scope.reportDetails = reportDetails;
     };
