@@ -45,7 +45,7 @@
 					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
 
 						<a ng-click="getTools(project.site_id)" href=""
-							ng-show="!project.stateHasTools && !project.migrating"> Download Options
+							ng-show="!project.stateHasTools && !project.migrating">Migration Options
                <span class="sr-only">for site {{project.site_name}}</span>
 						</a>
           </div>
@@ -54,7 +54,7 @@
         <div class="row">
           <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
             <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
-              <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Have my site deleted</label>
+              <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
             </div>
             <div  ng-show="project.deleteStatus">
               <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
@@ -74,7 +74,11 @@
               <h5>
                 {{project.tool_name}}
                 <small ng-show="project.lastMigratedStatus">
-                  - (last migrated by {{project.lastMigratedStatus.migratedBy}} to {{project.lastMigratedStatus.migratedHow}} on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}})
+                  - (last <span ng-show="project.lastMigratedStatus.migratedHow ==='box'">migrated</span>
+                          <span ng-show="project.lastMigratedStatus.migratedHow ==='zip' || project.lastMigratedStatus.migratedHow ==='mailarchivembox' || project.lastMigratedStatus.migratedHow ==='mailarchivezip'">downloaded</span>
+                              by {{project.lastMigratedStatus.migratedBy}} {{project.lastMigratedStatus.migratedHow | readableExportTypeSmall }}
+                              on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}})
+
                 </small>
               </h5>
               <div ng-show="!project.doNotMigrateStatus">
