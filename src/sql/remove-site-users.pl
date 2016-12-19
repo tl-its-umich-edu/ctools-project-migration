@@ -32,6 +32,10 @@ my $USER_SQL = "delete from SAKAI_SITE_USER where site_id = 'SITE-ID';\n";
 my $REALM_SQL = "delete from SAKAI_REALM_RL_GR where realm_key in (select realm_key from sakai_realm where realm_id like '/site/SITE-ID%');\n";
 ## make site unpublished
 my $SITE_SQL = "update SAKAI_SITE set published=0 where site_id = 'SITE-ID'; \n";
+
+## save to CPM_ACTION_LOG table for tracking purposes
+my $LOG_SQL = "insert into CPM_ACTION_LOG (ACTION_TIME, SITE_ID, ACTION_TAKEN) VALUES (SYSTIMESTAMP,'SITE-ID','DELETE_MEMBERS'); \n";
+
 my $COMMIT_SQL = "commit;\n";
 
 main:
@@ -90,6 +94,11 @@ main:
        print OUTFILE "\n";
        
        $sql = $SITE_SQL;
+       $sql =~ s/SITE-ID/$_/;
+       print OUTFILE $sql;
+       print OUTFILE "\n\n";
+       
+       $sql = $LOG_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
        print OUTFILE "\n\n";
