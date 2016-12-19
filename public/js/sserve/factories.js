@@ -128,12 +128,12 @@ projectMigrationApp.factory('Projects', function($http) {
 				return result;
 			});
 		},
-		getProject : function(url) {
+		getProject : function(url, deleteStatus) {
 			return $http.get(url, {
 				cache : false
 			}).then(function success(result) {
 				// forward the data - let the controller deal with it
-				return transformProject(result);
+				return transformProject(result, deleteStatus);
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get project');
 				result.errors.failure = true;
