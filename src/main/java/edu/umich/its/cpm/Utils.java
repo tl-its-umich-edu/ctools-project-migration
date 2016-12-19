@@ -379,56 +379,18 @@ class Utils {
 
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
-	private static final String ALLOW_USER_URLOVERRIDE = "allow.testUser.urlOverride";
+	private static final String ALLOW_USER_URL = "use.testUser.url";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
 	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
 
-	/*
-	 * User is authenticated using CoSign and authorized using Ldap. For local
-	 * development, we have use.testUser.url = true to enable "testUser"
-	 * parameter. and only CoSigned user from certain LDAP group can use the
-	 * "testUser" param in URL. For production server, set
-	 * use.testUser.url=false
-	 */
+
 	public static String getCurrentUserId(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String rvUser = getRemoteUser(request,env);
-
-		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		}*/
-
-		// get the environment setting, default to "false"
-		String allowTestUserUrlOverride = env.getProperty(
-				ALLOW_USER_URLOVERRIDE, Boolean.FALSE.toString());
-		if (hasValue(allowTestUserUrlOverride)
-				&& Boolean.valueOf(allowTestUserUrlOverride)
-				&& request.getParameter(TEST_USER) != null) {
-			// non-prod environment
-			// check for the "testUser" param in url
-			String testUser = request.getParameter(TEST_USER);
-
-			String propLdapServerUrl = env
-					.getProperty(PROPERTY_LDAP_SERVER_URL);
-			String propMCommGroup = env.getProperty(PROPERTY_AUTH_GROUP);
-			if (hasValue(testUser)) {
-				if (hasValue(propLdapServerUrl) && hasValue(propMCommGroup)) {
-					// check whether the current user is authorized to set
-					// "testUser" param in URL
-					if (ldapAuthorizationVerification(propLdapServerUrl,
-							propMCommGroup, rvUser)) {
-						rvUser = testUser;
-					}
-				}
-			}
-
-			log.debug("CoSign user=" + rvUser + " test user=" + testUser
-					+ " returned user=" + rvUser);
-		}
+		String rvUser = getUserLoginId(request, env);
 
 		return rvUser;
 
@@ -441,7 +403,7 @@ class Utils {
 	public static boolean isCurrentUserCPMAdmin(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String remoteUser = getRemoteUser(request,env);
+		String remoteUser = getUserLoginId(request,env);
 		String admin_group_name = env.getProperty(Utils.PROPERTY_ADMIN_GROUP);
 		if (admin_group_name != null && remoteUser.equals(admin_group_name)) {
 			// if this is the Box admin user login
@@ -466,15 +428,39 @@ class Utils {
 	}
 
 	/*
-	 * get CoSign user
+	 * get CoSign user, for local development user will be passed from url parameter as
+	 * http://localhost:8080/?testUser=<uniqname> together with use.testUser.url from the
+	 * application.properties we will determine valid user. In short this block is mimicking
+	 * cosign user if CoSign is not enabled
 	 */
-	public static String getRemoteUser(HttpServletRequest request, Environment env) {
-		String propertyRemoteUser = env.getProperty(TEST_REMOTEUSER);
+	public static String getUserLoginId(HttpServletRequest request, Environment env) {
+		String user = null;
 		String remoteUser = request.getRemoteUser();
-		if (remoteUser == null || remoteUser.length() == 0) {
-			remoteUser = propertyRemoteUser;		
+		String testUser = request.getParameter(TEST_USER);
+		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URL));
+		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
+
+		if (isTestUrlEnabled && testUser != null) {
+			user = testUser;
+			request.getSession().setAttribute(TEST_USER, testUser);
+			log.debug("TEST USER is " + user);
+			return user;
 		}
-		return remoteUser;
+		if (isTestUrlEnabled && testUserInSession != null) {
+			user = testUserInSession;
+			log.debug("TEST USER FROM SESSION " + user);
+			return user;
+		}
+
+		if (!isTestUrlEnabled && remoteUser != null) {
+			user = remoteUser;
+			log.debug("REMOTE USER " + user);
+			return user;
+		}
+		if (user == null) {
+			log.error("No proper user could be retrieved from request");
+		}
+		return user;
 	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {

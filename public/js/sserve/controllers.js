@@ -18,7 +18,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     }
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.checkIsAdminUser;
-    Projects.checkIsAdminUser(checkIsAdminUserUrl).then(function(result) {
+    Projects.checkIsAdminUser(checkIsAdminUserUrl+window.location.search).then(function(result) {
       $timeout(function() {
         if (result.data.isAdmin) {
           $scope.isAdminUser = true;
@@ -44,7 +44,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     }
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
-    Projects.getProjects(projectsUrl).then(function(result) {
+     //adding the window.location.search to getProjects call as well since both isAdmin() and getProject() call
+     // are async and anyone can happen first so we want the parameters to be sent to backend as expected
+    Projects.getProjects(projectsUrl+window.location.search).then(function(result) {
       $scope.sourceProjects = result;
       // launch a decorator to query site status - only launched in sserve-lite view
       if (!$scope.migratingActive) {
