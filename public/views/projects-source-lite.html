@@ -80,7 +80,7 @@
 
                 </small>
               </h5>
-              <div ng-hide="project.deleteStatus">
+              <div ng-hide="project.deleteStatus || (project.tool_type==='sakai.resources' && project.lastMigratedStatus.migratedHow==='box')">
                 <div ng-show="!project.doNotMigrateStatus">
                   <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===false">
                     <div class="panel-body">
@@ -92,9 +92,7 @@
                         Email archive has no emails to download.
                     </div>
                   </div>
-                  <div>
-                  </div>
-                  <div class="panel panel-default"  ng-show="(project.tool_type ==='sakai.mailbox' && (project.hasContentItem===true)) || (project.tool_type==='sakai.resources' && project.hasContentItem===true)">
+                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true">
                     <div class="panel-body">
                       <p>
                         <small>
@@ -129,10 +127,10 @@
 
 					<div class="row noFocus"
 						id="toolSelDest{{project.tool_id}}" tabindex="-1">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink">
+						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink" style="padding-left:30px">
               <a ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zipped archive</a>
-              <div ng-show="project.tool_type==='sakai.mailbox'&& project.hasContentItem===true">
-                <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped Mailbox file</a></div>
+              <span ng-show="project.tool_type==='sakai.mailbox'&& project.hasContentItem===true">
+                <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped Mailbox file</a></span>
 						</div>
 					</div>
 				</div>
