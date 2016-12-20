@@ -1660,7 +1660,7 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			String name = messageFolderName + " " + sender + " " + date + " " + subject;
+			String name = messageFolderName + " " + date + " " + sender + " " + subject;
 			if(name.length()>100){
 				name=name.substring(0,100);
 			}
