@@ -2,7 +2,7 @@
 /* global projectMigrationApp, document, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus */
 
 /* MIGRATIONS CONTROLLER */
-projectMigrationApp.controller('projectMigrationController', ['Projects','ProjectsLite','Migration','Migrations','Migrated','PollingService','focus','$rootScope','$scope','$log','$q','$timeout','$window','$http',function(Projects, ProjectsLite, Migration, Migrations, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
+projectMigrationApp.controller('projectMigrationController', ['Projects','ProjectsLite','Migration','Migrated','PollingService','focus','$rootScope','$scope','$log','$q','$timeout','$window','$http',function(Projects, ProjectsLite, Migration, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
     $scope.loadingProjects = true;
     $scope.sourceProjects = [];
     $scope.migratingProjects = [];
@@ -28,20 +28,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - User is admin: ' + result.data);
       });
     });
-    if($scope.migratingActive) {
-      // whether the current user authorized app to Box or not
-      var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
-      Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-        if (result.data === 'true') {
-          $scope.boxAuthorized = true;
-        } else {
-          $scope.boxAuthorized = false;
-        }
-        // $scope.boxAuthorized ===
-        // result.data;
-        $log.info(' - - - - User authorized to Box: ' + result.data);
-      });
-    }
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
     Projects.getProjects(projectsUrl).then(function(result) {
@@ -54,27 +40,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       $log.info(moment().format('h:mm:ss') + ' - source projects loaded');
       $log.info(' - - - - GET /projects');
     });
-    // GET the current migrations list
-    var migratingUrl = $rootScope.urls.migratingUrl;
-    if ($scope.migratingActive) {
-      Migrations.getMigrations(migratingUrl).then(function(result) {
-        if (result.status === 200) {
-          $rootScope.status.migrations = moment().format('h:mm:ss');
-          $log.info(moment().format('h:mm:ss') + ' - migrating projects loaded');
-          $log.info(' - - - - GET /migrating');
-
-          if (result.data.entity.length && result.status === 200) {
-            $scope.migratingProjects = _.sortBy(transformMigrations(result).data.entity,'start_time').reverse();
-            $log.info('Updating projects panel based on CURRENT migrations');
-            updateProjectsPanel($scope.migratingProjects,'migrating');
-          }
-        } else {
-            $log.warn('Got error on /migrations');
-            $scope.migratingProjectsError = true;
-        }
-        poll('pollMigrations',migratingUrl,$rootScope.pollInterval,'migrations');
-      });
-    }
     // GET the migrations that have completed
     var migratedUrl = $rootScope.urls.migratedUrl;
     Migrated.getMigrated(migratedUrl).then(function(result) {
@@ -123,162 +88,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - GET /projects/' + projectId);
       });
     };
-    // handler for a request for the user's Box folders
-    $scope.getBoxFolders = function(projectSiteId,projectToolId) {
-      $scope.currentTool = projectToolId;
-      $scope.currentSite = projectSiteId;
-      // get the box folder info if it has not been
-      // gotten yet
-      if (!$scope.boxFolders) {
-        $scope.loadingFolders = true;
-        var boxUrl = '/box/folders';
-        Projects.getBoxFolders(boxUrl).then(function(result) {
-          //sessionStorage.setItem('boxFolders',JSON.stringify(result));
-          $scope.loadingFolders = false;
-          $scope.boxFolders = result.data;
-          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
-          $log.info(' - - - - GET /box/folders');
-        });
-      }
-    };
-    // handler for a request for user Box account authentication/authorization
-    $scope.boxAuthorize = function() {
-      $log.info('---- in boxAuthorize ');
-      // get the box folder info if it has not been
-      // gotten yet
-      if (!$scope.boxAuthorized) {
-        $log.info(' - - - - GET /box/authorize');
-        var boxUrl = '/box/authorize';
-        Projects.boxAuthorize(boxUrl).then(function(result) {
-          $scope.boxAuthorizeHtml = result.data;
-          $log.info(moment().format('h:mm:ss') + ' - BOX folder info requested');
-          $log.info(' - - - - GET /box/authorize');
-        });
-      }
-    };
-    // remove user authentication information from server memory, user need to re-authenticate in the future to access their box account
-    $scope.boxUnauthorize = function() {
-      var boxUrl = '/box/unauthorize';
-      Projects.boxUnauthorize(boxUrl).then(function(result) {
-        $scope.boxAuthorized = false;
-        // void the folders in scope
-        $scope.boxFolders = false;
-        // reset all things in all
-        // projects that depend on
-        // authorization
-        _.each($scope.sourceProjects,function(sourceProject) {
-          if (sourceProject !== null && sourceProject !== undefined) {
-            sourceProject.boxFolder = false;
-            sourceProject.stateSelectionExists = false;
-            sourceProject.selectDestination = false;
-            sourceProject.destinationTypeSelected = false;
-            sourceProject.selectDestinationType = false;
-            sourceProject.selected = false;
-          }
-        });
-        $('#boxIFrame').remove();
-        $('#boxIFrameContainer').append('<iframe class="boxIFrame" id="boxIFrame" src="/box/authorize" frameborder="0"></iframe>');
-        // current user un-authorize
-        // the app from accessing
-        // Box
-        $log.info(moment().format('h:mm:ss') + ' - unauthorize from Box account requested');
-        $log.info(' - - - - GET /box/unauthorize');
-      });
-    };
-    // handler for a user's selection of a particular Box folder as a destination of a migration
-    $scope.boxFolderSelect = function(folder) {
-      // decorate both the tool row and the parent
-      // site row with the selected folder
-      var toolRow = _.findWhere($scope.sourceProjects, {tool_id: $scope.currentTool});
-      var parentRow = _.findWhere($scope.sourceProjects, {site_id: $scope.currentSite,tool_id: ''});
-      parentRow.boxFolder = {
-        'name': folder.name,
-        'id': folder.ID
-      };
-      toolRow.boxFolder = {
-        'name': folder.name,
-        'id': folder.ID
-      };
-      $scope.selectBoxFolder = {
-        'name': folder.name,
-        'id': folder.ID
-      };
-      $log.info('BOX Folder "' + $scope.selectBoxFolder.name + '" (ID: ' + $scope.selectBoxFolder.id + ') selected');
-    };
-    // handler for a user's selection of export destination type: local download or export to Box as a destination of a migration
-    $scope.destinationTypeSelect = function(site_id,tool_id, name, id) {
-      if (name === 'Box') {
-        $scope.$evalAsync(function() {
-          focus('toolSelDestBox' + tool_id);
-        });
-      }
-      // decorate both the tool row and the parent
-      // site row
-      var toolRow = _.findWhere($scope.sourceProjects, {tool_id: tool_id});
-      toolRow.selectDestinationType = {
-        'name': name,
-        'id': id
-      };
-      var parentRow = _.findWhere($scope.sourceProjects, {site_id: site_id,tool_id: ''});
-      parentRow.selectDestinationType = {
-        'name': name,
-        'id': id
-      };
-      if (parentRow.stateSelectionExists && (parentRow.selectDestinationType.name === 'zip' || parentRow.selectDestinationType.name === 'Box' && $scope.selectBoxFolder) && !parentRow.stateExportConfirm && !parentRow.migrating) {
-        $scope.$evalAsync(function() {
-          focus('export' + site_id);
-        });
-      }
-    };
-    // change handler for tool checkboxes that determines if at least one is checked - if so, the export button is revealed, if not it is hidden
-    $scope.checkIfSelectionExists = function(projectId,toolId) {
-      var allTargetProjs = _.where($scope.sourceProjects, {site_id: projectId});
-      var targetSelections = _.where($scope.sourceProjects, {site_id: projectId,selected: true});
 
-      if (targetSelections.length) {
-        $scope.$evalAsync(function() {
-          focus('toolSelDest' + toolId);
-        });
-        _.first(allTargetProjs).stateSelectionExists = true;
-      } else {
-        _.first(allTargetProjs).stateSelectionExists = false;
-        _.first(allTargetProjs).stateExportConfirm = false;
-      }
-    };
-    // handler for the Export button (user has selected tools, specified dependencies and clicked on the "Export" button)
-    $scope.startMigrationConfirm = function(projectId) {
-      var allTargetProjs = _.where($scope.sourceProjects, {site_id: projectId});
-      var targetSelections = _.where($scope.sourceProjects, {site_id: projectId,selected: true});
-
-      // pop confirmation panel
-      if (targetSelections.length) {
-        _.first(allTargetProjs).stateExportConfirm = true;
-        $scope.$evalAsync(function() {
-          focus('confirm' + projectId);
-        });
-      } else {
-        _.first(allTargetProjs).stateExportConfirm = false;
-      }
-    };
-    // handler for the Cancel migration button - all states are reset for that particular project site
-    $scope.cancelStartMigrationConfirm = function(projectId) {
-      var allTargetProjs = _.where($scope.sourceProjects, {site_id: projectId});
-
-      $scope.$evalAsync(function() {
-        focus('project' + projectId);
-      });
-
-      var targetSelections = _.where($scope.sourceProjects, {site_id: projectId,selected: true});
-
-      // state management
-      _.first(allTargetProjs).stateExportConfirm = false;
-      _.first(allTargetProjs).stateSelectionExists = false;
-
-      // reset all checkboxes
-      _.each(targetSelections, function(tool) {
-        tool.selected = false;
-      });
-    };
     // handler for showing the details of a migrated thing
     $scope.showDetails = function(index, site_title) {
       var reportDetails = $scope.migratedProjects[index].status;
@@ -286,25 +96,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       reportDetails.title = site_title;
       $scope.reportDetails = reportDetails;
     };
-    $scope.checkBoxAuth = function() {
-      var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
-      Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
-        if (result.data === 'true') {
-          $scope.boxAuthorized = true;
-        } else {
-          $scope.boxAuthorized = false;
-        }
-        $log.info(' - - - - User authorized to Box: ' + result.data);
-      });
-    };
-    // on dismiss box auth modal, launch a function to check if box auth
-    $(document).on('hidden.bs.modal','#boxAuthModal',function() {
-      var appElement = $('#boxAuthModal');
-      var $scope = angular.element(appElement).scope();
-      $scope.$apply(function() {
-        appElement.scope().checkBoxAuth();
-      });
-    });
+
     $scope.startMigrationEmail = function(project, destinationType) {
       //add a mask with a modal to not allow more than one download at a time
       $('#maskModal').modal('show');
