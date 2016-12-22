@@ -28,6 +28,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -1644,7 +1647,16 @@ class MigrationTaskService {
                 		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
             		}
             		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
-
+			try {
+				DateFormat localTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+				Date localDateAndTime = localTimeFormat.parse(date);
+				long epochTime = localDateAndTime.getTime();
+				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+				ascTimePattern.setTimeZone(TimeZone.getTimeZone("UTC"));
+				date = ascTimePattern.format(new Date(epochTime));
+			} catch (java.text.ParseException e) {
+				log.error("Error occurred while parsing the Date: " + date + " due to " + e.getMessage());
+			}
 			// create file for each message
 			String messageFolderName = "";
 			if (folderForChannels)
