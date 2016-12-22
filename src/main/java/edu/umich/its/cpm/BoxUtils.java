@@ -170,7 +170,7 @@ public class BoxUtils implements EnvironmentAware {
 			// save user information into database
 			repository.save(u);
 		}
-		catch (Exception e)
+		catch (IllegalArgumentException e)
 		{
 			log.error("There is a problem saving BoxAuthUser for user " + remoteUserEmail + " " + e.getMessage());
 			return;
