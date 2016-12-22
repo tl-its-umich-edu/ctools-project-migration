@@ -13,6 +13,7 @@
 
 use strict;
 
+my $CPM_ACTION_LOG_SQL = "insert into CPM_ACTION_LOG (ACTION_TIME, SITE_ID, ACTION_TAKEN) VALUES (CURRENT_TIMESTAMP,'SITE-ID','DELETE_MEMBERS');\n";
 my $ARCHIVE_USER_SQL = "insert into ARCHIVE_SAKAI_SITE_USER (select * from SAKAI_SITE_USER where site_id = 'SITE-ID');\n";
 my $ARCHIVE_REALM_SQL = "insert into ARCHIVE_SAKAI_REALM_RL_GR (select * from SAKAI_REALM_RL_GR where realm_key in (select realm_key from sakai_realm where realm_id like '/site/SITE-ID%'));\n";
 my $ARCHIVE_SAKAI_SITE_USER_ROLE_SQL = "insert into ARCHIVE_SAKAI_SITE_USER_ROLE
@@ -58,7 +59,13 @@ main:
        next SITE if ( !$_ );
        my $sql;
        
-       print OUTFILE "-- for site id = $_\n";
+       print OUTFILE "-- Site $count: for site id = $_\n";
+       
+       $sql = $CPM_ACTION_LOG_SQL;
+       $sql =~ s/SITE-ID/$_/;
+       print OUTFILE $sql;
+       print OUTFILE "\n";
+       
        $sql = $ARCHIVE_SAKAI_SITE_USER_ROLE_SQL;
        $sql =~ s/SITE-ID/$_/;
        print OUTFILE $sql;
