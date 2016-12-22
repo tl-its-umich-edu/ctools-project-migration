@@ -56,4 +56,15 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       'box':'Migration to Box'
     }[String(type)] || 'Unknown Migration Type');
   };
+}).filter('readableExportTypeSmall', function() {
+  return function(type) {
+    return ({
+      'google': 'to Google Groups',
+      'mailarchivezip':'as a Zip file',
+      'mailarchivembox':'as a Zip file in .mbox format',
+      'resource zip':'as a Zip file',
+      'zip':'as a Zip file',
+      'box':'to Box'
+    }[String(type)] || 'Unknown Migration Type');
+  };
 });
