@@ -87,7 +87,6 @@ import org.json.JSONArray;
 import org.json.JSONException;
 
 import com.box.sdk.BoxAPIConnection;
-import com.box.sdk.BoxAPIException;
 import com.box.sdk.BoxFolder;
 import com.box.sdk.BoxFile;
 import com.box.sdk.BoxItem;
