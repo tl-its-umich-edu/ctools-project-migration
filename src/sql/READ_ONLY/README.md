@@ -1,25 +1,44 @@
-# Generating Read Only CTools site sql #
+# This directory contains tools to help with the CPM migration.
 
-This directory contains code to generate SQL to turn CTools sites read-only.
+# Obtaining the tools
 
 The latest version of the code is available at: the GitHub CPM repository
 https://github.com/tl-its-umich-edu/ctools-project-migration.git in
-the directory: src/sql/TLCPM-511.  The latest released build can be
+the directory: src/sql/READ_ONLY.  The latest released build can be
 downloaded from the TARS directory.
 
-Note: This script will not run on Windows.  It will run on OSX and should
+Note: These scripts will not run on Windows. They will run on OSX and should
 run on Linux.
 
-## Using the script ##
-
-Download the tar file.
+Download the appropriate tar file.
 
 Let the tar file expand during download or double click to expand it.
 
 Open a terminal shell and go the directory created when expanded.
 
-Create input file(s) with one site id per line.  The file can have blank
-lines and comment lines starting with a #.
+# Input files
+The scripts expect input as a list of site ids, one per line.  Lines
+that only have white space or that start with a comment (#) will be
+ignored.
+
+# Verifying sites have useable membership lists.
+The appropriate tar file starts with verifyAccessSiteMembership and
+contains a build date.
+
+This script requires a credentials.yml file containing the connection
+information for connecting the the desired ctools instance.  To create
+this file copy the credentials.yml.TEMPLATE file to credentials.yml
+and fill in the appropriate information.  The user should be a ctools
+admin in that instance.  
+
+Run the script as:
+    ./runVerifyMember.sh <site id file name>
+
+# Generating Read Only CTools site sql #
+
+The tar file starts with ROSqlSite and contains a build date.
+
+## Using the script ##
 
 Run the script as:
 
