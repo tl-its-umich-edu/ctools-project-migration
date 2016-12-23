@@ -48,6 +48,7 @@ sub printSummaryLine {
 # Store the connection information externally.
 sub setupCredentials {
 
+
   my ($yml_file) = shift(@ARGV) || './credentials.yml';
   my ($credentials) = LoadFile($yml_file) || die("can't read credentials file: [$yml_file]");
   $HOST=$credentials->{HOST};
