@@ -170,9 +170,9 @@ public class BoxUtils implements EnvironmentAware {
 			// save user information into database
 			repository.save(u);
 		}
-		catch (Exception e)
+		catch (IllegalArgumentException e)
 		{
-			log.error("There is problem saving BoxAuthUser for user " + remoteUserEmail + " " + e);
+			log.error("There is a problem saving BoxAuthUser for user " + remoteUserEmail + " " + e.getMessage());
 			return;
 		}
 		
@@ -379,47 +379,11 @@ public class BoxUtils implements EnvironmentAware {
 					newFolder.updateInfo(newFolderInfo);
 				}
 			} catch (BoxAPIException e) {
-				log.error("createNewFolderAtRootLevel: message=" + e.getMessage() + " response=" + e.getResponse());
+				log.error("createNewFolderAtRootLevel: There is a problem adding root Box folder for site " + siteId + " " + e.getMessage());
 			}
 		}
 
 		return newFolderInfo;
-	}
-
-	/**
-	 * Refresh Box access token and refresh token if necessary
-	 * Store new tokens into database
-	 */
-	public static BoxAPIConnection refreshAccessAndRefreshTokens(String boxClientId, String boxClientSecret, 
-			String userId, BoxAPIConnection api, BoxAuthUserRepository repository) {
-		// refresh accessToken and refreshToken if necessary
-		try
-		{
-			api.refresh();
-			String newAccessToken = api.getAccessToken();
-			String newRefreshToken = api.getRefreshToken();
-			
-			// save the new tokens into database
-			repository.setBoxAuthUserAccessToken(newAccessToken, userId);
-			repository.setBoxAuthUserRefreshToken(newRefreshToken, userId);
-			
-			// return construct new BoxAPIConnection object
-			api = new BoxAPIConnection(boxClientId,
-					boxClientSecret, newAccessToken, newRefreshToken);
-			}
-		catch (BoxAPIException e)
-		{
-			log.error("refreshAccessAndRefreshTokens message=" + e.getMessage() + " response=" + e.getResponse());
-			if (400 == e.getResponseCode())
-			{
-				// refresh token is expired
-				// user needs to authenticate again
-				repository.deleteBoxAuthUserAccessToken(userId);
-				repository.deleteBoxAuthUserRefreshToken(userId);
-			}
-		}
-
-		return api;
 	}
 
 	/**
@@ -636,7 +600,7 @@ public class BoxUtils implements EnvironmentAware {
 			return api;
 
 		} catch (BoxAPIException e) {
-			log.error("BoxUtils getBoxAPIConnection " + e.getResponse());
+			log.error("There is a problem getting Box connection: " + e.getMessage());
 			String response = e.getResponse();
 			if (response.contains("Refresh token has expired")) {
 				// time to refresh the refresh token

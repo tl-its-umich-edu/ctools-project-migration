@@ -10,6 +10,7 @@ import org.apache.http.protocol.HttpContext;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -28,6 +29,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -701,22 +705,28 @@ class MigrationTaskService {
 							log.debug(Utils.PARAM_BOX_FOLDER_ID_STACK + " length="
 									+ boxFolderIdStack.size());
 						} catch (BoxAPIException e) {
-							log.error(this + " boxUploadSiteContent "
-									+ e.getResponse());
-							JSONObject eJSON = new JSONObject(e.getResponse());
-							String errorMessage = eJSON.has("context_info") ? eJSON
-									.getString("context_info") : "";
-									itemStatus
-									.append("Box upload process was stopped due to the following error. Please rename the folder/resource item and migrate site again: \""
-											+ errorMessage + "\"");
-									// the status of file upload to Box
-									MigrationFileItem item = new MigrationFileItem(
-											contentUrl, title, itemStatus.toString());
-									rv.add(item);
+							String errorMessage = "There is a problem uploading item " + title + " to Box: "
+									+ e.getMessage();
+							try
+							{
+								JSONObject eJSON = new JSONObject(e.getResponse());
+								errorMessage = errorMessage.concat(eJSON.has("context_info")?eJSON.getString("context_info"):"");
+							}
+							catch (JSONException ee)
+							{
+								log.error("Cannot parse JSONObject out of " + e.getResponse());
+							}
+							
+							log.error(this + errorMessage);
+							
+							// the status of file upload to Box
+							itemStatus.append(errorMessage);
+							MigrationFileItem item = new MigrationFileItem(
+									contentUrl, title, itemStatus.toString());
+							rv.add(item);
 
-									// catch the BoxAPIException e
-									// and halt the whole upload process
-									break;
+							// finish up and continue to next item
+							continue;
 						}
 					}
 
@@ -883,7 +893,9 @@ class MigrationTaskService {
 						boxFolderIdStack.push("title -- conflict with existing Box folder");
 					} else {
 						// log the exception message
-						log.error(e.getResponse() + " for " + title);
+						String errorMessage = "There is a problem adding folder " + title + " to Box: " + e.getMessage();
+						log.error(errorMessage);
+						itemStatus.append(errorMessage);
 
 						// and throws the exception,
 						// so that the parent function can catch it and stop the
@@ -1085,8 +1097,8 @@ class MigrationTaskService {
 				}
 				else
 				{
-					String errorString = "uploadFile fileName=" + fileName
-							+ e.getResponse();
+					String errorString = "There is a problem uploading file " + fileName
+							+ " to Box: " + e.getMessage();
 					log.error(this + errorString);
 					status.append(errorString + Utils.LINE_BREAK);
 				}
@@ -1205,7 +1217,7 @@ class MigrationTaskService {
 					}
 				}
 			}
-			catch (org.json.JSONException jsonException)
+			catch (JSONException jsonException)
 			{
 				log.error("Problem parsing JSON object based on " + e.getResponse());
 			}
@@ -1644,14 +1656,23 @@ class MigrationTaskService {
                 		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
             		}
             		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
-
+			try {
+				DateFormat localTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+				Date localDateAndTime = localTimeFormat.parse(date);
+				long epochTime = localDateAndTime.getTime();
+				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+				ascTimePattern.setTimeZone(TimeZone.getTimeZone("UTC"));
+				date = ascTimePattern.format(new Date(epochTime));
+			} catch (java.text.ParseException e) {
+				log.error("Error occurred while parsing the Date: " + date + " due to " + e.getMessage());
+			}
 			// create file for each message
 			String messageFolderName = "";
 			if (folderForChannels)
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			String name = messageFolderName + " " + sender + " " + date + " " + subject;
+			String name = messageFolderName + " " + date + " " + sender + " " + subject;
 			if(name.length()>100){
 				name=name.substring(0,100);
 			}
