@@ -379,7 +379,7 @@ class Utils {
 
 	/************* LDAP lookup ****************/
 	private static final String OU_GROUPS = "ou=user groups,ou=groups,dc=umich,dc=edu";
-	private static final String ALLOW_USER_URL = "use.testUser.url";
+	private static final String ALLOW_USER_URLOVERRIDE = "allow.testUser.urlOverride";
 	private static final String LDAP_CTX_FACTORY = "com.sun.jndi.ldap.LdapCtxFactory";
 	private static final String PROPERTY_LDAP_SERVER_URL = "ldap.server.url";
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
@@ -429,7 +429,7 @@ class Utils {
 
 	/*
 	 * get CoSign user, for local development user will be passed from url parameter as
-	 * http://localhost:8080/?testUser=<uniqname> together with use.testUser.url from the
+	 * http://localhost:8080/?testUser=<uniqname> together with allow.testUser.urlOverride from the
 	 * application.properties we will determine valid user. In short this block is mimicking
 	 * cosign user if CoSign is not enabled
 	 */
@@ -437,7 +437,7 @@ class Utils {
 		String user = null;
 		String remoteUser = request.getRemoteUser();
 		String testUser = request.getParameter(TEST_USER);
-		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URL));
+		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
 		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
 
 		if (isTestUrlEnabled && testUser != null) {
