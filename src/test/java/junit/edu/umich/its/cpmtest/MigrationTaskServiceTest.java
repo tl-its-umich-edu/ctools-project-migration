@@ -128,4 +128,14 @@ public class MigrationTaskServiceTest {
 		assertEquals("9bfee837-9b2c-4b6e-9e84-d77e9fbe10e9",googleGroupName);
 
 	}
+
+
+	@Test
+	public void testCheckForDotsInFilename(){
+		assertEquals("Group 1.doc",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("Group 1.doc"));
+		assertEquals("T1_0.  International health systems",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("T1.0.  International health systems"));
+		assertEquals("Copy of F1_0. Syllabus",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("Copy of F1.0. Syllabus"));
+		assertEquals("simply_long.properties",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("simply.long.properties"));
+	}
+
 }
