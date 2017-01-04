@@ -1660,7 +1660,7 @@ class MigrationTaskService {
 				DateFormat localTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
 				Date localDateAndTime = localTimeFormat.parse(date);
 				long epochTime = localDateAndTime.getTime();
-				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd hh:mm:ss");
+				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
 				ascTimePattern.setTimeZone(TimeZone.getTimeZone("UTC"));
 				date = ascTimePattern.format(new Date(epochTime));
 			} catch (java.text.ParseException e) {
