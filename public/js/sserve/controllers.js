@@ -96,12 +96,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       poll('pollMigrated',migratedUrl,$rootScope.pollInterval,'migrated');
     });
     // handler for a request for the tools of a given project site
-    $scope.getTools = function(projectId) {
+    $scope.getTools = function(projectId, deleteStatus) {
       //  cannot refactor this one as it takes parameters
       var projectUrl = $rootScope.urls.projectUrl + projectId;
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
       $scope.sourceProjects[targetProjPos].loadingTools = true;
-      Projects.getProject(projectUrl).then(function(result) {
+      Projects.getProject(projectUrl, deleteStatus).then(function(result) {
         if(!$scope.migratingActive && result.data) {
           if(!$scope.migratingActive){
             result.data = $scope.toolStatus(result.data);
@@ -524,6 +524,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
             // find this site and remove deleteStatus object to let user know
             var thisSite = _.findWhere($scope.sourceProjects, {site_id: project.site_id});
             thisSite.deleteStatus = null;
+            var thisSiteTheseTools = _.where($scope.sourceProjects,  {site_id: project.site_id});
+            _.each(thisSiteTheseTools, function(thisSiteOrTool){
+              thisSiteOrTool.deleteStatus = null;
+              thisSiteOrTool.deleteProject = false;
+            });
           }
         }
       );
@@ -573,11 +578,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               // find this site and add deleteStatus object to let user know
               _.each(targetDeleteData, function(targetSite){
                 var targetSiteId = targetSite.split('=');
-                var thisSite = _.findWhere($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
-                thisSite.deleteStatus = {
-                  'userId':'You have',
-                  'consentTime': moment().valueOf()
-                };
+                var thisSiteTheseTools = _.where($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
+                _.each(thisSiteTheseTools, function(thisSiteOrTool){
+                  thisSiteOrTool.deleteStatus = {
+                    'userId':'You have',
+                    'consentTime': moment().valueOf()
+                  };
+                });
               });
             }
           }

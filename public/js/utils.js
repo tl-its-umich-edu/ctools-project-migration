@@ -49,7 +49,7 @@ user has requested the tools of a given project. Returned json is a Sakai like /
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
 */
-var transformProject = function (data){
+var transformProject = function (data, deleteStatus){
     var toolColl = [];
     var siteId = data.data[0].tools[0].siteId;
     var siteName = $('#siteid' + siteId.replace('~','')).text();
@@ -73,20 +73,21 @@ var transformProject = function (data){
 
 
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources' || item.tools[0].toolId === 'sakai.mailbox' )) {
-      toolObj.migration_id= '',
-      toolObj.site_id= siteId,
-      toolObj.site_name= siteName,
-      toolObj.tool_name= tool_name,
-      toolObj.tool_type= item.tools[0].toolId,
-      toolObj.tool_id= item.tools[0].id,
-      toolObj.migrated_by= '',
-      toolObj.start_time= '',
-      toolObj.end_time='',
-      toolObj.destination_type= '',
-      toolObj.destination_url= '',
-      toolObj.tool= true,
-      toolObj.tool_site_id= siteId + item.tools[0].id,
-      toolObj.hasContentItem = item.hasContentItem,
+      toolObj.migration_id= '';
+      toolObj.site_id= siteId;
+      toolObj.site_name= siteName;
+      toolObj.tool_name= tool_name;
+      toolObj.tool_type= item.tools[0].toolId;
+      toolObj.tool_id= item.tools[0].id;
+      toolObj.migrated_by= '';
+      toolObj.start_time= '';
+      toolObj.end_time='';
+      toolObj.destination_type= '';
+      toolObj.destination_url= '';
+      toolObj.tool= true;
+      toolObj.tool_site_id= siteId + item.tools[0].id;
+      toolObj.hasContentItem = item.hasContentItem;
+      toolObj.deleteStatus = deleteStatus;
       toolColl.push(toolObj);
     }
 
