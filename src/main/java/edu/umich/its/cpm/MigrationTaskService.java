@@ -1,5 +1,7 @@
 package edu.umich.its.cpm;
 
+import org.apache.commons.io.FilenameUtils;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
@@ -984,6 +986,7 @@ class MigrationTaskService {
 				// return AsyncResult
 				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
+			fileName= replaceDotsInFileNameExceptFileExtention(fileName);
 			
 			String webLinkUrl = bFile.getWeb_link_url();
 			String fileAccessUrl = bFile.getFile_access_url();
@@ -1149,7 +1152,17 @@ class MigrationTaskService {
 			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 		}
 
-		/**
+	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
+		if (!(StringUtils.countOccurrencesOf(fileName, ".") > 1)) {
+			return fileName;
+		}
+		String fileExtension = FilenameUtils.getExtension(fileName);
+		fileName = fileName.replaceFirst("[.][^.]+$", "").replace(".", "_");
+		fileName = fileName + Utils.EXTENSION_SEPARATOR + fileExtension;
+		return fileName;
+	}
+
+	/**
 		 * update the status and end time for file item
 		 * @param id
 		 * @param status
