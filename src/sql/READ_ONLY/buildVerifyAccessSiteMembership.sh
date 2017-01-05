@@ -25,7 +25,7 @@ function build_tar {
     [ -e ${BUILD_DIR} ] && rm -rf ${BUILD_DIR}
     mkdir ${BUILD_DIR}
 
-    cp runVerifyMember.sh ${BUILD_DIR}
+    cp runVerifyAccessSiteMembership.sh ${BUILD_DIR}
     cp credentials.yml.TEMPLATE ${BUILD_DIR}
     cp README.md ${BUILD_DIR}
     chmod +x *packed *.sh
