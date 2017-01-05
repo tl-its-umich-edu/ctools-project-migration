@@ -1652,7 +1652,7 @@ class MigrationTaskService {
 				Date localDateAndTime = localTimeFormat.parse(date);
 				long epochTime = localDateAndTime.getTime();
 				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-				ascTimePattern.setTimeZone(TimeZone.getTimeZone("UTC"));
+				ascTimePattern.setTimeZone(TimeZone.getTimeZone("America/New_York"));
 				date = ascTimePattern.format(new Date(epochTime));
 			} catch (java.text.ParseException e) {
 				log.error("Error occurred while parsing the Date: " + date + " due to " + e.getMessage());
