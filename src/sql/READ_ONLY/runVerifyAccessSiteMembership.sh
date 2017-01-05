@@ -3,8 +3,7 @@
 #### - make prefix/instance a command line option.
 #### - make sure that the packed script exists and is runnable.
 
-#SCRIPT=./verifyAccessSiteMembership.pl.packed
-SCRIPT=./verifyAccessSiteMembership.pl
+SCRIPT=./verifyAccessSiteMembership.pl.packed
 
 function help {
     echo "$0: <site id file> {configuration file}"
@@ -43,5 +42,5 @@ echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership"
 cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership
 
 # make a file of the sql to run to fix the site membership.
-perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.membership | sort -u >> $SITEIDS.membership.sql
+perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.membership | sort -u >> $SITEIDS.membership.deleteunknown.sql
 #end
