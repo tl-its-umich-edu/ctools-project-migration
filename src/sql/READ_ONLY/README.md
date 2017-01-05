@@ -86,7 +86,6 @@ appropriate CTDEV or CTQA configuration file.  The name of the file
 should make it easy to chose the correct one.  The configuration file
 primarily specifies the roles and permissions to be modified.
 
-
 ## Modifying and Releasing  the scripts ##
 
 Developers should use the ./buildCPMTools.sh scripts to package up the
