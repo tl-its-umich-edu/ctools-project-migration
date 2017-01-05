@@ -671,6 +671,19 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $scope.selectionIsMade = false;
       }
     };
+    $scope.exportSiteMembership = function(site_id, site_name) {
+      var projectUrl = 'data/membership.json';
+      console.log('conroller');
+      Projects.getMembership(projectUrl).then(function(result) {
+        $scope.membership = {
+	         'metadata': {
+		           'site_name': site_name
+	          },
+	           "data": result
+           };
+        $log.info(moment().format('h:mm:ss') + ' - membership for site ' + site_id + ' retrieved');
+      });
+    };
   }
 ]);
 

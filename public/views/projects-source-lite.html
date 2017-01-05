@@ -42,12 +42,19 @@
           <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
             <span class="spinner" ng-show="project.loadingTools"></span>
           </div>
-					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-
-						<a ng-click="getTools(project.site_id, project.deleteStatus)" href=""
-							ng-show="!project.stateHasTools && !project.migrating">Migration Options
-               <span class="sr-only">for site {{project.site_name}}</span>
-						</a>
+					<div class="col-md-4 col-lg-4 col-sm-4 col-xs-4" style="text-align:right">
+            <div ng-class="project.type !=='myworkspace' && !project.stateHasTools?'btn-group':''" role="group">
+              <button class="btn btn-default btn-sm"
+                ng-show="project.type !=='myworkspace'"
+                data-toggle="modal" data-target="#membershipModal"
+                ng-click="exportSiteMembership(project.site_id, project.site_name)">
+                Members
+              </button>
+              <button class="btn btn-default btn-sm" ng-click="getTools(project.site_id, project.deleteStatus)"
+  							ng-show="!project.stateHasTools && !project.migrating">Migration Options
+                 <span class="sr-only">for site {{project.site_name}}</span>
+  						</button>
+            </div>
           </div>
         </div>
         <br>

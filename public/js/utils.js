@@ -144,6 +144,26 @@ var transformMigrated = function(result) {
 
 };
 
+var prepareMembership = function(membership) {
+  var role='';
+  var gg_format = [];
+  var mc_format = {'owners':[], 'members':[]};
+  var readable_format =[];
+
+  _.each(membership.data.membership_collection, function(member){
+    gg_format.push(member.userEid);
+    readable_format.push({'userId':member.userEid, 'memberRole':member.memberRole, 'userSortName':member.userSortName});
+    // collating by role for MComm format
+    if(member.memberRole ==='Owner'){
+      mc_format.owners.push(member.userEid);
+    } else {
+      mc_format.members.push(member.userEid);
+    }
+  });
+  membership = {'gg_format':gg_format, 'mc_format':mc_format, 'readable_format':readable_format};
+  return membership;
+};
+
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
 };
@@ -151,3 +171,7 @@ var errorDisplay = function(url, status, message){
 var errorDisplayBulk = function(result){
   alert('Asked for: ' + result.data.path + '\n\nGot a: ' + result.data.status + ' ' + result.data.error + ' - ' + result.data.exception + '\n\nSo: ' + result.data.custom_message);
 };
+
+$(function () {
+  $('[data-toggle="popover"]').popover({'html':true})
+})
