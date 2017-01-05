@@ -1153,11 +1153,12 @@ class MigrationTaskService {
 		}
 
 	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
-		if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
-			String fileExtension = FilenameUtils.getExtension(fileName);
-			fileName = fileName.replaceFirst("[.][^.]+$", "").replace(".", "_");
-			fileName = fileName + Utils.EXTENSION_SEPARATOR + fileExtension;
+		if (!(StringUtils.countOccurrencesOf(fileName, ".") > 1)) {
+			return fileName;
 		}
+		String fileExtension = FilenameUtils.getExtension(fileName);
+		fileName = fileName.replaceFirst("[.][^.]+$", "").replace(".", "_");
+		fileName = fileName + Utils.EXTENSION_SEPARATOR + fileExtension;
 		return fileName;
 	}
 
