@@ -43,5 +43,5 @@ echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership"
 cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership
 
 # make a file of the sql to run to fix the site membership.
-perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.membership >> $SITEIDS.membership.sql
+perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.membership | sort -u >> $SITEIDS.membership.sql
 #end
