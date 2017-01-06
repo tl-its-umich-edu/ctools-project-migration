@@ -84,18 +84,6 @@ projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $htt
 				defer.reject('error');
 			});
 			return defer.promise;
-		//}
-
-
-      // return $http.post(url, {
-      //   cache : false
-      // }).then(function success(result) {
-      //   return result;
-      // }, function error(result) {
-      //   errorDisplay(url, result.status, 'Unable to download an email archive');
-      //   result.errors.failure = true;
-      //   return result;
-      // });
     }
   };
 });
@@ -140,68 +128,7 @@ projectMigrationApp.factory('Projects', function($http) {
 				return result;
 			});
 		},
-		getBoxFolders : function(url) {
-			return $http.get(url, {
-				cache : false
-			}).then(
-					function success(result) {
-						// forward the data - let the controller deal with it
-						return result;
-					},
-					function error(result) {
-						errorDisplay(url, result.status,
-								'Unable to get box folder info');
-						result.errors.failure = true;
-						return result;
-					});
-		},
-		boxAuthorize: function(url) {
-			return $http.get(url, {
-				cache : false
-			}).then(
-					function success(result) {
-						// forward the data - let the controller deal with it
-						return result;
-					},
-					function error(result) {
-						errorDisplay(url, result.status,
-								'Unable to authorize into Box');
-						result.errors.failure = true;
-						return result;
-					});
-		},
-		boxUnauthorize : function(url) {
-			return $http.get(url, {
-				cache : false
-			}).then(
-					function success(result) {
-						// forward the data - let the controller deal with it
-						return result;
-					},
-					function error(result) {
-						errorDisplay(url, result.status,
-								'Unable to unauthorize user from Box.');
-						result.errors.failure = true;
-						return result;
-					});
-		},
-		checkBoxAuthorized : function(url) {
-			return $http.get(url, {
-				cache : false
-			}).then(
-					function success(result) {
-						// forward the data - let the controller deal with it
-						return result;
-					},
-					function error(result) {
-						errorDisplay(url, result.status,
-								'Unable to check user authentication info with Box.');
-						result.errors.failure = true;
-						return result;
-					});
-		},
     checkIsAdminUser : function(url) {
-
       return $http.get(url, {
         cache : false
       }).then(
@@ -237,45 +164,7 @@ projectMigrationApp.factory('Migration', function($q, $timeout, $window, $http) 
 				defer.reject('error');
 			});
 			return defer.promise;
-		},
-		postMigrationBox : function(url) {
-			return $http.post(url, {
-				cache : false
-			}).then(
-					function success(result) {
-						// forward the data - let the controller deal with it
-						return result;
-					},
-					function error(result) {
-						errorDisplay(url, result.status,
-								'Unable to post new migration');
-						result.errors.failure = true;
-						return result;
-					});
 		}
-	};
-});
-
-// PROJECTS FACTORY - does the request for the migrations controller
-projectMigrationApp.factory('Migrations', function($http) {
-	return {
-		getMigrations : function(url) {
-			return $http.get(url, {
-				cache : false
-			}).then(function success(result) {
-				// endpoint will return a 200, but the payload may be an error message with a status flag
-				if(result.data.status ===200){
-					return result;
-				} else {
-					result.status = result.data.status;
-					return result;
-				}
-			}, function error(result) {
-				errorDisplay(url, result.status, 'Unable to get current migrations');
-				result.errors.failure = true;
-				return result;
-			});
-		},
 	};
 });
 
