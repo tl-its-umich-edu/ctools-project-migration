@@ -276,6 +276,69 @@
     </div>
   </div>
 
+  <div class="modal fade" id="membershipModal" tabindex="-1" role="dialog"
+    aria-labelledby="membershipModalLabel">
+    <div class="modal-dialog" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <button type="button" class="close" data-dismiss="modal"
+            aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+          <h4 class="modal-title" id="membershipModalLabel">Site membership for {{membership.metadata.site_name}}</h4>
+        </div>
+        <div class="modal-body">
+          <h4>Google Groups format</h4>
+          <div class="well">
+            <span ng-repeat="member in membership.data.gg_format">{{member}}<span ng-show="!$last">, </span></span>
+          </div>
+          <h4>MCommunity format <small>(users categorized by role)</small> </h4>
+          <div class="well">
+            <div class="" ng-show="membership.data.mc_format.owners.length">
+              <a href="#" class="btn btn-sm btn-link pull-right"
+                 tabindex="0"
+                data-trigger="focus"
+                data-placement="left" data-toggle="popover" title="CTools to MComm roles"
+                data-content="CTools Owners <span style='font-size:16px'>➙</span> MComm Owners<br>CTools other <span style='font-size:16px'>➙</span> MComm Members ">Information
+              </a>
+              <h5>
+                Owners
+              </h5>
+              <span ng-repeat="owner in membership.data.mc_format.owners">{{owner}}<span ng-show="!$last">, </span></span>
+            </div>
+            <div class="" ng-show="membership.data.mc_format.members.length">
+              <h5>
+                Members
+              </h5>
+              <span ng-repeat="member in membership.data.mc_format.members">{{member}}<span ng-show="!$last">, </span></span>
+            </div>
+          </div>
+          <h4>Readable format <small>(information from CTools)</small></h4>
+          <div class="well">
+            <table class="table">
+              <thead>
+                <tr>
+                  <th scope="col">Id</th>
+                  <th scope="col">Role</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr ng-repeat="member in membership.data.readable_format |orderBy:userSortName">
+                  <td scope="row">{{member.userId}}</td>
+                  <td>{{member.memberRole}}</td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-default" data-dismiss="modal">Close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+
 
 	<script type="text/javascript"
 		src="vendors/jquery/jquery-1.11.0.min.js"></script>
