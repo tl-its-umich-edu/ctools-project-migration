@@ -194,6 +194,9 @@ public class UtilsTest {
 		assertEquals("A2 health systems.pdf",Utils.modifyFileNameOnType("application/pdf", "A2 health systems"));
 		assertEquals("A2 health systems.txt",Utils.modifyFileNameOnType("text/plain", "A2 health systems"));
 		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.bin",Utils.modifyFileNameOnType("application/octet-stream", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/html", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2-0-  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2-0-  Kinsella and Velkoff 2001 Chapter 4"));
 
 	}
 	
