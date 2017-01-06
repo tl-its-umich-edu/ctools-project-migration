@@ -145,19 +145,17 @@ var transformMigrated = function(result) {
 };
 
 var prepareMembership = function(membership) {
-  var role='';
   var gg_format = [];
   var mc_format = {'owners':[], 'members':[]};
   var readable_format =[];
-
-  _.each(membership.data.membership_collection, function(member){
-    gg_format.push(member.userEid);
-    readable_format.push({'userId':member.userEid, 'memberRole':member.memberRole, 'userSortName':member.userSortName});
+  _.each(membership, function(value, prop){
+    gg_format.push(prop);
+    readable_format.push({'userId':prop, 'memberRole':value});
     // collating by role for MComm format
-    if(member.memberRole ==='Owner'){
-      mc_format.owners.push(member.userEid);
+    if(value ==='Owner'){
+      mc_format.owners.push(prop);
     } else {
-      mc_format.members.push(member.userEid);
+      mc_format.members.push(prop);
     }
   });
   membership = {'gg_format':gg_format, 'mc_format':mc_format, 'readable_format':readable_format};

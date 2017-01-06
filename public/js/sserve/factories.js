@@ -221,7 +221,7 @@ projectMigrationApp.factory('Projects', function($http) {
 				cache : false
 			}).then(function success(result) {
 				// forward the data - let the controller deal with it
-        return prepareMembership(result);
+        return prepareMembership(result.data.entity);
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get membership');
 				result.errors.failure = true;

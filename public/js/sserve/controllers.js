@@ -672,8 +672,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     };
     $scope.exportSiteMembership = function(site_id, site_name) {
-      var projectUrl = 'data/membership.json';
-      console.log('conroller');
+      var projectUrl = 'siteMembership/' + site_id;
       Projects.getMembership(projectUrl).then(function(result) {
         $scope.membership = {
 	         'metadata': {
