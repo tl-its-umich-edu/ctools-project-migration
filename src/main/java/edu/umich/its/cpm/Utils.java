@@ -657,6 +657,7 @@ class Utils {
 			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type)
 			|| Utils.isOfURLMIMEType(type))) {
 				// handle citation and URL type
+				fileName = fileName.replace(".", "_");
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
