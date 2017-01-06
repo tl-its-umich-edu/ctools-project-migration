@@ -4,8 +4,6 @@
 
 # LIMITATION: This script will only work if the fatpack has been installed here.
 SITEBIN="/opt/local/libexec/perl5.22/sitebin";
-##>>>>>>APP=${1:-generateROSqlSite.pl}
-##>>>>>>APP_OUT=$APP.packed
 
 # temporary build directory
 BUILD_DIR=TMP_BUILD.DIR
@@ -49,8 +47,7 @@ function build_tar {
 function pack_script {
     local APP=$1
     local APP_OUT=$APP.packed
-    #    echo "+++ Please ignore error messages about 'pod' files."
-    ## pack up the script and support files.
+    ## pack up the script files
     PATH=$PATH:$SITEBIN fatpack pack  ./$APP >| ${APP_OUT}
     return_value=$?
     if [ $return_value != 0 ]; then
@@ -61,17 +58,6 @@ function pack_script {
 }
 
 
-# function pack_script_OLD {
-#     ## pack up the script and support files.
-# >>>>>    PATH=$PATH:$SITEBIN fatpack pack  ./$APP >| ${APP_OUT}
-#     return_value=$?
-#     if [ $return_value != 0 ]; then
-# >>>>>        echo "$0: failed to generate ${APP_OUT}"
-#         exit -1
-#     fi
-# >>>>    echo "+++ Created ${APP_OUT} with sql generation tool."
-# }
-
 echo "+++ Please ignore error messages about 'pod' files."
 
 pack_script generateROSqlSite.pl
@@ -81,35 +67,3 @@ build_tar
 
 
 #end
-###############################
-
-####>>>>>>> APP=${1:-verifyAccessSiteMembership.pl}
-####>>>>>>> APP_OUT=$APP.packed
-
-# function build_tar {
-
-# >>>>>>    cp runVerifyAccessSiteMembership.sh ${BUILD_DIR}
-# >>>>>>    cp credentials.yml.TEMPLATE ${BUILD_DIR}
-#     cp README.md ${BUILD_DIR}
-#     chmod +x *packed *.sh
-# >>>>>>    cp verifyAccessSiteMembership.pl.packed ${BUILD_DIR}
-# >>>>>    TAR_OUT=${TAR_DIR}/verifyAccessSiteMembership.${TS}.tar
-# >>>>>    echo "+++ Created ${TAR_OUT} for verify site membership tool."
-#     rm -rf ${BUILD_DIR}
-# }
-
-# function pack_script {
-#     ## pack up the script and support files.
-# >>>>    PATH=$PATH:$SITEBIN fatpack pack  ./$APP >| ${APP_OUT}
-#     return_value=$?
-#     if [ $return_value != 0 ]; then
-# >>>>        echo "$0: failed to generate ${APP_OUT}"
-#         exit -1
-#     fi
-# >>>>    echo "+++ Created ${APP_OUT} with sql generation tool." 
-# }
-
-# >>>>> echo "+++ Generate portable perl script for $APP"
-
-#end
-
