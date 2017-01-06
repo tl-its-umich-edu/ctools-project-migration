@@ -37,7 +37,7 @@ Spring Boot (https://github.com/spring-projects/spring-boot) makes it easy to cr
 ## Run the code with Tomcat 7 embedded:
 * run 'mvn spring-boot:run'. This will compile the code and start embedded tomcat server.
 * http://localhost:8080/health returns server status
-* http://localhost:8080/ is the landing page of the project migration tool
+* http://localhost:8080/?testUser=<uniqname> is the landing page of the project migration tool and enable `allow.testUser.urlOverride = true` in application.properties
 TALK ABOUT mvn clean
 TALK ABOUT setting port explicitly
 

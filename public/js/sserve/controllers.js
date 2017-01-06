@@ -18,7 +18,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     }
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.checkIsAdminUser;
-    Projects.checkIsAdminUser(checkIsAdminUserUrl).then(function(result) {
+    Projects.checkIsAdminUser(checkIsAdminUserUrl + window.location.search).then(function(result) {
       $timeout(function() {
         if (result.data.isAdmin) {
           $scope.isAdminUser = true;
@@ -44,7 +44,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     }
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
-    Projects.getProjects(projectsUrl).then(function(result) {
+     //adding the window.location.search to getProjects call as well since both isAdmin() and getProject() call
+     // are async and anyone can happen first so we want the parameters to be sent to backend as expected
+    Projects.getProjects(projectsUrl + window.location.search).then(function(result) {
       $scope.sourceProjects = result;
       // launch a decorator to query site status - only launched in sserve-lite view
       if (!$scope.migratingActive) {
@@ -94,12 +96,12 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       poll('pollMigrated',migratedUrl,$rootScope.pollInterval,'migrated');
     });
     // handler for a request for the tools of a given project site
-    $scope.getTools = function(projectId) {
+    $scope.getTools = function(projectId, deleteStatus) {
       //  cannot refactor this one as it takes parameters
       var projectUrl = $rootScope.urls.projectUrl + projectId;
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
       $scope.sourceProjects[targetProjPos].loadingTools = true;
-      Projects.getProject(projectUrl).then(function(result) {
+      Projects.getProject(projectUrl, deleteStatus).then(function(result) {
         if(!$scope.migratingActive && result.data) {
           if(!$scope.migratingActive){
             result.data = $scope.toolStatus(result.data);
@@ -522,6 +524,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
             // find this site and remove deleteStatus object to let user know
             var thisSite = _.findWhere($scope.sourceProjects, {site_id: project.site_id});
             thisSite.deleteStatus = null;
+            var thisSiteTheseTools = _.where($scope.sourceProjects,  {site_id: project.site_id});
+            _.each(thisSiteTheseTools, function(thisSiteOrTool){
+              thisSiteOrTool.deleteStatus = null;
+              thisSiteOrTool.deleteProject = false;
+            });
           }
         }
       );
@@ -571,11 +578,13 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
               // find this site and add deleteStatus object to let user know
               _.each(targetDeleteData, function(targetSite){
                 var targetSiteId = targetSite.split('=');
-                var thisSite = _.findWhere($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
-                thisSite.deleteStatus = {
-                  'userId':'You have',
-                  'consentTime': moment().valueOf()
-                };
+                var thisSiteTheseTools = _.where($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
+                _.each(thisSiteTheseTools, function(thisSiteOrTool){
+                  thisSiteOrTool.deleteStatus = {
+                    'userId':'You have',
+                    'consentTime': moment().valueOf()
+                  };
+                });
               });
             }
           }
