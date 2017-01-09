@@ -47,6 +47,9 @@ function build_tar {
 function pack_script {
     local APP=$1
     local APP_OUT=$APP.packed
+
+    [ -e "$APP" ] || { echo "######### ERROR: SCRIPT $APP NOT FOUND FOR PACKING."; exit 1; }
+    
     ## pack up the script files
     PATH=$PATH:$SITEBIN fatpack pack  ./$APP >| ${APP_OUT}
     return_value=$?

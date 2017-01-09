@@ -44,7 +44,8 @@ site id.  If there is a problem retrieving membership due to an
 unavailable user this line will also contain sql that can be used to
 fix the problem.  As a convenience the file <site id file
 name>.membership.deleteunknow.sql is created and contains all the
-fixup sql generated in this run.
+fixup sql generated in this run.  The user that runs the sql may need
+to explicitly commit the change.
 
 Note: The "membership" output file of the verify script can be used
 directly as input to the runRO script.  Any lines that doesn't contain
