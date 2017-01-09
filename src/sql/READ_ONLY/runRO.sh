@@ -33,5 +33,5 @@ fi
 
 echo "running: cat $SITEIDS | ./generateROSqlSite.pl.packed $CONFIG >| $SITEIDS.sql"
 
-cat $SITEIDS | ./generateROSqlSite.pl.packed $CONFIG >| $SITEIDS.sql
+cat $SITEIDS | ./generateROSqlSite.pl.packed $CONFIG >| $SITEIDS.readonly.sql
 #end
