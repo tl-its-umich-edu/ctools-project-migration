@@ -45,7 +45,6 @@ sub printSummaryLine {
   print "$siteId\t$statusCode\t$other\n";
 }
 
-
 # Store the connection information externally.
 sub setupCredentials {
 

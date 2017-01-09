@@ -3,6 +3,7 @@
 #### - make prefix/instance a command line option.
 #### - make sure that the packed script exists and is runnable.
 
+
 # default to packed script
 SCRIPT=./verifyAccessSiteMembership.pl.packed
 
