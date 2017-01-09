@@ -6,6 +6,7 @@
 use YAML qw'LoadFile';
 use POSIX qw(strftime);
 use File::Temp qw(tempfile);
+use Carp;
 
 # temporary file handle for session cookies.
 our $session_fh;
@@ -35,6 +36,13 @@ END_HELP
 if (defined($ARGV[0]) && $ARGV[0] =~ /^-?-h/i) {
   print $help;
   exit 1;
+}
+
+sub printSummaryLine {
+  my($siteId,$statusCode,$other) = @_;
+#  print "siteId: [$siteId] statusCode: [$statusCode] other: [$other]\n";
+  croak() unless(defined($other));
+  print "$siteId\t$statusCode\t$other\n";
 }
 
 # Store the connection information externally.
@@ -69,13 +77,12 @@ sub getMembers {
   return $result;
 }
 
-# If find that can't get list because of missing user, print the sql to delete memberships for that user.
-sub handleMissingEid {
-  my $eid = shift;
-  return unless (length($eid) > 0);
+# If find that can't get membership list because of missing user, generate the sql to delete site memberships/grants for that user.
+sub missingEidMessage {
+  my ($eid) = @_;
 
-  my $deleteMembership = "delete from ${DB_USER}.SAKAI_REALM_RL_GR where user_id in ( select user_id from ${DB_USER}.SAKAI_USER_ID_MAP where eid = '$eid'  )";
-  print "\tmissing_eid: $eid\tsql:\t$deleteMembership\n";
+  my $deleteMembership = "sql:\tdelete from ${DB_USER}.SAKAI_REALM_RL_GR where user_id in ( select user_id from ${DB_USER}.SAKAI_USER_ID_MAP where eid = '$eid'  )";
+  return $deleteMembership;
 }
 
 # Parse the (possibly disappointing) results of the membership call.
@@ -87,21 +94,22 @@ sub parseMembers {
   $status |= "";
   $site |= "";
     
-  # find the invalid member if it exists.
+  # find the invalid user member name if one is mentioned.
   ($eid) = ($text =~ /eid=id=(\w+)\s/ms);
   $eid |= "";
 
-  # Print a summary for the site.
+  # Generate and print a summary for the site.
   if ($status == 200) {
-    print "$site\n";
+    $msg = "ok";
+  } elsif ($status == 501) {
+    $msg = "unknown site";
+  } elsif (length($eid) > 0) {
+    $msg = missingEidMessage($eid);
   } else {
-    print "# ---- $status\t$site";
-    if (length($eid) > 0) {
-      print handleMissingEid($eid);
-    } else {
-      print "\n";
-    }
+    $msg = " unknown error:\t$text";
   }
+
+  printSummaryLine $site, $status, $msg;
 }
 
 # Verify that the site ids provided can be accessed and can provide
