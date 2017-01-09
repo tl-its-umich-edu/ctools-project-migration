@@ -562,8 +562,7 @@ public class MigrationController {
 	 * @param site_id
 	 * @return
 	 */
-	private HashMap<String, String> get_site_members(String site_id, String sessionId)
-			throws RestClientException, JSONException {
+	private HashMap<String, String> get_site_members(String site_id, String sessionId) {
 		HashMap<String, String> rv = new HashMap<String, String>();
 
 		String membersString = "";
@@ -585,7 +584,6 @@ public class MigrationController {
 				errorMessage = "Cannot find site members by siteId: " + site_id
 						+ " url=" + requestUrl + " " + e.getMessage();
 				log.error(errorMessage);
-				throw e;
 			}
 		}
 
@@ -607,11 +605,14 @@ public class MigrationController {
 			}
 			catch (JSONException e)
 			{
-				log.warn("error parsing member string:" + membersString + " for site " + site_id);
-				throw e;
+				errorMessage = "error parsing member string:" + membersString + " for site " + site_id;
+				log.warn(errorMessage);
 			}
 		}
 
+		// return the errorMessage too
+		rv.put(Utils.PARAM_ERROR_MESSAGE, errorMessage);
+		
 		return rv;
 	}
 
@@ -1320,6 +1321,10 @@ public class MigrationController {
 			// add site members to migration
 			HashMap<String, String> userRoles = get_site_members(siteId, sessionId);
 			for (String userEid : userRoles.keySet()) {
+				// no need to count the error report line here
+				if (Utils.PARAM_ERROR_MESSAGE.equals(userEid))
+					continue;
+				
 				String userRole = userRoles.get(userEid);
 				//String userEmail = Utils.getUserEmailFromUserId(userEid);
 				String userEmail = getUserEmailFromUserId(userEid);
@@ -2195,6 +2200,18 @@ public class MigrationController {
 		{	
 			HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
 			for (String userEid : userRolesMap.keySet()) {
+				if (Utils.PARAM_ERROR_MESSAGE.equals(userEid))
+				{
+					// encountered error from CTools membership feed
+					count_error++;
+					// report it into the item status list
+					JSONObject userItem = new JSONObject();
+					userItem.put(Utils.REPORT_ATTR_ITEM_ID, Utils.PARAM_ERROR_MESSAGE);
+					userItem.put(Utils.REPORT_ATTR_MESSAGE, userRolesMap.get(Utils.PARAM_ERROR_MESSAGE));
+					addMembers_items.put(userItem);
+					continue;
+				}
+				
 				String userRole = userRolesMap.get(userEid);
 				//String userEmail = Utils.getUserEmailFromUserId(userEid);
 				String userEmail = getUserEmailFromUserId(userEid);
