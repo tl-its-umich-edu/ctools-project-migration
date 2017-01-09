@@ -1,2 +1,4 @@
 fatlib
 *packed
+# don't allow checking in sensitive information.
+credentials*.yml
