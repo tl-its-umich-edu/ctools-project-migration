@@ -49,7 +49,7 @@ user has requested the tools of a given project. Returned json is a Sakai like /
 utility below turns it into an array of objects with the same structure
 as the CPM feeds of /migrating and /migrations for ease of comparing the three
 */
-var transformProject = function (data){
+var transformProject = function (data, deleteStatus){
     var toolColl = [];
     var siteId = data.data[0].tools[0].siteId;
     var siteName = $('#siteid' + siteId.replace('~','')).text();
@@ -73,20 +73,21 @@ var transformProject = function (data){
 
 
     if (item.tools.length ===1 && (item.tools[0].toolId === 'sakai.resources' || item.tools[0].toolId === 'sakai.mailbox' )) {
-      toolObj.migration_id= '',
-      toolObj.site_id= siteId,
-      toolObj.site_name= siteName,
-      toolObj.tool_name= tool_name,
-      toolObj.tool_type= item.tools[0].toolId,
-      toolObj.tool_id= item.tools[0].id,
-      toolObj.migrated_by= '',
-      toolObj.start_time= '',
-      toolObj.end_time='',
-      toolObj.destination_type= '',
-      toolObj.destination_url= '',
-      toolObj.tool= true,
-      toolObj.tool_site_id= siteId + item.tools[0].id,
-      toolObj.hasContentItem = item.hasContentItem,
+      toolObj.migration_id= '';
+      toolObj.site_id= siteId;
+      toolObj.site_name= siteName;
+      toolObj.tool_name= tool_name;
+      toolObj.tool_type= item.tools[0].toolId;
+      toolObj.tool_id= item.tools[0].id;
+      toolObj.migrated_by= '';
+      toolObj.start_time= '';
+      toolObj.end_time='';
+      toolObj.destination_type= '';
+      toolObj.destination_url= '';
+      toolObj.tool= true;
+      toolObj.tool_site_id= siteId + item.tools[0].id;
+      toolObj.hasContentItem = item.hasContentItem;
+      toolObj.deleteStatus = deleteStatus;
       toolColl.push(toolObj);
     }
 
@@ -143,6 +144,24 @@ var transformMigrated = function(result) {
 
 };
 
+var prepareMembership = function(membership) {
+  var gg_format = [];
+  var mc_format = {'owners':[], 'members':[]};
+  var readable_format =[];
+  _.each(membership, function(value, prop){
+    gg_format.push(prop);
+    readable_format.push({'userId':prop, 'memberRole':value});
+    // collating by role for MComm format
+    if(value ==='Owner'){
+      mc_format.owners.push(prop);
+    } else {
+      mc_format.members.push(prop);
+    }
+  });
+  membership = {'gg_format':gg_format, 'mc_format':mc_format, 'readable_format':readable_format};
+  return membership;
+};
+
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
 };
@@ -150,3 +169,7 @@ var errorDisplay = function(url, status, message){
 var errorDisplayBulk = function(result){
   alert('Asked for: ' + result.data.path + '\n\nGot a: ' + result.data.status + ' ' + result.data.error + ' - ' + result.data.exception + '\n\nSo: ' + result.data.custom_message);
 };
+
+$(function () {
+  $('[data-toggle="popover"]').popover({'html':true})
+})

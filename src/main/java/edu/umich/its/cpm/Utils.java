@@ -1,6 +1,7 @@
 package edu.umich.its.cpm;
 
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.util.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -12,6 +13,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -99,6 +101,7 @@ class Utils {
 
 	// CTools resource type strings
 	public static final String CTOOLS_RESOURCE_TYPE_URL = "text/url";
+	public static final String CTOOLS_FILENAME_EXTENSION_DONT_KNOW = "application/octet-stream";
 	public static final String CTOOLS_RESOURCE_TYPE_URL_EXTENSION = ".URL";
 	public static final String CTOOLS_RESOURCE_TYPE_CITATION = "text/html";
 	public static final String CTOOLS_RESOURCE_TYPE_CITATION_URL = "/citation/";
@@ -386,49 +389,11 @@ class Utils {
 	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
 
-	/*
-	 * User is authenticated using CoSign and authorized using Ldap. For local
-	 * development, we have use.testUser.url = true to enable "testUser"
-	 * parameter. and only CoSigned user from certain LDAP group can use the
-	 * "testUser" param in URL. For production server, set
-	 * use.testUser.url=false
-	 */
+
 	public static String getCurrentUserId(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String rvUser = getRemoteUser(request,env);
-
-		/*if (Utils.isCurrentUserCPMAdmin(request, env)) {
-			rvUser = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-		}*/
-
-		// get the environment setting, default to "false"
-		String allowTestUserUrlOverride = env.getProperty(
-				ALLOW_USER_URLOVERRIDE, Boolean.FALSE.toString());
-		if (hasValue(allowTestUserUrlOverride)
-				&& Boolean.valueOf(allowTestUserUrlOverride)
-				&& request.getParameter(TEST_USER) != null) {
-			// non-prod environment
-			// check for the "testUser" param in url
-			String testUser = request.getParameter(TEST_USER);
-
-			String propLdapServerUrl = env
-					.getProperty(PROPERTY_LDAP_SERVER_URL);
-			String propMCommGroup = env.getProperty(PROPERTY_AUTH_GROUP);
-			if (hasValue(testUser)) {
-				if (hasValue(propLdapServerUrl) && hasValue(propMCommGroup)) {
-					// check whether the current user is authorized to set
-					// "testUser" param in URL
-					if (ldapAuthorizationVerification(propLdapServerUrl,
-							propMCommGroup, rvUser)) {
-						rvUser = testUser;
-					}
-				}
-			}
-
-			log.debug("CoSign user=" + rvUser + " test user=" + testUser
-					+ " returned user=" + rvUser);
-		}
+		String rvUser = getUserLoginId(request, env);
 
 		return rvUser;
 
@@ -441,7 +406,7 @@ class Utils {
 	public static boolean isCurrentUserCPMAdmin(HttpServletRequest request,
 			Environment env) {
 		// get CoSign user first
-		String remoteUser = getRemoteUser(request,env);
+		String remoteUser = getUserLoginId(request,env);
 		String admin_group_name = env.getProperty(Utils.PROPERTY_ADMIN_GROUP);
 		if (admin_group_name != null && remoteUser.equals(admin_group_name)) {
 			// if this is the Box admin user login
@@ -466,15 +431,39 @@ class Utils {
 	}
 
 	/*
-	 * get CoSign user
+	 * get CoSign user, for local development user will be passed from url parameter as
+	 * http://localhost:8080/?testUser=<uniqname> together with allow.testUser.urlOverride from the
+	 * application.properties we will determine valid user. In short this block is mimicking
+	 * cosign user if CoSign is not enabled
 	 */
-	public static String getRemoteUser(HttpServletRequest request, Environment env) {
-		String propertyRemoteUser = env.getProperty(TEST_REMOTEUSER);
+	public static String getUserLoginId(HttpServletRequest request, Environment env) {
+		String user = null;
 		String remoteUser = request.getRemoteUser();
-		if (remoteUser == null || remoteUser.length() == 0) {
-			remoteUser = propertyRemoteUser;		
+		String testUser = request.getParameter(TEST_USER);
+		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
+		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
+
+		if (isTestUrlEnabled && testUser != null) {
+			user = testUser;
+			request.getSession().setAttribute(TEST_USER, testUser);
+			log.debug("TEST USER is " + user);
+			return user;
 		}
-		return remoteUser;
+		if (isTestUrlEnabled && testUserInSession != null) {
+			user = testUserInSession;
+			log.debug("TEST USER FROM SESSION " + user);
+			return user;
+		}
+
+		if (!isTestUrlEnabled && remoteUser != null) {
+			user = remoteUser;
+			log.debug("REMOTE USER " + user);
+			return user;
+		}
+		if (user == null) {
+			log.error("No proper user could be retrieved from request");
+		}
+		return user;
 	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
@@ -647,13 +636,14 @@ class Utils {
 	 */
 	public static String modifyFileNameOnType(String type, String fileName) {
 		String fileExtension = FilenameUtils.getExtension(fileName);
-		if ((fileExtension == null 
-			|| fileExtension.isEmpty() 
+		if ((fileExtension == null
+			|| fileExtension.isEmpty()
 			|| !Utils.HTML_FILE_EXTENSION.equals(EXTENSION_SEPARATOR + fileExtension))
 			&& 
-			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) 
+			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type)
 			|| Utils.isOfURLMIMEType(type))) {
 				// handle citation and URL type
+				fileName = fileName.replace(".", "_");
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
@@ -673,13 +663,18 @@ class Utils {
 						"Utils.modifyFileNameOnType: Couldn't find file extension for resource: "
 								+ fileName + " of MIME type = " + type, e);
 			}
-			if (mimeExtension != null 
-				&& FilenameUtils.getExtension(fileName).isEmpty()) {
-				// if file name extension is missing
-				// add the extension to file name
-				fileName = fileName.concat(mimeExtension);
+			Tika tika = new Tika();
+
+				if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
+					// if file name extension is missing add the extension to file name
+					fileName = fileName.concat(mimeExtension);
+					if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
+						fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
+						fileName = fileName.concat(mimeExtension);
+						return fileName;
+					}
+				}
 			}
-		}
 		return fileName;
 	}
 

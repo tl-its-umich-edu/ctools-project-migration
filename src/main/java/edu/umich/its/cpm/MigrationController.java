@@ -1135,7 +1135,7 @@ public class MigrationController {
 	public List<HashMap<String, String>> handleGetBoxFolders(
 			HttpServletRequest request, HttpServletResponse response) {
 		// get CoSign user id
-		String userId = Utils.getRemoteUser(request,env);
+		String userId = Utils.getUserLoginId(request,env);
 		String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
 		String boxClientSecret = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_SECRET);
 		//String remoteUserEmail = Utils.getCurrentUserEmail(request, env);
@@ -1237,7 +1237,7 @@ public class MigrationController {
 			// get the authCode,
 			// and get access token and refresh token subsequently
 			String boxTokenUrl = env.getProperty(Utils.BOX_TOKEN_URL);
-			String userId = Utils.getRemoteUser(request,env);
+			String userId = Utils.getUserLoginId(request,env);
 			String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
 			String boxClientSecret = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_SECRET);
 			BoxUtils.getAuthCodeFromBoxCallback(request, boxClientId,
@@ -1561,7 +1561,7 @@ public class MigrationController {
 			HttpServletResponse response) {
 		String remoteUserEmail = getCurrentUserEmail(request, env);
 		// get CoSign user id
-		String userId = Utils.getRemoteUser(request,env);
+		String userId = Utils.getUserLoginId(request,env);
 		String boxClientId = BoxUtils.getBoxClientIdOrSecret(userId, Utils.BOX_ID);
 		String boxAPIUrl = env.getProperty(Utils.BOX_API_URL);
 		String boxClientRedirectUrl = BoxUtils.getBoxClientRedirectUrl(request,
@@ -2159,7 +2159,7 @@ public class MigrationController {
 			String siteId, String siteName, String toolId, String toolName, HashMap<String, String> siteBoxMigrationIdMap) {
 		
 		// get box folder id
-		String remoteUserId = Utils.getRemoteUser(request,env);
+		String remoteUserId = Utils.getUserLoginId(request,env);
 		String boxAdminClientId = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_ID);
 		String boxAdminClientSecret = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_SECRET);
 		String boxSiteFolderName = "CTools - " + siteName;
