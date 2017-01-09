@@ -1352,9 +1352,6 @@ public class MigrationController {
 			String bulkMigrationId, String bulkMigrationName, String siteId,
 			String siteName, String toolId, String toolName,
 			String boxFolderId, String boxFolderName, String userId) {
-		// the return hashmap provide newly created Migration object, and status
-		// message
-		HashMap<String, Object> rv = new HashMap<String, Object>();
 
 		// status message
 		StringBuffer status = new StringBuffer();
@@ -1373,11 +1370,9 @@ public class MigrationController {
 
 		// assign null values to batch id and name
 		// create new migration record
-		rv = newMigrationRecord(status, bulkMigrationId, bulkMigrationName,
+		return  newMigrationRecord(status, bulkMigrationId, bulkMigrationName,
 				siteId, siteName, toolId, toolName, destinationType, userId,
 				targetUrl);
-
-		return rv;
 	}
 	
 	/**
@@ -2190,8 +2185,14 @@ public class MigrationController {
 		String boxFolderName = boxFolder.getName();
 
 		// add site members to Box folder as collaborators
+		// construct the JSON object for membership import
+		JSONObject addMembers = new JSONObject();
+		JSONObject addMembers_counts = new JSONObject();
+		JSONArray addMembers_items = new JSONArray();
+		int count_success = 0;
+		int count_error = 0;
 		try
-		{
+		{	
 			HashMap<String, String> userRolesMap = get_site_members(siteId, sessionId);
 			for (String userEid : userRolesMap.keySet()) {
 				String userRole = userRolesMap.get(userEid);
@@ -2203,10 +2204,28 @@ public class MigrationController {
 				{
 					continue;
 				}
-				BoxUtils.addCollaboration(
+				String addCollaborationStatus = BoxUtils.addCollaboration(
 						env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
 						userEmail, userRole, boxFolderId,
 						boxAdminClientId, boxAdminClientSecret, uRepository);
+				
+				if (addCollaborationStatus == null)
+				{
+					// no error message returned - success!
+					count_success++;
+				}
+				else
+				{
+					// failure
+					count_error++;
+					
+					// update the item list
+					JSONObject userItem = new JSONObject();
+					userItem.put(Utils.REPORT_ATTR_ITEM_ID, userEmail);
+					userItem.put(Utils.REPORT_ATTR_MESSAGE, addCollaborationStatus);
+					addMembers_items.put(userItem);
+				}
+				
 				// add user email to the owner list
 				if (addUserEmail(siteId, userRole))
 				{
@@ -2222,6 +2241,33 @@ public class MigrationController {
 		{
 			log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
 		}
+		addMembers.put(Utils.REPORT_ATTR_ITEMS, addMembers_items);
+		
+		// insert the counts element
+		addMembers_counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, count_success);
+		addMembers_counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS, count_error);
+		addMembers.put(Utils.REPORT_ATTR_COUNTS, addMembers_counts);
+		
+		// insert the status element
+		String membership_status = Utils.REPORT_STATUS_OK;
+		if (count_success == 0 && count_error > 0)
+		{
+			// all failures
+			membership_status = Utils.REPORT_STATUS_ERROR;
+		} else if (count_success > 0 && count_error > 0)
+		{
+			// partial failures
+			membership_status = Utils.REPORT_ATTR_COUNT_PARTIALS;
+		}
+		addMembers.put(Utils.REPORT_ATTR_STATUS, membership_status);
+		
+		// the migration status JSON object shall contain a "details" element
+		// which list the details of membership transfers
+		JSONObject statusJSON = new JSONObject();
+		JSONObject detailsJSON = new JSONObject();
+		detailsJSON.put(Utils.REPORT_ATTR_ADD_MEMBERS, addMembers);
+		statusJSON.put(Utils.REPORT_ATTR_DETAILS, detailsJSON);
+		
 		
 		// now after all checks passed, we are ready for migration
 		// save migration record into database
@@ -2232,6 +2278,9 @@ public class MigrationController {
 		
 		Migration migration = (Migration) saveBulkMigration.get("migration");
 		String migrationId = migration.getMigration_id();
+
+		// save the add member JSON to migration status field
+		repository.setMigrationStatus(statusJSON.toString(), migrationId);
 		
 		// add the boxFolderId to return map
 		siteBoxMigrationIdMap.put(siteId + "_boxRootFolderId", boxFolderId);

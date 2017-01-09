@@ -71,6 +71,12 @@ public interface MigrationRepository extends CrudRepository<Migration, String> {
 	 */
 	@Query("SELECT m FROM Migration m WHERE m.site_id = ?#{[0]} order by m.start_time desc")
 	public List<Migration> findBySiteId(String site_id);
+	
+	/**
+	 * get the status field
+	 */
+	@Query("select m.status from Migration m where m.id = ?#{[0]}")
+	public String getMigrationStatus(String migrationId);
 
 	/**
 	 * Update the status field
