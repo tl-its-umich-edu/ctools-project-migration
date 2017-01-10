@@ -2,6 +2,8 @@ package edu.umich.its.cpm;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
+import org.json.JSONException;
+
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -233,8 +235,17 @@ class MigrationInstanceService {
 				}
 			}
 			
-			// the JSON object holds itemized status information
+			// get the existing migration status
+			String statusString = mRepository.getMigrationStatus(mId);
 			JSONObject statusObject = new JSONObject();
+			try
+			{
+				statusObject = new JSONObject(statusString);
+			}
+			catch(JSONException ex){
+				statusObject = new JSONObject();
+			}
+			
 			// migration type
 			statusObject.put(Utils.REPORT_ATTR_TYPE, Utils.MIGRATION_TYPE_BOX);
 			String statusSummary = Utils.REPORT_STATUS_OK;

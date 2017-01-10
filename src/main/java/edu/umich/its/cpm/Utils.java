@@ -155,7 +155,6 @@ class Utils {
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
 
-
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
 	
@@ -195,6 +194,8 @@ class Utils {
 	public static final String PARAM_ITEM_STATUS = "itemStatus";
 	public static final String PARAM_CONTAINER_STACK = "containerStack";
 	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
+	
+	public static final String PARAM_ERROR_MESSAGE = "errorMessage";
 	
 	/**
 	 * login into CTools and become user with sessionId
