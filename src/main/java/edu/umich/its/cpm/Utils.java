@@ -443,19 +443,46 @@ class Utils {
 		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
 		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
 
-		if (isTestUrlEnabled && testUser != null) {
+		//become user case
+		if (isTestUrlEnabled && testUser != null && remoteUser != null && testUser != remoteUser) {
+			if (isCurrentUserCPMAdmin(remoteUser, env)) {
+				request.getSession().setAttribute(TEST_USER, testUser);
+				user = testUser;
+				log.debug("BECOME USER " + user);
+			} else {
+				user = remoteUser;
+				log.error("the user " + user + " is unauthorized to become user");
+			}
+			return user;
+		}
+		//become user case
+		if (isTestUrlEnabled && testUserInSession != null && remoteUser != null && testUserInSession != remoteUser) {
+			if (isCurrentUserCPMAdmin(remoteUser, env)) {
+				user = testUserInSession;
+				log.debug("BECOME USER IN SESSION: " + user);
+			} else {
+				user = remoteUser;
+				log.error("the user " + user + " is unauthorized to become user");
+			}
+
+			return user;
+		}
+        // when no cosign enabled
+		if (isTestUrlEnabled && testUser != null && remoteUser == null) {
 			user = testUser;
 			request.getSession().setAttribute(TEST_USER, testUser);
 			log.debug("TEST USER is " + user);
 			return user;
 		}
-		if (isTestUrlEnabled && testUserInSession != null) {
+		// when no cosign enabled
+		if (isTestUrlEnabled && testUserInSession != null && remoteUser == null) {
 			user = testUserInSession;
 			log.debug("TEST USER FROM SESSION " + user);
 			return user;
 		}
 
-		if (!isTestUrlEnabled && remoteUser != null) {
+		// regular user with cosign
+		if (remoteUser != null) {
 			user = remoteUser;
 			log.debug("REMOTE USER " + user);
 			return user;
