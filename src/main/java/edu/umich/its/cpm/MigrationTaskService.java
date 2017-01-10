@@ -633,6 +633,9 @@ class MigrationTaskService {
 						CONTENT_JSON_ATTR_TYPE);
 				String title = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_TITLE);
+				// trim the trailing space from title string
+				title = title.trim();
+				
 				String description = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_DESCRIPTION);
 				// metadata
