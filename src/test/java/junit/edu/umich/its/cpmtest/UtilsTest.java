@@ -190,6 +190,8 @@ public class UtilsTest {
 		assertEquals("A2_International HealthSystem.pdf",Utils.modifyFileNameOnType("application/pdf", "A2.International HealthSystem"));
 		assertEquals("T3_0_  Training and faculty development at UM.pdf",Utils.modifyFileNameOnType("application/pdf", "T3_0.  Training and faculty development at UM"));
 		assertEquals("Group 1.doc",Utils.modifyFileNameOnType("application/msword", "Group 1.doc"));
+		//nonsensical MIME type with correct file extension
+		assertEquals("Group 1.doc",Utils.modifyFileNameOnType("application/xword", "Group 1.doc"));
 		assertEquals("Copy of F1_0_ Syllabus.doc",Utils.modifyFileNameOnType("application/msword", "Copy of F1_0. Syllabus"));
 		assertEquals("A2 health systems.pdf",Utils.modifyFileNameOnType("application/pdf", "A2 health systems"));
 		assertEquals("A2 health systems.txt",Utils.modifyFileNameOnType("text/plain", "A2 health systems"));
