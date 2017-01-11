@@ -162,6 +162,15 @@ var prepareMembership = function(membership) {
   return membership;
 };
 
+
+var transformConcluded = function(concludedList){
+  var transformConcludedList = [];
+  _.each(concludedList, function(concluded){
+    transformConcludedList.push({'name': concluded[0], 'id':concluded[1]});
+  });
+  return transformConcludedList;
+};
+
 var errorDisplay = function(url, status, message){
   alert('Asked for: ' + url + '\n\nGot a: ' + status +'\n\nSo: ' + message);
 };
