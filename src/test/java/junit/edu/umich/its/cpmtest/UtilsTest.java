@@ -45,13 +45,13 @@ public class UtilsTest {
 
 		// URL as name
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
-				"http://www.npr.org/"), "http___www.npr.org_.html");
+				"http://www.npr.org/"), "http___www_npr_org_.html");
 
 		// string without extension
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
 		
 		// URL as name, not ending in "/"
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www.npr.org.html");
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www_npr_org.html");
 	}
 	
 	@Test
@@ -197,7 +197,9 @@ public class UtilsTest {
 		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/html", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
 		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
 		assertEquals("A2-0-  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2-0-  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("Using Web Dav on a Mac v1",Utils.modifyFileNameOnType("text/plain; charset=us-ascii", "Using Web Dav on a Mac v1"));
+		assertEquals("Using Web Dav on a Mac v1.bin",Utils.modifyFileNameOnType("application/octet-stream", "Using Web Dav on a Mac v1.bin"));
 
 	}
-	
+
 }
