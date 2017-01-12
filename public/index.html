@@ -178,7 +178,36 @@
               <span class="label label-danger" ng-show="reportDetails.counts.errors && reportDetails.counts.errors > 0">Errors: {{reportDetails.counts.errors}}</span>&nbsp;
               <span class="label label-warning"  ng-show="reportDetails.counts.partial_successes && reportDetails.counts.partial_successes > 0">Partial successes: {{reportDetails.counts.partial_successes}}</span>
             </p>
+            <!-- Box specific member migration errors -->
+            <div ng-if="reportDetails.details">
+              <p ng-if="reportDetails.details.add_members.counts.successes > 0">
+                {{reportDetails.details.add_members.counts.successes}} CTools members <strong>successfully </strong>added to destination Box folder.
+              </p>
+              <span ng-if="reportDetails.details &&
+               reportDetails.details.add_members.counts.partial_successes > 0"  class="export-fail">
+                {{reportDetails.details.add_members.counts.partial_successes}} partial success(es)
+              </span>
+              <span ng-if="reportDetails.details &&
+               reportDetails.details.add_members.counts.errors > 0" class="export-fail">
+                {{reportDetails.details.add_members.counts.errors}} members failed to be added.
+              </span>
+              <span ng-if="reportDetails.details.add_members.counts.errors > 0 || reportDetails.details.add_members.counts.partial_successes > 0">
+                <a href="" ng-click="reportDetails.showMembers = !reportDetails.showMembers">(info?)</a>
+              </span>
+
+              <ul ng-show="reportDetails.showMembers"  style="width:535px;list-style:none;margin:20px 0 0 0;padding:0">
+                <li ng-repeat="member in reportDetails.details.add_members.items" class="row">
+                  <div class="col-lg-4 col-md-4 col-sm-12 col-xs-12">
+                    {{member.item_id}}
+                  </div>
+                  <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
+                    {{member.message}}
+                  </div>
+                </li>
+              </ul>
+            </div>
           </div>
+          <hr>
           <ul class="list-group container"  style="width:550px;margin:0" ng-if="reportDetails.items.length">
             <li class="list-group-item" ng-class="item.item_Status==='PARTIAL'?'list-group-item-warn':list-group-item-danger" ng-repeat="item in reportDetails.items">
               <!-- TODO - add box to this -->
