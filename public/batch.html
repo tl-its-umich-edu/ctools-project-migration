@@ -249,7 +249,8 @@
                 {{reportDetails.details.add_members.counts.partial_successes}} partial.
                 {{reportDetails.details.add_members.counts.errors}} errors.
               </div>
-              <div style="width:535px" ng-show="reportDetails.details.add_members.items">
+              <br>
+              <div style="width:535px" ng-show="reportDetails.details.add_members.items" ng-if="reportDetails.type ==='google'">
                 <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" >
                   <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
                     <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
@@ -268,6 +269,19 @@
                   </li>
                 </ul>
               </div>
+              <div style="width:535px" ng-show="reportDetails.details.add_members.items" ng-if="reportDetails.type ==='box'">
+                <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" >
+                  <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                      {{item.item_id}}
+                    </div>
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+                      {{item.message}}
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <br>
               <ul class="list-group container"  style="width:550px;margin:0">
                 <li class="list-group-item" ng-repeat="item in reportDetails.items">
                   <div class="row">
