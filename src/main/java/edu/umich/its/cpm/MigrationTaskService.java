@@ -633,6 +633,9 @@ class MigrationTaskService {
 						CONTENT_JSON_ATTR_TYPE);
 				String title = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_TITLE);
+				// trim the trailing space from title string
+				title = title.trim();
+				
 				String description = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_DESCRIPTION);
 				// metadata
@@ -1048,6 +1051,11 @@ class MigrationTaskService {
 
 			// update file name
 			fileName = Utils.modifyFileNameOnType(type, fileName);
+			String fileExtension = FilenameUtils.getExtension(fileName);
+			if(fileExtension.isEmpty()){
+				status.append(String.format("For the File \"%1$s\" with MIME type: \"%2$s\" is missing file extension in Box",fileName,type));
+				log.error("For the File: {} with invalid MIME type: {} is missing file extension in Box",fileName,type);
+			}
 
 			// exit if content stream is null
 			if (content == null)

@@ -151,10 +151,10 @@ class Utils {
 	public static final String REPORT_ATTR_ID = "id";
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
+	public static final String FILE_EXTENSION_BIN = "bin";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
-
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -195,6 +195,8 @@ class Utils {
 	public static final String PARAM_ITEM_STATUS = "itemStatus";
 	public static final String PARAM_CONTAINER_STACK = "containerStack";
 	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
+	
+	public static final String PARAM_ERROR_MESSAGE = "errorMessage";
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -692,14 +694,16 @@ class Utils {
 			}
 			Tika tika = new Tika();
 
-				if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
+			if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
 					// if file name extension is missing add the extension to file name
+				if (!fileExtension.equals(FILE_EXTENSION_BIN)) {
 					fileName = fileName.concat(mimeExtension);
-					if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
-						fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
-						fileName = fileName.concat(mimeExtension);
-						return fileName;
-					}
+				}
+				if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
+					fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
+					fileName = fileName.concat(mimeExtension);
+					return fileName;
+				}
 				}
 			}
 		return fileName;
