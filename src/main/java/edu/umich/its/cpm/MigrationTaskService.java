@@ -710,7 +710,7 @@ class MigrationTaskService {
 							log.debug(Utils.PARAM_BOX_FOLDER_ID_STACK + " length="
 									+ boxFolderIdStack.size());
 						} catch (BoxAPIException e) {
-							String errorMessage = "There is a problem uploading item " + title + " to Box: "
+							String errorMessage = "There is a problem uploading item \"" + title + "\" to Box: "
 									+ e.getMessage();
 							try
 							{
@@ -869,7 +869,22 @@ class MigrationTaskService {
 				}
 				
 				// create box folder
-				BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
+				String peekFolderId = "";
+				try
+				{
+					peekFolderId = boxFolderIdStack.peek();
+				}
+				catch (java.util.EmptyStackException e)
+				{
+					itemStatus.append("Problem for adding \"" + title + "\" due to parent folder not existed.");
+					log.error(itemStatus.toString());
+					// return with error message
+					HashMap<String, Object> rv = returnMapWithStatus(containerStack,
+							boxFolderIdStack, itemStatus);
+					return rv;
+				}
+				
+				BoxFolder parentFolder = new BoxFolder(api, peekFolderId);
 				String sanitizedTitle = Utils.sanitizeName(type, title);
 				try {
 					BoxFolder.Info childFolderInfo = parentFolder
@@ -898,14 +913,13 @@ class MigrationTaskService {
 						boxFolderIdStack.push("title -- conflict with existing Box folder");
 					} else {
 						// log the exception message
-						String errorMessage = "There is a problem adding folder " + title + " to Box: " + e.getMessage();
+						String errorMessage = "There is a problem " + e.getResponseCode() + " for adding folder " + title + " to Box: " + e.getMessage();
 						log.error(errorMessage);
 						itemStatus.append(errorMessage);
 
-						// and throws the exception,
-						// so that the parent function can catch it and stop the
-						// whole upload process
-						throw e;
+						// push the current folder id into the stack
+						containerStack.push(contentUrl);
+						boxFolderIdStack.push("folder \"" + title + "\" -- not added into Box");
 					}
 				}
 			} else {
@@ -933,6 +947,7 @@ class MigrationTaskService {
 					if (boxFolderIdStack.empty()) {
 						String parentError = "Cannot find parent folder for file "
 								+ contentUrl;
+						itemStatus.append(parentError);
 						log.error(parentError);
 					} else {
 						// insert records into database
@@ -1103,8 +1118,8 @@ class MigrationTaskService {
 				}
 				else
 				{
-					String errorString = "There is a problem uploading file " + fileName
-							+ " to Box: " + e.getMessage();
+					String errorString = "There is a problem uploading file \"" + fileName
+							+ "\" to Box folder " + boxFolderId + ": " + e.getMessage();
 					log.error(this + errorString);
 					status.append(errorString + Utils.LINE_BREAK);
 				}
