@@ -869,20 +869,19 @@ class MigrationTaskService {
 				}
 				
 				// create box folder
-				String peekFolderId = "";
-				try
+				if (boxFolderIdStack.isEmpty())
 				{
-					peekFolderId = boxFolderIdStack.peek();
-				}
-				catch (java.util.EmptyStackException e)
-				{
-					itemStatus.append("Problem for adding \"" + title + "\" due to parent folder not existed.");
+					// the folder should not be empty, log with error and update the item status
+					itemStatus.append("Problem for adding \"" + title + "\" due to parent folder not existing.");
 					log.error(itemStatus.toString());
 					// return with error message
 					HashMap<String, Object> rv = returnMapWithStatus(containerStack,
 							boxFolderIdStack, itemStatus);
 					return rv;
 				}
+				
+				// get the first folder id from stack
+				String peekFolderId = boxFolderIdStack.peek();
 				
 				BoxFolder parentFolder = new BoxFolder(api, peekFolderId);
 				String sanitizedTitle = Utils.sanitizeName(type, title);
