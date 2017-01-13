@@ -1,18 +1,14 @@
 package junit.edu.umich.its.cpmtest;
 
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotEquals;
+import edu.umich.its.cpm.Utils;
+import org.junit.*;
 
 import java.util.HashMap;
 
-import org.junit.After;
-import org.junit.AfterClass;
-import org.junit.Before;
-import org.junit.BeforeClass;
-import org.junit.Test;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNotEquals;
 
 //import junit.framework.TestCase;
-import edu.umich.its.cpm.Utils;
 
 //public class UtilsTest extends TestCase {
 public class UtilsTest {
@@ -49,13 +45,13 @@ public class UtilsTest {
 
 		// URL as name
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
-				"http://www.npr.org/"), "http___www.npr.org_.html");
+				"http://www.npr.org/"), "http___www_npr_org_.html");
 
 		// string without extension
 		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
 		
 		// URL as name, not ending in "/"
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www.npr.org.html");
+		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www_npr_org.html");
 	}
 	
 	@Test
@@ -188,5 +184,22 @@ public class UtilsTest {
 			System.out.println(this + " java.net.MalformedURLException " + url);
 		}
 	}
-	
+
+	@Test
+	public void testMimeExtensionLogic(){
+		assertEquals("A2_International HealthSystem.pdf",Utils.modifyFileNameOnType("application/pdf", "A2.International HealthSystem"));
+		assertEquals("T3_0_  Training and faculty development at UM.pdf",Utils.modifyFileNameOnType("application/pdf", "T3_0.  Training and faculty development at UM"));
+		assertEquals("Group 1.doc",Utils.modifyFileNameOnType("application/msword", "Group 1.doc"));
+		assertEquals("Copy of F1_0_ Syllabus.doc",Utils.modifyFileNameOnType("application/msword", "Copy of F1_0. Syllabus"));
+		assertEquals("A2 health systems.pdf",Utils.modifyFileNameOnType("application/pdf", "A2 health systems"));
+		assertEquals("A2 health systems.txt",Utils.modifyFileNameOnType("text/plain", "A2 health systems"));
+		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.bin",Utils.modifyFileNameOnType("application/octet-stream", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/html", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("A2-0-  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2-0-  Kinsella and Velkoff 2001 Chapter 4"));
+		assertEquals("Using Web Dav on a Mac v1",Utils.modifyFileNameOnType("text/plain; charset=us-ascii", "Using Web Dav on a Mac v1"));
+		assertEquals("Using Web Dav on a Mac v1.bin",Utils.modifyFileNameOnType("application/octet-stream", "Using Web Dav on a Mac v1.bin"));
+
+	}
+
 }

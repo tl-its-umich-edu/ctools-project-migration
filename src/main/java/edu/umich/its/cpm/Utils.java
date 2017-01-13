@@ -1,6 +1,7 @@
 package edu.umich.its.cpm;
 
 import org.apache.commons.io.FilenameUtils;
+import org.springframework.util.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -12,6 +13,7 @@ import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.BasicHttpContext;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.util.EntityUtils;
+import org.apache.tika.Tika;
 import org.apache.tika.config.TikaConfig;
 import org.apache.tika.mime.MimeType;
 import org.apache.tika.mime.MimeTypeException;
@@ -99,6 +101,7 @@ class Utils {
 
 	// CTools resource type strings
 	public static final String CTOOLS_RESOURCE_TYPE_URL = "text/url";
+	public static final String CTOOLS_FILENAME_EXTENSION_DONT_KNOW = "application/octet-stream";
 	public static final String CTOOLS_RESOURCE_TYPE_URL_EXTENSION = ".URL";
 	public static final String CTOOLS_RESOURCE_TYPE_CITATION = "text/html";
 	public static final String CTOOLS_RESOURCE_TYPE_CITATION_URL = "/citation/";
@@ -148,10 +151,10 @@ class Utils {
 	public static final String REPORT_ATTR_ID = "id";
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
+	public static final String FILE_EXTENSION_BIN = "bin";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
-
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -192,6 +195,8 @@ class Utils {
 	public static final String PARAM_ITEM_STATUS = "itemStatus";
 	public static final String PARAM_CONTAINER_STACK = "containerStack";
 	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
+	
+	public static final String PARAM_ERROR_MESSAGE = "errorMessage";
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -647,13 +652,14 @@ class Utils {
 	 */
 	public static String modifyFileNameOnType(String type, String fileName) {
 		String fileExtension = FilenameUtils.getExtension(fileName);
-		if ((fileExtension == null 
-			|| fileExtension.isEmpty() 
+		if ((fileExtension == null
+			|| fileExtension.isEmpty()
 			|| !Utils.HTML_FILE_EXTENSION.equals(EXTENSION_SEPARATOR + fileExtension))
 			&& 
-			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type) 
+			(Utils.CTOOLS_RESOURCE_TYPE_CITATION.equals(type)
 			|| Utils.isOfURLMIMEType(type))) {
 				// handle citation and URL type
+				fileName = fileName.replace(".", "_");
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
@@ -673,13 +679,20 @@ class Utils {
 						"Utils.modifyFileNameOnType: Couldn't find file extension for resource: "
 								+ fileName + " of MIME type = " + type, e);
 			}
-			if (mimeExtension != null 
-				&& FilenameUtils.getExtension(fileName).isEmpty()) {
-				// if file name extension is missing
-				// add the extension to file name
-				fileName = fileName.concat(mimeExtension);
+			Tika tika = new Tika();
+
+			if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
+					// if file name extension is missing add the extension to file name
+				if (!fileExtension.equals(FILE_EXTENSION_BIN)) {
+					fileName = fileName.concat(mimeExtension);
+				}
+				if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
+					fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
+					fileName = fileName.concat(mimeExtension);
+					return fileName;
+				}
+				}
 			}
-		}
 		return fileName;
 	}
 

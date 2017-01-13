@@ -41,4 +41,14 @@ public class MigrationTaskServiceTest {
 		assertNotNull("empty field ok",gio);
 	}
 
+
+	@Test
+	public void testCheckForDotsInFilename(){
+		assertEquals("Group 1.doc",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("Group 1.doc"));
+		assertEquals("T1_0.  International health systems",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("T1.0.  International health systems"));
+		assertEquals("Copy of F1_0. Syllabus",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("Copy of F1.0. Syllabus"));
+		assertEquals("simply_long.properties",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("simply.long.properties"));
+		assertEquals("Happy",MigrationTaskService.replaceDotsInFileNameExceptFileExtention("Happy"));
+	}
+
 }

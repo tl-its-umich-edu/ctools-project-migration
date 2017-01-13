@@ -527,53 +527,69 @@ public class BoxUtils implements EnvironmentAware {
 	 * @param boxClientId
 	 * @param boxClientSecret
 	 */
-	public static void addCollaboration(String boxAdminId, String userEmail,
+	public static String addCollaboration(String boxAdminId, String userEmail,
 			String role, String folderId, String boxClientId,
 			String boxClientSecret, BoxAuthUserRepository repository) {
+		
+		// add status return
+		String rv = null;
+		
 		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, repository);
 		
 		BoxFolder folder = null;
 		
-		if (api != null) {
-			try {
-				folder = new BoxFolder(api, folderId);
-
-				// map CTools roles to Box Collaborator roles
-				// default to be Box View role
-				BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
-				if (Utils.ROLE_OWNER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.CO_OWNER;
-				}
-				else if (Utils.ROLE_ORGANIZER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.EDITOR;
-				}
-				else if (Utils.ROLE_MEMBER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
-				}
-				else if (Utils.ROLE_OBSERVER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER;
-				}
-				else if (Utils.ROLE_MAINTAINER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.CO_OWNER;
-				}
-				else if (Utils.ROLE_INSTRUCTOR.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.EDITOR;
-				}
-				else if (Utils.ROLE_STUDENT.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
-				}
-				folder.collaborate(userEmail, boxRole);
-			} catch (BoxAPIException e) {
-				log.warn("addCollaboration messsage=" + e.getMessage() + " response=" + e.getResponse() );
-			}
+		if (api == null) 
+		{
+			rv = " Problem adding user=" + userEmail
+					+ " with role=" + role
+					+ " to Box folder id=" + folderId + ": Problem getting Box API Connection. ";
+			log.error(rv);
+			return rv;
 		}
+		
+		try {
+			folder = new BoxFolder(api, folderId);
+
+			// map CTools roles to Box Collaborator roles
+			// default to be Box View role
+			BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
+			if (Utils.ROLE_OWNER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.CO_OWNER;
+			}
+			else if (Utils.ROLE_ORGANIZER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.EDITOR;
+			}
+			else if (Utils.ROLE_MEMBER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+			}
+			else if (Utils.ROLE_OBSERVER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER;
+			}
+			else if (Utils.ROLE_MAINTAINER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.CO_OWNER;
+			}
+			else if (Utils.ROLE_INSTRUCTOR.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.EDITOR;
+			}
+			else if (Utils.ROLE_STUDENT.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+			}
+			folder.collaborate(userEmail, boxRole);
+		} catch (BoxAPIException e) {
+			log.warn("addCollaboration messsage=" + e.getMessage() + " response=" + e.getMessage());
+			rv = " Problem adding user=" + userEmail
+					+ " with role=" + role
+					+ " to Box folder id=" + folderId + ": " + e.getMessage();
+		}
+		
+		return rv;
 
 	}
 

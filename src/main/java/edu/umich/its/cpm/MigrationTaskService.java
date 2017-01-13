@@ -1,5 +1,7 @@
 package edu.umich.its.cpm;
 
+import org.apache.commons.io.FilenameUtils;
+
 import org.apache.http.HttpResponse;
 import org.apache.http.ParseException;
 import org.apache.http.client.HttpClient;
@@ -29,6 +31,9 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.text.DateFormat;
+import java.text.SimpleDateFormat;
+import java.util.*;
 import java.util.concurrent.Future;
 import java.util.zip.ZipEntry;
 import java.util.zip.ZipOutputStream;
@@ -628,6 +633,9 @@ class MigrationTaskService {
 						CONTENT_JSON_ATTR_TYPE);
 				String title = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_TITLE);
+				// trim the trailing space from title string
+				title = title.trim();
+				
 				String description = Utils.getJSONString(contentItem,
 						CONTENT_JSON_ATTR_DESCRIPTION);
 				// metadata
@@ -981,6 +989,7 @@ class MigrationTaskService {
 				// return AsyncResult
 				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
+			fileName= replaceDotsInFileNameExceptFileExtention(fileName);
 			
 			String webLinkUrl = bFile.getWeb_link_url();
 			String fileAccessUrl = bFile.getFile_access_url();
@@ -1042,6 +1051,11 @@ class MigrationTaskService {
 
 			// update file name
 			fileName = Utils.modifyFileNameOnType(type, fileName);
+			String fileExtension = FilenameUtils.getExtension(fileName);
+			if(fileExtension.isEmpty()){
+				status.append(String.format("For the File \"%1$s\" with MIME type: \"%2$s\" is missing file extension in Box",fileName,type));
+				log.error("For the File: {} with invalid MIME type: {} is missing file extension in Box",fileName,type);
+			}
 
 			// exit if content stream is null
 			if (content == null)
@@ -1146,7 +1160,17 @@ class MigrationTaskService {
 			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 		}
 
-		/**
+	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
+		if (!(StringUtils.countOccurrencesOf(fileName, ".") > 1)) {
+			return fileName;
+		}
+		String fileExtension = FilenameUtils.getExtension(fileName);
+		fileName = fileName.replaceFirst("[.][^.]+$", "").replace(".", "_");
+		fileName = fileName + Utils.EXTENSION_SEPARATOR + fileExtension;
+		return fileName;
+	}
+
+	/**
 		 * update the status and end time for file item
 		 * @param id
 		 * @param status
@@ -1653,14 +1677,23 @@ class MigrationTaskService {
                 		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
             		}
             		String date = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_DATE);
-
+			try {
+				DateFormat localTimeFormat = new SimpleDateFormat("EEE, d MMM yyyy HH:mm:ss Z");
+				Date localDateAndTime = localTimeFormat.parse(date);
+				long epochTime = localDateAndTime.getTime();
+				DateFormat ascTimePattern = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
+				ascTimePattern.setTimeZone(TimeZone.getTimeZone("America/New_York"));
+				date = ascTimePattern.format(new Date(epochTime));
+			} catch (java.text.ParseException e) {
+				log.error("Error occurred while parsing the Date: " + date + " due to " + e.getMessage());
+			}
 			// create file for each message
 			String messageFolderName = "";
 			if (folderForChannels)
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			String name = messageFolderName + " " + sender + " " + date + " " + subject;
+			String name = messageFolderName + " " + date + " " + sender + " " + subject;
 			if(name.length()>100){
 				name=name.substring(0,100);
 			}
