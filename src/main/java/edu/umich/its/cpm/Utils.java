@@ -433,67 +433,93 @@ class Utils {
 	}
 
 	/*
-	 * get CoSign user, for local development user will be passed from url parameter as
-	 * http://localhost:8080/?testUser=<uniqname> together with allow.testUser.urlOverride from the
-	 * application.properties we will determine valid user. In short this block is mimicking
-	 * cosign user if CoSign is not enabled
+	 * this block of code getting the logged in user to cpm. CPM features become user for admins, get User's when no
+	 * authentication is used using the flag "allow.testUser.urlOverride" along with testUser parameter turned on from URL.
+	 * All that logic is handled here.
+	 *
 	 */
 	public static String getUserLoginId(HttpServletRequest request, Environment env) {
 		String user = null;
 		String remoteUser = request.getRemoteUser();
 		String testUser = request.getParameter(TEST_USER);
-		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
+		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ? false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
 		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
 
-		//become user case
-		if (isTestUrlEnabled && testUser != null && remoteUser != null && testUser != remoteUser) {
-			if (isCurrentUserCPMAdmin(remoteUser, env)) {
-				request.getSession().setAttribute(TEST_USER, testUser);
-				user = testUser;
-				log.debug("BECOME USER " + user);
-			} else {
-				user = remoteUser;
-				log.error("the user " + user + " is unauthorized to become user");
-			}
-			return user;
-		}
-		//become user case
-		if (isTestUrlEnabled && testUserInSession != null && remoteUser != null && testUserInSession != remoteUser) {
-			if (isCurrentUserCPMAdmin(remoteUser, env)) {
-				user = testUserInSession;
-				log.debug("BECOME USER IN SESSION: " + user);
-			} else {
-				user = remoteUser;
-				log.error("the user " + user + " is unauthorized to become user");
-			}
-
-			return user;
-		}
-        // when no cosign enabled
-		if (isTestUrlEnabled && testUser != null && remoteUser == null) {
-			user = testUser;
-			request.getSession().setAttribute(TEST_USER, testUser);
-			log.debug("TEST USER is " + user);
-			return user;
-		}
-		// when no cosign enabled
-		if (isTestUrlEnabled && testUserInSession != null && remoteUser == null) {
-			user = testUserInSession;
-			log.debug("TEST USER FROM SESSION " + user);
-			return user;
+		// simple authenticated user
+		if (!allowTestUserOverride) {
+			return remoteUser;
 		}
 
-		// regular user with cosign
-		if (remoteUser != null) {
-			user = remoteUser;
-			log.debug("REMOTE USER " + user);
-			return user;
-		}
-		if (user == null) {
-			log.error("No proper user could be retrieved from request");
+		if (allowTestUserOverride) {
+
+			// user is authenticated, can become user using "testUser" attribute so we authorize the user using LDAP.
+			// only admin's can become users
+			if (remoteUser != null) {
+				//become user case
+				if (testUser != null) {
+					if (isCurrentUserCPMAdmin(remoteUser, env) && (!testUser.contentEquals(remoteUser))) {
+						user = testUser;
+						request.getSession().setAttribute(TEST_USER, testUser);
+						log.info("BECOME USER " + user);
+					} else {
+						user = makeUserRemoteUserAndRemoveTestUserFromSession(request, remoteUser);
+
+					}
+					return user;
+				}
+				//become user case
+				if (testUserInSession != null) {
+					//getting the user from session as subsequent request from UI won't provide the
+					// testUser attribute as part of request. checking for each call for authorization, safe to have this in place.
+					if (isCurrentUserCPMAdmin(remoteUser, env)) {
+						user = testUserInSession;
+						log.info("BECOME USER IN SESSION: " + user);
+					} else {
+						user = makeUserRemoteUserAndRemoveTestUserFromSession(request, remoteUser);
+					}
+
+					return user;
+				}
+				// authenticated user
+				user = remoteUser;
+				log.info("REMOTE USER " + user);
+				return user;
+			}
+			// no authentication getting the user from testUser attribute
+			if(remoteUser==null) {
+				if (testUser != null) {
+					user = testUser;
+					request.getSession().setAttribute(TEST_USER, testUser);
+					log.info("TEST USER is " + user);
+					return user;
+				}
+				// no authentication case
+				if (testUserInSession != null) {
+					user = testUserInSession;
+					log.info("TEST USER FROM SESSION " + user);
+					return user;
+				}
+			}
+
+			if (user == null) {
+				log.error("No proper user could be retrieved from request");
+			}
 		}
 		return user;
 	}
+
+		// this is a case where a non admin user try's to become user or a admin try to use testUser
+		//feature to become then self.
+		private static String makeUserRemoteUserAndRemoveTestUserFromSession(HttpServletRequest request, String remoteUser) {
+			String user;
+			user = remoteUser;
+			// removing the previous become user from session as admin is logging in as himself using testUser and
+			// we are setting user from remoteUser.
+			request.getSession().removeAttribute(TEST_USER);
+			log.error("the user " + user + " is not allowed to become user may be because, not authorized or admin " +
+					"want to become user by setting the \"testUser\" parameter");
+			return user;
+		}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
 		JSONObject downloadStatus = new JSONObject();
