@@ -1086,7 +1086,7 @@ class MigrationTaskService {
 
 				bContent = new BufferedInputStream(content);
 				BoxFolder folder = new BoxFolder(api, boxFolderId);
-				log.info("upload file size " + fileSize + " to folder " + folder.getID());
+				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 						Utils.sanitizeName(type, fileName),
@@ -1098,18 +1098,38 @@ class MigrationTaskService {
 					}
 				});
 
-				// get the BoxFile object, get BoxFile.Info object, set description,
-				// and commit change
-				BoxFile newFile = newFileInfo.getResource();
-				newFileInfo.setDescription(fileDescription);
-				newFile.updateInfo(newFileInfo);
-
-				// assign meta data
-				Metadata metaData = new Metadata();
-				metaData.add("/copyrightAlert",
-						fileCopyrightAlert == null ? "false" : "true");
-				metaData.add("/author", fileAuthor);
-				newFile.createMetadata(metaData);
+				try
+				{
+					// get the BoxFile object, get BoxFile.Info object, set description,
+					// and commit change
+					BoxFile newFile = newFileInfo.getResource();
+					newFileInfo.setDescription(fileDescription);
+					newFile.updateInfo(newFileInfo);
+					
+					try
+					{
+						// assign meta data
+						Metadata metaData = new Metadata();
+						metaData.add("/copyrightAlert",
+								fileCopyrightAlert == null ? "false" : "true");
+						metaData.add("/author", fileAuthor==null ? "":fileAuthor);
+						newFile.createMetadata(metaData);
+					}
+					catch (BoxAPIException e)
+					{
+						String errorString = "There is a problem add metadata (copyright alert, or file author) to file \"" + fileName
+								+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+						log.error(this + errorString);
+						status.append(errorString + Utils.LINE_BREAK);
+					}
+				}
+				catch (BoxAPIException e)
+				{
+					String errorString = "There is a problem add description to file \"" + fileName
+							+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+					log.error(this + errorString);
+					status.append(errorString + Utils.LINE_BREAK);
+				}
 
 				log.info("upload success for file " + fileName);
 			} catch (BoxAPIException e) {
