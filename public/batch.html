@@ -66,7 +66,11 @@
 						<h3 class="panel-title">Start a batch migration</h3>
 					</div>
 					<div class="panel-body">
-						<form role="tabpanel" class="tab-pane active" id="upload">
+
+            <div class="alert alert-warning" ng-show="!boxAuthorized">
+              Authorize to Box first to start a batch migration.
+            </div>
+						<form role="tabpanel" class="tab-pane active" id="upload" ng-show="boxAuthorized">
 								<h3 class="panel-title panel-title-batch">Upload</h3>
 								<div class="well form-group">
                   <div id="bulkUploadFileContainer">
@@ -96,6 +100,8 @@
                   </div>
 								</div>
 							</form>
+
+
 					</div>
 				</div>
 			</div>
