@@ -710,7 +710,7 @@ class MigrationTaskService {
 							log.debug(Utils.PARAM_BOX_FOLDER_ID_STACK + " length="
 									+ boxFolderIdStack.size());
 						} catch (BoxAPIException e) {
-							String errorMessage = "There is a problem uploading item " + title + " to Box: "
+							String errorMessage = "There is a problem uploading item \"" + title + "\" to Box: "
 									+ e.getMessage();
 							try
 							{
@@ -869,7 +869,21 @@ class MigrationTaskService {
 				}
 				
 				// create box folder
-				BoxFolder parentFolder = new BoxFolder(api, boxFolderIdStack.peek());
+				if (boxFolderIdStack.isEmpty())
+				{
+					// the folder should not be empty, log with error and update the item status
+					itemStatus.append("Problem for adding \"" + title + "\" due to parent folder not existing.");
+					log.error(itemStatus.toString());
+					// return with error message
+					HashMap<String, Object> rv = returnMapWithStatus(containerStack,
+							boxFolderIdStack, itemStatus);
+					return rv;
+				}
+				
+				// get the first folder id from stack
+				String peekFolderId = boxFolderIdStack.peek();
+				
+				BoxFolder parentFolder = new BoxFolder(api, peekFolderId);
 				String sanitizedTitle = Utils.sanitizeName(type, title);
 				try {
 					BoxFolder.Info childFolderInfo = parentFolder
@@ -898,14 +912,13 @@ class MigrationTaskService {
 						boxFolderIdStack.push("title -- conflict with existing Box folder");
 					} else {
 						// log the exception message
-						String errorMessage = "There is a problem adding folder " + title + " to Box: " + e.getMessage();
+						String errorMessage = "There is a problem " + e.getResponseCode() + " for adding folder " + title + " to Box: " + e.getMessage();
 						log.error(errorMessage);
 						itemStatus.append(errorMessage);
 
-						// and throws the exception,
-						// so that the parent function can catch it and stop the
-						// whole upload process
-						throw e;
+						// push the current folder id into the stack
+						containerStack.push(contentUrl);
+						boxFolderIdStack.push("folder \"" + title + "\" -- not added into Box");
 					}
 				}
 			} else {
@@ -933,6 +946,7 @@ class MigrationTaskService {
 					if (boxFolderIdStack.empty()) {
 						String parentError = "Cannot find parent folder for file "
 								+ contentUrl;
+						itemStatus.append(parentError);
 						log.error(parentError);
 					} else {
 						// insert records into database
@@ -1072,7 +1086,7 @@ class MigrationTaskService {
 
 				bContent = new BufferedInputStream(content);
 				BoxFolder folder = new BoxFolder(api, boxFolderId);
-				log.info("upload file size " + fileSize + " to folder " + folder.getID());
+				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 						Utils.sanitizeName(type, fileName),
@@ -1084,18 +1098,14 @@ class MigrationTaskService {
 					}
 				});
 
-				// get the BoxFile object, get BoxFile.Info object, set description,
-				// and commit change
-				BoxFile newFile = newFileInfo.getResource();
-				newFileInfo.setDescription(fileDescription);
-				newFile.updateInfo(newFileInfo);
 
-				// assign meta data
-				Metadata metaData = new Metadata();
-				metaData.add("/copyrightAlert",
-						fileCopyrightAlert == null ? "false" : "true");
-				metaData.add("/author", fileAuthor);
-				newFile.createMetadata(metaData);
+				BoxFile newFile = newFileInfo.getResource();
+				// set file description
+				status = setBoxFileDescription(status, boxFolderId, fileName,
+						fileDescription, newFileInfo, newFile);
+				// set file metadata
+				status = setBoxFileMetadata(status, boxFolderId, fileName, fileAuthor,
+						fileCopyrightAlert, newFile);
 
 				log.info("upload success for file " + fileName);
 			} catch (BoxAPIException e) {
@@ -1108,8 +1118,8 @@ class MigrationTaskService {
 				}
 				else
 				{
-					String errorString = "There is a problem uploading file " + fileName
-							+ " to Box: " + e.getMessage();
+					String errorString = "There is a problem uploading file \"" + fileName
+							+ "\" to Box folder " + boxFolderId + ": " + e.getMessage();
 					log.error(this + errorString);
 					status.append(errorString + Utils.LINE_BREAK);
 				}
@@ -1158,6 +1168,70 @@ class MigrationTaskService {
 			// update job end time and status
 			// return AsyncResult
 			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+		}
+
+		/**
+		 * set the metadata (author, copyright alert) of Box file
+		 * @param status
+		 * @param boxFolderId
+		 * @param fileName
+		 * @param fileAuthor
+		 * @param fileCopyrightAlert
+		 * @param newFile
+		 * @return
+		 */
+		private StringBuffer setBoxFileMetadata(StringBuffer status,
+				String boxFolderId, String fileName, String fileAuthor,
+				String fileCopyrightAlert, BoxFile newFile) {
+			try
+			{
+				// assign meta data
+				Metadata metaData = new Metadata();
+				metaData.add("/copyrightAlert",
+						fileCopyrightAlert == null ? "false" : "true");
+				metaData.add("/author", fileAuthor==null ? "":fileAuthor);
+				newFile.createMetadata(metaData);
+			}
+			catch (BoxAPIException e)
+			{
+				String errorString = "There is a problem add metadata (copyright alert, or file author) to file \"" + fileName
+						+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+				log.error(this + errorString);
+				status.append(errorString + Utils.LINE_BREAK);
+			}
+			
+			return status;
+		}
+
+		/**
+		 * set the description field value of Box file
+		 * @param status
+		 * @param boxFolderId
+		 * @param fileName
+		 * @param fileDescription
+		 * @param newFileInfo
+		 * @param newFile
+		 * @return
+		 */
+		private StringBuffer setBoxFileDescription(StringBuffer status,
+				String boxFolderId, String fileName, String fileDescription,
+				BoxFile.Info newFileInfo, BoxFile newFile) {
+			try
+			{
+				// get the BoxFile object, get BoxFile.Info object, set description,
+				// and commit change
+				newFileInfo.setDescription(fileDescription);
+				newFile.updateInfo(newFileInfo);
+			}
+			catch (BoxAPIException e)
+			{
+				String errorString = "There is a problem add description to file \"" + fileName
+						+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+				log.error(this + errorString);
+				status.append(errorString + Utils.LINE_BREAK);
+			}
+			
+			return status;
 		}
 
 	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {

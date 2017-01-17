@@ -101,7 +101,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
         }
       }
       else {
-
+        var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
         Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
           if (result.data === 'true') {
             $scope.boxAuthorized = true;
