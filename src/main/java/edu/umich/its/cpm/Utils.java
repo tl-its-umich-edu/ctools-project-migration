@@ -390,6 +390,7 @@ class Utils {
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
 	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
+	private static final String SESSION_USER = "sesUser";
 
 
 	public static String getCurrentUserId(HttpServletRequest request,
@@ -432,94 +433,56 @@ class Utils {
 				propAdminMCommGroup, userId);
 	}
 
-	/*
-	 * this block of code getting the logged in user to cpm. CPM features become user for admins, get User's when no
-	 * authentication is used using the flag "allow.testUser.urlOverride" along with testUser parameter turned on from URL.
-	 * All that logic is handled here.
-	 *
-	 */
+
 	public static String getUserLoginId(HttpServletRequest request, Environment env) {
-		String user = null;
 		String remoteUser = request.getRemoteUser();
 		String testUser = request.getParameter(TEST_USER);
-		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ? false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
-		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
+		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ?
+				false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
+		log.debug("************** SESSION ID: "+request.getSession().getId());
 
-		// simple authenticated user
+
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
 		if (!allowTestUserOverride) {
-			return remoteUser;
+			return getAndSetUserInSession(request, remoteUser);
 		}
 
-		if (allowTestUserOverride) {
-
-			// user is authenticated, can become user using "testUser" attribute so we authorize the user using LDAP.
-			// only admin's can become users
-			if (remoteUser != null) {
-				//become user case
-				if (testUser != null) {
-					if (isCurrentUserCPMAdmin(remoteUser, env) && (!testUser.contentEquals(remoteUser))) {
-						user = testUser;
-						request.getSession().setAttribute(TEST_USER, testUser);
-						log.info("BECOME USER " + user);
-					} else {
-						user = makeUserRemoteUserAndRemoveTestUserFromSession(request, remoteUser);
-
-					}
-					return user;
-				}
-				//become user case
-				if (testUserInSession != null) {
-					//getting the user from session as subsequent request from UI won't provide the
-					// testUser attribute as part of request. checking for each call for authorization, safe to have this in place.
-					if (isCurrentUserCPMAdmin(remoteUser, env)) {
-						user = testUserInSession;
-						log.info("BECOME USER IN SESSION: " + user);
-					} else {
-						user = makeUserRemoteUserAndRemoveTestUserFromSession(request, remoteUser);
-					}
-
-					return user;
-				}
-				// authenticated user
-				user = remoteUser;
-				log.info("REMOTE USER " + user);
-				return user;
-			}
-			// no authentication getting the user from testUser attribute
-			if(remoteUser==null) {
-				if (testUser != null) {
-					user = testUser;
-					request.getSession().setAttribute(TEST_USER, testUser);
-					log.info("TEST USER is " + user);
-					return user;
-				}
-				// no authentication case
-				if (testUserInSession != null) {
-					user = testUserInSession;
-					log.info("TEST USER FROM SESSION " + user);
-					return user;
-				}
+		if (remoteUser != null) {
+			if (!isCurrentUserCPMAdmin(remoteUser, env)) {
+				return getAndSetUserInSession(request, remoteUser);
 			}
 
-			if (user == null) {
-				log.error("No proper user could be retrieved from request");
+			if(testUser!=null){
+				return becomeUser(request,testUser);
 			}
+			return getAndSetUserInSession(request, remoteUser);
 		}
-		return user;
+
+		if (testUser != null) {
+			return becomeUser(request,testUser);
+		}
+		log.debug("****** session User:" + userInSession);
+		return userInSession;
 	}
 
-		// this is a case where a non admin user try's to become user or a admin try to use testUser
-		//feature to become then self.
-		private static String makeUserRemoteUserAndRemoveTestUserFromSession(HttpServletRequest request, String remoteUser) {
-			String user;
-			user = remoteUser;
-			// removing the previous become user from session as admin is logging in as himself using testUser and
-			// we are setting user from remoteUser.
-			request.getSession().removeAttribute(TEST_USER);
-			log.error("the user " + user + " is not allowed to become user may be because, not authorized or admin " +
-					"want to become user by setting the \"testUser\" parameter");
-			return user;
-		}
+	private static String getAndSetUserInSession(HttpServletRequest request, String remoteUser) {
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
+		if(userInSession!=null){
+			log.debug("****** session User: " + userInSession);
+            return userInSession;
+        }
+		//remote user is always accessed from session
+		request.getSession().setAttribute(SESSION_USER, remoteUser);
+		log.debug("****** remote User to session:" + remoteUser);
+		return remoteUser;
+	}
+
+	private static String becomeUser(HttpServletRequest request, String testUser){
+		request.getSession().setAttribute(SESSION_USER, testUser);
+		log.debug("****** Became User  " + testUser);
+		return testUser;
+
+	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
 		JSONObject downloadStatus = new JSONObject();
