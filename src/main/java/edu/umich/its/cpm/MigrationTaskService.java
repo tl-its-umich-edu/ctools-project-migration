@@ -1086,7 +1086,7 @@ class MigrationTaskService {
 
 				bContent = new BufferedInputStream(content);
 				BoxFolder folder = new BoxFolder(api, boxFolderId);
-				log.info("upload file size " + fileSize + " to folder " + folder.getID());
+				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 						Utils.sanitizeName(type, fileName),
@@ -1098,18 +1098,14 @@ class MigrationTaskService {
 					}
 				});
 
-				// get the BoxFile object, get BoxFile.Info object, set description,
-				// and commit change
-				BoxFile newFile = newFileInfo.getResource();
-				newFileInfo.setDescription(fileDescription);
-				newFile.updateInfo(newFileInfo);
 
-				// assign meta data
-				Metadata metaData = new Metadata();
-				metaData.add("/copyrightAlert",
-						fileCopyrightAlert == null ? "false" : "true");
-				metaData.add("/author", fileAuthor);
-				newFile.createMetadata(metaData);
+				BoxFile newFile = newFileInfo.getResource();
+				// set file description
+				status = setBoxFileDescription(status, boxFolderId, fileName,
+						fileDescription, newFileInfo, newFile);
+				// set file metadata
+				status = setBoxFileMetadata(status, boxFolderId, fileName, fileAuthor,
+						fileCopyrightAlert, newFile);
 
 				log.info("upload success for file " + fileName);
 			} catch (BoxAPIException e) {
@@ -1172,6 +1168,70 @@ class MigrationTaskService {
 			// update job end time and status
 			// return AsyncResult
 			return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+		}
+
+		/**
+		 * set the metadata (author, copyright alert) of Box file
+		 * @param status
+		 * @param boxFolderId
+		 * @param fileName
+		 * @param fileAuthor
+		 * @param fileCopyrightAlert
+		 * @param newFile
+		 * @return
+		 */
+		private StringBuffer setBoxFileMetadata(StringBuffer status,
+				String boxFolderId, String fileName, String fileAuthor,
+				String fileCopyrightAlert, BoxFile newFile) {
+			try
+			{
+				// assign meta data
+				Metadata metaData = new Metadata();
+				metaData.add("/copyrightAlert",
+						fileCopyrightAlert == null ? "false" : "true");
+				metaData.add("/author", fileAuthor==null ? "":fileAuthor);
+				newFile.createMetadata(metaData);
+			}
+			catch (BoxAPIException e)
+			{
+				String errorString = "There is a problem add metadata (copyright alert, or file author) to file \"" + fileName
+						+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+				log.error(this + errorString);
+				status.append(errorString + Utils.LINE_BREAK);
+			}
+			
+			return status;
+		}
+
+		/**
+		 * set the description field value of Box file
+		 * @param status
+		 * @param boxFolderId
+		 * @param fileName
+		 * @param fileDescription
+		 * @param newFileInfo
+		 * @param newFile
+		 * @return
+		 */
+		private StringBuffer setBoxFileDescription(StringBuffer status,
+				String boxFolderId, String fileName, String fileDescription,
+				BoxFile.Info newFileInfo, BoxFile newFile) {
+			try
+			{
+				// get the BoxFile object, get BoxFile.Info object, set description,
+				// and commit change
+				newFileInfo.setDescription(fileDescription);
+				newFile.updateInfo(newFileInfo);
+			}
+			catch (BoxAPIException e)
+			{
+				String errorString = "There is a problem add description to file \"" + fileName
+						+ "\" in Box folder " + boxFolderId + ": " + e.getMessage();
+				log.error(this + errorString);
+				status.append(errorString + Utils.LINE_BREAK);
+			}
+			
+			return status;
 		}
 
 	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
