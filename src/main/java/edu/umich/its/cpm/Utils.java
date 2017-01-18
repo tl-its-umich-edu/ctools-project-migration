@@ -390,6 +390,7 @@ class Utils {
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
 	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
+	private static final String SESSION_USER = "sesUser";
 
 
 	public static String getCurrentUserId(HttpServletRequest request,
@@ -432,40 +433,59 @@ class Utils {
 				propAdminMCommGroup, userId);
 	}
 
-	/*
-	 * get CoSign user, for local development user will be passed from url parameter as
-	 * http://localhost:8080/?testUser=<uniqname> together with allow.testUser.urlOverride from the
-	 * application.properties we will determine valid user. In short this block is mimicking
-	 * cosign user if CoSign is not enabled
-	 */
+
 	public static String getUserLoginId(HttpServletRequest request, Environment env) {
-		String user = null;
 		String remoteUser = request.getRemoteUser();
 		String testUser = request.getParameter(TEST_USER);
-		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
-		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
+		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ?
+				false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
+		log.debug("************** SESSION ID: " + request.getSession().getId());
 
-		if (isTestUrlEnabled && testUser != null) {
-			user = testUser;
-			request.getSession().setAttribute(TEST_USER, testUser);
-			log.debug("TEST USER is " + user);
-			return user;
-		}
-		if (isTestUrlEnabled && testUserInSession != null) {
-			user = testUserInSession;
-			log.debug("TEST USER FROM SESSION " + user);
-			return user;
+
+		if (!allowTestUserOverride) {
+			return getOrSetUserInSession(request, remoteUser);
 		}
 
-		if (!isTestUrlEnabled && remoteUser != null) {
-			user = remoteUser;
-			log.debug("REMOTE USER " + user);
-			return user;
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
+		if (remoteUser != null) {
+			if (!isCurrentUserCPMAdmin(remoteUser, env)) {
+				return getOrSetUserInSession(request, remoteUser);
+			}
+
+			if (testUser != null) {
+				return becomeUser(request, testUser);
+			}
+			return getOrSetUserInSession(request, remoteUser);
 		}
-		if (user == null) {
-			log.error("No proper user could be retrieved from request");
+
+		if (testUser != null) {
+			return becomeUser(request, testUser);
 		}
-		return user;
+		log.debug("****** session User:" + userInSession);
+		return userInSession;
+	}
+
+	private static String getOrSetUserInSession(HttpServletRequest request, String remoteUser) {
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
+		if (userInSession != null) {
+			log.debug("****** session User: " + userInSession);
+			return userInSession;
+		}
+		//remote user is always accessed from session
+		setUserInSession(request, remoteUser);
+		log.debug("****** remote User to session:" + remoteUser);
+		return remoteUser;
+	}
+
+	private static String becomeUser(HttpServletRequest request, String testUser){
+		setUserInSession(request, testUser);
+		return testUser;
+
+	}
+
+	private static void setUserInSession(HttpServletRequest request, String user) {
+		request.getSession().setAttribute(SESSION_USER, user);
+		log.debug("****** Became User  " + user);
 	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
