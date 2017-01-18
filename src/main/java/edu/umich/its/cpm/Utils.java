@@ -439,49 +439,53 @@ class Utils {
 		String testUser = request.getParameter(TEST_USER);
 		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ?
 				false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
-		log.debug("************** SESSION ID: "+request.getSession().getId());
+		log.debug("************** SESSION ID: " + request.getSession().getId());
 
 
-		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
 		if (!allowTestUserOverride) {
-			return getAndSetUserInSession(request, remoteUser);
+			return getOrSetUserInSession(request, remoteUser);
 		}
 
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
 		if (remoteUser != null) {
 			if (!isCurrentUserCPMAdmin(remoteUser, env)) {
-				return getAndSetUserInSession(request, remoteUser);
+				return getOrSetUserInSession(request, remoteUser);
 			}
 
-			if(testUser!=null){
-				return becomeUser(request,testUser);
+			if (testUser != null) {
+				return becomeUser(request, testUser);
 			}
-			return getAndSetUserInSession(request, remoteUser);
+			return getOrSetUserInSession(request, remoteUser);
 		}
 
 		if (testUser != null) {
-			return becomeUser(request,testUser);
+			return becomeUser(request, testUser);
 		}
 		log.debug("****** session User:" + userInSession);
 		return userInSession;
 	}
 
-	private static String getAndSetUserInSession(HttpServletRequest request, String remoteUser) {
+	private static String getOrSetUserInSession(HttpServletRequest request, String remoteUser) {
 		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
-		if(userInSession!=null){
+		if (userInSession != null) {
 			log.debug("****** session User: " + userInSession);
-            return userInSession;
-        }
+			return userInSession;
+		}
 		//remote user is always accessed from session
-		request.getSession().setAttribute(SESSION_USER, remoteUser);
+		setUserInSession(request, remoteUser);
 		log.debug("****** remote User to session:" + remoteUser);
 		return remoteUser;
 	}
 
 	private static String becomeUser(HttpServletRequest request, String testUser){
-		request.getSession().setAttribute(SESSION_USER, testUser);
-		log.debug("****** Became User  " + testUser);
+		setUserInSession(request, testUser);
 		return testUser;
 
+	}
+
+	private static void setUserInSession(HttpServletRequest request, String user) {
+		request.getSession().setAttribute(SESSION_USER, user);
+		log.debug("****** Became User  " + user);
 	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
