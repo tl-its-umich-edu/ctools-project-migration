@@ -15,6 +15,14 @@
 #########
 # This is the table prefix for the SQL queries
 db_user: CTDEV_USER
+
+########## Values beyond here are unlikely to change. #########
+# Put in a line break for comma separated lists in IN clause every this many entries.
+comma_break_rate: 5
+
+# Maximum number of realms to add to each query.
+realms_max: 100
+
 # These roles will have the permissions removed in all listed sites.
 roles:
     - Member
