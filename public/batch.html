@@ -276,7 +276,10 @@
                 </ul>
               </div>
               <div style="width:535px" ng-show="reportDetails.details.add_members.items" ng-if="reportDetails.type ==='box'">
-                <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" >
+                <div class="alert alert-danger" style="overflow:scroll" ng-show="reportDetails.details.add_members.status ==='ERROR'">
+                  {{reportDetails.details.add_members.items[0].message}}
+                </div>
+                <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" ng-show="reportDetails.details.add_members.status !=='ERROR'">
                   <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
                     <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
                       {{item.item_id}}
