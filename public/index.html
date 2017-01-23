@@ -154,6 +154,7 @@
                 <div class="col-lg-4 col-lg-4 col-lg-4">
                   Google error
                 </div>
+              </li>
               <li ng-repeat="member in reportDetails.details.add_members.items" class="row">
                 <div class="col-lg-4 col-lg-4 col-lg-4">
                   {{member.item_id.id}}
@@ -205,7 +206,7 @@
                     {{member.item_id}}
                   </div>
                   <div class="col-lg-8 col-md-8 col-sm-12 col-xs-12">
-                    {{member.message}}
+                    {{member.message | filterMemberError}}
                   </div>
                 </li>
               </ul>

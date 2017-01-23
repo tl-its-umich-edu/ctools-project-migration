@@ -285,7 +285,8 @@
                       {{item.item_id}}
                     </div>
                     <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
-                      {{item.message}}
+                      {{item.message | filterMemberError}} <small><a href="" ng-click="item.showFullMessage =true">(see full message)</a></small>
+                      <div ng-show="item.showFullMessage" class="alert alert-warning" style="padding:0px 5px"><small>{{item.message}}</small></div>
                     </div>
                   </li>
                 </ul>
