@@ -533,8 +533,14 @@ public class MigrationController {
 			String sessionId = getUserSessionId(request);
 
 			// return CTools site members
-			return Response.status(Response.Status.OK).entity(get_site_members(siteId, sessionId))
-					.build();
+			HashMap<String, String> site_members = get_site_members(siteId, sessionId);
+			for (String userEid : site_members.keySet()) {
+				if (userEid.equals("errorMessage")) {
+						return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(site_members).build();
+				}
+			}
+
+			return Response.status(Response.Status.OK).entity(site_members).build();
 		} catch (Exception e) {
 			return Response
 					.status(Response.Status.INTERNAL_SERVER_ERROR)
@@ -610,8 +616,10 @@ public class MigrationController {
 			}
 		}
 
-		// return the errorMessage too
-		rv.put(Utils.PARAM_ERROR_MESSAGE, errorMessage);
+		// return the errorMessage if there is one
+		if(!errorMessage.isEmpty()) {
+			rv.put(Utils.PARAM_ERROR_MESSAGE, errorMessage);
+		}
 		
 		return rv;
 	}
