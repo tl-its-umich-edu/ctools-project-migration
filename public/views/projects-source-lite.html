@@ -1,11 +1,16 @@
 <div class="container-fluid">
   <div class="row">
     <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
-        <div ng-show="sourceProjects.length">
-          <input type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
-          <span ng-show="projectSearchFilter !==''">&nbsp;<button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default"><span aria-hidden="true">&times;</span><span class="sr-only">Reset site search filter</span></button></span>
-          <label for="searchProject" class="sr-only">Search for projects</label>
-        </div>
+      <div ng-show="sourceProjects.length">
+        <input type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
+        <span ng-show="projectSearchFilter">&nbsp;
+          <button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">
+            <em aria-hidden="true">&times;</em>
+            <em class="sr-only">Reset site search filter</em>
+          </button>
+        </span>
+        <label for="searchProject" class="sr-only">Search for projects</label>
+      </div>
     </div>
     <div class="col-lg-4 col-md-4 col-sm-12 col-cs-12" style="text-align:right;padding-right:0">
       <button accesskey="s" type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" aria-disabled="{{!selectionIsMade}}" ng-disabled="!selectionIsMade">Save changes</button>

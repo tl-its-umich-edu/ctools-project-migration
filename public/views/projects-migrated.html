@@ -68,7 +68,7 @@
     </ul>
   </div>
   <div class="container-fluid">
-    <div class="row">
+    <div class="row" ng-show="migratedProjects.length">
       <h4 ng-show="migratedProjects.length && recentlyMigratedProjectsShow">Complete list</h4>
       <div class="col-lg-8 col-md-8 col-sm-10 col-xs-8 form-inline" style="padding-left:0">
         <input type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
