@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, errorDisplay */
+/* global projectMigrationApp, errorDisplay, prepareMembership */
 
 projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $http) {
 	return {
@@ -147,8 +147,8 @@ projectMigrationApp.factory('Projects', function($http) {
 			return $http.get(url, {
 				cache : false
 			}).then(function success(result) {
-				// forward the data - let the controller deal with it
-        return prepareMembership(result.data.entity);
+				// transform the data for grouped display
+        return prepareMembership(result.data);
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get membership');
 				result.errors.failure = true;

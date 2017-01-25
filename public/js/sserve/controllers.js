@@ -464,14 +464,17 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     };
     $scope.exportSiteMembership = function(site_id, site_name) {
-      var projectUrl = 'siteMembership/' + site_id;
-      Projects.getMembership(projectUrl).then(function(result) {
+      var membershipUrl = 'siteMembership/' + site_id;
+      Projects.getMembership(membershipUrl).then(function(result) {
         $scope.membership = {
 	         'metadata': {
-		           'site_name': site_name
+		           'site_name': site_name,
+               'status':result.status,
+               'statusType':result.statusType
 	          },
-	           "data": result
+	           "data": result.data
            };
+          $log.info(JSON.stringify($scope.membership));
         $log.info(moment().format('h:mm:ss') + ' - membership for site ' + site_id + ' retrieved');
       });
     };
