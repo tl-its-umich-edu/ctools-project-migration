@@ -2,7 +2,8 @@
   <div class="row">
     <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
       <div ng-show="sourceProjects.length">
-        <input type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
+        <label for="searchProjects" class="sr-only">Search completed migrations</label>
+        <input id="searchProjects" type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
         <span ng-show="projectSearchFilter">&nbsp;
           <button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">
             <em aria-hidden="true">&times;</em>
@@ -29,7 +30,7 @@
 		<li ng-repeat="project in sourceProjects | filter:{site_name:projectSearchFilter}"
 			ng-class="project.tool_id !== '' ? 'myworkspace list-group-item toolRow noFocus' : 'myworkspace list-group-item projectRow noFocus'"
 			ng-hide="project.hideTools && project.tool"
-			id="toolSel{{project.tool_id}}" tabindex="-1">
+			id="toolSel{{project.tool_site_id}}" tabindex="-1">
 			<!--// using same contorsions to match the data model of migrations and migrated -->
 			<div class="noFocus"
 				ng-if="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''"
