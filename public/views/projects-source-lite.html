@@ -2,8 +2,7 @@
   <div class="row">
     <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
       <div ng-show="sourceProjects.length">
-        <label for="searchProjects" class="sr-only">Search completed migrations</label>
-        <input id="searchProjects" type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
+        <input id="searchProject" type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
         <span ng-show="projectSearchFilter">&nbsp;
           <button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">
             <em aria-hidden="true">&times;</em>
