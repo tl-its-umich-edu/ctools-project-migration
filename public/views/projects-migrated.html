@@ -68,7 +68,7 @@
     </ul>
   </div>
   <div class="container-fluid">
-    <div class="row">
+    <div class="row" ng-show="migratedProjects.length">
       <h4 ng-show="migratedProjects.length && recentlyMigratedProjectsShow">Complete list</h4>
       <div class="col-lg-8 col-md-8 col-sm-10 col-xs-8 form-inline" style="padding-left:0">
         <input type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
@@ -125,12 +125,12 @@
           && !migratedProject.status.data && !migratedProject.status.counts.length">
             <br>
             <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails(migratedProject.migration_id, migratedProject.site_name, migratedProject.destination_type )">
-              See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+              Some errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
           <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
-          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0)" class="glyphicon glyphicon-ok"></span>
-          <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
+          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.details.add_members.counts.errors > 0)" class="glyphicon glyphicon-ok"></span>
+          <span ng-show="migratedProject.status.status==='PARTIAL' || migratedProject.status.details.add_members.counts.errors > 0" class="glyphicon glyphicon-exclamation-sign"></span>
           <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-warning-sign"></span>
         </div>
 		  	</div>
