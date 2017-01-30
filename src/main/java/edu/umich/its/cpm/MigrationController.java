@@ -536,16 +536,15 @@ public class MigrationController {
 			HashMap<String, String> site_members = get_site_members(siteId, sessionId);
 			for (String userEid : site_members.keySet()) {
 				if (userEid.equals("errorMessage")) {
-						return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(site_members).build();
+					return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(site_members).build();
 				}
 			}
 
 			return Response.status(Response.Status.OK).entity(site_members).build();
 		} catch (Exception e) {
-			return Response
-					.status(Response.Status.INTERNAL_SERVER_ERROR)
-					.entity("Cannot get CTools site members for site "
-							+ siteId + ": " + e.getMessage()).build();
+			String msg = "Cannot get CTools site members for site " + siteId + ":" + e.getMessage();
+			log.error(msg);
+			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(msg).build();
 		}
 	}
 
