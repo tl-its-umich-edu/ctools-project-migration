@@ -71,7 +71,9 @@
     <div class="row" ng-show="migratedProjects.length">
       <h4 ng-show="migratedProjects.length && recentlyMigratedProjectsShow">Complete list</h4>
       <div class="col-lg-8 col-md-8 col-sm-10 col-xs-8 form-inline" style="padding-left:0">
-        <input type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
+        <label for="searchCompletedMigrations" class="sr-only">Search completed migrations</label>
+        <input id="searchCompletedMigrations" type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
+
         <span ng-show="completedMigrationsFilter">&nbsp;<button ng-click="completedMigrationsFilter=''" type="button" name="button" class="btn btn-default"><span aria-hidden="true">&times;</span><span class="sr-only">Reset migration search filter</span></button></span>
       </div>
       <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="padding-right:0">
