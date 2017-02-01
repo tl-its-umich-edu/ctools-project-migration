@@ -441,6 +441,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         );
         _.each($scope.migratedProjects, function(migrated){
           if(migrated.tool_id === tool.tool_id){
+            if(migrated.destination_type ==='box'){
+                tool.boxMigration = true;
+                tool.boxMigrationInfo = {'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url};
+            }
             migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
           }
         });
