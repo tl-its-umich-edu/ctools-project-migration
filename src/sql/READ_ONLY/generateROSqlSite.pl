@@ -8,7 +8,7 @@ use strict;
 ## to delete.  These are configured in a yml file.
 ## Can also generate SQL to restore the permissions and make the site writeable again.
 ## To do this add a line to the file of site ids that starting with TASK: followed by either
-## READ_ONLY or READ_ONLY_RESTORE.  The default is READ_ONLY.
+## READ_ONLY_UPDATE, READ_ONLY_LIST or READ_ONLY_RESTORE (READ_ONLY_RESTORE_LIST)
 
 # To use, (optionally) give the name of the yml file on the command line and capture the SQL
 # to be used later.  Sql will be written for the sites read from stdin and for the
@@ -22,7 +22,7 @@ use strict;
 our $DB_USER;
 our $comma_break_rate;
 our $realms_max;
-# type of operation: READ_ONLY or READ_ONLY_RESTORE
+# type of operation: READ_ONLY_UPDATE, READ_ONLY_LIST, READ_ONLY_RESTORE READ_ONLY_RESTORE_LIST
 our $task;
 our @functions;
 our @roles;
@@ -50,7 +50,38 @@ sub configure {
   @roles=@{$db->{roles}};
 
   # by default generate sql to make site read only.
-  $task="READ_ONLY";
+  $task="READ_ONLY_UPDATE";
+}
+
+
+# what sql action to do
+our($sqlAction);
+# what table to read from
+our($READ_TABLE);
+# what table to write to (if appropriate)
+our($UPDATE_TABLE);
+# setup values for the task.
+
+sub setupTask {
+  my $task = shift;
+  # take permissions out of rl_fn to make site read only
+  if ($task eq "READ_ONLY_UPDATE") {
+    ($sqlAction,$READ_TABLE,$UPDATE_TABLE) = ("DELETE ","sakai_realm_rl_fn","sakai_realm_rl_fn");
+  }
+  # list what would be removed from the table
+  if ($task eq "READ_ONLY_LIST") {
+    ($sqlAction,$READ_TABLE) = ("SELECT * ","sakai_realm_rl_fn");
+  }
+  # restore permissions from the archive table
+  if ($task eq "READ_ONLY_RESTORE") {
+    ($sqlAction,$READ_TABLE,$UPDATE_TABLE) = ("MERGE? INSERT?","sakai_realm_rl_fn_ARCHIVE","sakai_realm_rl_fn");
+  }
+  # list what would be restored.
+  if ($task eq "READ_ONLY_RESTORE_LIST") {
+        ($sqlAction,$READ_TABLE,$UPDATE_TABLE) = ("SELECT * ","sakai_realm_rl_fn_ARCHIVE","sakai_realm_rl_fn");
+  }
+  print ">>>>>>>> action: [$sqlAction] READ_TABLE: [$READ_TABLE] UPDATE_TABLE: [$UPDATE_TABLE]\n";
+  die "invalid task: [$task]\n" unless($sqlAction);
 }
 
 # sql to update the action log.
@@ -60,19 +91,6 @@ sub writeActionLog {
   print "/****** update log table *******/\n";
   print "insert into ${DB_USER}.CPM_ACTION_LOG VALUES(CURRENT_TIMESTAMP,'${siteId}','$task');\n";
 }
-
-
-# sub writeCALReadonlyUpdate {
-#   my($siteId) = shift;
-#   print "/****** update log table *******/\n";
-#   print "insert into ${DB_USER}.CPM_ACTION_LOG VALUES(CURRENT_TIMESTAMP,'${siteId}','READ_ONLY');\n";
-# }
-
-# sub writeCALRestoreReadonlyUpdate {
-#   my($siteId) = shift;
-#   print "/****** update log table *******/\n";
-#   print "insert into ${DB_USER}.CPM_ACTION_LOG VALUES(CURRENT_TIMESTAMP,'${siteId}','READ_ONLY_RESTORE');\n";
-# }
 
 # sql to make a function table backup.
 sub writeRRFTableBackupSql {
@@ -149,8 +167,10 @@ sub formatRealmKey {
 # return the sql for the start of the update query.
 sub prefix_sql {
   my $sql = <<"PREFIX_SQL";
-   DELETE
-   FROM   ${DB_USER}.sakai_realm_rl_fn SRRF 
+  -- delete
+   ${sqlAction}
+--    FROM   ${DB_USER}.sakai_realm_rl_fn SRRF 
+   FROM   ${DB_USER}.${UPDATE_TABLE} SRRF 
    WHERE  EXISTS (WITH -- look up all the keys from names
 PREFIX_SQL
   $sql
@@ -206,7 +226,8 @@ sub suffix_sql {
       -- find the rows that actually exist
         delete_grants
           AS (SELECT SRRF_2.*
-          FROM   ${DB_USER}.sakai_realm_rl_fn SRRF_2, role_function_realm_keys
+--          FROM   ${DB_USER}.sakai_realm_rl_fn SRRF_2, role_function_realm_keys
+          FROM   ${DB_USER}.${READ_TABLE} SRRF_2, role_function_realm_keys
           WHERE  SRRF_2.role_key = role_function_realm_keys.role_key
              AND SRRF_2.function_key = role_function_realm_keys.function_key
              AND SRRF_2.realm_key =  role_function_realm_keys.realm_key)
@@ -236,16 +257,36 @@ SUFFIX_SQL
 
 # print a commented string to the sql output
 
+# sub buildSqlRestore {
+#   my(@realmIds) = @_;
+#   my $realms_as_sql = unionList(@realmIds);
+#   my $rk = realm_keys_sql($realms_as_sql);
+#   my $sql = <<"RESTORE_SQL";
+#  INSERT INTO ${DB_USER}.SAKAI_REALM_RL_FN
+#  	select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF
+#      where exists (WITH
+#          $rk
+#  		 select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF_2, realm_keys
+#  	    	where SRRF_2.REALM_KEY = realm_keys.REALM_KEY
+#    	  	 	  and SRRF.REALM_KEY = SRRF_2.REALM_KEY
+#  	)
+# RESTORE_SQL
+#   print $sql
+  
+# }
 sub buildSqlRestore {
   my(@realmIds) = @_;
   my $realms_as_sql = unionList(@realmIds);
   my $rk = realm_keys_sql($realms_as_sql);
   my $sql = <<"RESTORE_SQL";
- INSERT INTO ${DB_USER}.SAKAI_REALM_RL_FN
- 	select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF
+-- INSERT INTO ${DB_USER}.SAKAI_REALM_RL_FN
+ INSERT INTO ${DB_USER}.${UPDATE_TABLE}
+-- 	select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF
+ 	select * from ${DB_USER}.${READ_TABLE} SRRF
      where exists (WITH
          $rk
- 		 select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF_2, realm_keys
+-- 		 select * from ${DB_USER}.sakai_realm_rl_fn_ARCHIVE SRRF_2, realm_keys
+ 		 select * from ${DB_USER}.${READ_TABLE} SRRF_2, realm_keys
  	    	where SRRF_2.REALM_KEY = realm_keys.REALM_KEY
    	  	 	  and SRRF.REALM_KEY = SRRF_2.REALM_KEY
  	)
@@ -261,7 +302,10 @@ sub printComment {
 
 sub printPermissionsCount {
   my $msg = shift;
-  print "/***** $msg ******/\n";
+  #  print "/***** $msg ******/\n";
+
+  printComment($msg);
+  printComment("what is correct table");
   print "select count(*) from ${DB_USER}.SAKAI_REALM_RL_FN;\n\n";
 }
 
@@ -273,7 +317,12 @@ sub parseSiteLine {
   # Check if there is an instruction to generate specific sql.
   if (/^TASK:\s*(\S+)/i) {
     $task = $1;
-    die (">>>>> INVALID TASK: [$task]") unless ($task eq "READ_ONLY" || $task eq "READ_ONLY_RESTORE");
+    die (">>>>> INVALID TASK: [$task]") unless ($task eq "READ_ONLY_UPDATE"
+                                                || $task eq "READ_ONLY_LIST"
+                                                || $task eq "READ_ONLY_RESTORE"
+                                                || $task eq "READ_ONLY_RESTORE_LIST");
+    setupTask($task);
+
     return;
   }
   # skip empty lines and comments
@@ -287,21 +336,11 @@ sub printForSites {
   my $task = shift;
   my @realmIds = @_;
   return if ((scalar @realmIds) == 0);
+  #  ???
   buildSql(@realmIds) if ($task eq "READ_ONLY");
   buildSqlRestore(@realmIds) if ($task eq "READ_ONLY_RESTORE");
+  die("unimplemented: ") if ($task eq "READ_ONLY_LIST" || $task eq "READ_ONLY_RESTORE_LIST");
 }
-
-# sub printForSites {
-#   my @realmIds = @_;
-#   return if ((scalar @realmIds) == 0);
-#   buildSql(@realmIds);
-# }
-
-# sub printForRestore {
-#   my @realmIds = @_;
-#   return if ((scalar @realmIds) == 0);
-#   buildSqlRestore(@realmIds);
-# }
 
 ##### Driver reads site ids from stdin #######
 
@@ -322,8 +361,6 @@ sub readFromStdin {
 
     if ((scalar @realmIds) >= $realms_max) {
       printForSites($task,@realmIds);
-      # printForSites(@realmIds) if ($task eq "READ_ONLY");
-      # printForRestore(@realmIds) if ($task eq "READ_ONLY_RESTORE");
       printPermissionsCount("updated so far");
       @realmIds = ();
     }
@@ -331,8 +368,6 @@ sub readFromStdin {
     my(@P) = parseSiteLine $_;
     next unless(defined($P[0]));
     writeActionLog($task,@P[0]);
-#    writeCALReadonlyUpdate(@P[0]) if ($task eq "READ_ONLY");
-#    writeCALRestoreReadonlyUpdate(@P[0]) if ($task eq "READ_ONLY_RESTORE");
     # add site id  to list of realms to process.
     if ((scalar @P) == 1) {
       push @realmIds,$P[0];
@@ -342,9 +377,6 @@ sub readFromStdin {
   # print any trailing sites
   if ((scalar @realmIds) >= 0) {
     printForSites($task,@realmIds);
-    #printForSites(@realmIds) if ($task eq "READ_ONLY");
-#    printForRestore(@realmIds) if ($task eq "READ_ONLY_RESTORE");
-
   }
 
   printPermissionsCount("final count");

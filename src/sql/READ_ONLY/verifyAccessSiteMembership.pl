@@ -85,17 +85,37 @@ sub missingEidMessage {
   return $deleteMembership;
 }
 
+# find the unknown EID.  There are a couple of different formats to check.
+sub findUnknownEID {
+  my $string = shift;
+  my $eid = "";
+
+#      print "string: [$string]\n";
+  if ($string =~ /eid=id=([;:(),-@\w]+)/ms
+      or $string =~ /id \(([]&';:(),-@\w.]+)\)/ms
+     ) {
+    $string =~ s/'/''/g;
+    $eid = $1;
+ #   print "fUE: eid: [$eid] ".$eid,"\n";
+#    return $eid;
+  }
+  return $eid
+}
+
 # Parse the (possibly disappointing) results of the membership call.
 sub parseMembers {
   my $text = shift;
 
   # get http status and site id
-  ($status,$site) = ($text =~ /(\d\d\d)\s+http.+\/site\/(.+)\/memberships.json$/ms);
+  my ($status,$site) = ($text =~ /(\d\d\d)\s+http.+\/site\/(.+)\/memberships.json$/ms);
   $status |= "";
   $site |= "";
+  my $eid |= "";
     
   # find the invalid user member name if one is mentioned.
-  ($eid) = ($text =~ /eid=id=(\w+)\s/ms);
+  #  ($eid) = ($text =~ /eid=id=(\w+)\s/ms);
+  $eid = findUnknownEID($text);
+  #print "eid: [$eid]\n";
   $eid |= "";
 
   # Generate and print a summary for the site.
@@ -127,7 +147,11 @@ sub runVerifyMembers {
     parseMembers $members;
   }
 }
-
+#perl -le "print scalar localtime"
+my $t=scalar(localtime);
+print "# start at $t\n";
 runVerifyMembers;
+$t=scalar(localtime);
+print "# end at $t\n";
 
 #end
