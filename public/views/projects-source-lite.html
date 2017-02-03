@@ -82,11 +82,14 @@
 						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
               <h5>
                 {{project.tool_name}}
+                <small ng-show="project.boxMigration">
+                  - migrated to <strong><a target="_blank" href="{{project.boxMigrationInfo.migratedTo}}">Box</a></strong> on {{project.boxMigrationInfo.migratedWhen | date: 'medium'}}
+                </small>
                 <small ng-show="project.lastMigratedStatus">
-                  - (last <span ng-show="project.lastMigratedStatus.migratedHow ==='box'">migrated</span>
+                  - last <span ng-show="project.lastMigratedStatus.migratedHow ==='box'">migrated</span>
                           <span ng-show="project.lastMigratedStatus.migratedHow ==='zip' || project.lastMigratedStatus.migratedHow ==='mailarchivembox' || project.lastMigratedStatus.migratedHow ==='mailarchivezip'">downloaded</span>
                               by {{project.lastMigratedStatus.migratedBy}} {{project.lastMigratedStatus.migratedHow | readableExportTypeSmall }}
-                              on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}})
+                              on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}}
 
                 </small>
               </h5>
@@ -102,7 +105,7 @@
                         Email archive has no emails to download.
                     </div>
                   </div>
-                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true">
+                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true && !project.boxMigration">
                     <div class="panel-body">
                       <p>
                         <small>
