@@ -165,9 +165,7 @@ var prepareMembership = function(membership) {
   membership = {
     'data': {
       'groups': {
-        'gg_format': _.sortBy(gg_format, function(mem) {
-          return mem;
-        }),
+        'gg_format': _.sortBy(gg_format, function(mem) {return mem;}),
         'mc_format': mc_format,
         'readable_format': _.sortBy(readable_format, function(mem) { return mem.userId; })
       }
