@@ -152,6 +152,7 @@ class Utils {
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
 	public static final String FILE_EXTENSION_BIN = "bin";
+	public static final String JSON_ATTR_MAIL_SUBJECT = "subject";
 
 	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
@@ -170,7 +171,7 @@ class Utils {
 	public static final String JSON_ATTR_MAIL_HEADERS = "headers";
 	public static final String JSON_ATTR_MAIL_DATE = "Date: ";
 	public static final String JSON_ATTR_MAIL_FROM = "From: ";
-	public static final String JSON_ATTR_MAIL_SUBJECT = "Subject: ";
+	public static final String JSON_ATTR_MAIL_SUBJECT_FROM_HEADER = "Subject: ";
 	public static final String JSON_ATTR_MAIL_BODY = "body";
 	public static final String JSON_ATTR_MAIL_ATTACHMENTS = "attachments";
 	public static final String JSON_ATTR_MAIL_TYPE = "type";
