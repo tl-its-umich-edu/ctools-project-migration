@@ -159,12 +159,17 @@ var prepareMembership = function(membership) {
     }
   });
 
+  mc_format.owners =  _.sortBy(mc_format.owners, function(mem) { return mem; });
+  mc_format.members = _.sortBy(mc_format.members, function(mem) { return mem; });
+
   membership = {
     'data': {
       'groups': {
-        'gg_format': gg_format,
+        'gg_format': _.sortBy(gg_format, function(mem) {
+          return mem;
+        }),
         'mc_format': mc_format,
-        'readable_format': readable_format
+        'readable_format': _.sortBy(readable_format, function(mem) { return mem.userId; })
       }
     },
     'status': membership.status,
