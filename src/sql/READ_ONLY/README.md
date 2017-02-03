@@ -2,10 +2,10 @@
 
 There are two tools available.
 
-    * runRO.sh - generate SQL to make a site read-only.
     * verifySiteAccessMembership.sh - Verify that can get the
      sitemembership via the CTools direct api and create sql to fixup
      membership problems if they are found.
+     * runRO.sh - generate SQL to make a site read-only.
 
 # Obtaining the tools
 
@@ -14,10 +14,8 @@ run on Linux.
 
 Both tools are contained in a single tar file in the GitHub CPM repository
 https://github.com/tl-its-umich-edu/ctools-project-migration.git They
-are in the directory: src/sql/READ_ONLY.  The most released build can be
-downloaded from the TARS directory.
-
-Download the required tar file. The appropriate tar file starts with
+are in the directory: src/sql/READ_ONLY.  The most recent build can be
+downloaded from the TARS directory. The appropriate tar file starts with
 CPMTools and also specifies a build date.
 
 Let the tar file expand during download or double click to expand it.
@@ -31,26 +29,24 @@ that only have white space or that start with a comment (#) will be
 ignored.  Output files will be generated in the same directory as the
 input file.
 
+Both scripts have configuration files to be explained later.
+
 # Verifying sites have useable membership lists. #
 
 Run the script as:
     ./verifyAccessSiteMembership.sh <site id file name>
 
-There are two output files.  <site id file name>.membership is a log
-of the results of testing site membership. A line that contains only a
-site id indicates that the site membership is ok for CPM.  All other
-output lines are commented and indicate the membership status code and
-site id.  If there is a problem retrieving membership due to an
-unavailable user this line will also contain sql that can be used to
-fix the problem.  As a convenience the file <site id file
-name>.membership.deleteunknow.sql is created and contains all the
-fixup sql generated in this run.  The user that runs the sql may need
-to explicitly commit the change.
-
-Note: The "membership" output file of the verify script can be used
-directly as input to the runRO script.  Any lines that doesn't contain
-a valid site id will be commented and therefore be ignored by the
-runRO script.
+There are two output files: <site id file name>.membership is a log of
+the results of testing site membership.  The output contains 3
+columns: the site id, the https status code, and a message.  For
+successful requests the message will be "ok".  For unsuccessful
+requests the status code will be returned and, if possible, there will
+be sql that can be run later to fix the membership issue.  As a
+convenience the sql will be collected into the file <site id file
+name>.membership.deleteunknow.sql.  In production that sql will need
+to be run by a DBA.  The generated sql should work in most cases. For
+some situations the sql may not be correct (but it will be
+harmless). Case by case solutions may be required in those cases.
 
 The verifyAccessSiteMembership.sh script requires creating a
 credentials.yml file containing the connection information for
@@ -59,7 +55,7 @@ the credentials.yml.TEMPLATE file to credentials.yml, uncomment the
 correct section for the ctools instance to be examined, and fill in
 the appropriate user and password information. This script must access
 a CTools instance directly and needs the credentials for a ctools
-admin in the required instance.
+admin in that instance.
 
 # Generating Read Only CTools site sql #
 

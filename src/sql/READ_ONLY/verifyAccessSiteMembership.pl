@@ -1,7 +1,9 @@
 #!/usr/bin/env perl -w
 
 # Read in list of site ids and either verify that the members can be read from the site
-# or document the error.  If there is a bad user id in the site print out that user id.
+# or document the error.  If there is a bad user id in the site print out that user id
+# and generate sql that will (usually) fix the problem.  Other cases will be dealt with
+# on a case-by-case basis.
 
 use YAML qw'LoadFile';
 use POSIX qw(strftime);
@@ -27,7 +29,7 @@ my $help = <<END_HELP;
   credentials.yml.TEMPLATE for a sample file to copy and configure.
 
   Status code of 000 suggests a serious problem in configuration.  Check the credentials file.
-  Status code of 200 the request is fine.  You probably won't see that explicitly.
+  Status code of 200 the request is fine.
   Status code of 400 is expected when the membership request can not be completed.
   Status code of 501 likely means that the site doesn't exist as requested.
 END_HELP
@@ -40,7 +42,6 @@ if (defined($ARGV[0]) && $ARGV[0] =~ /^-?-h/i) {
 
 sub printSummaryLine {
   my($siteId,$statusCode,$other) = @_;
-#  print "siteId: [$siteId] statusCode: [$statusCode] other: [$other]\n";
   croak() unless(defined($other));
   print "$siteId\t$statusCode\t$other\n";
 }
@@ -90,19 +91,23 @@ sub findUnknownEID {
   my $string = shift;
   my $eid = "";
 
-#      print "string: [$string]\n";
-  if ($string =~ /eid=id=([;:(),-@\w]+)/ms
-      or $string =~ /id \(([]&';:(),-@\w.]+)\)/ms
+  # match a couple of different patterns.
+  if (    $string =~ /eid=id=([;:(),-@\w.']+)/ms
+       or $string =~ /id \(([]&';:(),-@\w.]+)\)/ms
      ) {
-    $string =~ s/'/''/g;
+
     $eid = $1;
- #   print "fUE: eid: [$eid] ".$eid,"\n";
-#    return $eid;
+    # double up single quotes for Oracle consumption.
+    $eid =~ s/'/''/g;
+    # Occasionally site information appears in with the user id.  Get rid of it.
+    $eid =~ s/::site.+$//;
   }
   return $eid
 }
 
-# Parse the (possibly disappointing) results of the membership call.
+# Parse the results of the membership call.
+# There may be error messages in the value returned from the call so we
+# need to account for those.
 sub parseMembers {
   my $text = shift;
 
@@ -111,11 +116,10 @@ sub parseMembers {
   $status |= "";
   $site |= "";
   my $eid |= "";
-    
-  # find the invalid user member name if one is mentioned.
-  #  ($eid) = ($text =~ /eid=id=(\w+)\s/ms);
+
+  # find the invalid user member name that is mentioned in the
+  # text of errors.
   $eid = findUnknownEID($text);
-  #print "eid: [$eid]\n";
   $eid |= "";
 
   # Generate and print a summary for the site.
@@ -147,7 +151,7 @@ sub runVerifyMembers {
     parseMembers $members;
   }
 }
-#perl -le "print scalar localtime"
+
 my $t=scalar(localtime);
 print "# start at $t\n";
 runVerifyMembers;
