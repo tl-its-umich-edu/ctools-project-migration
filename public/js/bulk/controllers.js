@@ -85,11 +85,14 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       });
     });
 
-
+    $scope.resetBulkUpload = function(){
+      $scope.bulkUploadFile = undefined;
+      $scope.upload=undefined;
+    };
 
     $scope.bulkUpload = function() {
       $('.has-error').removeClass('has-error');
-      if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource){
+      if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource || !$scope.upload.name || $scope.upload.name===''){
         if(!$scope.upload || $scope.upload.name ===''){
           $('.bulkUploadName').addClass('has-error');
         }
