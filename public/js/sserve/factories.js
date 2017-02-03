@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, errorDisplay, prepareMembership */
+/* global projectMigrationApp, errorDisplay, prepareMembership, _, transformProject, transformProjects, transformMigrated, setInterval, clearInterval */
 
 projectMigrationApp.factory('ProjectsLite', function($q, $timeout, $window, $http) {
 	return {
@@ -103,13 +103,16 @@ projectMigrationApp.factory('Projects', function($http) {
 				cache : false
 			}).then(function success(result) {
 				// filter everything course sites
-
-				var sourceProjects = result.data.site_collection;
-				// use a transform to make project data mirror data in
-				// migrations and migrated
-				var siteList = transformProjects(sourceProjects);
-				// returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
-				return _.chain(siteList).sortBy('title').sortBy('type_code').value();
+         if(result.data.site_collection){
+          var sourceProjects = result.data.site_collection;
+          // use a transform to make project data mirror data in
+          // migrations and migrated
+          var siteList = transformProjects(sourceProjects);
+          // returned presorted by site type (by code - mwsp=1, gt=2, p=3) and then alphanum
+          return _.chain(siteList).sortBy('title').sortBy('type_code').value();
+        } else {
+           return [];
+        }
 			}, function error(result) {
 				errorDisplay(url, result.status, 'Unable to get projects');
 				result.errors.failure = true;
@@ -139,6 +142,21 @@ projectMigrationApp.factory('Projects', function($http) {
           function error(result) {
             errorDisplay(url, result.status,
                 'Unable to check if user is an admin.');
+            return result;
+          });
+    },
+
+    pingDependency : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(
+          function success(result) {
+            // forward the data - let the controller deal with it
+            return result;
+          },
+          function error(result) {
+            errorDisplay(url, result.status,
+                'Unable to check ' + url);
             return result;
           });
     },
@@ -226,8 +244,7 @@ projectMigrationApp.factory('PollingService', [
 							}).then(callback);
 						};
 						poller();
-						polls[name] = setInterval(poller, pollingTime
-								|| defaultPollingTime);
+						polls[name] = setInterval(poller, pollingTime || defaultPollingTime);
 					}
 				},
 				stopPolling : function(name) {
