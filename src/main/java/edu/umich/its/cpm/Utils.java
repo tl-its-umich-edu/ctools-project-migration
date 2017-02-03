@@ -1,7 +1,6 @@
 package edu.umich.its.cpm;
 
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.util.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -23,17 +22,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
+import javax.naming.directory.*;
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
@@ -152,8 +151,11 @@ class Utils {
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
 	public static final String FILE_EXTENSION_BIN = "bin";
+    public static final String STATUS_DEPENDENCIES_BOX = "status/dependencies/box";
+    public static final String STATUS_DEPENDENCIES_CTOOLS = "status/dependencies/ctools";
+    public static final String REPORT_STATUS_DOWN = "DOWN";
 
-	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+    private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
 
 	// constant for session id
@@ -866,6 +868,25 @@ class Utils {
         	rv = rv + "_sessionId=" + sessionId;
         }
         return rv;
+    }
+
+	public static String dependencyStatus(String url){
+        log.debug("*******************" + url);
+        String status = REPORT_STATUS_DOWN;
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.getForEntity(url, String.class);
+        } catch (RestClientException e) {
+            log.warn("GET call {} failed due to {} ", url, e.getMessage());
+        }
+
+        if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
+            status = REPORT_STATUS_OK;
+        }
+        HashMap<String, Object> statusMap = new HashMap<String, Object>();
+        statusMap.put("status", status);
+        return (new JSONObject(statusMap)).toString();
     }
 
 
