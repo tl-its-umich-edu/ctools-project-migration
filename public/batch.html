@@ -93,7 +93,7 @@
                       <div class="alert alert-danger" ng-show="uploadStartedMessage.status!==202">{{uploadStartedMessage.data}}</div>
                     </div>
                     <button type="reset" name="reset-file-input"
-										class="btn btn-default"><strong>Reset</strong></button>
+										class="btn btn-default" ng-click="resetBulkUpload()"><strong>Reset</strong></button>
                     <button class="btn btn-primary" ng-click="bulkUpload()"
 										name="process-file-input">Process</button>
                     <div class="spinner" ng-show="bulkUploadInProcess"></div>
@@ -158,7 +158,8 @@
                     <h3 class="panel-title panel-title-batch">Concluded</h3>
                   </div>
                   <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12" style="margin:13px -12px">
-                    <input type="text" class="form-control" placeholder="Search batch names" ng-model="searchBatchNames">
+                    <label for="searchBatchNames" class="sr-only">Search batchnames</label>
+                    <input id="searchBatchNames" type="text" class="form-control" placeholder="Search batch names" ng-model="searchBatchNames">
                   </div>
                 </div>
 								<ul class="list-group" style="margin: 0 15px 0">

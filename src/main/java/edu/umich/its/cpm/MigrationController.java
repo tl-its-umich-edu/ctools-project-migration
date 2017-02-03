@@ -1071,7 +1071,7 @@ public class MigrationController implements ErrorController {
 			// output json
 			response.setContentType(MediaType.APPLICATION_JSON);
 			response.setCharacterEncoding("UTF-8");
-			if (jsonValue == null) {
+			if (jsonValue == null || jsonValue.isEmpty()) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().write(errorMessage == null? "":errorMessage);
 			} else {
