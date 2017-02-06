@@ -1531,7 +1531,7 @@ class MigrationTaskService {
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject message = messages.getJSONObject(iMessage);
 						String date = getProperty(message, Utils.JSON_ATTR_MAIL_DATE);
-						String subject = getProperty(message, Utils.JSON_ATTR_MAIL_SUBJECT);
+						String subject = getEmailSubject(message);
 						String messageId = date + " " + subject;
 						String emailMessage = message.toString();
 						AttachmentHandler attachmentHandler = new AttachmentHandler(request);
@@ -1745,7 +1745,7 @@ class MigrationTaskService {
 		{
 			// get message information from header
 			JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
-			String subject = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT);
+			String subject = getEmailSubject(message);
 			String sender = getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_FROM);
             		if (sender.indexOf('<') != -1) {
                 		sender = sender.substring(sender.indexOf('<') + 1, sender.indexOf('>'));
@@ -1776,7 +1776,18 @@ class MigrationTaskService {
 			return messageFolderName;
 		}
 
-		private String getMailArchiveMboxMessageFolderName(String site_id) {
+	private String getEmailSubject(JSONObject message) {
+		// get the subject from the message that seems to be the place where to get reliable info
+		JSONArray headers = message.getJSONArray(Utils.JSON_ATTR_MAIL_HEADERS);
+		String subject = message.getString(Utils.JSON_ATTR_MAIL_SUBJECT);
+		if (subject != null) {
+			return subject;
+		}
+		// or else get subject from the header
+		return getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT_FROM_HEADER);
+	}
+
+	private String getMailArchiveMboxMessageFolderName(String site_id) {
 			String messageFolderName = "";
 			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + site_id) + "/";
 
