@@ -431,6 +431,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.toolStatus = function(data){
       _.each(data, function(tool){
         var migratedMatch =[];
+        var boxMigratedMatch=[];
         var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
         ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
           function(result) {
@@ -441,12 +442,23 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         );
         _.each($scope.migratedProjects, function(migrated){
           if(migrated.tool_id === tool.tool_id){
-            migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
+            if(migrated.destination_type ==='box'){
+                tool.boxMigration = true;
+                boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
+            } else {
+              migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
+            }
+
+
           }
         });
+        if(boxMigratedMatch.length){
+          tool.boxMigrationInfo = _.sortBy(migratedMatch, 'migratedWhen').reverse()[0];
+        }
         if(migratedMatch.length){
           tool.lastMigratedStatus = _.sortBy(migratedMatch, 'migratedWhen').reverse()[0];
         }
+
       });
       return data;
     };

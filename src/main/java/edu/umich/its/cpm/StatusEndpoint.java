@@ -1,19 +1,16 @@
 package edu.umich.its.cpm;
 
+import org.json.JSONObject;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.actuate.endpoint.Endpoint;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
 import org.springframework.stereotype.Component;
-
-import java.util.HashMap;
-import java.util.Properties;
+import org.springframework.web.context.ServletContextAware;
 
 import javax.servlet.ServletContext;
-
-import org.springframework.web.context.ServletContextAware;
-import org.springframework.core.env.Environment;
-import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.context.annotation.PropertySource;
-import org.json.JSONObject;
-
+import java.util.HashMap;
+import java.util.Properties;
 /**
  * this is to add a new status end point with application version
  * information, and link to external dependencies
@@ -64,11 +61,12 @@ class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 			buildMap.put("Jenkins Build Tag", (String) props.get("build_tag"));
 			
 			statusMap.put("build", buildMap);
+
 			// all external links
 			HashMap<String, Object> urlMap = new HashMap<String, Object>();
-			urlMap.put("ping", env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL)+"/status/ping.json");
-			urlMap.put("CTools server", env.getProperty(Utils.ENV_PROPERTY_CTOOLS_SERVER_URL));
-			urlMap.put("Box server", env.getProperty("box_api_url"));
+			urlMap.put("ping", env.getProperty(Utils.SERVER_URL)+"/status/ping");
+			urlMap.put("CTools ping", env.getProperty(Utils.SERVER_URL)+"/"+Utils.STATUS_DEPENDENCIES_CTOOLS);
+			urlMap.put("Box ping", env.getProperty(Utils.SERVER_URL)+"/"+Utils.STATUS_DEPENDENCIES_BOX);
 			statusMap.put("urls", urlMap);
 			rv = (new JSONObject(statusMap)).toString();
 			

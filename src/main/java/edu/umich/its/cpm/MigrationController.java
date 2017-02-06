@@ -3,120 +3,66 @@ package edu.umich.its.cpm;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.apache.http.client.*;
-import org.apache.http.protocol.HttpCoreContext;
-import org.apache.http.protocol.BasicHttpContext;
-import org.apache.http.NameValuePair;
 import org.apache.http.HttpResponse;
-import org.apache.http.message.BasicNameValuePair;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.http.client.methods.*;
-import org.apache.http.impl.client.BasicCookieStore;
-import org.apache.http.client.protocol.HttpClientContext;
-import org.apache.http.client.entity.UrlEncodedFormEntity;
-import org.apache.http.util.EntityUtils;
-import org.apache.commons.io.FileUtils;
 
-import java.io.File;
-import java.io.IOException;
-import java.net.URL;
-import java.util.concurrent.Callable;
-import java.util.Set;
-import java.util.HashSet;
-import java.util.Iterator;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.boot.autoconfigure.web.ErrorAttributes;
+import org.springframework.boot.autoconfigure.web.ErrorController;
+import org.springframework.context.annotation.PropertySource;
+import org.springframework.core.env.Environment;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.scheduling.annotation.EnableAsync;
+import org.springframework.util.StopWatch;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
+import org.springframework.web.context.request.RequestAttributes;
+import org.springframework.web.context.request.ServletRequestAttributes;
+import org.springframework.web.multipart.MultipartException;
+import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.multipart.MultipartHttpServletRequest;
+import org.springframework.web.util.UriComponentsBuilder;
 
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
-import javax.ws.rs.DELETE;
 import javax.ws.rs.GET;
-import javax.ws.rs.HEAD;
 import javax.ws.rs.POST;
-import javax.ws.rs.PUT;
-import javax.ws.rs.Path;
 import javax.ws.rs.Produces;
-import javax.ws.rs.core.Context;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
-import javax.ws.rs.core.Response.ResponseBuilder;
-import javax.inject.Inject;
 
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.List;
-import java.util.ListIterator;
 import java.util.ArrayList;
 import java.util.Iterator;
-import java.util.UUID;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URLDecoder;
-import java.util.Date;
+import java.util.Set;
+import java.util.HashSet;
 import java.sql.Timestamp;
-import java.text.SimpleDateFormat;
-import java.io.PrintWriter;
 import java.io.IOException;
-import java.util.concurrent.Future;
 
 import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
-import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
-import org.springframework.http.ResponseEntity;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.HttpHeaders;
-import org.springframework.core.env.Environment;
-import org.springframework.web.client.RestTemplate;
-import org.springframework.web.client.RestClientException;
-import org.springframework.context.annotation.PropertySource;
-import org.springframework.web.context.request.async.DeferredResult;
-import org.springframework.util.StopWatch;
-import org.springframework.util.concurrent.ListenableFuture;
-import org.springframework.util.concurrent.ListenableFutureCallback;
-import org.springframework.web.util.UriComponentsBuilder;
-import org.springframework.web.multipart.MultipartHttpServletRequest;
-import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.multipart.MultipartException;
-import org.springframework.util.StopWatch;
 import org.json.JSONObject;
 import org.json.JSONArray;
 import org.json.JSONException;
 
-import com.box.sdk.BoxAPIConnection;
-import com.box.sdk.BoxFolder;
-import com.box.sdk.BoxFile;
-import com.box.sdk.BoxItem;
 import com.box.sdk.BoxItem.Info;
-import com.box.sdk.BoxUser;
-import com.box.sdk.Metadata;
-import com.box.sdk.ProgressListener;
-import com.google.gson.Gson;
-
-import javax.servlet.ServletException;
-import javax.servlet.ServletOutputStream;
-import javax.servlet.http.HttpServlet;
-import javax.servlet.http.HttpServletRequest;
-import javax.servlet.http.HttpServletResponse;
-
-//import static org.junit.Assert.assertTrue;
-
-
-
 
 import java.io.*;
-import java.util.zip.ZipEntry;
-import java.util.zip.ZipOutputStream;
-
-import org.springframework.scheduling.annotation.EnableAsync;
 
 @EnableAsync
 @PropertySource("file:${catalina.base:/usr/local/ctools/app/ctools/tl}/home/application.properties")
 @RestController
-public class MigrationController {
+public class MigrationController implements ErrorController {
 
 	private static final String JSON_ATTR_MEMBERSHIP_COLLECTION = "membership_collection";
 	
@@ -127,6 +73,8 @@ public class MigrationController {
 
 	private static final Logger log = LoggerFactory
 			.getLogger(MigrationController.class);
+
+	private static final String PATH = "/error";
 
 	@Autowired
 	MigrationRepository repository;
@@ -148,6 +96,9 @@ public class MigrationController {
 
 	@Autowired
 	private MigrationInstanceService migrationInstanceService;
+
+	@Autowired
+	private ErrorAttributes errorAttributes;
 
 	/**
 	 * get all CTools sites where user have Owner role inside
@@ -1120,7 +1071,7 @@ public class MigrationController {
 			// output json
 			response.setContentType(MediaType.APPLICATION_JSON);
 			response.setCharacterEncoding("UTF-8");
-			if (jsonValue == null) {
+			if (jsonValue == null || jsonValue.isEmpty()) {
 				response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
 				response.getWriter().write(errorMessage == null? "":errorMessage);
 			} else {
@@ -2811,4 +2762,22 @@ public class MigrationController {
                     + callStatus.get("migrationId"));
         }
     }
+
+	@Override
+	public String getErrorPath() {
+		return PATH;
+	}
+
+	@RequestMapping(value = PATH)
+	public ErrorJson error(HttpServletRequest request, HttpServletResponse response) {
+		// Appropriate HTTP response code (e.g. 404 or 500) is automatically set by Spring.
+		// Here we just define response body.
+		return new ErrorJson(response.getStatus(), getErrorAttributes(request));
+	}
+
+	private Map<String, Object> getErrorAttributes(HttpServletRequest request) {
+		RequestAttributes requestAttributes = new ServletRequestAttributes(request);
+		// no need to include stack trace hence setting it to false
+		return errorAttributes.getErrorAttributes(requestAttributes, false);
+	}
 }
