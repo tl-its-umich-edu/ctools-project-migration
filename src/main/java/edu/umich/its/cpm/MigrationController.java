@@ -2772,6 +2772,7 @@ public class MigrationController implements ErrorController {
 	public ErrorJson error(HttpServletRequest request, HttpServletResponse response) {
 		// Appropriate HTTP response code (e.g. 404 or 500) is automatically set by Spring.
 		// Here we just define response body.
+		response.setStatus(response.getStatus());
 		return new ErrorJson(response.getStatus(), getErrorAttributes(request));
 	}
 
