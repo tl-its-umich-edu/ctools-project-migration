@@ -151,9 +151,9 @@ class Utils {
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
 	public static final String FILE_EXTENSION_BIN = "bin";
-    public static final String STATUS_DEPENDENCIES_BOX = "status/dependencies/box";
-    public static final String STATUS_DEPENDENCIES_CTOOLS = "status/dependencies/ctools";
-    public static final String REPORT_STATUS_DOWN = "DOWN";
+	public static final String STATUS_DEPENDENCIES_BOX = "status/dependencies/box";
+	public static final String STATUS_DEPENDENCIES_CTOOLS = "status/dependencies/ctools";
+	public static final String REPORT_STATUS_DOWN = "DOWN";
 
     private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
