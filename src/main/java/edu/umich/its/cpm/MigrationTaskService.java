@@ -1003,7 +1003,9 @@ class MigrationTaskService {
 				// return AsyncResult
 				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
-			fileName= replaceDotsInFileNameExceptFileExtention(fileName);
+			if(!type.equals(Utils.CTOOLS_RESOURCE_TYPE_URL)) {
+				fileName = replaceDotsInFileNameExceptFileExtention(fileName);
+			}
 			
 			String webLinkUrl = bFile.getWeb_link_url();
 			String fileAccessUrl = bFile.getFile_access_url();
