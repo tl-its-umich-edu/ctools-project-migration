@@ -672,6 +672,10 @@ class Utils {
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
+
+		if(fileExtension.equals("sav")){
+			return fileName;
+		}
 		
 		if (type != null) {
 			String mimeExtension = null;
