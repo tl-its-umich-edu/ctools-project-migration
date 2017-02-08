@@ -639,6 +639,7 @@ class Utils {
 		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<]");
 		Matcher m = p.matcher(name);
 		name = m.replaceAll("_");
+		name=name.replace("\t", " ");
 
 		return name;
 	}
@@ -647,6 +648,7 @@ class Utils {
 		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
 		// backslash in the string.
 		zipFileName=zipFileName.replace('\\','_');
+		zipFileName=zipFileName.replace("\t", " ");
 		return zipFileName.replaceAll("[?>|*<:]", "_");
 	}
 

@@ -1089,8 +1089,6 @@ class MigrationTaskService {
 				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
 				fileName = Utils.sanitizeName(type, fileName);
-				//replace all the tabs in the filename with single space as Box SDK won't let migrate the files
-				fileName=fileName.replace("\t", " ");
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
 						fileName, fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
