@@ -1091,9 +1091,9 @@ class MigrationTaskService {
 				BoxFolder folder = new BoxFolder(api, boxFolderId);
 				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
+				fileName = Utils.sanitizeName(type, fileName);
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
-						Utils.sanitizeName(type, fileName),
-						fileSize, new ProgressListener() {
+						fileName, fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
 							long totalBytes) {
 						log.debug(numBytes + " out of total bytes "
@@ -1237,6 +1237,8 @@ class MigrationTaskService {
 			return status;
 		}
 
+	//Filenames could contain dot(.)  when files migrated to box this will look like unknow extension
+	// and cannot be previewed in box. see MigrationTaskServiceTest.java for Use Cases
 	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
 		if (!(StringUtils.countOccurrencesOf(fileName, ".") > 1)) {
 			return fileName;
