@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, document, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus */
+/* global projectMigrationApp, document, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus, window */
 
 /* MIGRATIONS CONTROLLER */
 projectMigrationApp.controller('projectMigrationController', ['Projects','ProjectsLite','Migration','Migrated','PollingService','focus','$rootScope','$scope','$log','$q','$timeout','$window','$http',function(Projects, ProjectsLite, Migration, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
@@ -98,7 +98,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - GET /projects/' + projectId);
       });
     };
-
+    $scope.displayMask = function(){
+      $('#maskModal').modal('show');
+    };
     // handler for showing the details of a migrated thing
     $scope.showDetails = function(migration_id, site_title) {
       var targetMigrationPos = $scope.migratedProjects.indexOf(_.findWhere($scope.migratedProjects, {migration_id: migration_id}));
@@ -120,6 +122,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
       $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
        ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+         project.makeDisabled = false;
        });
     };
 
@@ -172,6 +175,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           Migration.getMigrationZip(migrationUrl).then(function(result) {
             // add a mask with a modal to not allow more that on zip request at the time
             $('#maskModal').modal('show');
+            $scope.sourceProjects[targetProjChildPos].makeDisabled=false;
             $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos]);
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
@@ -506,6 +510,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     };
   }
 ]);
+
 
 
 projectMigrationApp.controller('projectMigrationControllerStatus', ['Status',

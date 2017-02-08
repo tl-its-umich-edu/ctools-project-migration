@@ -58,8 +58,8 @@
                   ng-click="exportSiteMembership(project.site_id, project.site_name)">
                   Members
                 </button>
-                <button class="btn btn-default btn-xs" ng-click="getTools(project.site_id, project.deleteStatus)"
-    							ng-show="!project.stateHasTools && !project.migrating">Migration Options
+                <button class="btn btn-default btn-xs" ng-click="project.makeDisabled=true;getTools(project.site_id, project.deleteStatus)"
+    							ng-show="!project.stateHasTools && !project.migrating" ng-disabled="project.makeDisabled">Migration Options
                    <span class="sr-only">for site {{project.site_name}}</span>
     						</button>
               </div>
@@ -145,9 +145,17 @@
   					<div class="row noFocus"
   						id="toolSelDest{{project.tool_id}}" tabindex="-1">
   						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink" style="padding-left:30px">
-                <a ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zipped archive</a>
+                <button class="btn btn-small btn-link-special" ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true"
+                  ng-click="project.makeDisabled = true;displayMask();project.selected=true;startMigration(project.site_id, project.site_name,'zip')" ng-disabled="project.makeDisabled"
+                  >
+                  Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zipped archive</button>
                 <span ng-show="project.tool_type==='sakai.mailbox'&& project.hasContentItem===true">
-                  <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped Mailbox file</a></span>
+                  <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a
+                  <button class="btn btn-small btn-link-special"
+                    ng-click="project.makeDisabled= true;displayMask();startMigrationEmail(project, 'mailarchivezip')" ng-disabled="project.makeDisabled">zipped archive</button>
+                   or as
+                   <button class="btn btn-small btn-link-special"
+                    ng-click="project.makeDisabled = true;displayMask();startMigrationEmail(project, 'mailarchivembox')" ng-disabled="project.makeDisabled">a zipped Mailbox file</button></span>
   						</div>
   					</div>
   				</div>
