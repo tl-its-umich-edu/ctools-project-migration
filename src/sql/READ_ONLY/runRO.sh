@@ -16,7 +16,7 @@ fi
 function help {
     echo "$0: {task} <site id file> {configuration file}"
     echo "Generate sql for CTools site read-only process.  Requires a file of site ids"
-    echo "(one per line) and an optional configuration file name."
+    echo "(one per line), a specific task name, and an optional configuration file name."
     echo "The configuration file to use depends on the CTools instances being processed."
     echo "See the *.yml files for more information."
     echo "The possible tasks for the generated sql are:"
@@ -24,7 +24,7 @@ function help {
     echo "READ_ONLY_UPDATE will create sql to make site read only. It is the default."
     echo "READ_ONLY_RESTORE sql will restore the permissions removed from the site."
     echo "The _LIST tasks will print what would be changed, but does not do the change."
-    echo "The sql will be put in the file <site id file>.sql."
+    echo "The sql will be put in the file <site id file>.<task name>.sql"
 }
 
 ######## Check for task type specification. Default to READ_ONLY_UPDATE.
@@ -36,7 +36,7 @@ shopt -s nocasematch
 TASK=$1
 if [[ $TASK =~ "READ_ONLY_" ]];
 then
-    echo "found task"
+#    echo "found task"
     shift
 else
     echo "defaulting task to READ_ONLY_UPDATE"
@@ -53,7 +53,6 @@ if [ $# -eq 0 ]; then
     exit 1
 fi
 
-
 if [ ! -e "${SITEIDS}" ]; then
     echo "$0: ERROR: must provide file of siteIds."
     exit 1;
@@ -68,5 +67,4 @@ echo "running: cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${TASK}.
 
 cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${TASK}.sql
 
-#cat ${SITEIDS} | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${TASK}.sql
 #end

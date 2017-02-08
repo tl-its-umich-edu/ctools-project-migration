@@ -61,14 +61,21 @@ admin in that instance.
 
 Run the script as:
 
-    ./runRO.sh <site id file name> {optional configuration file name}
+    ./runRO.sh <task> <site id file name> {optional configuration file name}
 
-The output sql will automatically be put in the file <site id file
-name>.readonly.sql.
+The output sql will automatically be put in the file:
+
+    <site id file name>.<task>.sql
 
 Arguments:
 
--<site id file name>: The input file of site ids can have any name. The
+-&lt;task>: Type of sql to generate.  The possible tasks are:
+READ\_ONLY\_UPDATE, READ\_ONLY\_LIST, READ\_ONLY\_RESTORE, and
+READ\_ONLY\_RESTORE\_LIST. The UPDATE tasks deal with removing
+permissions.  The second two deal with restoring permissions from an
+archive table.
+
+-&lt;site id file name>: The input file of site ids can have any name. The
 resulting sql files may be very large since the script generates many
 sql statements for each site.  It may be good to break the input file
 into multiple files of, say, 100 sites per file.
@@ -82,7 +89,20 @@ appropriate CTDEV or CTQA configuration file.  The name of the file
 should make it easy to chose the correct one.  The configuration file
 primarily specifies the roles and permissions to be modified.
 
-## Modifying and Releasing  the scripts ##
+## Creating and running Read Only SQL.
+1. Make sure that an copy of the *sakai\_realm\_rl\_fn* table has been
+   made.  Since we expect little change in the sites it isn't
+   necessary to make a copy every time the read_only scripts are run.
+1. Update the corresponding yml file with the name of the archive
+table.
+1. Generate a file of site ids to update.
+1. Run the script to generate sql and use the site ids file as input.
+Use the ./runRO.sh wrapper script to run the tool.
+1. Have a DBA run and commit the resulting sql.  In production it must
+   be run by a DBA.
+
+
+# Modifying and Releasing  the scripts ##
 
 Developers should use the ./buildCPMTools.sh scripts to package up the
 perl script into a 'packed' script that can be distributed. The build

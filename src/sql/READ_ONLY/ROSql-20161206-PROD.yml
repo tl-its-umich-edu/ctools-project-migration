@@ -23,6 +23,9 @@ comma_break_rate: 5
 # Maximum number of realms to add to each query.
 realms_max: 100
 
+# Name of role / function archive table.
+#ARCHIVE_ROLE_FUNCTION_TABLE: sakai_realm_rl_fn_20170208
+
 # These roles will have the permissions removed in all listed sites.
 roles:
     - Member
