@@ -1088,9 +1088,9 @@ class MigrationTaskService {
 				BoxFolder folder = new BoxFolder(api, boxFolderId);
 				log.info("upload file " + fileName + " size " + fileSize + " to folder " + folder.getID());
 
+				fileName = Utils.sanitizeName(type, fileName);
 				BoxFile.Info newFileInfo = folder.uploadFile(bContent,
-						Utils.sanitizeName(type, fileName),
-						fileSize, new ProgressListener() {
+						fileName, fileSize, new ProgressListener() {
 					public void onProgressChanged(long numBytes,
 							long totalBytes) {
 						log.debug(numBytes + " out of total bytes "
