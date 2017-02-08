@@ -1862,7 +1862,7 @@ public class MigrationController implements ErrorController {
 					if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
 					{
 						// check to see whether the site has any resource
-						if (checkSiteZeroResource(sessionId, userId, bulkMigrationName,
+						if (checkSiteWithEmptyResourceList(sessionId, userId, bulkMigrationName,
 								bulkMigrationId, siteId,
 								siteName, toolId, toolName))
 						{
@@ -1941,12 +1941,12 @@ public class MigrationController implements ErrorController {
 	 * @param toolName
 	 * @return
 	 */
-	private boolean checkSiteZeroResource(String sessionId,
+	private boolean checkSiteWithEmptyResourceList(String sessionId,
 			String userId, String bulkMigrationName,
 			String bulkMigrationId, String siteId,
 			String siteName, String toolId, String toolName) {
 		// assume site has resource
-		boolean rv = false;
+		boolean hasZeroResource = false;
 		
 		// check whether the site has content
 		RestTemplate template = new RestTemplate();
@@ -1968,7 +1968,7 @@ public class MigrationController implements ErrorController {
 				handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
 						bulkMigrationId, siteId, siteName, "default_resource_tool_id",
 						Utils.TOOL_NAME_RESOURCES, errorMessage);
-				rv = true;
+				hasZeroResource = true;
 			}
 
 		} catch (RestClientException e) {
@@ -1978,7 +1978,7 @@ public class MigrationController implements ErrorController {
 			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
 					bulkMigrationId, siteId, siteName, "default_resource_tool_id",
 					Utils.TOOL_NAME_RESOURCES, errorMessage);
-			rv = true;
+			hasZeroResource = true;
 		} catch (Exception e) {
 			String errorMessage = "Migration status for " + siteId + " "
 					+ e.getClass().getName();
@@ -1986,9 +1986,9 @@ public class MigrationController implements ErrorController {
 			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
 					bulkMigrationId, siteId, siteName, "default_resource_tool_id",
 					Utils.TOOL_NAME_RESOURCES, errorMessage);
-			rv = true;
+			hasZeroResource = true;
 		}
-		return rv;
+		return hasZeroResource;
 	}
 	
 	/**
