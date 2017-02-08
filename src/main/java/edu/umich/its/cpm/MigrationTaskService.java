@@ -1003,6 +1003,7 @@ class MigrationTaskService {
 				// return AsyncResult
 				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
+			// replacing dots with _ don't need for Weblinks https://itsjira.umms.med.umich.edu/browse/TLCPM-653
 			if(!type.equals(Utils.CTOOLS_RESOURCE_TYPE_URL)) {
 				fileName = replaceDotsInFileNameExceptFileExtention(fileName);
 			}
