@@ -80,7 +80,7 @@ class MigrationTaskService {
 	private static final String CTOOLS_ACCESS_STRING = "/access/content";
 	private static final String CTOOLS_CITATION_ACCESS_STRING = "/access/citation/content";
 	private static final String CTOOLS_CONTENT_STRING = "/content";
-	private static final String CONTENT_JSON_ATTR_CONTENT_COLLECTION = "content_collection";
+	public static final String CONTENT_JSON_ATTR_CONTENT_COLLECTION = "content_collection";
 	private static final String CONTENT_JSON_ATTR_CONTAINER = "container";
 	private static final String CONTENT_JSON_ATTR_TITLE = "title";
 	private static final String CONTENT_JSON_ATTR_TYPE = "type";
@@ -619,7 +619,7 @@ class MigrationTaskService {
 			// this is the parallel stack which stored the Box folder of those
 			// container collections
 			java.util.Stack<String> boxFolderIdStack = new java.util.Stack<String>();
-
+			
 			for (int i = 0; i < array.length(); i++) {
 				// error flag
 				boolean error_flag = false;

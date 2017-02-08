@@ -168,6 +168,9 @@ class Utils {
 	// error message of no CTools site with id
 	public static final String NO_CTOOLS_SITE="Cannnot find a CTools site with the site id";
 	
+	// error message of no resource
+	public static final String NO_CTOOLS_SITE_RESOURCE="There is no resource within the site id";
+	
 	// MailArchive message JSON prefixes
 	public static final String JSON_ATTR_MAILARCHIVE_COLLECTION = "mailarchive_collection";
 	public static final String JSON_ATTR_MAIL_HEADERS = "headers";
@@ -200,6 +203,8 @@ class Utils {
 	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
 	
 	public static final String PARAM_ERROR_MESSAGE = "errorMessage";
+	
+	public static final String TOOL_NAME_RESOURCES = "Resources";
 	
 	/**
 	 * login into CTools and become user with sessionId
