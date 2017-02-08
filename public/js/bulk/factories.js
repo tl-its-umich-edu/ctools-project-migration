@@ -95,6 +95,20 @@ projectMigrationApp.factory('Projects', function($http) {
 						return result;
 					});
 		},
+    pingDependency : function(url) {
+      return $http.get(url, {
+        cache : false
+      }).then(
+          function success(result) {
+            // forward the data - let the controller deal with it
+            return result;
+          },
+          function error(result) {
+            errorDisplay(url, result.status,
+                'Unable to check ' + url);
+            return result;
+          });
+    },
     checkIsAdminUser : function(url) {
       return $http.get(url, {
         cache : false
