@@ -1,6 +1,17 @@
 a {
 	color:#005bb2;
 }
+.btn-link-special {
+  color: #004e99;
+  padding: 0;
+  vertical-align: baseline;
+  background: transparent;
+}
+.btn-link-special:hover {
+  color: #004e99;
+  text-decoration: underline;
+}
+
 small.export-fail {
 	color:#c00 !important;
 }
@@ -29,6 +40,7 @@ small, h1 small, h2 small, h3 small, h4 small, h5 small, h6 small, .h1 small, .h
 .btn-primary:hover {
 	background:#0068cc
 }
+
 .site-header {
 	font-size: 14px;
   margin: 0;
