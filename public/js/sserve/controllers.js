@@ -461,7 +461,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           }
         });
         if(boxMigratedMatch.length){
-          tool.boxMigrationInfo = _.sortBy(migratedMatch, 'migratedWhen').reverse()[0];
+          tool.boxMigrationInfo = _.sortBy(boxMigratedMatch, 'migratedWhen').reverse()[0];
         }
         if(migratedMatch.length){
           tool.lastMigratedStatus = _.sortBy(migratedMatch, 'migratedWhen').reverse()[0];
