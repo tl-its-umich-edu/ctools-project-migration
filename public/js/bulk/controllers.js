@@ -7,7 +7,18 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
     // set default to resources and hide the radio group
     $scope.uploadSource = 'resources';
 
-
+    var pingCToolsUrl =  $rootScope.urls.pingCtools;
+    Projects.pingDependency(pingCToolsUrl).then(function(result) {
+      if(result.data.status ==='DOWN'){
+        $scope.ctoolsDown = true;
+      }
+    });
+    var pingBoxUrl = $rootScope.urls.pingBox;
+    Projects.pingDependency(pingBoxUrl).then(function(result) {
+      if(result.data.status ==='DOWN'){
+        $scope.boxDown = true;
+      }
+    });
 
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.isAdminCheckUrl;

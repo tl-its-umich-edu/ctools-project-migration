@@ -1,156 +1,162 @@
-<div class="container-fluid">
-  <div class="row">
-    <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
-      <div ng-show="sourceProjects.length">
-        <input id="searchProject" type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
-        <span ng-show="projectSearchFilter">&nbsp;
-          <button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">
-            <em aria-hidden="true">&times;</em>
-            <em class="sr-only">Reset site search filter</em>
-          </button>
-        </span>
-        <label for="searchProject" class="sr-only">Search for projects</label>
+<div class="no-items alert alert-danger" ng-show="ctoolsDown">
+    ⚠️ CTools is not available at the moment.
+</div>
+
+<div ng-show="!ctoolsDown">
+  <div class="container-fluid">
+    <div class="row">
+      <div class="col-lg-8 col-md-8 col-sm-12 col-cs-12 form-inline" style="padding-left:0">
+        <div ng-show="sourceProjects.length">
+          <input id="searchProject" type="text" name="" value="" class="form-control" placeholder="Search by site name..." id="searchProject" ng-model="projectSearchFilter">
+          <span ng-show="projectSearchFilter">&nbsp;
+            <button ng-click="projectSearchFilter=''" type="button" name="button" class="btn btn-default">
+              <em aria-hidden="true">&times;</em>
+              <em class="sr-only">Reset site search filter</em>
+            </button>
+          </span>
+          <label for="searchProject" class="sr-only">Search for projects</label>
+        </div>
+      </div>
+      <div class="col-lg-4 col-md-4 col-sm-12 col-cs-12" style="text-align:right;padding-right:0">
+        <button accesskey="s" type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" aria-disabled="{{!selectionIsMade}}" ng-disabled="!selectionIsMade">Save changes</button>
       </div>
     </div>
-    <div class="col-lg-4 col-md-4 col-sm-12 col-cs-12" style="text-align:right;padding-right:0">
-      <button accesskey="s" type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" aria-disabled="{{!selectionIsMade}}" ng-disabled="!selectionIsMade">Save changes</button>
-    </div>
   </div>
-</div>
-<br>
-<div class="no-items" ng-show="loadingProjects">
-	<span class="spinner"></span> <span> Loading projects from
-		CTools...</span>
-</div>
-<div ng-if="!sourceProjects.length && !loadingProjects">No project
-	sites available.</div>
-<div ng-show="sourceProjects.length">
-	<ul class="list-group" style="margin-bottom: 0">
-		<li ng-repeat="project in sourceProjects | filter:{site_name:projectSearchFilter}"
-			ng-class="project.tool_id !== '' ? 'myworkspace list-group-item toolRow noFocus' : 'myworkspace list-group-item projectRow noFocus'"
-			ng-hide="project.hideTools && project.tool"
-			id="toolSel{{project.tool_site_id}}" tabindex="-1">
-			<!--// using same contorsions to match the data model of migrations and migrated -->
-			<div class="noFocus"
-				ng-if="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''"
-				id="project{{project.site_id}}" tabindex="-1">
-				<div class="row">
-					<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
-						<h4 class="site-header">
-							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
-              <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
-						</h4>
+  <br>
+  <div class="no-items" ng-show="loadingProjects">
+  	<span class="spinner"></span> <span> Loading projects from
+  		CTools...</span>
+  </div>
+  <div ng-if="!sourceProjects.length && !loadingProjects">No project
+  	sites available.</div>
+  <div ng-show="sourceProjects.length">
+  	<ul class="list-group" style="margin-bottom: 0">
+  		<li ng-repeat="project in sourceProjects | filter:{site_name:projectSearchFilter}"
+  			ng-class="project.tool_id !== '' ? 'myworkspace list-group-item toolRow noFocus' : 'myworkspace list-group-item projectRow noFocus'"
+  			ng-hide="project.hideTools && project.tool"
+  			id="toolSel{{project.tool_site_id}}" tabindex="-1">
+  			<!--// using same contorsions to match the data model of migrations and migrated -->
+  			<div class="noFocus"
+  				ng-if="project.site_name !== sourceProjects[$index - 1] && project.tool_id === ''"
+  				id="project{{project.site_id}}" tabindex="-1">
+  				<div class="row">
+  					<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
+  						<h4 class="site-header">
+  							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
+                <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
+  						</h4>
 
-					</div>
-          <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
-            <span class="spinner" ng-show="project.loadingTools"></span>
-          </div>
-					<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
-            <div ng-class="project.type !=='myworkspace' && !project.stateHasTools?'btn-group':''" role="group">
-              <button class="btn btn-default btn-xs"
-                ng-show="project.type !=='myworkspace'"
-                data-toggle="modal" data-target="#membershipModal"
-                ng-click="exportSiteMembership(project.site_id, project.site_name)">
-                Members
-              </button>
-              <button class="btn btn-default btn-xs" ng-click="getTools(project.site_id, project.deleteStatus)"
-  							ng-show="!project.stateHasTools && !project.migrating">Migration Options
-                 <span class="sr-only">for site {{project.site_name}}</span>
-  						</button>
+  					</div>
+            <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
+              <span class="spinner" ng-show="project.loadingTools"></span>
+            </div>
+  					<div class="col-md-6 col-lg-6 col-sm-6 col-xs-6" style="text-align:right">
+              <div ng-class="project.type !=='myworkspace' && !project.stateHasTools?'btn-group':''" role="group">
+                <button class="btn btn-default btn-xs"
+                  ng-show="project.type !=='myworkspace'"
+                  data-toggle="modal" data-target="#membershipModal"
+                  ng-click="exportSiteMembership(project.site_id, project.site_name)">
+                  Members
+                </button>
+                <button class="btn btn-default btn-xs" ng-click="getTools(project.site_id, project.deleteStatus)"
+    							ng-show="!project.stateHasTools && !project.migrating">Migration Options
+                   <span class="sr-only">for site {{project.site_name}}</span>
+    						</button>
+              </div>
             </div>
           </div>
-        </div>
-        <br>
-        <div class="row">
-          <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
-            <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
-              <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
+          <br>
+          <div class="row">
+            <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
+              <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
+                <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
+              </div>
+              <div  ng-show="project.deleteStatus">
+                <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
+              </div>
             </div>
-            <div  ng-show="project.deleteStatus">
-              <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
+            <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
+              <small><a ng-show="project.deleteStatus" ng-click="unFlagSiteDeletion(project)" href=""><i class="glyphicon glyphicon-remove"></i> Remove flag <span class="sr-only"> for deleting {{project.site_name}}</span></a></small>
             </div>
           </div>
-          <div class="col-md-4 col-lg-4 col-sm-4 col-xs-4">
-            <small><a ng-show="project.deleteStatus" ng-click="unFlagSiteDeletion(project)" href=""><i class="glyphicon glyphicon-remove"></i> Remove flag <span class="sr-only"> for deleting {{project.site_name}}</span></a></small>
-          </div>
-        </div>
-			</div>
-			<div class="x"
-				ng-hide="project.tool_id === 'notools' || project.tool_id === ''" class="toolRow">
-				<div>
-					<div class="row">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-              <h5>
-                {{project.tool_name}}
-                <small ng-show="project.boxMigration">
-                  - migrated to <strong><a target="_blank" href="{{project.boxMigrationInfo.migratedTo}}">Box</a></strong> on {{project.boxMigrationInfo.migratedWhen | date: 'medium'}}
-                </small>
-                <small ng-show="project.lastMigratedStatus">
-                  - last <span ng-show="project.lastMigratedStatus.migratedHow ==='box'">migrated</span>
-                          <span ng-show="project.lastMigratedStatus.migratedHow ==='zip' || project.lastMigratedStatus.migratedHow ==='mailarchivembox' || project.lastMigratedStatus.migratedHow ==='mailarchivezip'">downloaded</span>
-                              by {{project.lastMigratedStatus.migratedBy}} {{project.lastMigratedStatus.migratedHow | readableExportTypeSmall }}
-                              on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}}
+  			</div>
+  			<div class="x"
+  				ng-hide="project.tool_id === 'notools' || project.tool_id === ''" class="toolRow">
+  				<div>
+  					<div class="row">
+  						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+                <h5>
+                  {{project.tool_name}}
+                  <small ng-show="project.boxMigration">
+                    - migrated to <strong><a target="_blank" href="{{project.boxMigrationInfo.migratedTo}}">Box</a></strong> on {{project.boxMigrationInfo.migratedWhen | date: 'medium'}}
+                  </small>
+                  <small ng-show="project.lastMigratedStatus">
+                    - last <span ng-show="project.lastMigratedStatus.migratedHow ==='box'">migrated</span>
+                            <span ng-show="project.lastMigratedStatus.migratedHow ==='zip' || project.lastMigratedStatus.migratedHow ==='mailarchivembox' || project.lastMigratedStatus.migratedHow ==='mailarchivezip'">downloaded</span>
+                                by {{project.lastMigratedStatus.migratedBy}} {{project.lastMigratedStatus.migratedHow | readableExportTypeSmall }}
+                                on {{project.lastMigratedStatus.migratedWhen | date: 'medium'}}
 
-                </small>
-              </h5>
-              <div ng-hide="project.deleteStatus || (project.tool_type==='sakai.resources' && project.lastMigratedStatus.migratedHow==='box')">
-                <div ng-show="!project.doNotMigrateStatus">
-                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===false">
-                    <div class="panel-body">
-                        There are no resource items to download.
+                  </small>
+                </h5>
+                <div ng-hide="project.deleteStatus || (project.tool_type==='sakai.resources' && project.lastMigratedStatus.migratedHow==='box')">
+                  <div ng-show="!project.doNotMigrateStatus">
+                    <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===false">
+                      <div class="panel-body">
+                          There are no resource items to download.
+                      </div>
+                    </div>
+                    <div class="panel panel-default"  ng-show="project.tool_type==='sakai.mailbox' && project.hasContentItem===false">
+                      <div class="panel-body">
+                          Email archive has no emails to download.
+                      </div>
+                    </div>
+                    <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true && !project.boxMigration">
+                      <div class="panel-body">
+                        <p>
+                          <small>
+                            <span ng-if="project.tool_type==='sakai.resources'">Faculty/staff: Your content will be automatically moved to Box</span>
+                            <span ng-if="project.tool_type==='sakai.mailbox'">The email archive will be moved to a Google group</span> unless you check the box below.
+                          </small>
+                        </p>
+                        <input type="checkbox"
+          								id="check{{project.site_id}}{{project.tool_id}}"
+          								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
+          							<label for="check{{project.site_id}}{{project.tool_id}}"
+          								style="font-weight: normal">Do not move my {{project.tool_name}} to
+                        <span ng-if="project.tool_type==='sakai.resources'">Box</span>
+                      </div>
                     </div>
                   </div>
-                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.mailbox' && project.hasContentItem===false">
-                    <div class="panel-body">
-                        Email archive has no emails to download.
-                    </div>
-                  </div>
-                  <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true && !project.boxMigration">
-                    <div class="panel-body">
-                      <p>
-                        <small>
-                          <span ng-if="project.tool_type==='sakai.resources'">Faculty/staff: Your content will be automatically moved to Box</span>
-                          <span ng-if="project.tool_type==='sakai.mailbox'">The email archive will be moved to a Google group</span> unless you check the box below.
-                        </small>
-                      </p>
-                      <input type="checkbox"
-        								id="check{{project.site_id}}{{project.tool_id}}"
-        								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
-        							<label for="check{{project.site_id}}{{project.tool_id}}"
-        								style="font-weight: normal">Do not move my {{project.tool_name}} to
-                      <span ng-if="project.tool_type==='sakai.resources'">Box</span>
-                    </div>
-                  </div>
-                </div>
 
-                <div ng-show="project.doNotMigrateStatus">
-                  <p>
-                    <small>
-                    {{project.doNotMigrateStatus.userId}} requested
-                    <span ng-if="project.tool_type==='sakai.resources'"> this content not be moved to Box</span>
-                    <span ng-if="project.tool_type==='sakai.mailbox'"> this email archive not be moved to Google Groups</span> on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
-                    </small>
-                    <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request<span class="sr-only"> that {{project.tool_name}} for site {{project.site_name}} not be migrated</span>?</a>
-                  </p>
-                </div>
+                  <div ng-show="project.doNotMigrateStatus">
+                    <p>
+                      <small>
+                      {{project.doNotMigrateStatus.userId}} requested
+                      <span ng-if="project.tool_type==='sakai.resources'"> this content not be moved to Box</span>
+                      <span ng-if="project.tool_type==='sakai.mailbox'"> this email archive not be moved to Google Groups</span> on {{project.doNotMigrateStatus.consentTime | date: 'medium'}}
+                      </small>
+                      <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request<span class="sr-only"> that {{project.tool_name}} for site {{project.site_name}} not be migrated</span>?</a>
+                    </p>
+                  </div>
+    						</div>
+              </div>
+  					</div>
+
+  					<div class="row noFocus"
+  						id="toolSelDest{{project.tool_id}}" tabindex="-1">
+  						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink" style="padding-left:30px">
+                <a ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zipped archive</a>
+                <span ng-show="project.tool_type==='sakai.mailbox'&& project.hasContentItem===true">
+                  <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped Mailbox file</a></span>
   						</div>
-            </div>
-					</div>
-
-					<div class="row noFocus"
-						id="toolSelDest{{project.tool_id}}" tabindex="-1">
-						<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12 specialLink" style="padding-left:30px">
-              <a ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true" href="" ng-click="project.selected=true;startMigration(project.site_id, project.site_name,'zip')">Download <span class="sr-only">{{project.site_name}} </span>{{project.tool_name}} as a zipped archive</a>
-              <span ng-show="project.tool_type==='sakai.mailbox'&& project.hasContentItem===true">
-                <span class="spinner" ng-show="project.processing"></span> Download <span class="sr-only">{{project.site_name}}'s </span> {{project.tool_name}} as a <a href="" ng-click="startMigrationEmail(project, 'mailarchivezip')">zipped archive</a> or as <a href="" ng-click="startMigrationEmail(project, 'mailarchivembox')">a zipped Mailbox file</a></span>
-						</div>
-					</div>
-				</div>
-			</div>
-			<div class="row" ng-show="project.tool_id === 'notools'">
-				<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-					{{project.tool_name}}</div>
-			</div>
-		</li>
-	</ul>
+  					</div>
+  				</div>
+  			</div>
+  			<div class="row" ng-show="project.tool_id === 'notools'">
+  				<div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
+  					{{project.tool_name}}</div>
+  			</div>
+  		</li>
+  	</ul>
+  </div>
 </div>
