@@ -968,7 +968,7 @@ public class MigrationController implements ErrorController {
 		HttpContext httpContext = (HttpContext) sessionAttributes
 				.get("httpContext");
 
-		// 3. get the site resource list
+		// get the site resource list
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
 		// "https://server/direct/site/SITE_ID.json"
@@ -977,8 +977,9 @@ public class MigrationController implements ErrorController {
 		try {
 			siteResourceJson = restTemplate.getForObject(requestUrl,
 					String.class);
-			 migrationTaskService.boxUploadSiteContent(migrationId, httpContext, remoteUserEmail,
-					sessionId, siteResourceJson, boxFolderId);
+			// proceed with uploading resource to Box
+			migrationTaskService.boxUploadSiteContent(migrationId, httpContext, remoteUserEmail,
+				sessionId, siteResourceJson, boxFolderId);
 
 		} catch (RestClientException e) {
 			String errorMessage = "Cannot find site by siteId: " + siteId
@@ -1823,23 +1824,10 @@ public class MigrationController implements ErrorController {
 				{
 					// if the site id is invalid, and we cannot find the site
 					// generate an empty migration record with error and move on
-
-					/* Timestamp start_time, Timestamp end_time,
-					String destination_type, String destination_url, String status*/
-					Migration migrationWithWrongSiteId = new Migration(bulkMigrationId, bulkMigrationName,
-							siteId, Utils.NO_CTOOLS_SITE + " " + siteId/*site name*/,
-							"default_tool_id"/*tool id*/, "default_tool_name"/*tool name*/,
-							userId/*migrated by*/,
-							new java.sql.Timestamp(System.currentTimeMillis()), new java.sql.Timestamp(System.currentTimeMillis()),
-							Utils.MIGRATION_TYPE_BOX, "",
-							Utils.NO_CTOOLS_SITE);
-					try {
-						repository.save(migrationWithWrongSiteId);
-					} catch (IllegalArgumentException e) {
-						log.error("Exception " + migrationWithWrongSiteId.toString() + e.getMessage());
-					} catch (Exception e) {
-						log.error("Exception " + migrationWithWrongSiteId.toString() + e.getMessage());
-					}
+					String errorMessage = Utils.NO_CTOOLS_SITE + " " + siteId/*site name*/;
+					handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
+							bulkMigrationId, siteId, siteName, "default_resource_tool_id",
+							Utils.TOOL_NAME_RESOURCES, errorMessage);
 					continue;
 				}
 				
@@ -1873,6 +1861,17 @@ public class MigrationController implements ErrorController {
 					
 					if (migrationToolId.equals(Utils.MIGRATION_TOOL_RESOURCE))
 					{
+						// check to see whether the site has any resource
+						if (checkSiteZeroResource(sessionId, userId, bulkMigrationName,
+								bulkMigrationId, siteId,
+								siteName, toolId, toolName))
+						{
+							// stop here if site has no resource
+							// remove added admin user
+							migrationInstanceService.removeAddedAdminOwner(siteId);
+							continue;
+						}
+						
 						// bulk migration of resource items into Box
 						siteBoxMigrationIdMap = createRootBoxFolderWithMembers(sessionId,
 								request, response, userId, bulkMigrationName,
@@ -1928,6 +1927,68 @@ public class MigrationController implements ErrorController {
 		
 		return new ResponseEntity<String>("Bulk Migration started.", headers,
 				HttpStatus.ACCEPTED);
+	}
+
+	/**
+	 * returns true if site has no resource item
+	 * @param sessionId
+	 * @param userId
+	 * @param bulkMigrationName
+	 * @param bulkMigrationId
+	 * @param siteId
+	 * @param siteName
+	 * @param toolId
+	 * @param toolName
+	 * @return
+	 */
+	private boolean checkSiteZeroResource(String sessionId,
+			String userId, String bulkMigrationName,
+			String bulkMigrationId, String siteId,
+			String siteName, String toolId, String toolName) {
+		// assume site has resource
+		boolean rv = false;
+		
+		// check whether the site has content
+		RestTemplate template = new RestTemplate();
+		String url = Utils.directCallUrl(env, "content/site/" + siteId + ".json?", sessionId);
+		String siteResourceJson = null;
+		try {
+			siteResourceJson = template.getForObject(url,
+					String.class);
+			JSONObject obj = new JSONObject(siteResourceJson);
+			JSONArray array = obj.getJSONArray(MigrationTaskService.CONTENT_JSON_ATTR_CONTENT_COLLECTION);
+			if (array.length() == 1)
+			{
+				// There is only one element about the Site root folder,
+				// which means that site does not have any resources.
+				// No need to create an empty Box folder for it.
+				// Simply save error message in migration record and exit.
+				String errorMessage = "Site " + siteName + "(id=" + siteId + ") contains zero resources.";
+				log.error(errorMessage);
+				handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
+						bulkMigrationId, siteId, siteName, "default_resource_tool_id",
+						Utils.TOOL_NAME_RESOURCES, errorMessage);
+				rv = true;
+			}
+
+		} catch (RestClientException e) {
+			String errorMessage = "Cannot find site by siteId: " + siteId
+					+ " " + e.getMessage();
+			log.error(errorMessage);
+			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
+					bulkMigrationId, siteId, siteName, "default_resource_tool_id",
+					Utils.TOOL_NAME_RESOURCES, errorMessage);
+			rv = true;
+		} catch (Exception e) {
+			String errorMessage = "Migration status for " + siteId + " "
+					+ e.getClass().getName();
+			log.error("uploadToBox ", e);
+			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
+					bulkMigrationId, siteId, siteName, "default_resource_tool_id",
+					Utils.TOOL_NAME_RESOURCES, errorMessage);
+			rv = true;
+		}
+		return rv;
 	}
 	
 	/**
@@ -2120,7 +2181,6 @@ public class MigrationController implements ErrorController {
 			HttpServletRequest request, HttpServletResponse response,
 			String userId, String bulkMigrationName, String bulkMigrationId,
 			String siteId, String siteName, String toolId, String toolName, HashMap<String, String> siteBoxMigrationIdMap) {
-		
 		// get box folder id
 		String remoteUserId = Utils.getUserLoginId(request,env);
 		String boxAdminClientId = BoxUtils.getBoxClientIdOrSecret(remoteUserId, Utils.BOX_ID);
@@ -2135,8 +2195,10 @@ public class MigrationController implements ErrorController {
 				boxSiteFolderName, siteId, uRepository);
 		if (boxFolder == null) {
 			// exit with error saved into migration record
+			String errorMessage = "Box root folder was not created for site " + siteName + ". "
+					+ "Please check whether the Box folder with the name exists; Or Box auth token has expired. ";
 			handleBulkResourceBoxRootFolderError(userId, bulkMigrationName,
-					bulkMigrationId, siteId, siteName, toolId, toolName);
+					bulkMigrationId, siteId, siteName, toolId, toolName, errorMessage);
 			return siteBoxMigrationIdMap;
 		}
 		
@@ -2304,7 +2366,7 @@ public class MigrationController implements ErrorController {
 
 	private void handleBulkResourceBoxRootFolderError(String userId,
 			String bulkMigrationName, String bulkMigrationId, String siteId,
-			String siteName, String toolId, String toolName) {
+			String siteName, String toolId, String toolName, String errorMessage) {
 		// error message saved into status
 		// the status json object
 		JSONObject uploadStatus = new JSONObject();
@@ -2315,8 +2377,6 @@ public class MigrationController implements ErrorController {
 		uploadStatus.put(Utils.REPORT_ATTR_COUNTS,count);
 		// details
 		JSONObject details = new JSONObject();
-		String errorMessage = "Box root folder was not created for site " + siteName + ". "
-				+ "Please check whether the Box folder with the name exists; Or Box auth token has expired. ";
 		details.put(Utils.REPORT_ATTR_MESSAGE, errorMessage);
 		uploadStatus.put(Utils.REPORT_ATTR_DETAILS, details);
 		// type
