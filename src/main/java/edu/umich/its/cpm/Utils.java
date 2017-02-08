@@ -672,6 +672,8 @@ class Utils {
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
+		// The .sav have MIME type seems to have application/octetstream which will results .bin extension
+		// so adding a check and return if that is the case. https://itsjira.umms.med.umich.edu/browse/TLCPM-641
 
 		if(fileExtension.equals("sav")){
 			return fileName;
