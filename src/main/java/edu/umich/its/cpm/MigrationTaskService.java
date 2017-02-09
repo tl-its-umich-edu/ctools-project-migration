@@ -1115,6 +1115,12 @@ class MigrationTaskService {
 					// log it, but do not change status, so this file still sits in pool
 					String errorString = "Box access token expired for user " + userId;
 					log.error(errorString);
+					
+					// we will clean up start_time, end_time, and status for the file, 
+					// so that it would be picked up again for migration
+					fRepository.setMigrationBoxFileStartTime(id, null);
+					fRepository.setMigrationBoxFileEndTime(id, null);
+					fRepository.setMigrationBoxFileStatus(id, null);
 				}
 				else if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
