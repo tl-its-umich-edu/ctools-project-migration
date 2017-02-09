@@ -1109,7 +1109,14 @@ class MigrationTaskService {
 
 				log.info("upload success for file " + fileName);
 			} catch (BoxAPIException e) {
-				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_UNAUTHORIZED)
+				{
+					// 401 means Box access token expired
+					// log it, but do not change status, so this file still sits in pool
+					String errorString = "Box access token expired for user " + userId;
+					log.error(errorString);
+				}
+				else if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
 					String conflictString = "There is already a file with name "
 							+ fileName + " - file was not added to Box";

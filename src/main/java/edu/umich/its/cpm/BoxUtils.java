@@ -612,7 +612,23 @@ public class BoxUtils implements EnvironmentAware {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
-			
+			try
+			{
+				// a test call to check whether the API is valid
+				// the result of api.needsRefresh() is not useful
+				BoxUser.getCurrentUser(api);
+			}
+			catch (BoxAPIException ee)
+			{
+				if (ee.getResponseCode() == org.apache.http.HttpStatus.SC_UNAUTHORIZED)
+				{
+					// need to update access token
+					api.refresh();
+					log.info("Update user " + userId + " access token. ");
+					repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
+				}
+			}
+					
 			return api;
 
 		} catch (BoxAPIException e) {
