@@ -81,7 +81,7 @@
   					<div class="panel-heading">
   						<h3 class="panel-title" id="projectPanelHeader">CTools Sites</h3>
   					</div>
-  					<div class="panel-body" aria-labelledby="projectPanelHeader">
+  					<div class="panel-body" aria-labelledby="projectPanelHeader" role="main">
   						<div ng-include="'views/projects-source-lite.html'"></div>
   					</div>
   				</div>
@@ -96,7 +96,7 @@
   								class="badge pull-right" ng-if="!migratedProjectsError">{{migratedProjects.length}}</span>
   						</h3>
   					</div>
-  					<div class="panel-body" aria-labelledby="migratedPanelHeader">
+  					<div class="panel-body" aria-labelledby="migratedPanelHeader" role="complementary" aria-live="polite" aria-relevant="additions">
   						<div ng-include="'views/projects-migrated.html'"></div>
   					</div>
   				</div>

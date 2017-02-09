@@ -1,6 +1,10 @@
 <div class="no-items alert alert-danger" ng-show="ctoolsDown">
     ⚠️ CTools is not available at the moment.
 </div>
+<div class="no-items alert alert-info sr-only" role="alert" ng-if="gettingTools">
+    {{gettingTools}}
+</div>
+
 
 <div ng-show="!ctoolsDown">
   <div class="container-fluid">
@@ -21,6 +25,13 @@
         <button accesskey="s" type="button" class="btn btn-md btn-primary" ng-click="updateProjectListSettings()" aria-disabled="{{!selectionIsMade}}" ng-disabled="!selectionIsMade">Save changes</button>
       </div>
     </div>
+    <div class="row sr-onlyxxx" role="alert" ng-if="projectSearchFilter">
+      <br>
+      <div class=" alert alert-info col-lg-12 col-md-12 col-sm-12 col-xs-12" style="padding-right:0">
+        Found {{(sourceProjects|filter:{site_name:projectSearchFilter}).length}} items
+      </div>
+    </div>
+
   </div>
   <br>
   <div class="no-items" ng-show="loadingProjects">
@@ -70,6 +81,7 @@
             <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
               <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
                 <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
+                <small ng-if="project.deleteProject"> - (do not forget to click <strong>Save Changes</strong> at the top)</small>
               </div>
               <div  ng-show="project.deleteStatus">
                 <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
@@ -121,9 +133,12 @@
                         <input type="checkbox"
           								id="check{{project.site_id}}{{project.tool_id}}"
           								ng-model="project.selectedDoNotMove" ng-change="updateProjectListCheck()">
+
           							<label for="check{{project.site_id}}{{project.tool_id}}"
           								style="font-weight: normal">Do not move my {{project.tool_name}} to
-                        <span ng-if="project.tool_type==='sakai.resources'">Box</span>
+                          <span ng-if="project.tool_type==='sakai.resources'">Box</span>
+                        </label>
+                        <small ng-if="project.selectedDoNotMove"> - (do not forget to click <strong>Save Changes</strong> at the top)</small>
                       </div>
                     </div>
                   </div>
