@@ -1013,6 +1013,14 @@ class MigrationTaskService {
 			final long fileSize = bFile.getFile_size();
 
 			BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
+			if (api == null)
+			{
+				status.append(" uploadFile: cannot get Box API Connection for file:" + fileName + ".");
+				
+				// update job end time and status
+				// return AsyncResult
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+			}
 
 			log.info("begin to upload file " + fileName + " to box folder "
 					+ boxFolderId + " " + fileAccessUrl);
@@ -1109,7 +1117,20 @@ class MigrationTaskService {
 
 				log.info("upload success for file " + fileName);
 			} catch (BoxAPIException e) {
-				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
+				if (e.getResponseCode() == org.apache.http.HttpStatus.SC_UNAUTHORIZED)
+				{
+					// 401 means Box access token expired
+					// log it, but do not change status, so this file still sits in pool
+					String errorString = "Box access token expired for user " + userId;
+					log.error(errorString);
+					
+					// we will clean up start_time, end_time, and status for the file, 
+					// so that it would be picked up again for migration
+					fRepository.setMigrationBoxFileStartTime(id, null);
+					fRepository.setMigrationBoxFileEndTime(id, null);
+					fRepository.setMigrationBoxFileStatus(id, null);
+				}
+				else if (e.getResponseCode() == org.apache.http.HttpStatus.SC_CONFLICT) {
 					// 409 means name conflict - item already existed
 					String conflictString = "There is already a file with name "
 							+ fileName + " - file was not added to Box";
