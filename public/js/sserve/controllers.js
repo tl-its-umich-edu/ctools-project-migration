@@ -73,24 +73,26 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       //  cannot refactor this one as it takes parameters
       var projectUrl = $rootScope.urls.projectUrl + projectId;
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
+      $scope.gettingTools = 'Getting migration options for site' + $scope.sourceProjects[targetProjPos].site_name;
       $scope.sourceProjects[targetProjPos].loadingTools = true;
       Projects.getProject(projectUrl, deleteStatus).then(function(result) {
+        $scope.gettingTools = 'Migration options for site ' + $scope.sourceProjects[targetProjPos].site_name + ' added';
         if(!$scope.migratingActive && result.data) {
           if(!$scope.migratingActive){
             result.data = $scope.toolStatus(result.data);
           }
         }
-
         // add the tools after theproject object
         $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1,0].concat(result.data));
         // get a handle on the first
         // tool
-        var firstToolId = 'toolSel' + result.data[0].tool_id;
+        var firstToolId = 'toolSel' + result.data[0].site_id + result.data[0].tool_id;
         // use the handle to pass
         // focus to the first tool
         $scope.$evalAsync(function() {
           focus(firstToolId);
         });
+
         // state management
         $scope.sourceProjects[targetProjPos].stateHasTools = true;
         $scope.sourceProjects[targetProjPos].loadingTools = false;
