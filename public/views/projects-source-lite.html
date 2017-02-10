@@ -81,7 +81,7 @@
             <div class="col-md-8 col-lg-8 col-sm-8 col-xs-8">
               <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
                 <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
-                <small ng-if="project.deleteProject"> - (do not forget to click <strong>Save Changes</strong> at the top)</small>
+                <small ng-if="project.deleteProject"> - (do not forget to click <strong>Save changes</strong> at the top)</small>
               </div>
               <div  ng-show="project.deleteStatus">
                 <small>{{project.deleteStatus.userId}} flagged for deletion on {{project.deleteStatus.consentTime | date:'medium'}}</small>
@@ -138,7 +138,7 @@
           								style="font-weight: normal">Do not move my {{project.tool_name}} to
                           <span ng-if="project.tool_type==='sakai.resources'">Box</span>
                         </label>
-                        <small ng-if="project.selectedDoNotMove"> - (do not forget to click <strong>Save Changes</strong> at the top)</small>
+                        <small ng-if="project.selectedDoNotMove"> - (do not forget to click <strong>Save changes</strong> at the top)</small>
                       </div>
                     </div>
                   </div>

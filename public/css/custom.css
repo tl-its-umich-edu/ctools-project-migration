@@ -1,5 +1,7 @@
+
 a {
 	color:#005bb2;
+  text-decoration: underline
 }
 .btn-link-special {
   color: #004e99;
@@ -84,7 +86,9 @@ h3, h4.site-header {
 	background: #0068cc
 }
 .btn-primary[disabled] {
-	background:#000;
+	background:#eee;
+  color:#555;
+  border:1px solid #555
 }
 
 .resDestPanel {
