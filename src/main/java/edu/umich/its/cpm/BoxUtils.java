@@ -623,9 +623,17 @@ public class BoxUtils implements EnvironmentAware {
 				if (ee.getResponseCode() == org.apache.http.HttpStatus.SC_UNAUTHORIZED)
 				{
 					// need to update access token
-					api.refresh();
-					log.info("Update user " + userId + " access token. ");
-					repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
+					try
+					{
+						api.refresh();
+						log.info("Update user " + userId + " access token. ");
+						repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
+					}
+					catch (IllegalStateException e)
+					{
+						log.error("There is problem freshing access token for user: " + userId);
+						return null;
+					}
 				}
 			}
 					

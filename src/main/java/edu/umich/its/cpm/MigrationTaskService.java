@@ -1013,6 +1013,14 @@ class MigrationTaskService {
 			final long fileSize = bFile.getFile_size();
 
 			BoxAPIConnection api = BoxUtils.getBoxAPIConnection(userId, uRepository);
+			if (api == null)
+			{
+				status.append(" uploadFile: cannot get Box API Connection for file:" + fileName + ".");
+				
+				// update job end time and status
+				// return AsyncResult
+				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
+			}
 
 			log.info("begin to upload file " + fileName + " to box folder "
 					+ boxFolderId + " " + fileAccessUrl);
