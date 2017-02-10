@@ -13,6 +13,7 @@ if [ -e "./verifyAccessSiteMembership.pl" ] && [ "./verifyAccessSiteMembership.p
    SCRIPT=./verifyAccessSiteMembership.pl
 fi
 
+####### help
 function help {
     echo "$0: <site id file> {configuration file}"
     echo "Verify that site ids listed will respond to a CTools API request for membership."
@@ -20,10 +21,18 @@ function help {
     echo "The sql will be put in the file <site id file>.sql."
     }
 
+### time stamp utility
+function niceTimestamp {
+    echo $(date +"%F-%H-%M")
+}
+#######
 
 CONFIG=${2:-credentials.yml}
 SITEIDS=${1}
+#  Add time to output files so don't overwrite old ones by accident.
+T=$(niceTimestamp)
 
+##### sanity checks
 if [ $# -eq 0 ]; then
     help;
     echo $( $(pwd)/$SCRIPT -h);
@@ -40,10 +49,12 @@ if [ ! -e "${CONFIG}" ]; then
     exit 1;
 fi
 
-echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership"
+### do it!
+echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.csv"
 
-cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.membership.csv
+cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.csv
 
 # make a file of the sql to run to fix the site membership.
-perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.membership.csv | sort -u >| $SITEIDS.membership.deleteunknown.sql
+
+perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.$T.membership.csv | sort -u >| $SITEIDS.$T.membership.deleteunknown.sql
 #end
