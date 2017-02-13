@@ -117,7 +117,7 @@ Have a DBA run and commit the resulting sql. To see the effect of the
 results immediately a CTools admin should reset the memory caches from
 the memory Ctools admin site.
 
-# Developers only: Modifying and Releasing  the scripts 
+# Developers only: Modifying and Releasing the scripts
 
 Developers should use the ./buildCPMTools.sh scripts to package up the
 perl script into a 'packed' script that can be distributed. The build
