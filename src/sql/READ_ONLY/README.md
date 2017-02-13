@@ -67,7 +67,7 @@ Have a DBA run and commit the resulting sql. To see the effect of the
 results immediately a CTools admin should reset the memory caches from
 the memory Ctools admin site.
 
-The SQL may not may not work in some exceptional cases.
+The SQL may not work in some exceptional cases.
 Case by case solutions may be required for some sites.
 
 # Tool: Making CTools sites Read Only
