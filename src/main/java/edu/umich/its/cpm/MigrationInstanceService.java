@@ -98,13 +98,16 @@ class MigrationInstanceService {
 			// delay for 5 seconds
 			Thread.sleep(5000L);
 			
+			// check whether there is queued-up site id for migration
+			migrationTaskService.handleWithBatchFileMigrationRequest();
+			
 			/*********** Box migration tasks ***********/
 			// looping through resource request
 			List<MigrationBoxFile> bFiles = fRepository.findNextNewMigrationBoxFile();
 			if (bFiles != null && bFiles.size() > 0)
 			{
 				// get right HttpContext object
-				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, null, env.getProperty(Utils.ENV_PROPERTY_USERNAME));
+				HashMap<String, Object> sessionAttributes = Utils.login_becomeuser(env, env.getProperty(Utils.ENV_PROPERTY_USERNAME));
 				HttpContext httpContext = sessionAttributes != null ? (HttpContext) sessionAttributes.get("httpContext"):null;
 				String sessionId = sessionAttributes != null ? (String) sessionAttributes.get("sessionId"):null;
 				
@@ -277,7 +280,7 @@ class MigrationInstanceService {
 			
 			// cleanup the added owner of admin user from CTools site
 			String siteId = mRepository.getMigrationSiteId(mId);
-			removeAddedAdminOwner(siteId);
+			migrationTaskService.removeAddedAdminOwner(siteId);
 		}
 	}
 	
@@ -337,42 +340,9 @@ class MigrationInstanceService {
 		
 			// update the status of migration record
 			mRepository.setMigrationStatus(status.toString(), mId);   
-         // cleanup the added owner of admin user from CTools site
-         	removeAddedAdminOwner(mId);
+			// cleanup the added owner of admin user from CTools site
+         	migrationTaskService.removeAddedAdminOwner(mId);
         }
-	}
-
-	/**
-	 * // cleanup the added owner of admin user from CTools site
-	 * @param migrationId
-	 */
-	protected void removeAddedAdminOwner(String siteId) {
-		String adminUser = env.getProperty(Utils.ENV_PROPERTY_USERNAME);
-		
-		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
-		
-		if(sessionAttributes.isEmpty()){
-			log.error("Logging into Ctools failed for the admin user.");
-		}
-		
-		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
-		// the request string to add user to site with Owner role
-		String requestUrl = Utils.directCallUrl(env, "membership/" + adminUser + "::site:" + siteId + "?userIds=" + adminUser + "&", adminSessionId);
-		
-		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
-		HttpClient httpClient = HttpClientBuilder.create().build();
-		try {
-		    HttpDelete request = new HttpDelete(requestUrl);
-		    request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-			HttpResponse response = httpClient.execute(request, httpContext);
-			int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != 204) {
-			    log.error(String.format("Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId ));
-			    return;
-			}
-		} catch (IOException e) {
-		    log.error(String.format("IOException Failure to remove user \"%1$s\" from site %2$s ", adminUser, siteId) + e);
-		}
 	}
 
 	/*************** Box Migration ********************/
