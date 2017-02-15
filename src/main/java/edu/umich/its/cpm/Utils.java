@@ -206,10 +206,12 @@ class Utils {
 	
 	public static final String TOOL_NAME_RESOURCES = "Resources";
 	
+	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request, String remoteUser) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, String remoteUser) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
