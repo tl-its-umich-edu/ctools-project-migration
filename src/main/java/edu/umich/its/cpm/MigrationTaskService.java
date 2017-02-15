@@ -255,38 +255,35 @@ class MigrationTaskService {
 			
 			// now that we finished all box root folder creation
 			// we are ready to do file content tasks
-			if (!siteBoxMigrationIdMap.isEmpty())
+			String boxFolderId = null;
+			String migrationId = null;
+			
+			// get the Box Admin Id
+			String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
+			while (!migrationSiteQueue.isEmpty())
 			{
-				String boxFolderId = null;
-				String migrationId = null;
-				
-				// get the Box Admin Id
-				String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
-				while (!migrationSiteQueue.isEmpty())
+				String siteAttributesString = migrationSiteQueue.poll();
+				String[] siteAttributes = siteAttributesString.split(Utils.BOX_BULK_UPLOAD_SEPARATOR);
+				if (siteAttributes.length != 6)
 				{
-					String siteAttributesString = migrationSiteQueue.poll();
-					String[] siteAttributes = siteAttributesString.split(Utils.BOX_BULK_UPLOAD_SEPARATOR);
-					if (siteAttributes.length != 6)
-					{
-						// wrong format
-						continue;
-					}
-					String siteId = siteAttributes[0];
-					
-					if (siteBoxMigrationIdMap.containsKey(siteId + "_boxRootFolderId")) {
-						boxFolderId = siteBoxMigrationIdMap.get(siteId + "_boxRootFolderId");
-					}
-					if (siteBoxMigrationIdMap.containsKey(siteId + "_migrationId")) {
-						migrationId = siteBoxMigrationIdMap.get(siteId + "_migrationId");
-					}
-					if (boxFolderId != null && migrationId != null) {
-						// delegate the actual content migrations to async calls
-						HashMap<String, String> status = createBoxMigrationTask(userId, 
-								boxFolderId, siteId, migrationId);
-						log.info(this + " batch upload call for site id=" + siteId
-								+ " migration id=" + (status.containsKey("migrationId")?status.get("migrationId"):"")
-								+ " error message=" + (status.containsKey("errorMessage")?status.get("errorMessage"):""));
-					}
+					// wrong format
+					continue;
+				}
+				String siteId = siteAttributes[0];
+				
+				if (siteBoxMigrationIdMap != null && siteBoxMigrationIdMap.containsKey(siteId + "_boxRootFolderId")) {
+					boxFolderId = siteBoxMigrationIdMap.get(siteId + "_boxRootFolderId");
+				}
+				if (siteBoxMigrationIdMap != null &&siteBoxMigrationIdMap.containsKey(siteId + "_migrationId")) {
+					migrationId = siteBoxMigrationIdMap.get(siteId + "_migrationId");
+				}
+				if (boxFolderId != null && migrationId != null) {
+					// delegate the actual content migrations to async calls
+					HashMap<String, String> status = createBoxMigrationTask(userId, 
+							boxFolderId, siteId, migrationId);
+					log.info(this + " batch upload call for site id=" + siteId
+							+ " migration id=" + (status.containsKey("migrationId")?status.get("migrationId"):"")
+							+ " error message=" + (status.containsKey("errorMessage")?status.get("errorMessage"):""));
 				}
 			}
 		}
