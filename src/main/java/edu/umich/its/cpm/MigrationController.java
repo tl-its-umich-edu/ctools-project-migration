@@ -1304,38 +1304,6 @@ public class MigrationController implements ErrorController {
 				HttpStatus.ACCEPTED);
 	}
 	
-	/**
-	 * add user with Owner role into CTools site
-	 * @param adminUserId
-	 * @param siteId
-	 * @param sessionId
-	 */
-	private void addAdminAsSiteOwner(String adminUserId, String siteId, String sessionId)
-	{
-		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
-	        
-		if(sessionAttributes.isEmpty()){
-			log.error("Logging into Ctools failed for the admin user.");
-		}
-		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
-		// the request string to add user to site with Owner role
-		String requestUrl = Utils.directCallUrl(env, "membership/site/" + siteId + "?userSearchValues=" + adminUserId + "&memberRole=" + Utils.ROLE_OWNER + "&", adminSessionId);
-     	
-		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
-		HttpClient httpClient = HttpClientBuilder.create().build();
-		try {
-			HttpPost request = new HttpPost(requestUrl);
-			request.setHeader("Content-Type", "application/x-www-form-urlencoded");
-			HttpResponse response = httpClient.execute(request, httpContext);
-			int statusCode = response.getStatusLine().getStatusCode();
-			if (statusCode != 200) {
-				log.error(String.format("Failure to add user \"%1$s\" as Owner to site %2$s ", adminUserId, siteId ));
-			}
-		} catch (IOException e) {
-		    log.error(String.format("Failure to add user \"%1$s\" as Owner to site %2$s ", adminUserId, siteId) + e);
-		}
-	}
-	
 	private JSONObject googleGlobalFailureReport(JSONObject statusObj, JSONObject details, String detailMsg,JSONObject addMembers) {
 		details.put(Utils.REPORT_ATTR_MESSAGE, detailMsg);
 		addMembers.put(Utils.REPORT_ATTR_STATUS,Utils.REPORT_STATUS_ERROR);

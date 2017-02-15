@@ -204,6 +204,10 @@ class MigrationInstanceService {
 		int allFinishedItemCount = fRepository.getFinishedMigrationBoxFileCountForMigration(mId);
 		if (allItemCount > 0 && allItemCount == allFinishedItemCount )
 		{
+			// cleanup the added owner of admin user from CTools site
+			String siteId = mRepository.getMigrationSiteId(mId);
+			migrationTaskService.removeAddedAdminOwner(siteId);
+			
 			// all the items within the migration is finished
 			// update the end time of the parent record
 			Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);
@@ -277,10 +281,6 @@ class MigrationInstanceService {
 
 			// update the status of migration record
 			mRepository.setMigrationStatus(statusObject.toString(), mId);
-			
-			// cleanup the added owner of admin user from CTools site
-			String siteId = mRepository.getMigrationSiteId(mId);
-			migrationTaskService.removeAddedAdminOwner(siteId);
 		}
 	}
 	
