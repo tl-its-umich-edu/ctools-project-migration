@@ -2129,7 +2129,10 @@ class MigrationTaskService {
 				// return AsyncResult
 				return new AsyncResult<String>(setUploadJobEndtimeStatus(id, status));
 			}
-			fileName= replaceDotsInFileNameExceptFileExtention(fileName);
+			// replacing dots with _ don't need for Weblinks https://itsjira.umms.med.umich.edu/browse/TLCPM-653
+			if(!type.equals(Utils.CTOOLS_RESOURCE_TYPE_URL)) {
+				fileName = replaceDotsInFileNameExceptFileExtention(fileName);
+			}
 			
 			String webLinkUrl = bFile.getWeb_link_url();
 			String fileAccessUrl = bFile.getFile_access_url();
@@ -2381,6 +2384,8 @@ class MigrationTaskService {
 			return status;
 		}
 
+	//Filenames could contain dot(.)  when files migrated to box this will look like unknow extension
+	// and cannot be previewed in box. see MigrationTaskServiceTest.java for Use Cases
 	public static String replaceDotsInFileNameExceptFileExtention(String fileName) {
 		if (!(StringUtils.countOccurrencesOf(fileName, ".") > 1)) {
 			return fileName;
