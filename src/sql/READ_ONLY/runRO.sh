@@ -27,6 +27,12 @@ function help {
     echo "The sql will be put in the file <site id file>.<task name>.sql"
 }
 
+### time stamp utility
+function niceTimestamp {
+    echo $(date +"%F-%H-%M")
+}
+#######
+
 ######## Check for task type specification. Default to READ_ONLY_UPDATE.
 # case insensitive match
 # Only check for plausible match.  Let perl scripts
@@ -63,8 +69,10 @@ if [ ! -e "${CONFIG}" ]; then
     exit 1;
 fi
 
-echo "running: cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${TASK}.sql"
+T=$(niceTimestamp)
 
-cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${TASK}.sql
+echo "running: cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${T}.${TASK}.sql"
+
+cat $SITEIDS | ${SCRIPT} ${TASK} ${CONFIG} >| ${SITEIDS}.${T}.${TASK}.sql
 
 #end
