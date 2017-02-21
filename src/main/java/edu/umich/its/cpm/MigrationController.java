@@ -820,9 +820,8 @@ public class MigrationController implements ErrorController {
 		if (uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) == null) {
 			rv = "Cannot find user's Box authentication info. ";
 		} else {
-			uRepository.deleteBoxAuthUserAccessToken(userEmail);
-			uRepository.deleteBoxAuthUserRefreshToken(userEmail);
-			rv = "User authentication info is removed. ";
+			uRepository.deleteBoxAuthUser(userEmail);
+			rv = "Box authentication info for user " + userEmail + " is removed. ";
 		}
 
 		log.info("/box/unauthorize for user " + userEmail + " " + rv);
@@ -858,11 +857,17 @@ public class MigrationController implements ErrorController {
 
 		return rv != null ? BOX_AUTHORIZED_HTML : BOX_UNAUTHORIZED_HTML;
 	}
-
+	
 	@RequestMapping("/box/checkAuthorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
 		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) != null);
+	}
+	
+	@RequestMapping("/box/validRefreshToken")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Boolean validBoxRefreshToken(HttpServletRequest request) {
+		return Boolean.valueOf(uRepository.validBoxUserRefreshToken(getCurrentUserEmail(request, env)) != null);
 	}
 
 	/**

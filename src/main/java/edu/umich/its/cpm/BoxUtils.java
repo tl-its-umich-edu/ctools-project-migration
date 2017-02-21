@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -277,7 +278,7 @@ public class BoxUtils implements EnvironmentAware {
 					JSONObject obj = new JSONObject(theString);
 					repository.setBoxAuthUserAccessToken((String) obj.get("access_token"), u.getUserId());
 					repository.setBoxAuthUserRefreshToken((String) obj.get("refresh_token"), u.getUserId());
-
+					repository.setBoxAuthUserRefreshTokenCreatedOn(new Timestamp(System.currentTimeMillis()), u.getUserId());
 					// close inputstream and entity
 					IOUtils.closeQuietly(body);
 					EntityUtils.consume(entity);
@@ -648,8 +649,7 @@ public class BoxUtils implements EnvironmentAware {
 				// so that the user will need to go through the Box
 				// authentication process again to generate refresh token and
 				// access token
-				repository.deleteBoxAuthUserAccessToken(userId);
-				repository.deleteBoxAuthUserRefreshToken(userId);
+				repository.deleteBoxAuthUser(userId);
 			}
 			return null;
 		}

@@ -66,6 +66,11 @@ public class BoxAuthUser {
 	@Getter
 	@Setter
 	private String refreshToken;
+	
+	@Column(name = "REFRESH_TOKEN_CREATEDON", columnDefinition = "TIMESTAMP")
+	@Getter
+	@Setter
+	private Timestamp refreshTokenCreatedOn;
 
 	protected BoxAuthUser() {
 	}
@@ -76,6 +81,15 @@ public class BoxAuthUser {
 		this.state = state;
 		this.accessToken = accessToken;
 		this.refreshToken = refreshToken;
+	}
+	
+	public BoxAuthUser(String userId, String state, 
+			String accessToken, String refreshToken, Timestamp refreshTokenCreatedOn) {
+		this.userId = userId;
+		this.state = state;
+		this.accessToken = accessToken;
+		this.refreshToken = refreshToken;
+		this.refreshTokenCreatedOn = refreshTokenCreatedOn;
 	}
 
 	@Override
