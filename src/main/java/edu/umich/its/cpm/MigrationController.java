@@ -867,7 +867,21 @@ public class MigrationController implements ErrorController {
 	@RequestMapping("/box/validRefreshToken")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean validBoxRefreshToken(HttpServletRequest request) {
-		return Boolean.valueOf(uRepository.validBoxUserRefreshToken(getCurrentUserEmail(request, env)) != null);
+		// Box refresh token valid days is 60 days, unless set otherwise
+		int tokenDays = 60;
+		
+		// read in property setting
+		if(env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS) != null) {
+			try
+			{
+				tokenDays = Integer.parseInt(env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS));
+			}
+			catch (NumberFormatException e)
+			{
+				log.error("The setting for Box refresh token valid days is not integer: " + env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS));
+			}
+		}
+		return Boolean.valueOf(uRepository.currentBoxUserRefreshToken(getCurrentUserEmail(request, env), tokenDays) != null);
 	}
 
 	/**

@@ -208,6 +208,8 @@ class Utils {
 	
 	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
 	
+	public static final String BOX_REFRESH_TOKEN_VALID_DAYS = "box_refresh_token_valid_days";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */

@@ -56,14 +56,15 @@ public interface BoxAuthUserRepository extends CrudRepository<BoxAuthUser, Strin
 	
 	/**
 	 * Find whether the given user's Box refresh token is valid or not
-	 * True if the refresh token is less than 60 days old
+	 * True if the refresh token is less than the given days old
 	 * False otherwise
 	 * 
 	 * @param userId
+	 * @param numberOfDay
 	 * @return
 	 */
-	@Query("SELECT refreshToken FROM BoxAuthUser u WHERE u.userId = ?#{[0]} and u.refreshTokenCreatedOn is not null and u.refreshTokenCreatedOn > TRUNC(SYSDATE) - 60)")
-	String validBoxUserRefreshToken(String userId);
+	@Query("SELECT refreshToken FROM BoxAuthUser u WHERE u.userId = ?#{[0]} and u.refreshTokenCreatedOn is not null and u.refreshTokenCreatedOn > TRUNC(SYSDATE) - ?#{[1]})")
+	String currentBoxUserRefreshToken(String userId, int numberOfDays);
 	
 	/**
 	 * Finds BoxAuthUser refresh token
