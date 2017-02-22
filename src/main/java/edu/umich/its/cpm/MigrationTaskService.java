@@ -305,6 +305,7 @@ class MigrationTaskService {
 					String.class);
 			JSONObject siteJSONObject = new JSONObject(siteJson);
 			siteName = (String) siteJSONObject.get("title");
+			siteName=Utils.sanitizeName(Utils.COLLECTION_TYPE,siteName);
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
