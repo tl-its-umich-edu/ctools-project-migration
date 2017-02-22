@@ -864,9 +864,9 @@ public class MigrationController implements ErrorController {
 		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) != null);
 	}
 	
-	@RequestMapping("/box/validRefreshToken")
+	@RequestMapping("/box/currentRefreshToken")
 	@Produces(MediaType.APPLICATION_JSON)
-	public Boolean validBoxRefreshToken(HttpServletRequest request) {
+	public Boolean currentBoxRefreshToken(HttpServletRequest request) {
 		// Box refresh token valid days is 60 days, unless set otherwise
 		int tokenDays = 60;
 		
