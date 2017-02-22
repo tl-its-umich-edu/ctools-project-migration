@@ -624,7 +624,9 @@ class Utils {
 	}
 
 	/**
-	 * replace characters match the regular expression to "_"
+	 * Replace characters match( /,\,<,>,*, | \tab) the regular expression to "_" as some of these are not allowed
+	 * as part of Folder/files names by Operating system and Box. The double back slashes are user for escaping and the
+	 * beginning backslash actually escaping the \ and not looking for \\ in a string
 	 *
 	 * @param name
 	 * @return
@@ -641,7 +643,6 @@ class Utils {
 			log.error(" sanitizeName to be null for name=" + oldName);
 			return null;
 		}
-
 		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<\\*\\|\\?]");
 		Matcher m = p.matcher(name);
 		name = m.replaceAll("_");
