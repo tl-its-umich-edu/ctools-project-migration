@@ -705,6 +705,12 @@ class Utils {
 						"Utils.modifyFileNameOnType: Couldn't find file extension for resource: "
 								+ fileName + " of MIME type = " + type, e);
 			}
+			// Mime extension will be empty because the Mime type mentioned in the ctools might be invalid/old and the
+			// tikka library is not supporting it. so this workflow is supporting invalid/old mime type from ctools.
+			// unit test are added to testMimeExtensionLogic()
+			if (mimeExtension.isEmpty()) {
+				return guessedFileExtension(type, fileName);
+			}
 			Tika tika = new Tika();
 
 			if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
@@ -721,6 +727,71 @@ class Utils {
 			}
 		return fileName;
 	}
+
+	public static String guessedFileExtension(String type, String fileName) {
+		MimeTypesChunk mimeTypes = null;
+		for (MimeTypesChunk mimeType : MimeTypesChunk.values()) {
+			if (type.toLowerCase().contains(mimeType.toString())) {
+				mimeTypes = mimeType;
+				break;
+			}
+		}
+		if (mimeTypes == null) {
+			return fileName;
+		}
+		String guessedFileExtension = getGuessedFileExtension(mimeTypes);
+		if (guessedFileExtension != null) {
+
+			String fileExtension = FilenameUtils.getExtension(fileName);
+			if (fileExtension.contains(guessedFileExtension.replace(".", ""))) {
+				return fileName;
+			}
+
+			fileName = fileName.concat(guessedFileExtension);
+			return fileName;
+		}
+		return fileName;
+	}
+
+	// will add more Mime types on case by case basic
+	public enum MimeTypesChunk {
+		POWERPOINT("powerpoint"), EXCEL("excel"), WORD("word"), JPEG("jpeg"), TEXTPLAIN("text/plain");
+		private final String mimeType;
+
+		MimeTypesChunk(String mimeType) {
+			this.mimeType = mimeType;
+		}
+
+		@Override
+		public String toString() {
+			return mimeType;
+		}
+	}
+
+	public static String getGuessedFileExtension(MimeTypesChunk type) {
+		String fileExtension = null;
+		switch (type) {
+			case POWERPOINT:
+				fileExtension = ".ppt";
+				break;
+			case EXCEL:
+				fileExtension = ".xls";
+				break;
+			case WORD:
+				fileExtension = ".doc";
+				break;
+			case JPEG:
+				fileExtension = ".jpeg";
+				break;
+			case TEXTPLAIN:
+				fileExtension = ".txt";
+				break;
+			default:
+				log.warn("MIME type not included in the list is: " + type);
+		}
+		return fileExtension;
+	}
+
 
 	public static String getCopyrightAcceptUrl(String copyrightAlert,
 			String contentUrl) {
