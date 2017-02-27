@@ -44,6 +44,8 @@
       Only for <strong>admininstrative users</strong>. You do not have access to this section of the application.
     </div>
   </div>
+
+
 	<div class="container-fluid" ng-controller="projectMigrationBatchController" ng-show="isAdminUser">
     <div class="row">
       <div class="col-md-6 col-lg-6 col-sm-6 col-xs-12 topMenu">
@@ -64,21 +66,26 @@
 						<h3 class="panel-title">Start a batch migration</h3>
 					</div>
 					<div class="panel-body">
-						<ul class="nav nav-tabs" role="tablist">
-							<li role="presentation" class="active"><a href="#upload"
-								aria-controls="upload" role="tab" data-toggle="tab">Upload</a></li>
-							<li role="presentation"><a href="#direct"
-								aria-controls="direct" role="tab" data-toggle="tab">Direct
-									input</a></li>
-						</ul>
-						<div class="tab-content">
-							<form role="tabpanel" class="tab-pane active" id="upload">
+
+            <div class="alert alert-warning" ng-show="!boxAuthorized">
+              Authorize to Box first to start a batch migration.
+            </div>
+            <div class="no-items alert alert-danger" ng-show="ctoolsDown" style="display:inline-block">
+             ⚠️ CTools is not available at the moment.
+           </div>
+           <div class="no-items alert alert-danger" ng-show="boxDown"  style="display:inline-block">
+             ⚠️ Box is not available at the moment.
+           </div>
+						<form role="tabpanel" class="tab-pane active" id="upload" ng-show="boxAuthorized  && (!ctoolsDown && !boxDown)">
 								<h3 class="panel-title panel-title-batch">Upload</h3>
 								<div class="well form-group">
                   <div id="bulkUploadFileContainer">
                     <div class="form-group">
                       <label for="bulkUploadName">Batch name (required)</label>
-                      <span class="pull-right uploadSource"> Migrate: <input id="resourcesChoice" ng-model="uploadSource" type="radio" name="uploadType" value="resources"> <label for="resourcesChoice">Resources</label>  <input id="emailChoice" ng-model="uploadSource" type="radio" name="uploadType" value="emailarchive"> <label for="emailChoice">Email</label> </span>
+                      <span class="pull-right">Only resources can be migrated</span>
+                      <span class="pull-right uploadSource" style="display:none"> Migrate:
+                        <input id="resourcesChoice" ng-model="uploadSource" type="radio" name="uploadType" value="resources"> <label for="resourcesChoice">Resources</label>
+                        <input id="emailChoice" ng-model="uploadSource" type="radio" name="uploadType" value="emailarchive"> <label for="emailChoice">Email</label> </span>
                       <span class="bulkUploadName"><input type="text" id="bulkUploadName" class="form-control" name="name" ng-model="upload.name" value=""></span>
                     </div>
                     <div class="form-group bulkUploadFile">
@@ -92,31 +99,15 @@
                       <div class="alert alert-danger" ng-show="uploadStartedMessage.status!==202">{{uploadStartedMessage.data}}</div>
                     </div>
                     <button type="reset" name="reset-file-input"
-										class="btn btn-default"><strong>Reset</strong></button>
+										class="btn btn-default" ng-click="resetBulkUpload()"><strong>Reset</strong></button>
                     <button class="btn btn-primary" ng-click="bulkUpload()"
 										name="process-file-input">Process</button>
                     <div class="spinner" ng-show="bulkUploadInProcess"></div>
                   </div>
 								</div>
 							</form>
-							<form role="tabpanel" class="tab-pane" id="direct">
-								<h3 class="panel-title panel-title-batch">Direct input</h3>
-								<div class="form-group">
-									<label for="name">Batch name</label> <input type="text"
-										id="name" name="name" value="" class="form-control">
-								</div>
-								<div class="form-group">
-									<textarea name="name" rows="8" class="form-control"></textarea>
-								</div>
-								<div class="form-group pull-right">
-									<div class="spinner" style="display: none"></div>
-									<button type="reset" name="reset-direct-input"
-										class="btn btn-default">Reset</button>
-									<button type="button" name="process-direct-input"
-										class="process-direct-input btn btn-default">Process</button>
-								</div>
-							</form>
-						</div>
+
+
 					</div>
 				</div>
 			</div>
@@ -173,7 +164,8 @@
                     <h3 class="panel-title panel-title-batch">Concluded</h3>
                   </div>
                   <div class="col-lg-8 col-md-8 col-sm-8 col-xs-12" style="margin:13px -12px">
-                    <input type="text" class="form-control" placeholder="Search batch names" ng-model="searchBatchNames">
+                    <label for="searchBatchNames" class="sr-only">Search batchnames</label>
+                    <input id="searchBatchNames" type="text" class="form-control" placeholder="Search batch names" ng-model="searchBatchNames">
                   </div>
                 </div>
 								<ul class="list-group" style="margin: 0 15px 0">
@@ -187,10 +179,10 @@
 									<li class="list-group-item row" ng-repeat="concludedBatch in concluded | filter:searchBatchNames">
                     <div class="row">
 											<div class="col-xs-8 col-sm-8 col-md-8 col-lg-8">
-                        <h4 class="site-header">{{concludedBatch[0]}}</h4>
+                        <h4 class="site-header">{{concludedBatch.name}}</h4>
 											</div>
 											<div class="col-xs-4 col-sm-4 col-md-4 col-lg-4">
-												<a ng-hide="concludedBatch.list" href="" class="btn btn-default btn-xs" ng-click="getBatchReport(concludedBatch[1], $index)">See
+												<a ng-hide="concludedBatch.list" href="" class="btn btn-default btn-xs" ng-click="getBatchReport(concludedBatch.id)">See
 													report</a>
                         <div class="spinner" ng-show="concludedBatch.batchReportLoading"></div>
 											</div>
@@ -211,7 +203,7 @@
                               </td>
                               <td class="col-lg-4">
                                 <div ng-if="!site.name.includes('Cannnot find a CTools site')">
-                                  <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch[1], site.id)">Site Report</a>
+                                  <a href="" data-toggle="modal" data-target="#siteReportModal" ng-click="getSiteReport(concludedBatch.id, site.id)">Site Report</a>
                                   <i class="glyphicon glyphicon-ok" ng-show="site.status==='OK'"></i>
                                   <i class="spinner" ng-show="site.status==='onging'"></i>
                                   <i class="glyphicon glyphicon-fire" ng-show="site.status === 'ERROR'"></i>
@@ -270,7 +262,8 @@
                 {{reportDetails.details.add_members.counts.partial_successes}} partial.
                 {{reportDetails.details.add_members.counts.errors}} errors.
               </div>
-              <div style="width:535px" ng-show="reportDetails.details.add_members.items">
+              <br>
+              <div style="width:535px" ng-show="reportDetails.details.add_members.items" ng-if="reportDetails.type ==='google'">
                 <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" >
                   <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
                     <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
@@ -289,6 +282,23 @@
                   </li>
                 </ul>
               </div>
+              <div style="width:535px" ng-show="reportDetails.details.add_members.items" ng-if="reportDetails.type ==='box'">
+                <div class="alert alert-danger" style="overflow:scroll" ng-show="reportDetails.details.add_members.status ==='ERROR'">
+                  {{reportDetails.details.add_members.items[0].message}}
+                </div>
+                <ul class="container" style="width:535px;list-style:none;padding:0;margin:0" ng-show="reportDetails.details.add_members.status !=='ERROR'">
+                  <li class="row" ng-repeat="item in reportDetails.details.add_members.items">
+                    <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4">
+                      {{item.item_id}}
+                    </div>
+                    <div class="col-lg-8 col-md-8 col-sm-8 col-xs-8">
+                      {{item.message | filterMemberError}} <small><a href="" ng-click="item.showFullMessage =true">(see full message)</a></small>
+                      <div ng-show="item.showFullMessage" class="alert alert-warning" style="padding:0px 5px"><small>{{item.message}}</small></div>
+                    </div>
+                  </li>
+                </ul>
+              </div>
+              <br>
               <ul class="list-group container"  style="width:550px;margin:0">
                 <li class="list-group-item" ng-repeat="item in reportDetails.items">
                   <div class="row">

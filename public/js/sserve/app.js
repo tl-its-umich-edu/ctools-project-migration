@@ -26,7 +26,9 @@ projectMigrationApp.run(function($rootScope) {
       'projectUrl': 'data/project_id.json',
       'checkBoxAuthorizedUrl': '',
       'checkIsAdminUser':'',
-      'bulkUploadUrl':''
+      'bulkUploadUrl':'',
+      'pingCtools':'data/ping-ctools.json',
+      'pingBox':'data/ping-box.json'
     };
   } else {
     $rootScope.urls = {
@@ -41,7 +43,10 @@ projectMigrationApp.run(function($rootScope) {
       'projectUrl': '/projects/',
       'checkBoxAuthorizedUrl': '/box/checkAuthorized',
       'checkIsAdminUser':'/isAdmin',
-      'bulkUploadUrl' : '/bulkUpload'
+      'bulkUploadUrl' : '/bulkUpload',
+      'pingCtools':'status/dependencies/ctools',
+      'pingBox':'status/dependencies/box'
+
     };
   }
   $rootScope.addProjectSites = [];

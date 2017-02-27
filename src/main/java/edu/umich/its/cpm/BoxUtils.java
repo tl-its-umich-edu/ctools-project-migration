@@ -15,6 +15,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.UUID;
+import java.sql.Timestamp;
 import java.text.SimpleDateFormat;
 import java.io.PrintWriter;
 import java.io.IOException;
@@ -277,7 +278,7 @@ public class BoxUtils implements EnvironmentAware {
 					JSONObject obj = new JSONObject(theString);
 					repository.setBoxAuthUserAccessToken((String) obj.get("access_token"), u.getUserId());
 					repository.setBoxAuthUserRefreshToken((String) obj.get("refresh_token"), u.getUserId());
-
+					repository.setBoxAuthUserRefreshTokenCreatedOn(new Timestamp(System.currentTimeMillis()), u.getUserId());
 					// close inputstream and entity
 					IOUtils.closeQuietly(body);
 					EntityUtils.consume(entity);
@@ -527,53 +528,69 @@ public class BoxUtils implements EnvironmentAware {
 	 * @param boxClientId
 	 * @param boxClientSecret
 	 */
-	public static void addCollaboration(String boxAdminId, String userEmail,
+	public static String addCollaboration(String boxAdminId, String userEmail,
 			String role, String folderId, String boxClientId,
 			String boxClientSecret, BoxAuthUserRepository repository) {
+		
+		// add status return
+		String rv = null;
+		
 		BoxAPIConnection api = getBoxAPIConnection(boxAdminId, repository);
 		
 		BoxFolder folder = null;
 		
-		if (api != null) {
-			try {
-				folder = new BoxFolder(api, folderId);
-
-				// map CTools roles to Box Collaborator roles
-				// default to be Box View role
-				BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
-				if (Utils.ROLE_OWNER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.CO_OWNER;
-				}
-				else if (Utils.ROLE_ORGANIZER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.EDITOR;
-				}
-				else if (Utils.ROLE_MEMBER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
-				}
-				else if (Utils.ROLE_OBSERVER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER;
-				}
-				else if (Utils.ROLE_MAINTAINER.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.CO_OWNER;
-				}
-				else if (Utils.ROLE_INSTRUCTOR.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.EDITOR;
-				}
-				else if (Utils.ROLE_STUDENT.equals(role))
-				{
-					boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
-				}
-				folder.collaborate(userEmail, boxRole);
-			} catch (BoxAPIException e) {
-				log.warn("addCollaboration messsage=" + e.getMessage() + " response=" + e.getResponse() );
-			}
+		if (api == null) 
+		{
+			rv = " Problem adding user=" + userEmail
+					+ " with role=" + role
+					+ " to Box folder id=" + folderId + ": Problem getting Box API Connection. ";
+			log.error(rv);
+			return rv;
 		}
+		
+		try {
+			folder = new BoxFolder(api, folderId);
+
+			// map CTools roles to Box Collaborator roles
+			// default to be Box View role
+			BoxCollaboration.Role boxRole = BoxCollaboration.Role.VIEWER;
+			if (Utils.ROLE_OWNER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.CO_OWNER;
+			}
+			else if (Utils.ROLE_ORGANIZER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.EDITOR;
+			}
+			else if (Utils.ROLE_MEMBER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+			}
+			else if (Utils.ROLE_OBSERVER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER;
+			}
+			else if (Utils.ROLE_MAINTAINER.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.CO_OWNER;
+			}
+			else if (Utils.ROLE_INSTRUCTOR.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.EDITOR;
+			}
+			else if (Utils.ROLE_STUDENT.equals(role))
+			{
+				boxRole = BoxCollaboration.Role.VIEWER_UPLOADER;
+			}
+			folder.collaborate(userEmail, boxRole);
+		} catch (BoxAPIException e) {
+			log.warn("addCollaboration messsage=" + e.getMessage() + " response=" + e.getMessage());
+			rv = " Problem adding user=" + userEmail
+					+ " with role=" + role
+					+ " to Box folder id=" + folderId + ": " + e.getMessage();
+		}
+		
+		return rv;
 
 	}
 
@@ -596,7 +613,31 @@ public class BoxUtils implements EnvironmentAware {
 			// make connection
 			BoxAPIConnection api = new BoxAPIConnection(boxClientId,
 					boxClientSecret, boxAccessToken, boxRefreshToken);
-			
+			try
+			{
+				// a test call to check whether the API is valid
+				// the result of api.needsRefresh() is not useful
+				BoxUser.getCurrentUser(api);
+			}
+			catch (BoxAPIException ee)
+			{
+				if (ee.getResponseCode() == org.apache.http.HttpStatus.SC_UNAUTHORIZED)
+				{
+					// need to update access token
+					try
+					{
+						api.refresh();
+						log.info("Update user " + userId + " access token. ");
+						repository.setBoxAuthUserAccessToken(api.getAccessToken(), userId);
+					}
+					catch (IllegalStateException e)
+					{
+						log.error("There is problem freshing access token for user: " + userId);
+						return null;
+					}
+				}
+			}
+					
 			return api;
 
 		} catch (BoxAPIException e) {
@@ -608,8 +649,7 @@ public class BoxUtils implements EnvironmentAware {
 				// so that the user will need to go through the Box
 				// authentication process again to generate refresh token and
 				// access token
-				repository.deleteBoxAuthUserAccessToken(userId);
-				repository.deleteBoxAuthUserRefreshToken(userId);
+				repository.deleteBoxAuthUser(userId);
 			}
 			return null;
 		}

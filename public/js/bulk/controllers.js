@@ -2,10 +2,23 @@
 /* global projectMigrationApp, validateBulkRequest, $, moment, document*/
 
 projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope', '$scope', '$log', '$q', '$window', '$timeout', 'BulkUpload', 'Projects',
-
   function($rootScope, $scope, $log, $q, $window, $timeout, BulkUpload, Projects) {
     $scope.boxAuthorized = false;
+    // set default to resources and hide the radio group
+    $scope.uploadSource = 'resources';
 
+    var pingCToolsUrl =  $rootScope.urls.pingCtools;
+    Projects.pingDependency(pingCToolsUrl).then(function(result) {
+      if(result.data.status ==='DOWN'){
+        $scope.ctoolsDown = true;
+      }
+    });
+    var pingBoxUrl = $rootScope.urls.pingBox;
+    Projects.pingDependency(pingBoxUrl).then(function(result) {
+      if(result.data.status ==='DOWN'){
+        $scope.boxDown = true;
+      }
+    });
 
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.isAdminCheckUrl;
@@ -34,7 +47,6 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
         }
       });
     });
-
       // handler for a request for user Box account authentication/authorization
       $scope.boxAuthorize = function() {
         $log.info('---- in boxAuthorize ');
@@ -55,6 +67,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
     $(document).on('hidden.bs.modal','#boxAuthModal',function() {
       $('body').removeClass('modal-open');
       $('.modal-backdrop').remove();
+      var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
       Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
         if (result.data === 'true') {
           $scope.boxAuthorized = true;
@@ -83,11 +96,14 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       });
     });
 
-
+    $scope.resetBulkUpload = function(){
+      $scope.bulkUploadFile = undefined;
+      $scope.upload=undefined;
+    };
 
     $scope.bulkUpload = function() {
       $('.has-error').removeClass('has-error');
-      if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource){
+      if(!$scope.bulkUploadFile || !$scope.upload || !$scope.uploadSource || !$scope.upload.name || $scope.upload.name===''){
         if(!$scope.upload || $scope.upload.name ===''){
           $('.bulkUploadName').addClass('has-error');
         }
@@ -99,25 +115,34 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
         }
       }
       else {
-          var file = $scope.bulkUploadFile;
-          var name = $scope.upload.name;
-          var source = $scope.uploadSource;
-          $scope.bulkUploadInProcess = true;
-          var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
-          $log.info('POST: ' + bulkUploadUrl + ' called: ' + name + ' Source: ' + source);
-          $log.info(file, name, bulkUploadUrl, source);
-          BulkUpload.bulkUpload(file, name, bulkUploadUrl, source).then(function(response) {
-            $scope.bulkUploadInProcess = false;
-            // Reset form
-            $scope.upload.name ='';
-            $scope.bulkUploadFile ='';
-            $('#upload')[0].reset();
-            $timeout(function() {
-              $scope.uploadStarted = false;
-              $('a[href="#ongoing"]').trigger('click');
-              $scope.getOngoingList();
-            }, 3000);
-          });
+        var checkBoxAuthorizedUrl = $rootScope.urls.checkBoxAuthorizedUrl;
+        Projects.checkBoxAuthorized(checkBoxAuthorizedUrl).then(function(result) {
+          if (result.data === 'true') {
+            $scope.boxAuthorized = true;
+            var file = $scope.bulkUploadFile;
+            var name = $scope.upload.name;
+            var source = $scope.uploadSource;
+            $scope.bulkUploadInProcess = true;
+            var bulkUploadUrl = $rootScope.urls.bulkUploadPostUrl;
+            $log.info('POST: ' + bulkUploadUrl + ' called: ' + name + ' Source: ' + source);
+            $log.info(file, name, bulkUploadUrl, source);
+            BulkUpload.bulkUpload(file, name, bulkUploadUrl, source).then(function(response) {
+              $scope.bulkUploadInProcess = false;
+              // Reset form
+              $scope.upload.name ='';
+              $scope.bulkUploadFile ='';
+              $('#upload')[0].reset();
+              $timeout(function() {
+                $scope.uploadStarted = false;
+                $('a[href="#ongoing"]').trigger('click');
+                $scope.getOngoingList();
+              }, 3000);
+            });
+          } else {
+            $scope.boxAuthorized = false;
+            alert('Sorry. Your Box session has timed out - please authorize again');
+          }
+        });
       }
     };
 
@@ -132,7 +157,7 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       var listBulkUploadConcludedUrl = $rootScope.urls.listBulkUploadConcludedUrl;
       BulkUpload.getList(listBulkUploadConcludedUrl).then(function(resultConcluded) {
         $log.info('Getting concluded batches with  ' + listBulkUploadConcludedUrl);
-        $scope.concluded =resultConcluded.data.entity;
+        $scope.concluded =transformConcluded(resultConcluded.data.entity);
       });
     };
     $scope.getUploadList = function(batchId, $index) {
@@ -149,14 +174,16 @@ projectMigrationApp.controller('projectMigrationBatchController', ['$rootScope',
       return null;
     };
 
-    $scope.getBatchReport = function(batchId, $index) {
-      $scope.concluded[$index].batchReportLoading = true;
+    $scope.getBatchReport = function(batchId) {
+      var targetBatchPos = $scope.concluded.indexOf(_.findWhere($scope.concluded, {id: batchId}));
+
+      $scope.concluded[targetBatchPos].batchReportLoading = true;
       var bulkUploadListUrl = $rootScope.urls.bulkUploadPostUrl + '/' + batchId;
       BulkUpload.getList(bulkUploadListUrl).then(function(resultList) {
         $log.info('Getting of sites in a batch process batches with  ' + bulkUploadListUrl);
         if(resultList.status ===200){
-          $scope.concluded[$index].list = resultList.data.entity.sites;
-          $scope.concluded[$index].batchReportLoading = false;
+          $scope.concluded[targetBatchPos].list = resultList.data.entity.sites;
+          $scope.concluded[targetBatchPos].batchReportLoading = false;
         } else {
           alert(resultList.data.statusType + '\n\n' + resultList.data.entity);
         }

@@ -1,4 +1,4 @@
-# Configuration file for generating SQL to REMOVE permissions from
+# Configuration file for generating SQL to REMOVE/RESTORE permissions from
 # specific sites / roles.  The set of permissions to be removed
 # is the same for all sites and roles.
 # SQL has only been tested on Oracle.
@@ -15,6 +15,17 @@
 #########
 # This is the table prefix for the SQL queries
 db_user: CTDEV_USER
+
+########## Values beyond here are unlikely to change. #########
+# Put in a line break for comma separated lists in IN clause every this many entries.
+comma_break_rate: 5
+
+# Maximum number of realms to add to each query.
+realms_max: 20
+
+# Name of role / function archive table.
+#ARCHIVE_ROLE_FUNCTION_TABLE: sakai_realm_rl_fn_20170208
+
 # These roles will have the permissions removed in all listed sites.
 roles:
     - Member

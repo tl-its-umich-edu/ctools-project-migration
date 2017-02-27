@@ -68,10 +68,11 @@
     </ul>
   </div>
   <div class="container-fluid">
-    <div class="row">
+    <div class="row" ng-show="migratedProjects.length">
       <h4 ng-show="migratedProjects.length && recentlyMigratedProjectsShow">Complete list</h4>
       <div class="col-lg-8 col-md-8 col-sm-10 col-xs-8 form-inline" style="padding-left:0">
-        <input type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
+        <label for="searchCompletedMigrations" class="sr-only">Search completed migrations</label>
+        <input id="searchCompletedMigrations" type="text" name="" value="" class="form-control col-lg-8 col-md-8 col-sm-8 col-xs-8" placeholder="Search by site name..." ng-model="completedMigrationsFilter">
         <span ng-show="completedMigrationsFilter">&nbsp;<button ng-click="completedMigrationsFilter=''" type="button" name="button" class="btn btn-default"><span aria-hidden="true">&times;</span><span class="sr-only">Reset migration search filter</span></button></span>
       </div>
       <div class="col-lg-4 col-md-4 col-sm-4 col-xs-4" style="padding-right:0">
@@ -79,6 +80,13 @@
         <label for="showLastFive">Show last 5</label>
       </div>
     </div>
+    <div class="row sr-onlyxxx" role="alert" ng-if="completedMigrationsFilter">
+      <br>
+      <div class=" alert alert-info col-lg-12 col-md-12 col-sm-12 col-xs-12" style="padding-right:0">
+        Found {{(migratedProjects|filter:{site_name:completedMigrationsFilter}).length}} items
+      </div>
+    </div>
+
   </div>
   <br>
   <ul class="list-group" style="margin-bottom:0">
@@ -125,12 +133,12 @@
           && !migratedProject.status.data && !migratedProject.status.counts.length">
             <br>
             <a href="" data-toggle="modal" data-target="#reportModal" ng-click="showDetails(migratedProject.migration_id, migratedProject.site_name, migratedProject.destination_type )">
-              See errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
+              Some errors  <span class="sr-only"> on migration of {{migratedProject.tool_name}} for {{migratedProject.site_name}}</span></a>
           </small>
           &nbsp;
           <small ng-if="migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.counts.length">Old export format</small>
-          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0)" class="glyphicon glyphicon-ok"></span>
-          <span ng-show="migratedProject.status.status==='PARTIAL'" class="glyphicon glyphicon-exclamation-sign"></span>
+          <span ng-show="migratedProject.status.status==='OK' && !(migratedProject.status.data && migratedProject.status.data.length ===0 || migratedProject.status.data.length > 0 || migratedProject.status.details.add_members.counts.errors > 0)" class="glyphicon glyphicon-ok"></span>
+          <span ng-show="migratedProject.status.status==='PARTIAL' || migratedProject.status.details.add_members.counts.errors > 0" class="glyphicon glyphicon-exclamation-sign"></span>
           <span ng-show="migratedProject.status.status==='ERROR'" class="glyphicon glyphicon-warning-sign"></span>
         </div>
 		  	</div>

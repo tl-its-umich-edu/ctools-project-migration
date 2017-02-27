@@ -148,7 +148,7 @@ var prepareMembership = function(membership) {
   var gg_format = [];
   var mc_format = {'owners':[], 'members':[]};
   var readable_format =[];
-  _.each(membership, function(value, prop){
+  _.each(membership.entity, function(value, prop){
     gg_format.push(prop);
     readable_format.push({'userId':prop, 'memberRole':value});
     // collating by role for MComm format
@@ -158,8 +158,32 @@ var prepareMembership = function(membership) {
       mc_format.members.push(prop);
     }
   });
-  membership = {'gg_format':gg_format, 'mc_format':mc_format, 'readable_format':readable_format};
+
+  mc_format.owners =  _.sortBy(mc_format.owners, function(mem) { return mem; });
+  mc_format.members = _.sortBy(mc_format.members, function(mem) { return mem; });
+
+  membership = {
+    'data': {
+      'groups': {
+        'gg_format': _.sortBy(gg_format, function(mem) {return mem;}),
+        'mc_format': mc_format,
+        'readable_format': _.sortBy(readable_format, function(mem) { return mem.userId; })
+      }
+    },
+    'status': membership.status,
+    'statusType': membership.statusType
+  };
   return membership;
+
+};
+
+
+var transformConcluded = function(concludedList){
+  var transformConcludedList = [];
+  _.each(concludedList, function(concluded){
+    transformConcludedList.push({'name': concluded[0], 'id':concluded[1]});
+  });
+  return transformConcludedList;
 };
 
 var errorDisplay = function(url, status, message){

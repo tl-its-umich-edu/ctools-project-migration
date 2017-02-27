@@ -1,7 +1,6 @@
 package edu.umich.its.cpm;
 
 import org.apache.commons.io.FilenameUtils;
-import org.springframework.util.StringUtils;
 import org.apache.http.HttpResponse;
 import org.apache.http.client.CookieStore;
 import org.apache.http.client.HttpClient;
@@ -23,17 +22,17 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.core.env.Environment;
+import org.springframework.http.HttpStatus;
+import org.springframework.http.ResponseEntity;
+import org.springframework.util.StringUtils;
+import org.springframework.web.client.RestClientException;
+import org.springframework.web.client.RestTemplate;
 
 import javax.naming.Context;
 import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
-import javax.naming.directory.Attribute;
-import javax.naming.directory.DirContext;
-import javax.naming.directory.InitialDirContext;
-import javax.naming.directory.SearchControls;
-import javax.naming.directory.SearchResult;
+import javax.naming.directory.*;
 import javax.servlet.http.HttpServletRequest;
-
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
@@ -151,10 +150,14 @@ class Utils {
 	public static final String REPORT_ATTR_ID = "id";
 	public static final String REPORT_ATTR_ROLE = "role";
 	public static final String HAS_CONTENT_ITEM = "hasContentItem";
+	public static final String FILE_EXTENSION_BIN = "bin";
+	public static final String JSON_ATTR_MAIL_SUBJECT = "subject";
+    public static final String STATUS_DEPENDENCIES_BOX = "status/dependencies/box";
+    public static final String STATUS_DEPENDENCIES_CTOOLS = "status/dependencies/ctools";
+    public static final String REPORT_STATUS_DOWN = "DOWN";
 
-	private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
+    private static TikaConfig tikaConfig = TikaConfig.getDefaultConfig();
 	//public static String GGB_GOOGLE_DOMAIN = "ggb.google.domain";
-
 
 	// constant for session id
 	public static final String SESSION_ID = "sessionId";
@@ -165,12 +168,15 @@ class Utils {
 	// error message of no CTools site with id
 	public static final String NO_CTOOLS_SITE="Cannnot find a CTools site with the site id";
 	
+	// error message of no resource
+	public static final String NO_CTOOLS_SITE_RESOURCE="There is no resource within the site id";
+	
 	// MailArchive message JSON prefixes
 	public static final String JSON_ATTR_MAILARCHIVE_COLLECTION = "mailarchive_collection";
 	public static final String JSON_ATTR_MAIL_HEADERS = "headers";
 	public static final String JSON_ATTR_MAIL_DATE = "Date: ";
 	public static final String JSON_ATTR_MAIL_FROM = "From: ";
-	public static final String JSON_ATTR_MAIL_SUBJECT = "Subject: ";
+	public static final String JSON_ATTR_MAIL_SUBJECT_FROM_HEADER = "Subject: ";
 	public static final String JSON_ATTR_MAIL_BODY = "body";
 	public static final String JSON_ATTR_MAIL_ATTACHMENTS = "attachments";
 	public static final String JSON_ATTR_MAIL_TYPE = "type";
@@ -196,10 +202,18 @@ class Utils {
 	public static final String PARAM_CONTAINER_STACK = "containerStack";
 	public static final String PARAM_BOX_FOLDER_ID_STACK = "boxFolderIdStack";
 	
+	public static final String PARAM_ERROR_MESSAGE = "errorMessage";
+	
+	public static final String TOOL_NAME_RESOURCES = "Resources";
+	
+	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
+	
+	public static final String BOX_REFRESH_TOKEN_VALID_DAYS = "box_refresh_token_valid_days";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
-	public static HashMap<String, Object> login_becomeuser(Environment env, HttpServletRequest request, String remoteUser) {
+	public static HashMap<String, Object> login_becomeuser(Environment env, String remoteUser) {
 		// return the session related attributes after successful login call
 		HashMap<String, Object> sessionAttributes = new HashMap<String, Object>();
 
@@ -388,6 +402,7 @@ class Utils {
 	protected static final String PROPERTY_AUTH_GROUP = "mcomm.group";
 	protected static final String PROPERTY_ADMIN_GROUP = "mcomm.admin.group";
 	private static final String TEST_USER = "testUser";
+	private static final String SESSION_USER = "sesUser";
 
 
 	public static String getCurrentUserId(HttpServletRequest request,
@@ -430,40 +445,59 @@ class Utils {
 				propAdminMCommGroup, userId);
 	}
 
-	/*
-	 * get CoSign user, for local development user will be passed from url parameter as
-	 * http://localhost:8080/?testUser=<uniqname> together with allow.testUser.urlOverride from the
-	 * application.properties we will determine valid user. In short this block is mimicking
-	 * cosign user if CoSign is not enabled
-	 */
+
 	public static String getUserLoginId(HttpServletRequest request, Environment env) {
-		String user = null;
 		String remoteUser = request.getRemoteUser();
 		String testUser = request.getParameter(TEST_USER);
-		boolean isTestUrlEnabled = Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE));
-		String testUserInSession = (String) request.getSession().getAttribute(TEST_USER);
+		boolean allowTestUserOverride = ((env.getProperty(ALLOW_USER_URLOVERRIDE) == null ?
+				false : Boolean.valueOf(env.getProperty(ALLOW_USER_URLOVERRIDE))));
+		log.debug("************** SESSION ID: " + request.getSession().getId());
 
-		if (isTestUrlEnabled && testUser != null) {
-			user = testUser;
-			request.getSession().setAttribute(TEST_USER, testUser);
-			log.debug("TEST USER is " + user);
-			return user;
-		}
-		if (isTestUrlEnabled && testUserInSession != null) {
-			user = testUserInSession;
-			log.debug("TEST USER FROM SESSION " + user);
-			return user;
+
+		if (!allowTestUserOverride) {
+			return getOrSetUserInSession(request, remoteUser);
 		}
 
-		if (!isTestUrlEnabled && remoteUser != null) {
-			user = remoteUser;
-			log.debug("REMOTE USER " + user);
-			return user;
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
+		if (remoteUser != null) {
+			if (!isCurrentUserCPMAdmin(remoteUser, env)) {
+				return getOrSetUserInSession(request, remoteUser);
+			}
+
+			if (testUser != null) {
+				return becomeUser(request, testUser);
+			}
+			return getOrSetUserInSession(request, remoteUser);
 		}
-		if (user == null) {
-			log.error("No proper user could be retrieved from request");
+
+		if (testUser != null) {
+			return becomeUser(request, testUser);
 		}
-		return user;
+		log.debug("****** session User:" + userInSession);
+		return userInSession;
+	}
+
+	private static String getOrSetUserInSession(HttpServletRequest request, String remoteUser) {
+		String userInSession = (String) request.getSession().getAttribute(SESSION_USER);
+		if (userInSession != null) {
+			log.debug("****** session User: " + userInSession);
+			return userInSession;
+		}
+		//remote user is always accessed from session
+		setUserInSession(request, remoteUser);
+		log.debug("****** remote User to session:" + remoteUser);
+		return remoteUser;
+	}
+
+	private static String becomeUser(HttpServletRequest request, String testUser){
+		setUserInSession(request, testUser);
+		return testUser;
+
+	}
+
+	private static void setUserInSession(HttpServletRequest request, String user) {
+		request.getSession().setAttribute(SESSION_USER, user);
+		log.debug("****** Became User  " + user);
 	}
 
 	public static JSONObject migrationStatusObject(String destination_type) {
@@ -592,7 +626,9 @@ class Utils {
 	}
 
 	/**
-	 * replace characters match the regular expression to "_"
+	 * Replace characters match( /,\,<,>,*, | \tab) the regular expression to "_" as some of these are not allowed
+	 * as part of Folder/files names by Operating system and Box. The double back slashes are user for escaping and the
+	 * beginning backslash actually escaping the \ and not looking for \\ in a string
 	 *
 	 * @param name
 	 * @return
@@ -609,11 +645,10 @@ class Utils {
 			log.error(" sanitizeName to be null for name=" + oldName);
 			return null;
 		}
-
-		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<]");
+		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<\\*\\|\\?]");
 		Matcher m = p.matcher(name);
 		name = m.replaceAll("_");
+		name=name.replace("\t", " ");
 
 		return name;
 	}
@@ -622,6 +657,7 @@ class Utils {
 		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
 		// backslash in the string.
 		zipFileName=zipFileName.replace('\\','_');
+		zipFileName=zipFileName.replace("\t", " ");
 		return zipFileName.replaceAll("[?>|*<:]", "_");
 	}
 
@@ -647,6 +683,12 @@ class Utils {
 				fileName = fileName + Utils.HTML_FILE_EXTENSION;
 				return fileName;
 		}
+		// The .sav have MIME type seems to have application/octetstream which will results .bin extension
+		// so adding a check and return if that is the case. https://itsjira.umms.med.umich.edu/browse/TLCPM-641
+
+		if(fileExtension.equals("sav")){
+			return fileName;
+		}
 		
 		if (type != null) {
 			String mimeExtension = null;
@@ -665,14 +707,16 @@ class Utils {
 			}
 			Tika tika = new Tika();
 
-				if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
+			if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
 					// if file name extension is missing add the extension to file name
+				if (!fileExtension.equals(FILE_EXTENSION_BIN)) {
 					fileName = fileName.concat(mimeExtension);
-					if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
-						fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
-						fileName = fileName.concat(mimeExtension);
-						return fileName;
-					}
+				}
+				if (StringUtils.countOccurrencesOf(fileName, ".") > 1) {
+					fileName = FilenameUtils.getBaseName(fileName).replace(".", "_");
+					fileName = fileName.concat(mimeExtension);
+					return fileName;
+				}
 				}
 			}
 		return fileName;
@@ -842,6 +886,25 @@ class Utils {
         	rv = rv + "_sessionId=" + sessionId;
         }
         return rv;
+    }
+
+	public static String dependencyStatus(String url){
+        log.debug("*******************" + url);
+        String status = REPORT_STATUS_DOWN;
+        RestTemplate restTemplate = new RestTemplate();
+        ResponseEntity<String> response = null;
+        try {
+            response = restTemplate.getForEntity(url, String.class);
+        } catch (RestClientException e) {
+            log.warn("GET call {} failed due to {} ", url, e.getMessage());
+        }
+
+        if (response != null && response.getStatusCode().equals(HttpStatus.OK)) {
+            status = REPORT_STATUS_OK;
+        }
+        HashMap<String, Object> statusMap = new HashMap<String, Object>();
+        statusMap.put("status", status);
+        return (new JSONObject(statusMap)).toString();
     }
 
 

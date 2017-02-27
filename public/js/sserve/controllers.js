@@ -1,5 +1,5 @@
 'use strict';
-/* global projectMigrationApp, document, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus */
+/* global projectMigrationApp, document, angular, _, moment, $, transformMigrations, prepareReport, transformMigrated, addSiteStatus, window */
 
 /* MIGRATIONS CONTROLLER */
 projectMigrationApp.controller('projectMigrationController', ['Projects','ProjectsLite','Migration','Migrated','PollingService','focus','$rootScope','$scope','$log','$q','$timeout','$window','$http',function(Projects, ProjectsLite, Migration, Migrated, PollingService, focus, $rootScope, $scope, $log, $q, $timeout, $window, $http) {
@@ -16,6 +16,14 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     } else {
       $scope.migratingActive = true;
     }
+
+    var pingCToolsUrl = $rootScope.urls.pingCtools;
+    Projects.pingDependency(pingCToolsUrl).then(function(result) {
+      if(result.data.status ==='DOWN'){
+        $scope.ctoolsDown = true;
+      }
+    });
+
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.checkIsAdminUser;
     Projects.checkIsAdminUser(checkIsAdminUserUrl + window.location.search).then(function(result) {
@@ -65,24 +73,26 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       //  cannot refactor this one as it takes parameters
       var projectUrl = $rootScope.urls.projectUrl + projectId;
       var targetProjPos = $scope.sourceProjects.indexOf(_.findWhere($scope.sourceProjects, {site_id: projectId}));
+      $scope.gettingTools = 'Getting migration options for site' + $scope.sourceProjects[targetProjPos].site_name;
       $scope.sourceProjects[targetProjPos].loadingTools = true;
       Projects.getProject(projectUrl, deleteStatus).then(function(result) {
+        $scope.gettingTools = 'Migration options for site ' + $scope.sourceProjects[targetProjPos].site_name + ' added';
         if(!$scope.migratingActive && result.data) {
           if(!$scope.migratingActive){
             result.data = $scope.toolStatus(result.data);
           }
         }
-
         // add the tools after theproject object
         $scope.sourceProjects.splice.apply($scope.sourceProjects, [targetProjPos + 1,0].concat(result.data));
         // get a handle on the first
         // tool
-        var firstToolId = 'toolSel' + result.data[0].tool_id;
+        var firstToolId = 'toolSel' + result.data[0].site_id + result.data[0].tool_id;
         // use the handle to pass
         // focus to the first tool
         $scope.$evalAsync(function() {
           focus(firstToolId);
         });
+
         // state management
         $scope.sourceProjects[targetProjPos].stateHasTools = true;
         $scope.sourceProjects[targetProjPos].loadingTools = false;
@@ -90,7 +100,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         $log.info(' - - - - GET /projects/' + projectId);
       });
     };
-
+    $scope.displayMask = function(){
+      $('#maskModal').modal('show');
+    };
     // handler for showing the details of a migrated thing
     $scope.showDetails = function(migration_id, site_title) {
       var targetMigrationPos = $scope.migratedProjects.indexOf(_.findWhere($scope.migratedProjects, {migration_id: migration_id}));
@@ -112,6 +124,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + project.site_name + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
       $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
        ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
+         project.makeDisabled = false;
        });
     };
 
@@ -164,6 +177,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           Migration.getMigrationZip(migrationUrl).then(function(result) {
             // add a mask with a modal to not allow more that on zip request at the time
             $('#maskModal').modal('show');
+            $scope.sourceProjects[targetProjChildPos].makeDisabled=false;
             $scope.migratingProjects.push($scope.sourceProjects[targetProjChildPos]);
             $log.info(' - - - - POST ' + migrationUrl);
             $log.warn(' - - - - after POST we start polling for /migrations every ' + $rootScope.pollInterval / 1000 + ' seconds');
@@ -358,7 +372,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         targetDeleteData.push('siteId=' + target.site_id);
       });
       _.each(targetDoNotMove, function(target) {
-        targetDoNotMoveData.push('siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolType=' + target.tool_type);
+        targetDoNotMoveData.push(
+          {
+            'url':'siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolType=' + target.tool_type,
+            'row':target.tool_site_id
+        });
       });
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
@@ -385,16 +403,17 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       // if do not migrated tool request has items as many posts as selected tools
       if(targetDoNotMoveData.length){
         _.each(targetDoNotMoveData, function(toolNotToMigr) {
-          var donotMigrateUrl = '/doNotMigrateTool?' + toolNotToMigr;
+          var donotMigrateUrl = '/doNotMigrateTool?' + toolNotToMigr.url;
           ProjectsLite.doNotMigrateTool(donotMigrateUrl).then(
             function(result) {
               if(result.data ==='site tool delete exempt choice saved.') {
                 // find this tool and add doNotMigrateStatus object to let user know
             	// "TOOLID&toolType=TYPE"
-            	var toolId = toolNotToMigr.split('=')[2];
+            	var toolId = donotMigrateUrl.split('=')[2];
             	// another splite will return the actual tool id
             	toolId = toolId.split('&')[0];
             	var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolId});
+              thisTool.selectedDoNotMove = false;
             	thisTool.doNotMigrateStatus = {
                   'userId':'You have',
                   'consentTime': moment().valueOf()
@@ -404,6 +423,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           );
         });
       }
+      $scope.selectionIsMade = false;
     };
     // launched after sourceProjects has been added to the scope it decorates sourceProjects with the delete consent status
     $scope.addSiteStatus = function(){
@@ -425,6 +445,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.toolStatus = function(data){
       _.each(data, function(tool){
         var migratedMatch =[];
+        var boxMigratedMatch=[];
         var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
         ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
           function(result) {
@@ -435,12 +456,23 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         );
         _.each($scope.migratedProjects, function(migrated){
           if(migrated.tool_id === tool.tool_id){
-            migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
+            if(migrated.destination_type ==='box'){
+                tool.boxMigration = true;
+                boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
+            } else {
+              migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
+            }
+
+
           }
         });
+        if(boxMigratedMatch.length){
+          tool.boxMigrationInfo = _.sortBy(boxMigratedMatch, 'migratedWhen').reverse()[0];
+        }
         if(migratedMatch.length){
           tool.lastMigratedStatus = _.sortBy(migratedMatch, 'migratedWhen').reverse()[0];
         }
+
       });
       return data;
     };
@@ -464,19 +496,23 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     };
     $scope.exportSiteMembership = function(site_id, site_name) {
-      var projectUrl = 'siteMembership/' + site_id;
-      Projects.getMembership(projectUrl).then(function(result) {
+      var membershipUrl = 'siteMembership/' + site_id;
+      Projects.getMembership(membershipUrl).then(function(result) {
         $scope.membership = {
 	         'metadata': {
-		           'site_name': site_name
+		           'site_name': site_name,
+               'status':result.status,
+               'statusType':result.statusType
 	          },
-	           "data": result
+	           "data": result.data
            };
+          $log.info(JSON.stringify($scope.membership));
         $log.info(moment().format('h:mm:ss') + ' - membership for site ' + site_id + ' retrieved');
       });
     };
   }
 ]);
+
 
 
 projectMigrationApp.controller('projectMigrationControllerStatus', ['Status',

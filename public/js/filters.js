@@ -46,6 +46,13 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
       }
 
     };
+}).filter('filterMemberError', function() {
+    return function(input) {
+      if(input){
+        var extract = input.split('role=')[1].split('to Box folder id')[0];
+        return extract;
+      }
+    };
 }).filter('readableExportType', function() {
   return function(type) {
     return ({

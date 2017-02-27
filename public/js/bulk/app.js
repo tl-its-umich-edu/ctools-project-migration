@@ -19,16 +19,20 @@ projectMigrationApp.run(function($rootScope) {
       // only needed to mock gettin a list and a site
       'bulkUploadList': '/bulkUploadList.json',
       'bulkUploadSite': '/bulkUploadSite.json',
-
+      'pingCtools':'data/ping-ctools.json',
+      'pingBox':'data/ping-box.json'
     };
   } else {
     $rootScope.urls = {
       'isAdminCheckUrl': '/isAdmin',
-      'checkBoxAuthorizedUrl': '/box/checkAuthorized',
+      'checkBoxAuthorizedUrl': '/box/currentRefreshToken',
       'bulkUploadPostUrl': '/bulkUpload',
       'listBulkUploadAllUrl': '/bulkUpload/all',
       'listBulkUploadOngoingUrl': '/bulkUpload/ongoing',
       'listBulkUploadConcludedUrl': '/bulkUpload/concluded',
+      'pingCtools':'status/dependencies/ctools',
+      'pingBox':'status/dependencies/box'
+
     };
   }
 });
