@@ -44,6 +44,9 @@ correct section for the ctools instance to be examined, and fill in
 the appropriate user and password information for a CTools admin
 user in that instance.
 
+If you copy the file contents from Google Drive via an application use
+Google sheets.  Do *NOT* use MS excel.
+
 In case of a need to restore membership in a site a copy of the
 *sakai\_realm\_rl\_gr* should be made in the database for each
 instance.  This need only be done once.

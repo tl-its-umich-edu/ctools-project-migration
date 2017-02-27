@@ -24,7 +24,7 @@ comma_break_rate: 5
 realms_max: 100
 
 # Name of role / function archive table.
-#ARCHIVE_ROLE_FUNCTION_TABLE: sakai_realm_rl_fn_20170208
+ARCHIVE_ROLE_FUNCTION_TABLE: sakai_realm_rl_fn_20170227
 
 # These roles will have the permissions removed in all listed sites.
 roles:
