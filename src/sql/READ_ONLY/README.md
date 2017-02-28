@@ -55,14 +55,17 @@ instance.  This need only be done once.
 
     ./runVerifyAccessSiteMembership.sh <site id list file name>
 
-There are two output files: &lt;site id file name>.&lt;time stamp>.membership.csv is a log of
-the results of testing site membership.  The output contains 3
+There are three output files:
+&lt;site id file name>.&lt;time stamp>.membership.txt is a log of
+the results of testing site membership.  This file contains 3
 columns: the site id, the https status code, and a message.  For
 successful requests the message will be "ok".  For unsuccessful
 requests the status code will be returned and, if possible, there will
 also be sql that can be run later to fix the membership issue.  As a
 convenience the sql will be collected into the file &lt;site id file
-name>.&lt;timestamp>.membership.deleteunknow.sql.
+name>.&lt;timestamp>.membership.deleteunknow.sql and a list
+of the sites that had bad users is put in the file &lt;site id file
+name>.&lt;timestamp>.membership.updatesites.txt.
 
 ## Running the output SQL
 
