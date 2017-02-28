@@ -38,6 +38,7 @@ import java.net.MalformedURLException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -209,6 +210,7 @@ class Utils {
 	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
 	
 	public static final String BOX_REFRESH_TOKEN_VALID_DAYS = "box_refresh_token_valid_days";
+
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -768,26 +770,25 @@ class Utils {
 		}
 	}
 
+	private static final Map<MimeTypesChunk, String> mimeMap;
+	static
+	{
+		mimeMap = new HashMap<MimeTypesChunk, String>();
+		mimeMap.put(MimeTypesChunk.POWERPOINT, ".ppt");
+		mimeMap.put(MimeTypesChunk.EXCEL, ".xls");
+		mimeMap.put(MimeTypesChunk.WORD, ".doc");
+		mimeMap.put(MimeTypesChunk.JPEG, ".jpeg");
+		mimeMap.put(MimeTypesChunk.TEXTPLAIN, ".txt");
+	}
+
 	public static String getGuessedFileExtension(MimeTypesChunk type) {
 		String fileExtension = null;
-		switch (type) {
-			case POWERPOINT:
-				fileExtension = ".ppt";
+
+		for (MimeTypesChunk mimeType : mimeMap.keySet()) {
+			if (mimeType.equals(type)) {
+				fileExtension = mimeMap.get(mimeType);
 				break;
-			case EXCEL:
-				fileExtension = ".xls";
-				break;
-			case WORD:
-				fileExtension = ".doc";
-				break;
-			case JPEG:
-				fileExtension = ".jpeg";
-				break;
-			case TEXTPLAIN:
-				fileExtension = ".txt";
-				break;
-			default:
-				log.warn("MIME type not included in the list is: " + type);
+			}
 		}
 		return fileExtension;
 	}
