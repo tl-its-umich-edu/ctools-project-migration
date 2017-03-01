@@ -63,7 +63,7 @@ public interface BoxAuthUserRepository extends CrudRepository<BoxAuthUser, Strin
 	 * @param numberOfDay
 	 * @return
 	 */
-	@Query("SELECT refreshToken FROM BoxAuthUser u WHERE u.userId = ?#{[0]} and u.refreshTokenCreatedOn is not null and u.refreshTokenCreatedOn > TRUNC(SYSDATE) - ?#{[1]})")
+	@Query("SELECT refreshToken FROM BoxAuthUser u WHERE u.userId = ?#{[0]} and u.refreshTokenCreatedOn is not null and u.refreshTokenCreatedOn > (SYSDATE - ?#{[1]})")
 	String currentBoxUserRefreshToken(String userId, int numberOfDays);
 	
 	/**
