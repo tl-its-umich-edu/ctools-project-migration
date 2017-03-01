@@ -72,7 +72,10 @@ our($CURRENT_ROLE_FUNCTION_TABLE) = "sakai_realm_rl_fn";
 sub setupTask {
   my $task = shift;
 
-  die(">>>>> Must specify value for ARCHIVE_ROLE_FUNCTION_TABLE in yml file") unless ($ARCHIVE_ROLE_FUNCTION_TABLE);
+  if (!$ARCHIVE_ROLE_FUNCTION_TABLE && ($task eq "READ_ONLY_RESTORE" || $task eq "READ_ONLY_RESTORE_LIST")) {
+    die(">>>>> For restore actions must specify value for ARCHIVE_ROLE_FUNCTION_TABLE in yml file.");
+  }
+
 
   die (">>>>> INVALID TASK: [$task]") unless ($task eq "READ_ONLY_UPDATE"
                                               || $task eq "READ_ONLY_LIST"
