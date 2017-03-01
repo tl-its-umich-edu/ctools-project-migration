@@ -64,7 +64,7 @@ class Utils {
 	public static final String ROLE_OBSERVER = "Observer";
 	public static final String ROLE_MAINTAINER = "maintain";
 	public static final String ROLE_INSTRUCTOR = "Instructor";
-	public static final String ROLE_STUDENT = "student";
+	public static final String ROLE_STUDENT = "Student";
 
 	public static final String COLLECTION_TYPE = "collection";
 
