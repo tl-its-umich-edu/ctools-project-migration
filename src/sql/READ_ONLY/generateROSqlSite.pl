@@ -304,8 +304,7 @@ sub printForSites {
 sub readFromStdin {
   
   # make a backup table.
-  ## make these by hand once.
-  #  writeRRFTableBackupSql($task);
+  writeRRFTableBackupSql($task) if ($task eq "READ_ONLY_UPDATE");
 
   printPermissionsCount("initial count");
 
