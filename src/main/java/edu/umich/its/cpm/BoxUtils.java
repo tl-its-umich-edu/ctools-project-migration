@@ -525,12 +525,10 @@ public class BoxUtils implements EnvironmentAware {
 	 * @param userEmail
 	 * @param role
 	 * @param folderId
-	 * @param boxClientId
-	 * @param boxClientSecret
 	 */
 	public static String addCollaboration(String boxAdminId, String userEmail,
-			String role, String folderId, String boxClientId,
-			String boxClientSecret, BoxAuthUserRepository repository) {
+			String role, String folderId, 
+			BoxAuthUserRepository repository) {
 		
 		// add status return
 		String rv = null;
