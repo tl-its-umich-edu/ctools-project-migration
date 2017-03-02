@@ -195,7 +195,7 @@ sub prefix_sql {
   my $sql = <<"PREFIX_SQL";
    ${sqlAction}
    FROM   ${DB_USER}.${READ_TABLE} SRRF 
-   WHERE  EXISTS (WITH -- look up all the internal keys from external names
+   WHERE  EXISTS (WITH 
 PREFIX_SQL
   $sql
 }
