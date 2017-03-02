@@ -34,6 +34,7 @@ function build_tar {
 
     # copy the common files and the packed files.
     cp README.md ${BUILD_DIR}
+    cp README.html ${BUILD_DIR}
     cp *packed ${BUILD_DIR}
     
     chmod +x *packed *.sh
