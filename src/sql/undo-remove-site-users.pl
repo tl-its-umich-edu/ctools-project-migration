@@ -36,32 +36,35 @@ main:
 
    ## set up count value
    my $count = 0;
-   SITE: foreach $_ (@sites)
+   ## variable to hold the site id from the input list
+   my $siteId;
+   SITE: foreach $siteId (@sites)
    {
        $count = $count + 1;
        
-       $_ =~ s/\r?\n$//;
+       ## remove the trailing return characters
+       $siteId =~ s/\r?\n$//;
        chomp;
-       next SITE if ( !$_ );
+       next SITE if ( !$siteId );
        my $sql;
        
-       print OUTFILE "-- Site $count: for site id = $_\n";
+       print OUTFILE "-- Site $count: for site id = $siteId\n";
        
        ## update the change record
        $sql = $CPM_ACTION_LOG_SQL;
-       $sql =~ s/SITE-ID/$_/;
+       $sql =~ s/SITE-ID/$siteId/;
        print OUTFILE $sql;
        print OUTFILE "\n";
 
        ## recover site user
        $sql = $USER_SQL;
-       $sql =~ s/SITE-ID/$_/;
+       $sql =~ s/SITE-ID/$siteId/;
        print OUTFILE $sql;
        print OUTFILE "\n";
        
        ## recover site user role
        $sql = $REALM_SQL;
-       $sql =~ s/SITE-ID/$_/;
+       $sql =~ s/SITE-ID/$siteId/;
        print OUTFILE $sql;
        print OUTFILE "\n";
    }
