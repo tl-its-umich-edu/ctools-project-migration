@@ -1,10 +1,7 @@
-<?xml version="1.0" encoding="UTF-8" ?>
-<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN"
-	"http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
-
-<html xmlns="http://www.w3.org/1999/xhtml">
-
-<head>
+<!--?xml version="1.0" encoding="UTF-8" ?-->
+<!DOCTYPE html PUBLIC "-//W3C//DTD XHTML 1.0 Strict//EN" "http://www.w3.org/TR/xhtml1/DTD/xhtml1-strict.dtd">
+<html xmlns="http://www.w3.org/1999/xhtml"><head>
+<meta http-equiv="content-type" content="text/html; charset=windows-1252">
 <title>README.html</title>
 
 </head>
@@ -71,16 +68,16 @@ instance.  This need only be done once.</p>
 </code></pre>
 
 <p>There are three output files:
-&lt;site id file name>.&lt;time stamp>.membership.txt is a log of
+&lt;site id file name&gt;.&lt;time stamp&gt;.membership.txt is a log of
 the results of testing site membership.  This file contains 3
 columns: the site id, the https status code, and a message.  For
 successful requests the message will be "ok".  For unsuccessful
 requests the status code will be returned and, if possible, there will
 also be sql that can be run later to fix the membership issue.  As a
 convenience the sql will be collected into the file &lt;site id file
-name>.&lt;timestamp>.membership.deleteunknow.sql and a list
+name&gt;.&lt;timestamp&gt;.membership.deleteunknow.sql and a list
 of the sites that had bad users is put in the file &lt;site id file
-name>.&lt;timestamp>.membership.updatesites.txt.</p>
+name&gt;.&lt;timestamp&gt;.membership.updatesites.txt.</p>
 
 <h2>Running the output SQL</h2>
 
@@ -100,16 +97,15 @@ empty lines are ignored) and a configuration file.  Configuration
 files are provided for each CTools instance.  The default is for a
 file confgured for production CTools.</p>
 
-<p>Just in case there is a reason to restore sites and undo the read only
-change make sure the following has been done for each instance.</p>
-
-<ol>
-<li>Make sure that an copy of the <em>sakai_realm_rl_fn</em> table has been
-made.  Since we expect little change in the sites it isn't
-necessary to make a copy every time the read only scripts are run.</li>
-<li>Update the corresponding yml file with the name of the archive
-table.</li>
-</ol>
+<p>It is possible to restore permissions after a read-only operation.
+The read-only sql automatically makes a back up copy of the role
+function table with a name that includes the date when the sql was
+generated.  If a restore is required modify the appropriate yml file
+so that the 
+ARCHIVE_ROLE_FUNCTION_TABLE contains the name of the
+appropriate archive table, one that contains the permissions to
+be restored.  This value can only be determined by the person doing
+the restore.</p>
 
 <h2>script execution</h2>
 
@@ -126,12 +122,12 @@ table.</li>
 <p>Arguments:</p>
 
 <ul>
-<li><p>&lt;task>: Type of sql to generate.  The possible tasks are:
+<li><p>&lt;task&gt;: Type of sql to generate.  The possible tasks are:
 READ_ONLY_UPDATE, READ_ONLY_LIST, READ_ONLY_RESTORE, and
 READ_ONLY_RESTORE_LIST. The UPDATE tasks deal with removing
 permissions.  The second two deal with restoring permissions from an
 archive table.</p></li>
-<li><p>&lt;site id file name></p></li>
+<li><p>&lt;site id file name&gt;</p></li>
 <li><p>{optional configuration file name}  This defaults to a configuration
 for the production instance.  The only changes required for this
 file would be for the archive table name.</p></li>
@@ -155,5 +151,6 @@ then pushed to the git repository.</p>
 a build.  These will include FatPacker and YAML packages.  There may be
 others as well.</p>
 
-</body>
-</html>
+
+
+</body></html>
