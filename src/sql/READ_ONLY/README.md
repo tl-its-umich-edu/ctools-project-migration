@@ -85,14 +85,15 @@ empty lines are ignored) and a configuration file.  Configuration
 files are provided for each CTools instance.  The default is for a
 file confgured for production CTools.
 
-Just in case there is a reason to restore sites and undo the read only
-change make sure the following has been done for each instance.
-
-1. Make sure that an copy of the *sakai\_realm\_rl\_fn* table has been
-   made.  Since we expect little change in the sites it isn't
-   necessary to make a copy every time the read only scripts are run.
-1. Update the corresponding yml file with the name of the archive
-table.
+It is possible to restore permissions after a read-only operation.
+The read-only sql automatically makes a back up copy of the role
+function table with a name that includes the date when the sql was
+generated.  If a restore is required modify the appropriate yml file
+so that the 
+ARCHIVE\_ROLE\_FUNCTION\_TABLE contains the name of the
+appropriate archive table, one that contains the permissions to
+be restored.  This value can only be determined by the person doing
+the restore.
 
 ## script execution
 Run the script as:
