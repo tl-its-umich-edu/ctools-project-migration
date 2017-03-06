@@ -436,8 +436,10 @@ public class MigrationController implements ErrorController {
 
 			return Response.status(Response.Status.OK).entity(site_members).build();
 		} catch (Exception e) {
-			String msg = "Cannot get CTools site members for site " + siteId + ":" + e.getMessage();
-			log.error(msg);
+			String msg = "The membership list for this site cannot be generated. " +
+					"There is at least one site member with an invalid user ID. " +
+					"Please contact ITS for help with this error.";
+			log.error("Cannot get CTools site members for site " + siteId + ":" + e.getMessage());
 			return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(msg).build();
 		}
 	}
