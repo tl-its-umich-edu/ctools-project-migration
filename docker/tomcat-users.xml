@@ -36,7 +36,9 @@
 -->
 <!-- -->
 <role rolename="role1"/>
-<!-- for CPM needs to be a user with a uniqname and CPM admin role -->
-<user username="dlhaines" password="PASSMEIN" roles="role1"/>
+<!-- for CPM this needs to be a user with a uniqname and membership in
+     the CPM admin mcommunity group.
+-->
+<user username="COOLEST_NAME_OF_ALL" password="PASSMEIN" roles="role1"/>
 <!-- -->
 </tomcat-users>
