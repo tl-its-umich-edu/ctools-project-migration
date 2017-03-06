@@ -1069,9 +1069,11 @@ class MigrationTaskService {
 			}
 			else
 			{
-				errorMessage = "Cannot find site members by siteId: " + site_id
-						+ " url=" + requestUrl + " " + e.getMessage();
-				log.error(errorMessage);
+				errorMessage = "The membership list for this site cannot be generated. " +
+						"There is at least one site member with an invalid user ID. " +
+						"Please contact ITS for help with this error. ";
+				log.error("Cannot find site members by siteId: " + site_id
+						+ " url=" + requestUrl + " " + e.getMessage());
 			}
 		}
 
