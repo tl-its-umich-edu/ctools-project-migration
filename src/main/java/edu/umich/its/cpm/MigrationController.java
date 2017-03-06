@@ -1032,18 +1032,18 @@ public class MigrationController implements ErrorController {
 
 		log.debug("in boxAuthorization");
 
-		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
-			log.debug("user " + remoteUserEmail
-					+ " has not authorized to use Box. Start auth process.");
-			// go to Box authentication screen
-			// get access token and refresh token and store locally
-			BoxUtils.authenticate(boxAPIUrl, boxClientId,
-					boxClientRedirectUrl, remoteUserEmail, response, uRepository);
-			return "UnAuthorized";
-		} else {
-			log.debug("user " + remoteUserEmail + " already authorized");
+		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) != null && currentBoxRefreshToken(request)) {
+			log.info("user " + remoteUserEmail + " already authorized");
 			return "Authorized";
 		}
+		
+		log.info("user " + remoteUserEmail
+				+ " has not authorized to use Box. Start auth process.");
+		// go to Box authentication screen
+		// get access token and refresh token and store locally
+		BoxUtils.authenticate(boxAPIUrl, boxClientId,
+				boxClientRedirectUrl, remoteUserEmail, response, uRepository);
+		return "UnAuthorized";
 	}
 
 	/******************* bulk migration **************************/
