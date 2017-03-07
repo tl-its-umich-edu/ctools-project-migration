@@ -14,7 +14,9 @@
 		<version>1.4.0.RELEASE</version>
 	</parent>
 
-	<packaging>war</packaging>
+
+    <packaging>war</packaging>
+
 
 	<profiles>
 		<profile>
@@ -232,9 +234,9 @@
 	</dependencies>
 
 	<properties>
-		<skipTests>false</skipTests>
-		<maven.compiler.source>1.7</maven.compiler.source>
-		<maven.compiler.target>1.8</maven.compiler.target>
+      <skipTests>false</skipTests>
+	  <maven.compiler.source>1.7</maven.compiler.source>
+	  <maven.compiler.target>1.8</maven.compiler.target>
 	</properties>
 
 	<build>
