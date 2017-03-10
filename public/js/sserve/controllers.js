@@ -446,19 +446,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       _.each(data, function(tool){
         var migratedMatch =[];
         var boxMigratedMatch=[];
-        var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
-        ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
-          function(result) {
-             if (result.data.entity) {
-               tool.doNotMigrateStatus = result.data.entity[0];
-             }
-          }
-        );
+        // disabled (TLCPM-710)
+        // var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
+        // ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
+        //   function(result) {
+        //      if (result.data.entity) {
+        //        tool.doNotMigrateStatus = result.data.entity[0];
+        //      }
+        //   }
+        // );
         _.each($scope.migratedProjects, function(migrated){
           if(migrated.tool_id === tool.tool_id){
             if(migrated.destination_type ==='box'){
-                tool.boxMigration = true;
-                boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
+                //disabled (TLCPM-710)
+                // tool.boxMigration = true;
+                // boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
             } else {
               migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
             }
