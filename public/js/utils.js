@@ -127,7 +127,7 @@ var transformMigrations = function (data){
 };
 
 var transformMigrated = function(result) {
-  _.each(result.data.entity, function(migrated){
+  _.each(result.data.entity, function(migrated, index){
     migrated.migrated_by = migrated.migrated_by.split(',')[0];
     if (migrated.destination_url){
       var destination_urlArr = migrated.destination_url.split('/');
@@ -140,6 +140,14 @@ var transformMigrated = function(result) {
       }
     }
   });
+
+  // exclude from list all box migrations
+  var filterOutBox = _.filter(result.data.entity, function(item) {
+      return item.destination_type !== 'box';
+  });
+
+  result.data.entity = filterOutBox;
+
   return result;
 
 };
