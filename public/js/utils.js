@@ -141,13 +141,6 @@ var transformMigrated = function(result) {
     }
   });
 
-  // exclude from list all box migrations
-  var filterOutBox = _.filter(result.data.entity, function(item) {
-      return item.destination_type !== 'box';
-  });
-
-  result.data.entity = filterOutBox;
-
   return result;
 
 };
