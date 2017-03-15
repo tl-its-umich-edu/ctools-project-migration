@@ -1,0 +1,4 @@
+{
+  "alert_type": "alert-danger",
+  "alert_message": "Some message here, cannot contain markup."
+}

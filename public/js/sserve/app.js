@@ -28,7 +28,8 @@ projectMigrationApp.run(function($rootScope) {
       'checkIsAdminUser':'',
       'bulkUploadUrl':'',
       'pingCtools':'data/ping-ctools.json',
-      'pingBox':'data/ping-box.json'
+      'pingBox':'data/ping-box.json',
+      'getMessage':'data/alert-message.json'
     };
   } else {
     $rootScope.urls = {
@@ -45,7 +46,8 @@ projectMigrationApp.run(function($rootScope) {
       'checkIsAdminUser':'/isAdmin',
       'bulkUploadUrl' : '/bulkUpload',
       'pingCtools':'status/dependencies/ctools',
-      'pingBox':'status/dependencies/box'
+      'pingBox':'status/dependencies/box',
+      'getMessage':'data/alert-message.json'
 
     };
   }

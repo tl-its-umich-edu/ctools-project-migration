@@ -24,6 +24,15 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     });
 
+    var messageUrl = $rootScope.urls.getMessage;
+    Projects.pingDependency(messageUrl).then(function(result) {
+      if(result){
+        if(result.data){
+          $scope.generalAlert = result.data;
+        }
+      }
+    });
+
     // whether the current user is a member of the admin group or n0t
     var checkIsAdminUserUrl = $rootScope.urls.checkIsAdminUser;
     Projects.checkIsAdminUser(checkIsAdminUserUrl + window.location.search).then(function(result) {
