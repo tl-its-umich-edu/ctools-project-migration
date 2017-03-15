@@ -18,6 +18,7 @@
               <em class="sr-only">Reset site search filter</em>
             </button>
           </span>
+          <span ng-if="checkingDeleteFlags" class="alert alert-inline alert-info">Checking for delete flags</span>
           <label for="searchProject" class="sr-only">Search for projects</label>
         </div>
       </div>
@@ -70,7 +71,7 @@
                   Members
                 </button>
                 <button class="btn btn-default btn-xs" ng-click="project.makeDisabled=true;getTools(project.site_id, project.deleteStatus)"
-    							ng-show="!project.stateHasTools && !project.migrating" ng-disabled="project.makeDisabled">Download Options
+    							ng-show="!project.stateHasTools && !project.migrating && unlockOptions" ng-disabled="project.makeDisabled">Download Options
                    <span class="sr-only">for site {{project.site_name}}</span>
     						</button>
               </div>
