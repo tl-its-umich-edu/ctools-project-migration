@@ -427,8 +427,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     };
     // launched after sourceProjects has been added to the scope it decorates sourceProjects with the delete consent status
     $scope.addSiteStatus = function(){
+      $scope.checkingDeleteFlags = true;
       // request status from /isSiteToBeDeleted  endpoint for each site
-      _.each($scope.sourceProjects, function(site){
+      _.each($scope.sourceProjects, function(site, index){
         var getSiteInfoUrl = '/isSiteToBeDeleted?siteId=' + site.site_id;
         ProjectsLite.isSiteToBeDeleted(getSiteInfoUrl).then(
           function(result) {
@@ -437,6 +438,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
              }
           }
         );
+        if(index + 1 === $scope.sourceProjects.length){
+            $scope.unlockOptions = true;
+            $scope.checkingDeleteFlags = false;
+        }
       });
     };
     // for eachtool returned - query if it has been flagged for no migration - and also
