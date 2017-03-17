@@ -322,7 +322,7 @@
           <div class="" ng-show="membership.metadata.status ===200">
             <h4>Google Groups format</h4>
             <div class="well">
-              <span ng-repeat="member in membership.data.groups.gg_format">{{member}}<span ng-show="!$last">, </span></span>
+              <span ng-repeat="member in membership.data.groups.gg_format">{{member}}<span ng-show="member.indexOf('@')===-1">@umich.edu</span><span ng-show="!$last">, </span></span>
             </div>
             <h4>MCommunity format <small>(users categorized by role)</small> </h4>
 
