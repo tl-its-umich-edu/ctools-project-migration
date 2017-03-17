@@ -18,6 +18,7 @@
               <em class="sr-only">Reset site search filter</em>
             </button>
           </span>
+          <span ng-if="checkingDeleteFlags" class="alert alert-inline alert-info">Checking for delete flags</span>
           <label for="searchProject" class="sr-only">Search for projects</label>
         </div>
       </div>
@@ -70,7 +71,7 @@
                   Members
                 </button>
                 <button class="btn btn-default btn-xs" ng-click="project.makeDisabled=true;getTools(project.site_id, project.deleteStatus)"
-    							ng-show="!project.stateHasTools && !project.migrating" ng-disabled="project.makeDisabled">Migration Options
+    							ng-show="!project.stateHasTools && !project.migrating && unlockOptions" ng-disabled="project.makeDisabled">Download Options
                    <span class="sr-only">for site {{project.site_name}}</span>
     						</button>
               </div>
@@ -122,7 +123,8 @@
                           Email archive has no emails to download.
                       </div>
                     </div>
-                    <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true && !project.boxMigration">
+                    <!-- comment out for TLCPM-710 -->
+                    <!-- <div class="panel panel-default"  ng-show="project.tool_type==='sakai.resources' && project.hasContentItem===true && !project.boxMigration">
                       <div class="panel-body">
                         <p>
                           <small>
@@ -140,10 +142,10 @@
                         </label>
                         <small ng-if="project.selectedDoNotMove"> - (do not forget to click <strong>Save changes</strong> at the top)</small>
                       </div>
-                    </div>
+                    </div> -->
                   </div>
-
-                  <div ng-show="project.doNotMigrateStatus">
+                  <!-- comment out for TLCPM-710 -->
+                  <!-- <div ng-show="project.doNotMigrateStatus">
                     <p>
                       <small>
                       {{project.doNotMigrateStatus.userId}} requested
@@ -152,7 +154,7 @@
                       </small>
                       <a href="#" ng-click="unFlagDoNotMigrate(project)"> <i class="glyphicon glyphicon-remove"></i> Remove request<span class="sr-only"> that {{project.tool_name}} for site {{project.site_name}} not be migrated</span>?</a>
                     </p>
-                  </div>
+                  </div> -->
     						</div>
               </div>
   					</div>

@@ -427,8 +427,9 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     };
     // launched after sourceProjects has been added to the scope it decorates sourceProjects with the delete consent status
     $scope.addSiteStatus = function(){
+      $scope.checkingDeleteFlags = true;
       // request status from /isSiteToBeDeleted  endpoint for each site
-      _.each($scope.sourceProjects, function(site){
+      _.each($scope.sourceProjects, function(site, index){
         var getSiteInfoUrl = '/isSiteToBeDeleted?siteId=' + site.site_id;
         ProjectsLite.isSiteToBeDeleted(getSiteInfoUrl).then(
           function(result) {
@@ -437,6 +438,10 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
              }
           }
         );
+        if(index + 1 === $scope.sourceProjects.length){
+            $scope.unlockOptions = true;
+            $scope.checkingDeleteFlags = false;
+        }
       });
     };
     // for eachtool returned - query if it has been flagged for no migration - and also
@@ -446,19 +451,21 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       _.each(data, function(tool){
         var migratedMatch =[];
         var boxMigratedMatch=[];
-        var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
-        ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
-          function(result) {
-             if (result.data.entity) {
-               tool.doNotMigrateStatus = result.data.entity[0];
-             }
-          }
-        );
+        // disabled (TLCPM-710)
+        // var siteToolNotMigrateUrl = '/siteToolNotMigrate?siteId=' + tool.site_id + '&toolId=' + tool.tool_id;
+        // ProjectsLite.siteToolNotMigrate(siteToolNotMigrateUrl).then(
+        //   function(result) {
+        //      if (result.data.entity) {
+        //        tool.doNotMigrateStatus = result.data.entity[0];
+        //      }
+        //   }
+        // );
         _.each($scope.migratedProjects, function(migrated){
           if(migrated.tool_id === tool.tool_id){
             if(migrated.destination_type ==='box'){
-                tool.boxMigration = true;
-                boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
+                //disabled (TLCPM-710)
+                // tool.boxMigration = true;
+                // boxMigratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type,'migratedTo':migrated.destination_url});
             } else {
               migratedMatch.push({'migratedBy':migrated.migrated_by.split(',')[0],'migratedWhen':migrated.end_time,'migratedHow':migrated.destination_type});
             }

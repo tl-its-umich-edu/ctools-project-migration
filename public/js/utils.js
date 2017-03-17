@@ -127,7 +127,7 @@ var transformMigrations = function (data){
 };
 
 var transformMigrated = function(result) {
-  _.each(result.data.entity, function(migrated){
+  _.each(result.data.entity, function(migrated, index){
     migrated.migrated_by = migrated.migrated_by.split(',')[0];
     if (migrated.destination_url){
       var destination_urlArr = migrated.destination_url.split('/');
@@ -140,6 +140,7 @@ var transformMigrated = function(result) {
       }
     }
   });
+
   return result;
 
 };
