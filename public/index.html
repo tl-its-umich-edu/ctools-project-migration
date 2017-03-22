@@ -320,7 +320,7 @@
           <div class="" ng-show="membership.metadata.status ===200">
             <h4>Google Groups format</h4>
             <div class="well">
-              <span ng-repeat="member in membership.data.groups.gg_format">{{member}}<span ng-show="member.indexOf('@')===-1">@umich.edu</span><span ng-show="!$last">, </span></span>
+              <span ng-repeat="member in membership.data.groups.gg_format">{{member | whatMember}}<span ng-show="!$last">, </span></span>
             </div>
             <h4>MCommunity format <small>(users categorized by role)</small> </h4>
 
@@ -346,6 +346,60 @@
                 <span ng-repeat="member in membership.data.groups.mc_format.members">{{member}}<span ng-show="!$last">, </span></span>
               </div>
             </div>
+
+            <h4>Box format <small>(users categorized by role)</small> </h4>
+
+            <div class="well" style="position:relative">
+              <div class="" ng-show="membership.data.groups.box_format.co_owners.length">
+                <a href="#" class="btn btn-sm btn-link pull-right"
+                  style="margin-top:-20px"
+                  tabindex="0"
+                  data-trigger="focus"
+                  data-placement="left" data-toggle="popover" title="CTools to Box roles"
+                  data-content="
+                  Owners <span style='font-size:16px'>➙</span> Co-owners<br>
+                  Organizers <span style='font-size:16px'>➙</span> Editors<br>
+                  Members <span style='font-size:16px'>➙</span> Viewer Uploaders <br>
+                  Others <span style='font-size:16px'>➙</span> Viewers <br> ">Information
+                </a>
+                <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
+                  Co-Owners
+                </h5>
+                <span ng-repeat="co_owner in membership.data.groups.box_format.co_owners">{{co_owner  | whatMember}}<span ng-show="!$last">, </span></span>
+              </div>
+              <div class="" ng-show="membership.data.groups.box_format.editors.length">
+                <br>
+                <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
+                  Editors
+                </h5>
+                <span ng-repeat="editor in membership.data.groups.box_format.editors">{{editor  | whatMember}}<span ng-show="!$last">, </span></span>
+              </div>
+
+
+              <div class="" ng-show="membership.data.groups.box_format.viewer_uploaders.length">
+                <br>
+                <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
+                  Viewer Uploader
+                </h5>
+                <span ng-repeat="viewer_uploader in membership.data.groups.box_format.viewer_uploaders">{{viewer_uploader  | whatMember}}<span ng-show="!$last">, </span></span>
+              </div>
+
+
+              <div class="" ng-show="membership.data.groups.box_format.viewers.length">
+                <br>
+                <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
+                  Viewers
+                </h5>
+                <span ng-repeat="viewer in membership.data.groups.box_format.viewers">{{viewer  | whatMember}}<span ng-show="!$last">, </span></span>
+              </div>
+            </div>
+
+
+
+
+
+
+
             <h4>Participant List <small>(information from CTools)</small></h4>
             <div class="well">
               <table class="table">

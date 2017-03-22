@@ -148,26 +148,61 @@ var transformMigrated = function(result) {
 var prepareMembership = function(membership) {
   var gg_format = [];
   var mc_format = {'owners':[], 'members':[]};
+  var box_format = {'co_owners':[], 'editors':[], 'viewers':[],'viewer_uploaders':[]};
   var readable_format =[];
   _.each(membership.entity, function(value, prop){
     gg_format.push(prop);
     readable_format.push({'userId':prop, 'memberRole':value});
-    // collating by role for MComm format
-    if(value ==='Owner'){
+    // collating by role for MComm and Boxformat
+
+    switch(value) {
+    case 'Owner':
       mc_format.owners.push(prop);
-    } else {
+      box_format.co_owners.push(prop);
+      break;
+    case 'maintain':
+      mc_format.owners.push(prop);
+      box_format.co_owners.push(prop);
+      break;
+    case 'Organizer':
       mc_format.members.push(prop);
+      box_format.editors.push(prop);
+      break;
+    case 'Instructor':
+      mc_format.members.push(prop);
+      box_format.editors.push(prop);
+      break;
+    case 'Member':
+      mc_format.members.push(prop);
+      box_format.viewer_uploaders.push(prop);
+      break;
+    case 'Student':
+      mc_format.members.push(prop);
+      box_format.viewer_uploaders.push(prop);
+      break;
+    case 'Observer':
+      mc_format.members.push(prop);
+      box_format.viewers.push(prop);
+      break;
+    default:
+      mc_format.members.push(prop);
+      box_format.viewers.push(prop);
     }
   });
 
   mc_format.owners =  _.sortBy(mc_format.owners, function(mem) { return mem; });
   mc_format.members = _.sortBy(mc_format.members, function(mem) { return mem; });
+  box_format.co_owners = _.sortBy(box_format.co_owners, function(mem) { return mem; });
+  box_format.editors = _.sortBy(box_format.editors, function(mem) { return mem; });
+  box_format.viewer_uploaders = _.sortBy(box_format.viewer_uploaders, function(mem) { return mem; });
+  box_format.viewers = _.sortBy(box_format.viewers, function(mem) { return mem; });
 
   membership = {
     'data': {
       'groups': {
         'gg_format': _.sortBy(gg_format, function(mem) {return mem;}),
         'mc_format': mc_format,
+        'box_format':box_format,
         'readable_format': _.sortBy(readable_format, function(mem) { return mem.userId; })
       }
     },
