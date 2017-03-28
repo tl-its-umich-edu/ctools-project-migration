@@ -109,7 +109,7 @@ public class UtilsTest {
 	}
 	
 	@Test
-	public void testupdateFolderNameMap() {
+	public void testUpdateFolderNameMap() {
 		// start with empty HashMap for folder names
 		HashMap<String, String> folderNamesMap = new HashMap<String, String>();
 		
@@ -159,7 +159,7 @@ public class UtilsTest {
 		// now test the file name change
 		// 1. there is a folder name change inside the file path
 		String fileName = Utils.updateFolderPathForFileName("changed_folder_name/test.pdf", folderNamesMap);
-		assertEquals(fileName, "changed_folder_name/test.pdf");
+		assertEquals(fileName, "new_changed_folder_name/test.pdf");
 
 		// 2. there is NO folder name change inside the file path
 		fileName = Utils.updateFolderPathForFileName("unchanged_folder_name/subfolder_1//test.pdf", folderNamesMap);
@@ -199,9 +199,15 @@ public class UtilsTest {
 		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/html", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
 		assertEquals("A2_0_  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2.0.  Kinsella and Velkoff 2001 Chapter 4"));
 		assertEquals("A2-0-  Kinsella and Velkoff 2001 Chapter 4.html",Utils.modifyFileNameOnType("text/url", "A2-0-  Kinsella and Velkoff 2001 Chapter 4"));
-		assertEquals("Using Web Dav on a Mac v1",Utils.modifyFileNameOnType("text/plain; charset=us-ascii", "Using Web Dav on a Mac v1"));
+		assertEquals("Using Web Dav on a Mac v1.txt",Utils.modifyFileNameOnType("text/plain; charset=us-ascii", "Using Web Dav on a Mac v1"));
 		assertEquals("Using Web Dav on a Mac v1.bin",Utils.modifyFileNameOnType("application/octet-stream", "Using Web Dav on a Mac v1.bin"));
+		assertEquals("Something in the fileName.ppt",Utils.guessedFileExtension("Application/x-PowerPoint", "Something in the fileName"));
+		assertEquals("RedChicken and his friends.xls",Utils.guessedFileExtension("application/x-msexcel", "RedChicken and his friends"));
+		assertEquals("progressive_jpeg.jpeg",Utils.guessedFileExtension("image/pjpeg", "progressive_jpeg"));
+		assertEquals("Using Web Dav on a Mac v1.txt",Utils.guessedFileExtension("text/plain; charset=us-ascii", "Using Web Dav on a Mac v1"));
 
 	}
+
+
 
 }

@@ -25,7 +25,7 @@ projectMigrationApp.run(function($rootScope) {
   } else {
     $rootScope.urls = {
       'isAdminCheckUrl': '/isAdmin',
-      'checkBoxAuthorizedUrl': '/box/checkAuthorized',
+      'checkBoxAuthorizedUrl': '/box/currentRefreshToken',
       'bulkUploadPostUrl': '/bulkUpload',
       'listBulkUploadAllUrl': '/bulkUpload/all',
       'listBulkUploadOngoingUrl': '/bulkUpload/ongoing',

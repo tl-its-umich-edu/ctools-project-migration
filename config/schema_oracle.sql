@@ -50,6 +50,7 @@ user_id VARCHAR(99) NOT NULL,
 state VARCHAR(99),
 access_token VARCHAR(99),
 refresh_token VARCHAR(99),
+refresh_token_createdon TIMESTAMP,
 PRIMARY KEY (user_id));
 
 -- create table SITE_DELETE_CHOICE

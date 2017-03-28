@@ -83,6 +83,7 @@ public class GGBApiWrapperTest {
 	public void tearDown() throws Exception {
 	}
 
+	/****************
 	@Test
 	public void createTrivialInstance() {
 		GGBApiWrapper ggb = new GGBApiWrapper(null,null);
@@ -266,6 +267,6 @@ public class GGBApiWrapperTest {
 		String email = result_jo.getString("email");
 		assertTrue("email is non-trivial",email.length() > 5);
 	}
-	
+	***********/
 }
 

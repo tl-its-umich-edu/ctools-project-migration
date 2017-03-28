@@ -50,11 +50,19 @@ if [ ! -e "${CONFIG}" ]; then
 fi
 
 ### do it!
-echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.csv"
 
-cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.csv
+echo "running: cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.txt"
 
-# make a file of the sql to run to fix the site membership.
+cat $SITEIDS | $SCRIPT $CONFIG >| $SITEIDS.$T.membership.txt
 
-perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.$T.membership.csv | sort -u >| $SITEIDS.$T.membership.deleteunknown.sql
+# make summary files
+
+# list sites with users that provoked problems. Can be more that the number
+# of users causing problems since a user might appear in more than 1 site.
+perl -n -e '/^(\S+)\s.*sql:/ > 0 && print "$1\n"' $SITEIDS.$T.membership.txt | sort -u >| $SITEIDS.$T.membership.updatesites.txt
+
+# Make a file of the sql to run to fix the bad users.  This might fix
+# multiple sites.
+perl -n -e '/sql:\s*(.+)\s*$/ && length($1) > 0 && print "$1\n"' $SITEIDS.$T.membership.txt | sort -u >| $SITEIDS.$T.membership.deleteunknown.sql
+
 #end

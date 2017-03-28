@@ -72,7 +72,10 @@ our($CURRENT_ROLE_FUNCTION_TABLE) = "sakai_realm_rl_fn";
 sub setupTask {
   my $task = shift;
 
-  die(">>>>> Must specify value for ARCHIVE_ROLE_FUNCTION_TABLE in yml file") unless ($ARCHIVE_ROLE_FUNCTION_TABLE);
+  if (!$ARCHIVE_ROLE_FUNCTION_TABLE && ($task eq "READ_ONLY_RESTORE" || $task eq "READ_ONLY_RESTORE_LIST")) {
+    die(">>>>> For restore actions must specify value for ARCHIVE_ROLE_FUNCTION_TABLE in yml file.");
+  }
+
 
   die (">>>>> INVALID TASK: [$task]") unless ($task eq "READ_ONLY_UPDATE"
                                               || $task eq "READ_ONLY_LIST"
@@ -195,7 +198,7 @@ sub prefix_sql {
   my $sql = <<"PREFIX_SQL";
    ${sqlAction}
    FROM   ${DB_USER}.${READ_TABLE} SRRF 
-   WHERE  EXISTS (WITH -- look up all the internal keys from external names
+   WHERE  EXISTS (WITH 
 PREFIX_SQL
   $sql
 }
@@ -304,8 +307,7 @@ sub printForSites {
 sub readFromStdin {
   
   # make a backup table.
-  ## make these by hand once.
-  #  writeRRFTableBackupSql($task);
+  writeRRFTableBackupSql($task) if ($task eq "READ_ONLY_UPDATE");
 
   printPermissionsCount("initial count");
 

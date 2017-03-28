@@ -822,9 +822,8 @@ public class MigrationController implements ErrorController {
 		if (uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) == null) {
 			rv = "Cannot find user's Box authentication info. ";
 		} else {
-			uRepository.deleteBoxAuthUserAccessToken(userEmail);
-			uRepository.deleteBoxAuthUserRefreshToken(userEmail);
-			rv = "User authentication info is removed. ";
+			uRepository.deleteBoxAuthUser(userEmail);
+			rv = "Box authentication info for user " + userEmail + " is removed. ";
 		}
 
 		log.info("/box/unauthorize for user " + userEmail + " " + rv);
@@ -860,11 +859,31 @@ public class MigrationController implements ErrorController {
 
 		return rv != null ? BOX_AUTHORIZED_HTML : BOX_UNAUTHORIZED_HTML;
 	}
-
+	
 	@RequestMapping("/box/checkAuthorized")
 	@Produces(MediaType.APPLICATION_JSON)
 	public Boolean boxCheckAuthorized(HttpServletRequest request) {
 		return Boolean.valueOf(uRepository.findBoxAuthUserAccessToken(getCurrentUserEmail(request, env)) != null);
+	}
+	
+	@RequestMapping("/box/currentRefreshToken")
+	@Produces(MediaType.APPLICATION_JSON)
+	public Boolean currentBoxRefreshToken(HttpServletRequest request) {
+		// Box refresh token valid days is 60 days, unless set otherwise
+		int tokenDays = 60;
+		
+		// read in property setting
+		if(env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS) != null) {
+			try
+			{
+				tokenDays = Integer.parseInt(env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS));
+			}
+			catch (NumberFormatException e)
+			{
+				log.error("The setting for Box refresh token valid days is not integer: " + env.getProperty(Utils.BOX_REFRESH_TOKEN_VALID_DAYS));
+			}
+		}
+		return Boolean.valueOf(uRepository.currentBoxUserRefreshToken(getCurrentUserEmail(request, env), tokenDays) != null);
 	}
 
 	/**
@@ -1015,18 +1034,18 @@ public class MigrationController implements ErrorController {
 
 		log.debug("in boxAuthorization");
 
-		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) == null) {
-			log.debug("user " + remoteUserEmail
-					+ " has not authorized to use Box. Start auth process.");
-			// go to Box authentication screen
-			// get access token and refresh token and store locally
-			BoxUtils.authenticate(boxAPIUrl, boxClientId,
-					boxClientRedirectUrl, remoteUserEmail, response, uRepository);
-			return "UnAuthorized";
-		} else {
-			log.debug("user " + remoteUserEmail + " already authorized");
+		if (uRepository.findBoxAuthUserAccessToken(remoteUserEmail) != null && currentBoxRefreshToken(request)) {
+			log.info("user " + remoteUserEmail + " already authorized");
 			return "Authorized";
 		}
+		
+		log.info("user " + remoteUserEmail
+				+ " has not authorized to use Box. Start auth process.");
+		// go to Box authentication screen
+		// get access token and refresh token and store locally
+		BoxUtils.authenticate(boxAPIUrl, boxClientId,
+				boxClientRedirectUrl, remoteUserEmail, response, uRepository);
+		return "UnAuthorized";
 	}
 
 	/******************* bulk migration **************************/

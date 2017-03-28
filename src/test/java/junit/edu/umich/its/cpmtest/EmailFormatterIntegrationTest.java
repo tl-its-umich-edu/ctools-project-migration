@@ -23,7 +23,7 @@ import java.util.Set;
 /**
  * Created by pushyami on 8/17/16.
  */
-public class EmailFormatterTest extends TestCase {
+public class EmailFormatterIntegrationTest extends TestCase {
     Map<String, Object> messageSimple = null;
     EmailFormatter formatter;
     private EmailFormatter formatterForLargeAttachmentSizes;
@@ -59,48 +59,23 @@ public class EmailFormatterTest extends TestCase {
     public void tearDown() throws Exception {
     }
 
-    public void testMessageBody() {
-        String body = formatter.getBody(formatter.FORMAT_TYPE_RFC822);
-        assertEquals("This is so awesome to find out and unbelievable", body);
-    }
-
-    public void testMessageHeader() {
-        ArrayList<String> headers = formatter.prunedHeadersWithoutContentType();
-        assertEquals(17, headers.size());
-    }
-
-    public void testAttachment() {
-        HashMap<String, ArrayList<String>> attachments = formatter.getAttachments();
-        assertEquals(1, attachments.size());
-        Set<String> attachmentIDs = attachments.keySet();
-        for (String id : attachmentIDs) {
-            ArrayList<String> attachmentData = attachments.get(id);
-            if (id.equals("234")) {
-                assertEquals("text/plain", attachmentData.get(0));
-                assertEquals("email_msg.txt", attachmentData.get(1));
-                assertEquals("https://ctdevsearch.dsc.umich.edu/access/content/attachment/03f0e860-5d58-45a6-9226-bbcde27830c2/_anon_/dad9cffd-7aec-4896-83f5-23a4b2acacc3/email_msg.txt", attachmentData.get(2));
-            }
-        }
+    public void testSimpleMsgInRFCFormat() {
+        String expected = expectedEmailTextValue().toString();
+        MailResultPair emailTextPlusStatus = formatter.rfc822Format();
+        String actualEmailText = emailTextPlusStatus.getMessage();
+//        System.out.println(actualEmailText);
+//        System.out.println("StatusReport: "+emailTextPlusStatus.getReport().getJsonReportObject().toString());
+        assertEquals(expected, replaceTheBoundaryValue(actualEmailText));
     }
 
 
-    public void testFormattingMboxStartingHeader() {
-        ArrayList<String> headers = formatter.prunedHeadersWithoutContentType();
-        String actual = formatter.mboxStartingHeader(headers);
-        String expected = "From jdoe@umich.edu Wed Aug 24 14:04:47 2016";
-        assertEquals(expected, actual);
+    public void testSimpleMsgInRFCFormatWithAttachmentSizeExceedingLimit() {
+        MailResultPair emailTextPlusStatus = formatterForLargeAttachmentSizes.rfc822Format();
+        String actual = emailTextPlusStatus.getMessage();
+//        System.out.println(actual);
+//        System.out.println("StatusReport: "+emailTextPlusStatus.getReport().getJsonReportObject().toString());
+        assertEquals(expected(), replaceTheBoundaryValue(actual.trim()));
     }
-
-    /*
-    This test is ensuring that the starting header starts with "From" as that is required and don't want to test the
-    large header list. Also testing number of mbox headers
-     */
-    public void testMboxFormatStartingHeaderInListOfHeaders() {
-        ArrayList<String> mboxHeaders = formatter.mboxFormatHeaders();
-        assertEquals("From jdoe@umich.edu Wed Aug 24 14:04:47 2016", mboxHeaders.get(0));
-        assertEquals(18, mboxHeaders.size());
-    }
-
     private  String expected(){
         StringBuilder expectedEmailText = new StringBuilder();
         expectedEmailText.append("Received: from localhost ([127.0.0.1]) by prefect.dsc.umich.edu (JAMES SMTP Server 2.3.2) with SMTP ID 920 for <mbox-2@ctdev.dsc.umich.edu>; Tue, 20 Sep 2016 12:59:30 -0400 (EDT)");
@@ -159,22 +134,16 @@ public class EmailFormatterTest extends TestCase {
         return expectedEmailText.toString();
     }
 
-    public void testStringInbetween() {
-        Path path = Paths.get(Paths.get(".").toAbsolutePath() + "/src/test/java/junit/edu/umich/its/cpmtest/body_chunk.txt");
-        Path path1 = Paths.get(Paths.get(".").toAbsolutePath() + "/src/test/java/junit/edu/umich/its/cpmtest/expected_subString_in_between.txt");
-        byte[] data = null;
-        byte[] data1 = null;
-        try {
-            data = Files.readAllBytes(path);
-            data1 = Files.readAllBytes(path1);
 
-        } catch (IOException io) {
-            fail("Problem reading the file");
-        }
-        String actual = formatter.subStringInBetween(new String(data), "------=_Part_0_366590980.1473353467805");
-        assertEquals(new String(data1), actual);
+    public void testCheckMsgSizeMoreThanExpectedLimit() {
+        boolean actual = false;
+        MailResultPair emailMsgPlusStatus = formatterForLargeAttachmentSizes.rfcFormatWithoutAttachmentLimitCheck();
+        String emailMessage = (String) emailMsgPlusStatus.getMessage();
+        actual = formatterForLargeAttachmentSizes.checkMsgSizeMoreThanExpectedLimit(emailMessage);
+        assertEquals(true, actual);
 
     }
+
 
     private StringBuilder expectedEmailTextValue() {
         StringBuilder expectedEmailText = new StringBuilder();
