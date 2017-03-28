@@ -513,7 +513,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
 	          },
 	           "data": result.data
            };
-          $log.info(JSON.stringify($scope.membership));
         $log.info(moment().format('h:mm:ss') + ' - membership for site ' + site_id + ' retrieved');
       });
     };
