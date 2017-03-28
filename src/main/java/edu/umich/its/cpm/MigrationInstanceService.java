@@ -207,7 +207,14 @@ class MigrationInstanceService {
 			// cleanup the added owner of admin user from CTools site
 			String siteId = mRepository.getMigrationSiteId(mId);
 			migrationTaskService.removeAddedAdminOwner(siteId);
-			
+
+			// adding the members to folder at end of migration.
+			log.info("adding members to folder after file upload (in MigrationInstanceService)");
+			Migration migration = mRepository.findOne(mId);
+			JSONObject statusJSON = migrationTaskService.addSiteMembersToBoxFolder(migration);
+			// save the add member JSON to migration status field
+			mRepository.setMigrationStatus(statusJSON.toString(), mId);
+
 			// all the items within the migration is finished
 			// update the end time of the parent record
 			Timestamp lastItemMigrationTime = fRepository.getLastItemEndTimeForMigration(mId);

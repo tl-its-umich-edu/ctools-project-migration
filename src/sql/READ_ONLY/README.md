@@ -44,6 +44,9 @@ correct section for the ctools instance to be examined, and fill in
 the appropriate user and password information for a CTools admin
 user in that instance.
 
+If you copy the file contents from Google Drive via an application use
+Google sheets.  Do *NOT* use MS excel.
+
 In case of a need to restore membership in a site a copy of the
 *sakai\_realm\_rl\_gr* should be made in the database for each
 instance.  This need only be done once.
@@ -52,14 +55,17 @@ instance.  This need only be done once.
 
     ./runVerifyAccessSiteMembership.sh <site id list file name>
 
-There are two output files: &lt;site id file name>.&lt;time stamp>.membership.csv is a log of
-the results of testing site membership.  The output contains 3
+There are three output files:
+&lt;site id file name>.&lt;time stamp>.membership.txt is a log of
+the results of testing site membership.  This file contains 3
 columns: the site id, the https status code, and a message.  For
 successful requests the message will be "ok".  For unsuccessful
 requests the status code will be returned and, if possible, there will
 also be sql that can be run later to fix the membership issue.  As a
 convenience the sql will be collected into the file &lt;site id file
-name>.&lt;timestamp>.membership.deleteunknow.sql.
+name>.&lt;timestamp>.membership.deleteunknow.sql and a list
+of the sites that had bad users is put in the file &lt;site id file
+name>.&lt;timestamp>.membership.updatesites.txt.
 
 ## Running the output SQL
 
@@ -79,14 +85,15 @@ empty lines are ignored) and a configuration file.  Configuration
 files are provided for each CTools instance.  The default is for a
 file confgured for production CTools.
 
-Just in case there is a reason to restore sites and undo the read only
-change make sure the following has been done for each instance.
-
-1. Make sure that an copy of the *sakai\_realm\_rl\_fn* table has been
-   made.  Since we expect little change in the sites it isn't
-   necessary to make a copy every time the read only scripts are run.
-1. Update the corresponding yml file with the name of the archive
-table.
+It is possible to restore permissions after a read-only operation.
+The read-only sql automatically makes a back up copy of the role
+function table with a name that includes the date when the sql was
+generated.  If a restore is required modify the appropriate yml file
+so that the 
+ARCHIVE\_ROLE\_FUNCTION\_TABLE contains the name of the
+appropriate archive table, one that contains the permissions to
+be restored.  This value can only be determined by the person doing
+the restore.
 
 ## script execution
 Run the script as:

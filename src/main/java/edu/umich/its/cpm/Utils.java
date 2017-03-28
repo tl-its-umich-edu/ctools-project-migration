@@ -38,6 +38,7 @@ import java.net.MalformedURLException;
 import java.net.URLDecoder;
 import java.util.HashMap;
 import java.util.Hashtable;
+import java.util.Map;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
@@ -63,7 +64,7 @@ class Utils {
 	public static final String ROLE_OBSERVER = "Observer";
 	public static final String ROLE_MAINTAINER = "maintain";
 	public static final String ROLE_INSTRUCTOR = "Instructor";
-	public static final String ROLE_STUDENT = "student";
+	public static final String ROLE_STUDENT = "Student";
 
 	public static final String COLLECTION_TYPE = "collection";
 
@@ -207,6 +208,9 @@ class Utils {
 	public static final String TOOL_NAME_RESOURCES = "Resources";
 	
 	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
+	
+	public static final String BOX_REFRESH_TOKEN_VALID_DAYS = "box_refresh_token_valid_days";
+
 	
 	/**
 	 * login into CTools and become user with sessionId
@@ -624,7 +628,9 @@ class Utils {
 	}
 
 	/**
-	 * replace characters match the regular expression to "_"
+	 * Replace characters match( /,\,<,>,*, | \tab) the regular expression to "_" as some of these are not allowed
+	 * as part of Folder/files names by Operating system and Box. The double back slashes are user for escaping and the
+	 * beginning backslash actually escaping the \ and not looking for \\ in a string
 	 *
 	 * @param name
 	 * @return
@@ -641,9 +647,7 @@ class Utils {
 			log.error(" sanitizeName to be null for name=" + oldName);
 			return null;
 		}
-
-		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<]");
+		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<\\*\\|\\?]");
 		Matcher m = p.matcher(name);
 		name = m.replaceAll("_");
 		name=name.replace("\t", " ");
@@ -703,6 +707,12 @@ class Utils {
 						"Utils.modifyFileNameOnType: Couldn't find file extension for resource: "
 								+ fileName + " of MIME type = " + type, e);
 			}
+			// Mime extension will be empty because the Mime type mentioned in the ctools might be invalid/old and the
+			// tikka library is not supporting it. so this workflow is supporting invalid/old mime type from ctools.
+			// unit test are added to testMimeExtensionLogic()
+			if (mimeExtension.isEmpty()) {
+				return guessedFileExtension(type, fileName);
+			}
 			Tika tika = new Tika();
 
 			if (mimeExtension != null && tika.detect(fileName).equals(CTOOLS_FILENAME_EXTENSION_DONT_KNOW)) {
@@ -719,6 +729,70 @@ class Utils {
 			}
 		return fileName;
 	}
+
+	public static String guessedFileExtension(String type, String fileName) {
+		MimeTypesChunk mimeTypes = null;
+		for (MimeTypesChunk mimeType : MimeTypesChunk.values()) {
+			if (type.toLowerCase().contains(mimeType.toString())) {
+				mimeTypes = mimeType;
+				break;
+			}
+		}
+		if (mimeTypes == null) {
+			return fileName;
+		}
+		String guessedFileExtension = getGuessedFileExtension(mimeTypes);
+		if (guessedFileExtension != null) {
+
+			String fileExtension = FilenameUtils.getExtension(fileName);
+			if (fileExtension.contains(guessedFileExtension.replace(".", ""))) {
+				return fileName;
+			}
+
+			fileName = fileName.concat(guessedFileExtension);
+			return fileName;
+		}
+		return fileName;
+	}
+
+	// will add more Mime types on case by case basic
+	public enum MimeTypesChunk {
+		POWERPOINT("powerpoint"), EXCEL("excel"), WORD("word"), JPEG("jpeg"), TEXTPLAIN("text/plain");
+		private final String mimeType;
+
+		MimeTypesChunk(String mimeType) {
+			this.mimeType = mimeType;
+		}
+
+		@Override
+		public String toString() {
+			return mimeType;
+		}
+	}
+
+	private static final Map<MimeTypesChunk, String> mimeMap;
+	static
+	{
+		mimeMap = new HashMap<MimeTypesChunk, String>();
+		mimeMap.put(MimeTypesChunk.POWERPOINT, ".ppt");
+		mimeMap.put(MimeTypesChunk.EXCEL, ".xls");
+		mimeMap.put(MimeTypesChunk.WORD, ".doc");
+		mimeMap.put(MimeTypesChunk.JPEG, ".jpeg");
+		mimeMap.put(MimeTypesChunk.TEXTPLAIN, ".txt");
+	}
+
+	public static String getGuessedFileExtension(MimeTypesChunk type) {
+		String fileExtension = null;
+
+		for (MimeTypesChunk mimeType : mimeMap.keySet()) {
+			if (mimeType.equals(type)) {
+				fileExtension = mimeMap.get(mimeType);
+				break;
+			}
+		}
+		return fileExtension;
+	}
+
 
 	public static String getCopyrightAcceptUrl(String copyrightAlert,
 			String contentUrl) {

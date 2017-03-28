@@ -55,6 +55,18 @@ public interface BoxAuthUserRepository extends CrudRepository<BoxAuthUser, Strin
 	String findBoxAuthUserAccessToken(String userId);
 	
 	/**
+	 * Find whether the given user's Box refresh token is valid or not
+	 * True if the refresh token is less than the given days old
+	 * False otherwise
+	 * 
+	 * @param userId
+	 * @param numberOfDay
+	 * @return
+	 */
+	@Query("SELECT refreshToken FROM BoxAuthUser u WHERE u.userId = ?#{[0]} and u.refreshTokenCreatedOn is not null and u.refreshTokenCreatedOn > (SYSDATE - ?#{[1]})")
+	String currentBoxUserRefreshToken(String userId, int numberOfDays);
+	
+	/**
 	 * Finds BoxAuthUser refresh token
 	 * 
 	 * @param userId
@@ -88,6 +100,14 @@ public interface BoxAuthUserRepository extends CrudRepository<BoxAuthUser, Strin
 	@Modifying(clearAutomatically = false)
 	@Query("update BoxAuthUser u set u.refreshToken = ?#{[0]} where u.userId = ?#{[1]}")
 	public int setBoxAuthUserRefreshToken(String refreshToken, String userId);
+	
+	/**
+	 * Update the BoxAuthUser refreshTokenCreatedOn field
+	 */
+	@Transactional
+	@Modifying(clearAutomatically = false)
+	@Query("update BoxAuthUser u set u.refreshTokenCreatedOn = ?#{[0]} where u.userId = ?#{[1]}")
+	public int setBoxAuthUserRefreshTokenCreatedOn(Timestamp refreshTokenCreatedOn, String userId);
 	
 
 	/************** delete *************/
