@@ -54,10 +54,14 @@
   				<div class="row">
   					<div class="col-md-5 col-lg-5 col-sm-5 col-xs-5">
   						<h4 class="site-header">
-  							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">{{project.site_name}}</a>
+  							<a target="_blank" href="{{project.url | linkToSite}}" id="{{project.site_id}}">
+                  {{project.site_name}}
+                </a>
                 <span style="display:none" id="siteid{{project.site_id.replace('~','')}}">{{project.site_name}}</span>
+                <span  ng-show="project.type ==='project_secure' || project.type ==='workspace_secure'" style="font-size:12px;font-weight:normal;color:#a00"><br><br>
+                   This site may contain ITAR or EAR-protected data. See <a href="https://www.safecomputing.umich.edu/dataguide/?q=home" target="_blank">Sensitive Data Guide</a>.
+                </span>
   						</h4>
-
   					</div>
             <div class="col-md-1 col-lg-1 col-sm-1 col-xs-1">
               <span class="spinner" ng-show="project.loadingTools"></span>

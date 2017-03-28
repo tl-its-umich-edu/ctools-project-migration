@@ -128,7 +128,7 @@ public class MigrationController implements ErrorController {
 			HttpServletRequest request) {
 		
 		// default site types to be included in CPM tool
-		List<String> allowedSiteTypes = Arrays.asList("project", "myworkspace", "specialized_projects");
+		List<String> allowedSiteTypes = Arrays.asList("project", "myworkspace", "specialized_projects","project_secure","myworkspace_secure");
 		if (env.getProperty(Utils.ENV_PROPERTY_ALLOWED_SITE_TYPES) != null)
 		{
 			//get the property setting for site types to be included in CPM tool
