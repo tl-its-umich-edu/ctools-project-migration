@@ -1,0 +1,54 @@
+
+attachment.size.limit=5242880
+
+# optional
+
+spring.datasource.driverClassName=oracle.jdbc.driver.OracleDriver
+spring.datasource.url=<>
+spring.datasource.username=<>
+spring.datasource.password=<>
+spring.jpa.database-platform=org.hibernate.dialect.Oracle10gDialect
+spring.jpa.show-sql=false
+spring.datasource.test-on-borrow=true
+spring.datasource.validationQuery=SELECT 1 from dual
+#spring.datasource.test-while-idle=true
+#spring.datasource.connection-test-query=SELECT 1 from dual
+
+ctools.server.url=<>
+username=<>
+password=<>
+
+
+
+// box integration
+box_token_url=https://app.box.com/api/oauth2/token
+box_api_url=https://app.box.com/api
+box_client_id=<>
+box_client_secret=<>
+box_client_redirect_uri=http://localhost:8080
+
+box_admin_client_id=<>
+box_admin_client_secret=<>
+box_admin_account_id=box-ctools-migrate-qa@umich.edu
+
+server_url=http://localhost:8080
+
+allow.testUser.urlOverride=true
+use.testUser.url=true
+
+ldap.server.url=ldap://ldap.umich.edu
+mcomm.group=its-cpm-project
+mcomm.admin.group=box-ctools-migrate-qa
+
+zip.compression.level=9
+
+test.remoteuser=<>
+
+#endpoints.enabled=false
+endpoints.enabled=true
+endpoints.status.enabled=true
+endpoints.health.enabled=true
+
+logging.level.org.springframework: INFO
+logging.level.edu.umich.its.cpm: INFO
+
