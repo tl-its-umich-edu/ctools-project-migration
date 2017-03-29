@@ -318,7 +318,7 @@
             </p>
           </div>
           <div class="" ng-show="membership.metadata.status ===200">
-            <h4>Google Groups format</h4>
+            <h4>Google format</h4>
             <div class="well">
               <span ng-repeat="member in membership.data.groups.gg_format">{{member | whatMember}}<span ng-show="!$last">, </span></span>
             </div>
@@ -347,7 +347,7 @@
               </div>
             </div>
 
-            <h4>Box format <small>(users categorized by role)</small> </h4>
+            <h4>U-M Box format <small>(users categorized by role)</small> </h4>
 
             <div class="well" style="position:relative">
               <div class="" ng-show="membership.data.groups.box_format.co_owners.length">
@@ -355,7 +355,7 @@
                   style="margin-top:-20px"
                   tabindex="0"
                   data-trigger="focus"
-                  data-placement="left" data-toggle="popover" title="CTools to Box roles"
+                  data-placement="left" data-toggle="popover" title="CTools to U-M Box roles"
                   data-content="
                   Owners <span style='font-size:16px'>➙</span> Co-owners<br>
                   Organizers <span style='font-size:16px'>➙</span> Editors<br>
