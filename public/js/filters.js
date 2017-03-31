@@ -37,7 +37,15 @@ angular.module('projectMigrationFilters', []).filter('getExtension', function() 
         }
       }
     };
-
+}).filter('whatMember', function() {
+    return function(member) {
+      if(member.indexOf('@') ===-1) {
+        return member + '@umich.edu';
+      }
+      else {
+          return member;
+      }
+    };
 }).filter('extractMember', function() {
     return function(member) {
       if(member){
