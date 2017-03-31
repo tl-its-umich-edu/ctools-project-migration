@@ -46,6 +46,7 @@ import java.sql.Timestamp;
 import java.io.IOException;
 
 import org.springframework.web.bind.annotation.RequestMapping;
+import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.PathVariable;
@@ -413,6 +414,10 @@ public class MigrationController implements ErrorController {
 
 	/**
 	 * API call to get CTools site membership
+	 * The default format is an object where uniqname is the key and the value is
+	 * the user's sakai role.  This is the same as setting the optional query parameter "format"
+	 * to be "short". Setting the "format" query parameter to "long" will return a value with
+	 * the same key but the value to be an object with attributes of memberRole and userSortName.
 	 *
 	 * @return
 	 */
@@ -421,13 +426,23 @@ public class MigrationController implements ErrorController {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSiteMembershipAPI(
 			@PathVariable("siteId") String siteId,
+			@RequestParam(value="format",defaultValue="short", required=false) String format,
 			HttpServletRequest request) {
 		try {
 
+			// validate the input
+			format=format.toLowerCase();
+			if (!("short".equals(format) || "long".equals(format))) {
+				String msg = "Invalid format for getSiteMembershipSPI: ["+format+"]";
+				log.error(msg);
+				return Response.status(Response.Status.BAD_REQUEST).entity(msg).build();
+			}
+			
 			String sessionId = getUserSessionId(request);
 
 			// return CTools site members
-			HashMap<String, String> site_members = migrationTaskService.get_site_members(siteId, sessionId);
+
+			HashMap<String, Object> site_members = migrationTaskService.get_site_members(siteId, sessionId,format);
 			for (String userEid : site_members.keySet()) {
 				if (userEid.equals("errorMessage")) {
 					return Response.status(Response.Status.INTERNAL_SERVER_ERROR).entity(site_members).build();
@@ -618,7 +633,7 @@ public class MigrationController implements ErrorController {
 					+ " for site id= " + siteId + " for user " + remoteUser);
 			return rv;
 		}
-		
+
 		// 3. check if there is an ongoing migration for the same site and tool
 		boolean valid_migration_request = true;
 		List<Migration> migratingSiteTools = repository
@@ -914,7 +929,7 @@ public class MigrationController implements ErrorController {
 
 		return rv;
 	}
-	
+
 	/**
 	 * Save Bulk Migration Email to Google record to DB
 	 * 
@@ -1236,7 +1251,7 @@ public class MigrationController implements ErrorController {
     				HttpStatus.BAD_REQUEST);
         }
         String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
-        
+
 
 		// use the Box admin id
 		String userId = env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID);
