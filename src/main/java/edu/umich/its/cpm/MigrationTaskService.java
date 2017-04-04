@@ -898,7 +898,7 @@ class MigrationTaskService {
 		siteBoxMigrationIdMap.put(siteId + "_boxRootFolderId", boxFolderId);
 		// add the migrationId to return map
 		siteBoxMigrationIdMap.put(siteId + "_migrationId", migrationId);
-		
+
 		return siteBoxMigrationIdMap;
 	}
 	
@@ -1045,17 +1045,39 @@ class MigrationTaskService {
 	/**
 	 * REST API call to get CTools site members
 	 *
-	 * @param request
 	 * @param site_id
-	 * @return
+	 * @param sessionId
+	 * @return map of member id and ctools site role.
 	 */
+	
+	// This wrapper ensures existing calls remain working.
 	public HashMap<String, String> get_site_members(String site_id, String sessionId) {
-		HashMap<String, String> rv = new HashMap<String, String>();
+		HashMap<String,Object> raw_result = get_site_members(site_id, sessionId, Utils.SHORT_MEMBERSHIP_FORMAT);
+		// convert from map of String,Object to the expected String,String
+		HashMap<String,String> newMap =new HashMap<String,String>();
+		for (Map.Entry<String, Object> entry : raw_result.entrySet()) {
+		       if(entry.getValue() instanceof String){
+		            newMap.put(entry.getKey(), (String) entry.getValue());
+		          }
+		 }
+		return newMap;
+	}
+
+
+	// Generalized get_site_members method which takes account of the requested format.
+	public HashMap<String, Object> get_site_members(String site_id, String sessionId, String format) {
+
+		HashMap<String, Object> rv = new HashMap<String, Object>();
+
+		if (format.length() > 0) {
+			log.debug("get_site_members: format: [{}]",format);
+		}
 
 		String membersString = "";
 		String errorMessage = "";
 		String requestUrl = "";
 
+		// get the membership from CTools.
 		RestTemplate restTemplate = new RestTemplate();
 		requestUrl = Utils.directCallUrl(env, "membership/site/" + site_id + ".json?", sessionId);
 		log.debug("get_site_members: url:[{}] ",requestUrl);
@@ -1083,13 +1105,7 @@ class MigrationTaskService {
 				JSONArray members = (JSONArray) sJSON.get("membership_collection");
 				// iterate through all members
 				for (int iMember = 0; members != null && iMember < members.length(); ++iMember) {
-					JSONObject member = members.getJSONObject(iMember);
-					String userEid = member.getString("userEid");
-					String userRole = member.getString("memberRole");
-					boolean isActive = member.getBoolean("active");
-					if (isActive) {
-						rv.put(userEid, userRole);
-					}
+					processEachMemberInSite(rv, members, iMember, format);
 				}
 			}
 			catch (JSONException e)
@@ -1103,21 +1119,64 @@ class MigrationTaskService {
 		if(!errorMessage.isEmpty()) {
 			rv.put(Utils.PARAM_ERROR_MESSAGE, errorMessage);
 		}
-		
+
 		return rv;
 	}
-	
+
+	// Choose how to process each member.
+	// In java 8 could just assign the method to a variable early on and not need to keep redundent checking.
+	private void processEachMemberInSite(HashMap<String, Object> rv, JSONArray members, int iMember, String format) {
+		{
+			if (Utils.SHORT_MEMBERSHIP_FORMAT.equals(format)) {
+				formatShortMemberInfo(rv, members, iMember);
+			}
+			if (Utils.LONG_MEMBERSHIP_FORMAT.equals(format)) {
+				formatLongMemberInfo(rv, members, iMember);
+			}
+		}
+	}
+
+	// Format one member information object into the legacy short format.
+	private void formatShortMemberInfo(HashMap<String, Object> rv, JSONArray members, int iMember) {
+		JSONObject member = members.getJSONObject(iMember);
+
+		String userEid = member.getString("userEid");
+		String userRole = member.getString("memberRole");
+
+		boolean isActive = member.getBoolean("active");
+		if (isActive) {
+			rv.put(userEid, userRole);
+		}
+	}
+
+	// Format one member information object into the new long format.
+	private void formatLongMemberInfo(HashMap<String, Object> rv, JSONArray members, int iMember) {
+		JSONObject member = members.getJSONObject(iMember);
+		
+		String userEid = member.getString("userEid");
+		HashMap<String,String> userInfo = new HashMap<String,String>();
+		
+		userInfo.put("memberRole",member.getString("memberRole"));
+		// the name might be userSortName or userDisplayName
+		userInfo.put("userSortName", member.getString("userSortName"));
+
+		boolean isActive = member.getBoolean("active");
+		if (isActive) {
+			rv.put(userEid, userInfo);
+		}
+	}
+
 	/**
 	 * get MyWorkspace site members
 	 * @param sessionId
 	 * @param site_id
-	 * @return
+	 * @return map of user id and role.
 	 * @throws RestClientException
 	 */
-	private HashMap<String, String> getMyWorkspaceSiteMember(String sessionId, String site_id)
+	private HashMap<String, Object> getMyWorkspaceSiteMember(String sessionId, String site_id)
 			throws RestClientException {
 			
-			HashMap<String, String> rv = new HashMap<String, String>();
+			HashMap<String, Object> rv = new HashMap<String, Object>();
 			
 			// for MyWorkspace site, there is problem getting membership information
 			// we have to decipher the user information from the user id
@@ -1142,10 +1201,10 @@ class MigrationTaskService {
 				log.error(errorMessage);
 				throw ee;
 			}
-			log.info("result of getting user string " + userString);
+			//log.info("result of getting user string " + userString);
 			return rv;
 		}
-	
+
 	/**
 	 * update Box root folder name for MyWorkspace sites
 	 * @param sessionId
@@ -1182,7 +1241,7 @@ class MigrationTaskService {
 		}
 		return boxSiteRootFolderName;
 	}
-	
+
 	/**
 	 * concatenate all site Owner users, and maintainer users for MyWorkspace sites
 	 * @param sessionId
