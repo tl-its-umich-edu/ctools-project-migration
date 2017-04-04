@@ -231,5 +231,18 @@ var errorDisplayBulk = function(result){
 };
 
 $(function () {
-  $('[data-toggle="popover"]').popover({'html':true})
-})
+  $('[data-toggle="popover"]').popover({'html':true});
+  //make membership lists "editable" so that values can be picked up by a keyboard user
+  $('a.more').on( "click", function() {
+    $(this).parent('.editableTextarea').focus();
+  });
+  $('.editableTextarea').focus(function(){
+    $(this).hide();
+    var user_text = $.trim($(this).prev().text()).slice(0,-1);
+    $(this).next('textarea.userListArea').val(user_text).show().focus().select();
+  });
+  $('.userListArea').blur(function(){
+    $(this).hide();
+    $(this).prev('div.editableTextarea').show();
+  });
+});
