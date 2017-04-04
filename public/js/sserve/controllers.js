@@ -503,7 +503,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     };
     $scope.exportSiteMembership = function(site_id, site_name) {
-      var membershipUrl = 'siteMembership/' + site_id;
+      var membershipUrl = 'siteMembership/' + site_id + '?format=long';
       Projects.getMembership(membershipUrl).then(function(result) {
         $scope.membership = {
 	         'metadata': {

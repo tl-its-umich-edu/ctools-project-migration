@@ -1,0 +1,20 @@
+{
+	"statusType": "OK",
+	"entity": {
+		"dlhaines": {
+			"userSortName": "Haines, David",
+			"memberRole": "Owner"
+		},
+		"vkg": {
+			"userSortName": "Green, Victoria",
+			"memberRole": "Owner"
+		},
+		"mwagner": {
+			"userSortName": "Wagner, Margaret",
+			"memberRole": "Member"
+		}
+	},
+	"entityType": "java.util.HashMap",
+	"metadata": {},
+	"status": 200
+}
