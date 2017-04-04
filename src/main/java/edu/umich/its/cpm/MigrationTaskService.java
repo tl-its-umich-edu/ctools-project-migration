@@ -1052,7 +1052,7 @@ class MigrationTaskService {
 	
 	// This wrapper ensures existing calls remain working.
 	public HashMap<String, String> get_site_members(String site_id, String sessionId) {
-		HashMap<String,Object> raw_result = get_site_members(site_id, sessionId, "short");
+		HashMap<String,Object> raw_result = get_site_members(site_id, sessionId, Utils.SHORT_MEMBERSHIP_FORMAT);
 		// convert from map of String,Object to the expected String,String
 		HashMap<String,String> newMap =new HashMap<String,String>();
 		for (Map.Entry<String, Object> entry : raw_result.entrySet()) {
@@ -1065,12 +1065,12 @@ class MigrationTaskService {
 
 
 	// Generalized get_site_members method which takes account of the requested format.
-	public HashMap<String, Object> get_site_members(String site_id, String sessionId, String...format) {
+	public HashMap<String, Object> get_site_members(String site_id, String sessionId, String format) {
 
 		HashMap<String, Object> rv = new HashMap<String, Object>();
 
-		if (format.length > 0) {
-			log.debug("get_site_members: format: [{}]",format[0]);
+		if (format.length() > 0) {
+			log.debug("get_site_members: format: [{}]",format);
 		}
 
 		String membersString = "";
@@ -1125,12 +1125,12 @@ class MigrationTaskService {
 
 	// Choose how to process each member.
 	// In java 8 could just assign the method to a variable early on and not need to keep redundent checking.
-	private void processEachMemberInSite(HashMap<String, Object> rv, JSONArray members, int iMember, String... format) {
+	private void processEachMemberInSite(HashMap<String, Object> rv, JSONArray members, int iMember, String format) {
 		{
-			if ("short".equals(format[0])) {
+			if (Utils.SHORT_MEMBERSHIP_FORMAT.equals(format)) {
 				formatShortMemberInfo(rv, members, iMember);
 			}
-			if ("long".equals(format[0])) {
+			if (Utils.LONG_MEMBERSHIP_FORMAT.equals(format)) {
 				formatLongMemberInfo(rv, members, iMember);
 			}
 		}

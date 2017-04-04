@@ -116,6 +116,10 @@ class Utils {
 
 	public static final String LINE_BREAK = "\n";
 
+	// specify return format for membership url
+	public static final String SHORT_MEMBERSHIP_FORMAT = "short";
+	public static final String LONG_MEMBERSHIP_FORMAT = "long";
+	
 	private static final Logger log = LoggerFactory.getLogger(Utils.class);
     
 	// config variables
@@ -904,8 +908,6 @@ class Utils {
         statusMap.put("status", status);
         return (new JSONObject(statusMap)).toString();
     }
-
-
 
 
 }

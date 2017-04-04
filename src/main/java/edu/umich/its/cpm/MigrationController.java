@@ -426,13 +426,13 @@ public class MigrationController implements ErrorController {
 	@Produces(MediaType.APPLICATION_JSON)
 	public Response getSiteMembershipAPI(
 			@PathVariable("siteId") String siteId,
-			@RequestParam(value="format",defaultValue="short", required=false) String format,
+			@RequestParam(value="format",defaultValue=Utils.SHORT_MEMBERSHIP_FORMAT, required=false) String format,
 			HttpServletRequest request) {
 		try {
 
 			// validate the input
 			format=format.toLowerCase();
-			if (!("short".equals(format) || "long".equals(format))) {
+			if (!(Utils.SHORT_MEMBERSHIP_FORMAT.equals(format) || Utils.LONG_MEMBERSHIP_FORMAT.equals(format))) {
 				String msg = "Invalid format for getSiteMembershipSPI: ["+format+"]";
 				log.error(msg);
 				return Response.status(Response.Status.BAD_REQUEST).entity(msg).build();
