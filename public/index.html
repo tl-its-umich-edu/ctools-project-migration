@@ -320,7 +320,13 @@
           <div class="" ng-show="membership.metadata.status ===200">
             <h4>Google format</h4>
             <div class="well">
-              <span ng-repeat="member in membership.data.groups.gg_format">{{member | whatMember}}<span ng-show="!$last">, </span></span>
+              <div class="editableTextareaAll" style="display:none">
+                <span ng-repeat="member in membership.data.groups.gg_format">{{member | whatMember}}<span ng-show="!$last">, </span></span>
+              </div>
+              <div class="editableTextarea"  tabindex="0">
+                <span ng-repeat="member in membership.data.groups.gg_format | limitTo:membershipCutOff">{{member | whatMember}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.gg_format.length > membershipCutOff">More?</a>
+              </div>
+              <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
             </div>
             <h4>MCommunity format <small>(users categorized by role)</small> </h4>
 
@@ -336,14 +342,26 @@
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Owners
                 </h5>
-                <span ng-repeat="owner in membership.data.groups.mc_format.owners">{{owner}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="owner in membership.data.groups.mc_format.owners">{{owner}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea"  tabindex="0">
+                  <span ng-repeat="owner in membership.data.groups.mc_format.owners | limitTo:membershipCutOff">{{owner}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.mc_format.owners.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
               <div class="" ng-show="membership.data.groups.mc_format.members.length">
                 <br>
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Members
                 </h5>
-                <span ng-repeat="member in membership.data.groups.mc_format.members">{{member}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="member in membership.data.groups.mc_format.members">{{member}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea"  tabindex="0">
+                  <span ng-repeat="member in membership.data.groups.mc_format.members | limitTo:membershipCutOff">{{member}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.mc_format.members.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
             </div>
 
@@ -365,14 +383,26 @@
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Co-Owners
                 </h5>
-                <span ng-repeat="co_owner in membership.data.groups.box_format.co_owners">{{co_owner  | whatMember}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="co_owner in membership.data.groups.box_format.co_owners">{{co_owner  | whatMember}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea"  tabindex="0">
+                  <span ng-repeat="co_owner in membership.data.groups.box_format.co_owners | limitTo:membershipCutOff">{{co_owner  | whatMember}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.box_format.co_owners.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
               <div class="" ng-show="membership.data.groups.box_format.editors.length">
                 <br>
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Editors
                 </h5>
-                <span ng-repeat="editor in membership.data.groups.box_format.editors">{{editor  | whatMember}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="editor in membership.data.groups.box_format.editors">{{editor  | whatMember}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea" tabindex="0">
+                  <span ng-repeat="editor in membership.data.groups.box_format.editors | limitTo:membershipCutOff">{{editor  | whatMember}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.box_format.editors.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
 
 
@@ -381,25 +411,28 @@
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Viewer Uploader
                 </h5>
-                <span ng-repeat="viewer_uploader in membership.data.groups.box_format.viewer_uploaders">{{viewer_uploader  | whatMember}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="viewer_uploader in membership.data.groups.box_format.viewer_uploaders">{{viewer_uploader  | whatMember}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea" tabindex="0">
+                  <span ng-repeat="viewer_uploader in membership.data.groups.box_format.viewer_uploaders | limitTo:membershipCutOff">{{viewer_uploader  | whatMember}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.box_format.viewer_uploaders.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
-
-
               <div class="" ng-show="membership.data.groups.box_format.viewers.length">
                 <br>
                 <h5 style="border-bottom:1px solid #aaa;padding-bottom:5px">
                   Viewers
                 </h5>
-                <span ng-repeat="viewer in membership.data.groups.box_format.viewers">{{viewer  | whatMember}}<span ng-show="!$last">, </span></span>
+                <div class="editableTextareaAll" style="display:none">
+                  <span ng-repeat="viewer in membership.data.groups.box_format.viewers">{{viewer  | whatMember}}<span ng-show="!$last">, </span></span>
+                </div>
+                <div class="editableTextarea" tabindex="0">
+                  <span ng-repeat="viewer in membership.data.groups.box_format.viewers | limitTo:membershipCutOff">{{viewer  | whatMember}}<span ng-show="!$last">, </span></span> <a href="" class="more" ng-show="membership.data.groups.box_format.viewers.length > membershipCutOff">More?</a>
+                </div>
+                <textarea style="display:none" tabindex="-1" class="form-control userListArea" rows="2" cols="80"></textarea>
               </div>
             </div>
-
-
-
-
-
-
-
             <h4>Participant List <small>(information from CTools)</small></h4>
             <div class="well">
               <table class="table">
