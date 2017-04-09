@@ -378,6 +378,10 @@ class Utils {
 		if (object.has(key) && object.get(key) != JSONObject.NULL) {
 			rv = object.getString(key);
 		}
+		
+		// trim the String
+		rv = rv!=null?rv.trim():null;
+		
 		return rv;
 	}
 
