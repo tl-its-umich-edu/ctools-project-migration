@@ -1685,7 +1685,7 @@ public class MigrationController implements ErrorController {
         Map<String, String[]> parameterMap = request.getParameterMap();
         String destination_type = parameterMap.get("destination_type")[0];
 
-        if (Utils.isItMailArchiveZip(destination_type)) {
+        if (Utils.isItMailArchiveDirectory(destination_type)) {
             migrationCallForMailArchive(request, response, Utils.MIGRATION_MAILARCHIVE_TYPE_ZIP);
         } else if (Utils.isItMailArchiveMbox(destination_type)) {
             migrationCallForMailArchive(request, response, Utils.MIGRATION_MAILARCHIVE_TYPE_MBOX);
