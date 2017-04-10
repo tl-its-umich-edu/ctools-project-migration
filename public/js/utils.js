@@ -34,7 +34,7 @@ var transformProjects = function (siteList){
 }
 
 var getTypeCode = function(type){
-  if (type==='myworkspace'){
+  if (type==='myworkspace' || type==='myworkspace_secure'){
     return 1;
   }
   else if (type==='GradToolsRackham' || 'GradToolsDepartment'){
