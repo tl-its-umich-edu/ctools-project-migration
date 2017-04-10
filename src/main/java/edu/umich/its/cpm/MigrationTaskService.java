@@ -1718,8 +1718,8 @@ class MigrationTaskService {
 					}
 				}
 			} catch (IOException e) {
-				String ioExceptionString = " zipFiles--IOException: : fileName="
-						+ fileName;
+				String ioExceptionString = "Problem creating Zip file entry for fileName="
+						+ fileName + ": " + e.getMessage();
 				log.warn(ioExceptionString);
 				zipFileStatus.append(ioExceptionString + Utils.LINE_BREAK);
 			} finally {
