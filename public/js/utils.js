@@ -34,7 +34,7 @@ var transformProjects = function (siteList){
 }
 
 var getTypeCode = function(type){
-  if (type==='myworkspace'){
+  if (type==='myworkspace' || type==='myworkspace_secure'){
     return 1;
   }
   else if (type==='GradToolsRackham' || 'GradToolsDepartment'){
@@ -150,12 +150,13 @@ var prepareMembership = function(membership) {
   var mc_format = {'owners':[], 'members':[]};
   var box_format = {'co_owners':[], 'editors':[], 'viewers':[],'viewer_uploaders':[]};
   var readable_format =[];
-  _.each(membership.entity, function(value, prop){
-    gg_format.push(prop);
-    readable_format.push({'userId':prop, 'memberRole':value});
-    // collating by role for MComm and Boxformat
 
-    switch(value) {
+  _.each(membership.entity, function(value, prop){
+
+    gg_format.push(prop);
+    readable_format.push({'userId':prop, 'memberRole':value.memberRole,'name':value.userSortName});
+    // collating by role for MComm and Box format
+    switch(value.memberRole) {
     case 'Owner':
       mc_format.owners.push(prop);
       box_format.co_owners.push(prop);
@@ -196,14 +197,13 @@ var prepareMembership = function(membership) {
   box_format.editors = _.sortBy(box_format.editors, function(mem) { return mem; });
   box_format.viewer_uploaders = _.sortBy(box_format.viewer_uploaders, function(mem) { return mem; });
   box_format.viewers = _.sortBy(box_format.viewers, function(mem) { return mem; });
-
   membership = {
     'data': {
       'groups': {
         'gg_format': _.sortBy(gg_format, function(mem) {return mem;}),
         'mc_format': mc_format,
         'box_format':box_format,
-        'readable_format': _.sortBy(readable_format, function(mem) { return mem.userId; })
+        'readable_format': _.sortBy(readable_format, 'name')
       }
     },
     'status': membership.status,
@@ -231,5 +231,18 @@ var errorDisplayBulk = function(result){
 };
 
 $(function () {
-  $('[data-toggle="popover"]').popover({'html':true})
-})
+  $('[data-toggle="popover"]').popover({'html':true});
+  //make membership lists "editable" so that values can be picked up by a keyboard user
+  $('a.more').on( "click", function() {
+    $(this).parent('.editableTextarea').focus();
+  });
+  $('.editableTextarea').focus(function(){
+    $(this).hide();
+    var user_text = $.trim($(this).prev().text()).slice(0,-1);
+    $(this).next('textarea.userListArea').val(user_text).show().focus().select();
+  });
+  $('.userListArea').blur(function(){
+    $(this).hide();
+    $(this).prev('div.editableTextarea').show();
+  });
+});

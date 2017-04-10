@@ -8,6 +8,7 @@ projectMigrationApp.run(function($rootScope) {
   $rootScope.server = '';
   $rootScope.user = {};
   $rootScope.pollInterval = 15000;
+  $rootScope.membershipCutOff = 10;
   $rootScope.status = {
     'projects': '',
     'migrations': '',
