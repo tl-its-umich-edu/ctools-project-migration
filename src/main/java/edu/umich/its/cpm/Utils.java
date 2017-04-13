@@ -374,11 +374,15 @@ class Utils {
 	 * @return
 	 */
 	public static String getJSONString(JSONObject object, String key) {
-		String rv = null;
+		String jsonString = null;
 		if (object.has(key) && object.get(key) != JSONObject.NULL) {
-			rv = object.getString(key);
+			jsonString = object.getString(key);
 		}
-		return rv;
+		
+		// trim the String
+		jsonString = jsonString!=null?jsonString.trim():null;
+		
+		return jsonString;
 	}
 
 	/**
