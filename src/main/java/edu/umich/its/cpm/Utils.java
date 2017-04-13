@@ -632,7 +632,7 @@ class Utils {
 	}
 
 	/**
-	 * replace characters match the regular expression to "_"
+	 * replace characters to be suitable on multiple OS platforms.
 	 *
 	 * @param name
 	 * @return
@@ -658,13 +658,14 @@ class Utils {
 
 		return name;
 	}
+
     // Windows Explorer don't like below special characters in Folder names so zip extraction fails. Replacing with _
-	public static String sanitizeFolderNames(String zipFileName) {
+	public static String sanitizeName(String name) {
 		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
 		// backslash in the string.
-		zipFileName=zipFileName.replace('\\','_');
-		zipFileName=zipFileName.replace("\t", " ");
-		return zipFileName.replaceAll("[?>|*<:]", "_");
+		name=name.replace('\\','_');
+		name=name.replace("\t", " ");
+		return name.replaceAll("[?>|*<:]", "_");
 	}
 
 	/**
@@ -869,7 +870,7 @@ class Utils {
 		return CTOOLS_RESOURCE_TYPE_URL.equalsIgnoreCase(type);
 	}
 
-    public static boolean isItMailArchiveZip(String destination_type) {
+    public static boolean isItMailArchiveDirectory(String destination_type) {
         return destination_type.equals(MAILARCHIVEZIP);
     }
 

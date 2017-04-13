@@ -1308,6 +1308,7 @@ class MigrationTaskService {
 		 *
 		 * @return status of download
 		 */
+
 		public void downloadZippedFile(Environment env, HttpServletRequest request,
 				HttpServletResponse response, String userId,
 				HashMap<String, Object> sessionAttributes, String site_id,
@@ -1346,7 +1347,9 @@ class MigrationTaskService {
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
 					response.setCharacterEncoding("UTF-8");
-					String zipFileName = site_id + "_content.zip";
+
+					String zipFileName = generateResourcesZipFileName(request.getParameterMap().get("site_name")[0]);
+
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
@@ -1446,6 +1449,13 @@ class MigrationTaskService {
 
 		}
 
+		private String generateResourcesZipFileName(String site_name) {
+			site_name = Utils.sanitizeName(site_name).replaceAll(" ", "_");
+			String zipFileName = site_name + "_content.zip";
+			log.debug("resourceZipFileName: [{}]",zipFileName);
+			return zipFileName;
+		}
+
 		/**
 		 * update the status and end_time of migration record
 		 * @param migrationId
@@ -1535,8 +1545,7 @@ class MigrationTaskService {
 							rootFolderPath = contentUrl;
 						} else {
 							// create the zipentry for the sub-folder first
-							String folderName = contentUrl.replace(rootFolderPath,
-									"");
+							String folderName = contentUrl.replace(rootFolderPath,"");
 							
 							// update folder name
 							folderNameMap = Utils.updateFolderNameMap(
@@ -1546,7 +1555,7 @@ class MigrationTaskService {
 							}
 
 							// deal with special characters
-							folderName = Utils.sanitizeFolderNames(folderName);
+							folderName = Utils.sanitizeName(folderName);
 							
 							log.info("download folder " + folderName);
 
@@ -1650,7 +1659,7 @@ class MigrationTaskService {
 					// checks for folder renames
 					fileName = Utils.updateFolderPathForFileName(fileName,
 							folderNameUpdates);
-					fileName = Utils.sanitizeFolderNames(fileName);
+					fileName = Utils.sanitizeName(fileName);
 
 					log.info("download file " + fileName + " type=" + type);
 
@@ -2557,6 +2566,7 @@ class MigrationTaskService {
 
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
+			String site_name = parameterMap.get("site_name")[0];
 			JSONObject downloadStatus = Utils.migrationStatusObject(destination_type);
 			// login to CTools and get sessionId
 			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
@@ -2573,14 +2583,8 @@ class MigrationTaskService {
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
 					response.setCharacterEncoding("UTF-8");
-					String zipFileName = null;
-					if (Utils.isItMailArchiveZip(destination_type)) {
-						zipFileName = site_id + "_mailarchive.zip";
-						log.info("*** This is Mail Archive Zip Download ***");
-					} else if (Utils.isItMailArchiveMbox(destination_type)) {
-						zipFileName = site_id + "_mailarchivembox.zip";
-						log.info("*** This is Mail Archive (Mbox) Zip Download ***");
-					}
+
+					String zipFileName = generateMailArchiveName(site_name, destination_type)+".zip";
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
@@ -2636,6 +2640,22 @@ class MigrationTaskService {
 			setMigrationEndTimeAndStatus(migrationId, repository, downloadStatus);
 
 			return;
+		}
+
+		// figure out the name of the mail archive zip file.
+		private String generateMailArchiveName(String site_name, String destination_type) {
+			String formatText = null;
+			
+			if (Utils.isItMailArchiveDirectory(destination_type)) {
+				formatText = "_directory";
+			} else if (Utils.isItMailArchiveMbox(destination_type)) {
+				formatText = "_mbox";
+			}
+
+			String zipFileName = String.format("%s_mailarchive%s",site_name,formatText).replaceAll(" ", "_");
+
+			log.info("*** This is Mail Archive Zip Download name: [{}]",zipFileName);
+			return zipFileName;
 		}
 
 	private JSONObject errHandlingInDownloadMailArchiveZipFile(String site_id, JSONObject downloadStatus, String errorMessage) {
@@ -2714,7 +2734,7 @@ class MigrationTaskService {
 						String.class));
 				JSONArray messages = messagesJSON.getJSONArray(Utils.JSON_ATTR_MAILARCHIVE_COLLECTION);
 
-				if (Utils.isItMailArchiveZip(destination_type)) {
+				if (Utils.isItMailArchiveDirectory(destination_type)) {
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
 						JSONObject singleMailZipMsgStatus = new JSONObject();
 						StatusReport report = new StatusReport();
@@ -2742,7 +2762,8 @@ class MigrationTaskService {
 					}
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
-					String messageFolderName = getMailArchiveMboxMessageFolderName(site_id);
+					String site_name = request.getParameterMap().get("site_name")[0];
+					String messageFolderName = getMailArchiveMboxMessageFolderName(site_name,destination_type);
 					ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
 					out.putNextEntry(fileEntry);
 					for (int iMessage = 0; iMessage < messages.length(); iMessage++) {
@@ -2984,11 +3005,15 @@ class MigrationTaskService {
 			{
 				messageFolderName = channelName + Utils.PATH_SEPARATOR;
 			}
-			String name = messageFolderName + " " + date + " " + sender + " " + subject;
-			if(name.length()>100){
-				name=name.substring(0,100);
+			// If there is a channel then put in the separator space.
+			if (! messageFolderName.equals("")) {
+				messageFolderName += " ";
 			}
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, name) + "/";
+			messageFolderName += date + " " + sender + " " + subject;
+			if(messageFolderName.length()>100){
+				messageFolderName=messageFolderName.substring(0,100);
+			}
+			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName) + "/";
 
 			return messageFolderName;
 		}
@@ -3004,11 +3029,8 @@ class MigrationTaskService {
 		return getHeaderAttribute(headers, Utils.JSON_ATTR_MAIL_SUBJECT_FROM_HEADER);
 	}
 
-	private String getMailArchiveMboxMessageFolderName(String site_id) {
-			String messageFolderName = "";
-			messageFolderName = Utils.sanitizeName(Utils.COLLECTION_TYPE, messageFolderName + site_id) + "/";
-
-			return messageFolderName;
+	private String getMailArchiveMboxMessageFolderName(String site_name,String destination_type) {
+			return generateMailArchiveName(site_name,destination_type)+ "/";
 		}
 
 		/**
@@ -3108,7 +3130,6 @@ class MigrationTaskService {
 		}
 
 		/**
-		 * TODO
 		 * call GG microservice to upload message content
 		 * @param googleGroup
 		 * @param rcf822Email
@@ -3290,7 +3311,6 @@ class MigrationTaskService {
 	}
 
 	/**
-		 * TODO
 		 * call GG microservice to get Group Groups settings for given site id
 		 * @param siteId
 		 * @param sessionId

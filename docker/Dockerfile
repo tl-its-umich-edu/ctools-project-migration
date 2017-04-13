@@ -57,7 +57,8 @@ ADD ./web.xml $CATALINA_HOME/conf/web.xml
 ADD ./tomcat-users.xml $CATALINA_HOME/conf/tomcat-users.xml
 CMD ["catalina.sh", "jpda", "run"]
 
+# -v /etc/localtime:/etc/localtime:ro 
 ### Start in docker with:
-# docker run -p 8080:8080 -p 8090:8090 cpm_a
+# docker run -p 8080:8080 -p 8090:8090 -v /etc/localtime:/etc/localtime:ro cpm_a
 
 #end

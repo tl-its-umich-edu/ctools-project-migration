@@ -18,11 +18,16 @@
 
 #set -x
 set -e
+
+# set timezone explicitly
+TIMEZONE=" -e TZ=America/New_York "
+
 DOCKER_TAG=cpm_a
 PROFILES=" -P db-driver-oracle "
 
 WEB_PORT=" -p 8080:8080 "
 JPDA_PORT=" -p 8090:8090 "
+
 
 # build the war file
 (cd ..;
@@ -34,5 +39,5 @@ cp ../target/*war .
 
 docker build -t ${DOCKER_TAG} .
 
-echo -e "+++ run with: \n#docker run ${WEB_PORT} ${JPDA_PORT} ${DOCKER_TAG}"
+echo -e "+++ run with: \n#docker run ${WEB_PORT} ${JPDA_PORT} ${TIMEZONE} ${DOCKER_TAG}"
 #end
