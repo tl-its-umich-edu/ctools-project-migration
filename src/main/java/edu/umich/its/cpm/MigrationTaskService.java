@@ -1718,8 +1718,15 @@ class MigrationTaskService {
 					}
 				}
 			} catch (IOException e) {
+				String eMessage = e.getMessage();
+				
 				String ioExceptionString = "Problem creating Zip file entry for fileName="
-						+ fileName + ": " + e.getMessage();
+						+ fileName + ": " + eMessage;
+				if (eMessage != null && eMessage.contains("duplicate entry"))
+				{
+					// specific warning for duplicate entry
+					ioExceptionString = "This file could not be downloaded because another file already exists with the same name: " + fileName;
+				}
 				log.warn(ioExceptionString);
 				zipFileStatus.append(ioExceptionString + Utils.LINE_BREAK);
 			} finally {
