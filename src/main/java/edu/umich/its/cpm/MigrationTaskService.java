@@ -2635,7 +2635,6 @@ class MigrationTaskService {
 			return;
 		}
 
-		// TODO: Should the name of the format be included for both?
 		// figure out the name of the mail archive zip file.
 		private String generateMailArchiveName(String site_name, String destination_type) {
 			String formatText = null;
