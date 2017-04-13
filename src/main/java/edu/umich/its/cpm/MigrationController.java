@@ -328,72 +328,14 @@ public class MigrationController implements ErrorController {
 			if (!allowedSiteTypes.contains(siteType))
 				// if not the wanted type, bypass the site
 				continue;
-			try
-			{
-				// check whether this site is automatically created from Canvas
-				// and with only one Evaluation tool inside
-				if (!isEvalProjectSite(sessionId, siteId))
-				{
-					// keep the site JSON if current user has Owner role in this site
-					ownerSitesJSONArray.put(siteJSON);
-				}
-			}
-			catch (RestClientException e)
-			{
-				// sometimes there is problem getting site member roles
-				// in this case, we will add the site json
-				// and document the exception
-				ownerSitesJSONArray.put(siteJSON);
-				log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
-			}
-			catch (JSONException e)
-			{
-				// sometimes there is problem getting site member roles
-				// in this case, we will add the site json
-				// and document the exception
-				ownerSitesJSONArray.put(siteJSON);
-				log.error("Exception getting membership for site " + siteId + " " + e.getMessage());
-			}
+			
+			// keep the site JSON if current user has Owner role in this site
+			ownerSitesJSONArray.put(siteJSON);
 		}
 		
 		JSONObject sitesJSONObject = new JSONObject();
 		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, ownerSitesJSONArray);
 		return sitesJSONObject.toString();
-	}
-
-	/**
-	 * Some project sites are automatically created from Canvas
-	 * those sites have only one tool, the evaluation tool
-	 * Do not show those sites in user's migration project list
-	 * @param sessionId
-	 * @param siteId
-	 * @return
-	 */
-	private boolean isEvalProjectSite(String sessionId, String siteId) {
-		// filter out those sites that has only evaluation tool inside
-		boolean evaluationSite = false;
-		HashMap<String, String> pagesMap = migrationTaskService.get_user_project_site_tools(siteId, sessionId);
-		String pagesString = pagesMap.get("pagesString");
-		JSONArray pagesJSON = new JSONArray(pagesString);
-		
-		// return false if the site has none or more than one pages
-		if (pagesJSON.length() == 0 || pagesJSON.length() > 1)
-			return evaluationSite;
-		
-		// site only has one page
-		// get the first page
-		JSONObject pageJSON = (JSONObject) pagesJSON.get(0);
-		// look the tools attribute and find whether it only contain one tool --- Evaluation tool
-		JSONArray toolsJSON = (JSONArray) pageJSON.get("tools");
-		if (toolsJSON.length() == 1)
-		{
-			// get the only tool JSON object
-			JSONObject toolJSON = (JSONObject) toolsJSON.get(0);
-			if (Utils.SAKAI_EVALUATION_TOOL_ID.equals(toolJSON.get("toolId"))) {
-				evaluationSite =true;
-			}
-		}
-		return evaluationSite;
 	}
 
 	/**
