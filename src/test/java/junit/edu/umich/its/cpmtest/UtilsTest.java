@@ -29,29 +29,57 @@ public class UtilsTest {
 	public void tearDown() throws Exception {
 	}
 
+	/*
+	Character in Site Name
+	asterisk *
+	backslash \
+	colon :
+	double quote "
+	forward slash /
+	greater than >
+	less than <
+	pipe |
+	question mark ?
+	tab
+	*/
+	
+	//static String sanitizeCharacters = ":/><\t*\\\"|?.";
+	
+	@Test public void testAllExpectedSanitizeNameCharactersModified() {
+		assertEquals("___________",Utils.sanitizeName(Utils.COLLECTION_TYPE, Utils.SANITIZE_CHARACTERS));
+	}
+
+
 	@Test
 	public void testSanitizeName() {
 		// escape back slash
-		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test \\ folder"), "test _ folder");
-		
+		assertEquals("test _ folder",Utils.sanitizeName(Utils.COLLECTION_TYPE, "test \\ folder"));
+
 		// escape forward slash
-		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test / folder"), "test _ folder");
-		
+		assertEquals( "test _ folder",Utils.sanitizeName(Utils.COLLECTION_TYPE, "test / folder"));
+
 		// escape : 
-		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "test : folder"), "test _ folder");
+		assertEquals("test _ folder",Utils.sanitizeName(Utils.COLLECTION_TYPE, "test : folder"));
 
 		//escape > <
-		assertEquals(Utils.sanitizeName(Utils.COLLECTION_TYPE, "> test < folder"), "_ test _ folder");
+		assertEquals("_ test _ folder",Utils.sanitizeName(Utils.COLLECTION_TYPE, "> test < folder"));
 
 		// URL as name
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
-				"http://www.npr.org/"), "http___www_npr_org_.html");
+		assertEquals("http___www_npr_org_.html",Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION,
+				"http://www.npr.org/"));
 
 		// string without extension
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"), "test_url.html");
-		
+		assertEquals("test_url.html",Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "test_url"));
+
 		// URL as name, not ending in "/"
-		assertEquals(Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"), "http___www_npr_org.html");
+		assertEquals("http___www_npr_org.html",Utils.sanitizeName(Utils.CTOOLS_RESOURCE_TYPE_CITATION, "http://www.npr.org"));
+	}
+
+	@Test
+	public void testSanitizeFolderName() {
+		// make sure final back slash survives.
+		assertEquals("b/",Utils.sanitizeName(Utils.COLLECTION_TYPE, "b/"));
+		assertEquals("a_b/",Utils.sanitizeName(Utils.COLLECTION_TYPE, "a/b/"));
 	}
 	
 	@Test
@@ -159,7 +187,7 @@ public class UtilsTest {
 		// now test the file name change
 		// 1. there is a folder name change inside the file path
 		String fileName = Utils.updateFolderPathForFileName("changed_folder_name/test.pdf", folderNamesMap);
-		assertEquals(fileName, "changed_folder_name/test.pdf");
+		assertEquals(fileName, "new_changed_folder_name/test.pdf");
 
 		// 2. there is NO folder name change inside the file path
 		fileName = Utils.updateFolderPathForFileName("unchanged_folder_name/subfolder_1//test.pdf", folderNamesMap);
