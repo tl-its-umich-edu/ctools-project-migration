@@ -28,7 +28,6 @@ PROFILES=" -P db-driver-oracle "
 WEB_PORT=" -p 8080:8080 "
 JPDA_PORT=" -p 8090:8090 "
 
-
 # build the war file
 (cd ..;
  echo "mvn clean package ${PROFILES}"

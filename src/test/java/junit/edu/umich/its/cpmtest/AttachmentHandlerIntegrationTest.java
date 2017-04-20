@@ -21,7 +21,7 @@ import java.util.Properties;
  * Created by pushyami on 8/26/16.
  */
 
-public class AttachmentHandlerTest extends TestCase {
+public class AttachmentHandlerIntegrationTest extends TestCase {
 
     private AttachmentHandler attachmentHandler;
 

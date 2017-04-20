@@ -305,6 +305,7 @@ class MigrationTaskService {
 					String.class);
 			JSONObject siteJSONObject = new JSONObject(siteJson);
 			siteName = (String) siteJSONObject.get("title");
+			siteName=Utils.sanitizeName(Utils.COLLECTION_TYPE,siteName);
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
@@ -354,14 +355,14 @@ class MigrationTaskService {
 	private void addAdminAsSiteOwner(String adminUserId, String siteId, String sessionId)
 	{
 		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
-	        
+			
 		if(sessionAttributes.isEmpty()){
 			log.error("Logging into Ctools failed for the admin user.");
 		}
 		String adminSessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
 		// the request string to add user to site with Owner role
 		String requestUrl = Utils.directCallUrl(env, "membership/site/" + siteId + "?userSearchValues=" + adminUserId + "&memberRole=" + Utils.ROLE_OWNER + "&", adminSessionId);
-     	
+		
 		HttpContext httpContext = (HttpContext) sessionAttributes.get("httpContext");
 		HttpClient httpClient = HttpClientBuilder.create().build();
 		try {
@@ -740,10 +741,7 @@ class MigrationTaskService {
 	
 
 	/**
-	 * 
 	 * @param sessionId
-	 * @param request
-	 * @param response
 	 * @param userId
 	 * @param bulkMigrationName
 	 * @param bulkMigrationId
@@ -751,6 +749,7 @@ class MigrationTaskService {
 	 * @param siteName
 	 * @param toolId
 	 * @param toolName
+	 * @param siteBoxMigrationIdMap
 	 * @return
 	 */
 	private HashMap<String, String> createRootBoxFolderWithMembers(String sessionId,
@@ -784,6 +783,39 @@ class MigrationTaskService {
 		String boxFolderId = boxFolder.getID();
 		String boxFolderName = boxFolder.getName();
 
+		// now after all checks passed, we are ready for migration
+		// save migration record into database
+		HashMap<String, Object> saveBulkMigration = saveBulkBoxMigrationRecord(
+				bulkMigrationId, bulkMigrationName, siteId,
+				siteName, toolId, toolName, boxFolderId,
+				boxFolderName, allSiteOwners.toString());
+		
+		Migration migration = (Migration) saveBulkMigration.get("migration");
+		String migrationId = migration.getMigration_id();
+		
+		// add the boxFolderId to return map
+		siteBoxMigrationIdMap.put(siteId + "_boxRootFolderId", boxFolderId);
+		// add the migrationId to return map
+		siteBoxMigrationIdMap.put(siteId + "_migrationId", migrationId);
+		
+		return siteBoxMigrationIdMap;
+	}
+
+	
+	// Get all values required for adding members to folder from migration record.
+	public JSONObject addSiteMembersToBoxFolder(Migration migration) {
+		String siteId = migration.getSite_id();
+		StringBuffer allSiteOwners = new StringBuffer(migration.getMigrated_by());
+		String boxFolderId = boxFolderIdFromMigrationRecord(migration);
+
+		HashMap<String, Object> sessionAttributes = Utils.login_become_admin(env);
+
+		if(sessionAttributes.isEmpty()){
+			log.error("Logging into Ctools failed for the admin user.");
+		}
+
+		String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+
 		// add site members to Box folder as collaborators
 		// construct the JSON object for membership import
 		JSONObject addMembers = new JSONObject();
@@ -806,7 +838,7 @@ class MigrationTaskService {
 					addMembers_items.put(userItem);
 					continue;
 				}
-				
+
 				String userRole = userRolesMap.get(userEid);
 				//String userEmail = Utils.getUserEmailFromUserId(userEid);
 				String userEmail = getUserEmailFromUserId(userEid);
@@ -818,9 +850,8 @@ class MigrationTaskService {
 				}
 				String addCollaborationStatus = BoxUtils.addCollaboration(
 						env.getProperty(Utils.BOX_ADMIN_ACCOUNT_ID),
-						userEmail, userRole, boxFolderId,
-						boxAdminClientId, boxAdminClientSecret, uRepository);
-				
+						userEmail, userRole, boxFolderId,uRepository);
+
 				if (addCollaborationStatus == null)
 				{
 					// no error message returned - success!
@@ -830,14 +861,14 @@ class MigrationTaskService {
 				{
 					// failure
 					count_error++;
-					
+
 					// update the item list
 					JSONObject userItem = new JSONObject();
 					userItem.put(Utils.REPORT_ATTR_ITEM_ID, userEmail);
 					userItem.put(Utils.REPORT_ATTR_MESSAGE, addCollaborationStatus);
 					addMembers_items.put(userItem);
 				}
-				
+
 				// add user email to the owner list
 				if (addUserEmail(siteId, userRole))
 				{
@@ -854,12 +885,12 @@ class MigrationTaskService {
 			log.error("Problem parsing site members for site id = " + siteId + " " + e.getStackTrace());
 		}
 		addMembers.put(Utils.REPORT_ATTR_ITEMS, addMembers_items);
-		
+
 		// insert the counts element
 		addMembers_counts.put(Utils.REPORT_ATTR_COUNTS_SUCCESSES, count_success);
 		addMembers_counts.put(Utils.REPORT_ATTR_COUNTS_ERRORS, count_error);
 		addMembers.put(Utils.REPORT_ATTR_COUNTS, addMembers_counts);
-		
+
 		// insert the status element
 		String membership_status = Utils.REPORT_STATUS_OK;
 		if (count_success == 0 && count_error > 0)
@@ -872,36 +903,16 @@ class MigrationTaskService {
 			membership_status = Utils.REPORT_ATTR_COUNT_PARTIALS;
 		}
 		addMembers.put(Utils.REPORT_ATTR_STATUS, membership_status);
-		
+
 		// the migration status JSON object shall contain a "details" element
 		// which list the details of membership transfers
 		JSONObject statusJSON = new JSONObject();
 		JSONObject detailsJSON = new JSONObject();
 		detailsJSON.put(Utils.REPORT_ATTR_ADD_MEMBERS, addMembers);
 		statusJSON.put(Utils.REPORT_ATTR_DETAILS, detailsJSON);
-		
-		
-		// now after all checks passed, we are ready for migration
-		// save migration record into database
-		HashMap<String, Object> saveBulkMigration = saveBulkBoxMigrationRecord(
-				bulkMigrationId, bulkMigrationName, siteId,
-				siteName, toolId, toolName, boxFolderId,
-				boxFolderName, allSiteOwners.toString());
-		
-		Migration migration = (Migration) saveBulkMigration.get("migration");
-		String migrationId = migration.getMigration_id();
-
-		// save the add member JSON to migration status field
-		migrationRepository.setMigrationStatus(statusJSON.toString(), migrationId);
-		
-		// add the boxFolderId to return map
-		siteBoxMigrationIdMap.put(siteId + "_boxRootFolderId", boxFolderId);
-		// add the migrationId to return map
-		siteBoxMigrationIdMap.put(siteId + "_migrationId", migrationId);
-
-		return siteBoxMigrationIdMap;
+		return statusJSON;
 	}
-	
+
 	/**
 	 * Save Bulk Migration Resource to Box record to DB
 	 * 
@@ -921,7 +932,6 @@ class MigrationTaskService {
 		
 		// the format of folder path in box
 		// e.g. https://umich.app.box.com/files/0/f/<folderId>/<folderName>
-		log.info("boxFolderName=" + boxFolderName);
 		if (boxFolderId != null && !boxFolderId.isEmpty()
 				&& boxFolderName != null && !boxFolderName.isEmpty()) {
 			targetUrl = Utils.BOX_FILE_PATH_URL + boxFolderId
@@ -933,6 +943,24 @@ class MigrationTaskService {
 		return  newMigrationRecord(status, bulkMigrationId, bulkMigrationName,
 				siteId, siteName, toolId, toolName, destinationType, userId,
 				targetUrl);
+	}
+	
+	
+	private String boxFolderIdFromMigrationRecord(Migration migration) {
+		String boxFolderId = "";
+		// Use the same format for constructing the url to deconstruct it.
+		final Pattern pattern = Pattern.compile(Utils.BOX_FILE_PATH_URL+"(.+)"+Utils.PATH_SEPARATOR+"(.+)");
+		
+		String targetUrl = migration.getDestination_url();
+		// need to make matcher in each thread
+		Matcher matcher = pattern.matcher(targetUrl);
+		if (!matcher.matches()) {
+			log.warn("boxFolderIdFromMigrationRecord: no match in url: [{}]",targetUrl);
+		}
+		
+		boxFolderId = matcher.group(1);
+		
+		return boxFolderId;
 	}
 	
 	/**
