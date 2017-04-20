@@ -116,6 +116,16 @@ class Utils {
 
 	public static final String LINE_BREAK = "\n";
 
+	// Specify characters that can't appear in folder / file names
+	// Need lots and lots of backslashes to correctly quote backslashes used for escaping regex characters.
+	// Will handle trailing forward slash as a special case.
+	public static final String SANITIZE_CHARACTERS = ":/><*\\\\\"|\\?";
+	public static final String SANITIZE_CHARACTERS_REGEX = "["+SANITIZE_CHARACTERS+"]";
+	public static Pattern SANITIZE_CHARACTERS_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
+	public static final String SANITIZE_SPACES = "\t";
+	public static final String SANITIZE_SPACES_REGEX = "["+SANITIZE_SPACES+"]";
+	public static Pattern SANITIZE_SPACES_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
+
 	// specify return format for membership url
 	public static final String SHORT_MEMBERSHIP_FORMAT = "short";
 	public static final String LONG_MEMBERSHIP_FORMAT = "long";
@@ -644,28 +654,34 @@ class Utils {
 		if (!COLLECTION_TYPE.equals(type)) {
 			name = modifyFileNameOnType(type, name);
 		}
+
 		if (name == null)
 		{
 			log.error(" sanitizeName to be null for name=" + oldName);
 			return null;
 		}
 
-		// only look for ":" and "/" as of now
-		Pattern p = Pattern.compile("[\\\\:\\/\\>\\<]");
-		Matcher m = p.matcher(name);
-		name = m.replaceAll("_");
-		name=name.replace("\t", " ");
-
-		return name;
+		return sanitizeName(name);
 	}
 
-    // Windows Explorer don't like below special characters in Folder names so zip extraction fails. Replacing with _
+    // Replace special characters that cause problems in zip or file system names.
+	// A / at the end of a name is special, so will restore it if occurs.
 	public static String sanitizeName(String name) {
-		// double backslash actually escaping the \ and not looking for \\ in a string. it will replace all the
-		// backslash in the string.
-		name=name.replace('\\','_');
-		name=name.replace("\t", " ");
-		return name.replaceAll("[?>|*<:]", "_");
+
+		// Check to see if will need to maintain a trailing slash
+		Boolean restoreTrailingForwardSlash = (name.lastIndexOf("/") == name.length()-1);
+
+		// replace inconvenient characters with underscore
+		name = Utils.SANITIZE_CHARACTERS_PATTERN.matcher(name).replaceAll("_");
+	
+		// standardize whitespace with spaces.  Just change tabs.
+		name = Utils.SANITIZE_SPACES_PATTERN.matcher(name).replaceAll(" ");
+
+		if (restoreTrailingForwardSlash) {
+			name = name.substring(0, name.length()-1)+"/";
+		}
+
+		return name;
 	}
 
 	/**
