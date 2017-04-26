@@ -778,9 +778,10 @@ class Utils {
 		// update folder name if there is any parent folder renaming
 		// checks for folder name updates in the path
 		// replace all old folder title with new title
-		if (title.contains("/")) {
-			title = title.replace('/', '_');
-		}
+
+		// Make sure to use the sanitized name without special characters.
+		title = Utils.sanitizeName(title);
+	
 		String currentFolderName = folderName;
 		for (String oldFolderName : folderNameUpdates.keySet()) {
 			if (folderName.startsWith(oldFolderName)) {
