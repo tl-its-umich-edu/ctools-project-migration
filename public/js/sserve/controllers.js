@@ -360,68 +360,38 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       // get the sites that the user has
       // marked as ok to be deleted
       var targetDelete = _.where($scope.sourceProjects, {deleteProject: true});
-      // get the tools that have been
-      // selected for no migration
-      var targetDoNotMove = _.where($scope.sourceProjects, {selectedDoNotMove: true});
-
-      // initialize empty arrays
+      // initialize empty array
       var targetDeleteData = [];
-      var targetDoNotMoveData = [];
-      // populate the arrays
+      var targetDeleteConfirm = [];
+      // populate the array
       _.each(targetDelete, function(target) {
         targetDeleteData.push('siteId=' + target.site_id);
+        targetDeleteConfirm.push(target.site_name);
       });
-      _.each(targetDoNotMove, function(target) {
-        targetDoNotMoveData.push(
-          {
-            'url':'siteId=' + target.site_id+ '&toolId=' + target.tool_id + '&toolType=' + target.tool_type,
-            'row':target.tool_site_id
-        });
-      });
+      var targetDeleteDisplay = targetDeleteConfirm.join('\n');
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
       if(targetDeleteData.length){
-        var siteDeleteURL = '/deleteSite?' + targetDeleteData.join('&');
-        ProjectsLite.postDeleteSiteRequest(siteDeleteURL).then(
-          function(result) {
-            if(result.data === 'Delete site choices saved.'){
-              // find this site and add deleteStatus object to let user know
-              _.each(targetDeleteData, function(targetSite){
-                var targetSiteId = targetSite.split('=');
-                var thisSiteTheseTools = _.where($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
-                _.each(thisSiteTheseTools, function(thisSiteOrTool){
-                  thisSiteOrTool.deleteStatus = {
-                    'userId':'You have',
-                    'consentTime': moment().valueOf()
-                  };
-                });
-              });
-            }
-          }
-        );
-      }
-      // if do not migrated tool request has items as many posts as selected tools
-      if(targetDoNotMoveData.length){
-        _.each(targetDoNotMoveData, function(toolNotToMigr) {
-          var donotMigrateUrl = '/doNotMigrateTool?' + toolNotToMigr.url;
-          ProjectsLite.doNotMigrateTool(donotMigrateUrl).then(
+        if (window.confirm('Do you want us to delete the following sites?\n\n' + targetDeleteDisplay)) {
+          var siteDeleteURL = '/deleteSite?' + targetDeleteData.join('&');
+          ProjectsLite.postDeleteSiteRequest(siteDeleteURL).then(
             function(result) {
-              if(result.data ==='site tool delete exempt choice saved.') {
-                // find this tool and add doNotMigrateStatus object to let user know
-            	// "TOOLID&toolType=TYPE"
-            	var toolId = donotMigrateUrl.split('=')[2];
-            	// another splite will return the actual tool id
-            	toolId = toolId.split('&')[0];
-            	var thisTool = _.findWhere($scope.sourceProjects, {tool_id: toolId});
-              thisTool.selectedDoNotMove = false;
-            	thisTool.doNotMigrateStatus = {
-                  'userId':'You have',
-                  'consentTime': moment().valueOf()
-                };
+              if(result.data === 'Delete site choices saved.'){
+                // find this site and add deleteStatus object to let user know
+                _.each(targetDeleteData, function(targetSite){
+                  var targetSiteId = targetSite.split('=');
+                  var thisSiteTheseTools = _.where($scope.sourceProjects, {site_id: targetSite.split('=')[1]});
+                  _.each(thisSiteTheseTools, function(thisSiteOrTool){
+                    thisSiteOrTool.deleteStatus = {
+                      'userId':'You have',
+                      'consentTime': moment().valueOf()
+                    };
+                  });
+                });
               }
             }
           );
-        });
+        }
       }
       $scope.selectionIsMade = false;
     };
