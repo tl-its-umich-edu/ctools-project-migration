@@ -321,40 +321,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       }
     };
 
-    $scope.unFlagSiteDeletion = function(project){
-      $log.info('Unflagging project site deletion for ' + project.site_name);
-      var unFlagSiteDeleteURL = 'deleteSite?siteId='  + project.site_id +'&reset=true';
-      ProjectsLite.unFlagSiteDeletion(unFlagSiteDeleteURL).then(
-        function(result) {
-          if(result.data === 'Delete site choices saved.'){
-            // find this site and remove deleteStatus object to let user know
-            var thisSite = _.findWhere($scope.sourceProjects, {site_id: project.site_id});
-            thisSite.deleteStatus = null;
-            var thisSiteTheseTools = _.where($scope.sourceProjects,  {site_id: project.site_id});
-            _.each(thisSiteTheseTools, function(thisSiteOrTool){
-              thisSiteOrTool.deleteStatus = null;
-              thisSiteOrTool.deleteProject = false;
-            });
-          }
-        }
-      );
-    };
-
-     // handler for removing a flag that tool not be migrated
-     $scope.unFlagDoNotMigrate = function(project){
-       $log.info('Unflagging request to not have tool migrated for ' + project.site_name);
-       var unFlagDoNotMigrateURL = 'doNotMigrateTool?siteId=' + project.site_id + '&toolId=' + project.tool_id + '&toolType=' + project.tool_type + '&reset=true';
-       ProjectsLite.unFlagDoNotMigrate(unFlagDoNotMigrateURL).then(
-         function(result) {
-           if(result.data === 'site tool delete exempt choice saved.'){
-             var thisTool = _.findWhere($scope.sourceProjects, {tool_id: project.tool_id});
-             thisTool.doNotMigrateStatus = null;
-             thisTool.selectedDoNotMove = false;
-           }
-         }
-       );
-     };
-
     // handlers for posting 1) user acceptance that a site may be deleted and 2) user requests to not have certain tools migrated
     $scope.updateProjectListSettings = function() {
       // get the sites that the user has
