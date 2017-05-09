@@ -338,10 +338,11 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       // if delete array has items
       // post acceptance of deletion (params are a joined targetDeleteData array)
       if(targetDeleteData.length){
-        if (window.confirm('Do you want us to delete the following sites?\n\n' + targetDeleteDisplay)) {
+        if (window.confirm('Click OK to add the site(s) to the processing queue for deletion.\n\n' + targetDeleteDisplay)) {
           var siteDeleteURL = '/deleteSite?' + targetDeleteData.join('&');
           ProjectsLite.postDeleteSiteRequest(siteDeleteURL).then(
             function(result) {
+              $scope.selectionIsMade = false;
               if(result.data === 'Delete site choices saved.'){
                 // find this site and add deleteStatus object to let user know
                 _.each(targetDeleteData, function(targetSite){
@@ -359,7 +360,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           );
         }
       }
-      $scope.selectionIsMade = false;
     };
     // launched after sourceProjects has been added to the scope it decorates sourceProjects with the delete consent status
     $scope.addSiteStatus = function(){
