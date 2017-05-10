@@ -124,7 +124,7 @@ class Utils {
 	public static Pattern SANITIZE_CHARACTERS_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
 	public static final String SANITIZE_SPACES = "\t";
 	public static final String SANITIZE_SPACES_REGEX = "["+SANITIZE_SPACES+"]";
-	public static Pattern SANITIZE_SPACES_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
+	public static Pattern SANITIZE_SPACES_PATTERN = Pattern.compile(Utils.SANITIZE_SPACES_REGEX);
 
 	// specify return format for membership url
 	public static final String SHORT_MEMBERSHIP_FORMAT = "short";

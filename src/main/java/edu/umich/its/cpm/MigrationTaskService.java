@@ -1556,23 +1556,6 @@ class MigrationTaskService {
 							if (folderNameMap.containsKey(folderName)) {
 									folderName = folderNameMap.get(folderName);
 							}
-
-							// deal with special characters
-//							folderName = Utils.sanitizeName(folderName);
-
-//							log.info("download folder [{}]",folderName);
-
-							
-//							ZipEntry folderEntry = new ZipEntry(folderName);
-//							log.info("i: [{}] folderEntry: [{}]",i,folderName);
-//							try {
-//								out.putNextEntry(folderEntry);
-//							} catch (IOException e) {
-//								String ioError = "zipSiteContent: problem closing zip entry "
-//										+ folderName + " " + e;
-//								log.error(ioError);
-//								itemStatus.append(ioError + Utils.LINE_BREAK);
-//							}
 						}
 
 					} else {
@@ -1594,7 +1577,7 @@ class MigrationTaskService {
 						itemStatus.append(zipFileStatus);
 					}
 				}
-				
+
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						title, itemStatus.toString());
 
