@@ -1553,7 +1553,7 @@ class MigrationTaskService {
 							if (folderNameMap.containsKey(folderName)) {
 									folderName = folderNameMap.get(folderName);
 							}
-
+							
 							// deal with special characters
 							folderName = Utils.sanitizeName(folderName);
 							
@@ -1662,6 +1662,7 @@ class MigrationTaskService {
 
 					log.info("download file " + fileName + " type=" + type);
 
+					ZipEntry fileEntry = new ZipEntry(fileName);
 					if (Utils.isOfURLMIMEType(type)) {
 						if (webLinkUrl == null || webLinkUrl.isEmpty())
 						{
@@ -1673,8 +1674,8 @@ class MigrationTaskService {
 								// get the html file content first
 								String webLinkContent = Utils.getWebLinkContent(title,
 										webLinkUrl);
-	
-								ZipEntry fileEntry = new ZipEntry(fileName);
+								
+								
 								out.putNextEntry(fileEntry);
 								out.write(webLinkContent.getBytes());
 							}  catch (Exception e) {
@@ -1686,8 +1687,6 @@ class MigrationTaskService {
 							}
 						}
 					} else {
-
-						ZipEntry fileEntry = new ZipEntry(fileName);
 						out.putNextEntry(fileEntry);
 						int bCount = -1;
 

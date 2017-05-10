@@ -122,9 +122,15 @@ class Utils {
 	public static final String SANITIZE_CHARACTERS = ":/><*\\\\\"|\\?";
 	public static final String SANITIZE_CHARACTERS_REGEX = "["+SANITIZE_CHARACTERS+"]";
 	public static Pattern SANITIZE_CHARACTERS_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
+	
+	public static final String SANITIZE_CHARACTERS_FOLDER = ":><*\\\\\"|\\?";
+	public static final String SANITIZE_CHARACTERS_REGEX_FOLDER = "["+SANITIZE_CHARACTERS_FOLDER+"]";
+	public static Pattern SANITIZE_CHARACTERS_PATTERN_FOLDER = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX_FOLDER);
+	
+	
 	public static final String SANITIZE_SPACES = "\t";
 	public static final String SANITIZE_SPACES_REGEX = "["+SANITIZE_SPACES+"]";
-	public static Pattern SANITIZE_SPACES_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
+	public static Pattern SANITIZE_SPACES_PATTERN = Pattern.compile(Utils.SANITIZE_SPACES_REGEX);
 
 	// specify return format for membership url
 	public static final String SHORT_MEMBERSHIP_FORMAT = "short";
@@ -671,14 +677,22 @@ class Utils {
 		// Check to see if will need to maintain a trailing slash
 		Boolean restoreTrailingForwardSlash = (name.lastIndexOf("/") == name.length()-1);
 
-		// replace inconvenient characters with underscore
-		name = Utils.SANITIZE_CHARACTERS_PATTERN.matcher(name).replaceAll("_");
-	
-		// standardize whitespace with spaces.  Just change tabs.
-		name = Utils.SANITIZE_SPACES_PATTERN.matcher(name).replaceAll(" ");
-
 		if (restoreTrailingForwardSlash) {
+			// replace inconvenient characters with underscore
+			name = Utils.SANITIZE_CHARACTERS_PATTERN_FOLDER.matcher(name).replaceAll("_");
+			
+			// standardize whitespace with spaces.  Just change tabs.
+			name = Utils.SANITIZE_SPACES_PATTERN.matcher(name).replaceAll(" ");
+			
 			name = name.substring(0, name.length()-1)+"/";
+		}
+		else
+		{
+			// replace inconvenient characters with underscore
+			name = Utils.SANITIZE_CHARACTERS_PATTERN.matcher(name).replaceAll("_");
+			
+			// standardize whitespace with spaces.  Just change tabs.
+			name = Utils.SANITIZE_SPACES_PATTERN.matcher(name).replaceAll(" ");
 		}
 
 		return name;
@@ -930,6 +944,6 @@ class Utils {
         statusMap.put("status", status);
         return (new JSONObject(statusMap)).toString();
     }
-
-
+	
+	
 }
