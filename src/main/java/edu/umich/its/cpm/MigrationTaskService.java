@@ -1544,7 +1544,10 @@ class MigrationTaskService {
 						if (rootFolderPath == null) {
 							rootFolderPath = contentUrl;
 						} else {
-							// create the zipentry for the sub-folder first
+
+							// no longer need to create folder separately but 
+							// will update folderNameMap
+							
 							String folderName = contentUrl.replace(rootFolderPath,"");
 							
 							// update folder name
@@ -1552,21 +1555,6 @@ class MigrationTaskService {
 									folderNameMap, title, folderName);
 							if (folderNameMap.containsKey(folderName)) {
 									folderName = folderNameMap.get(folderName);
-							}
-
-							// deal with special characters
-							folderName = Utils.sanitizeName(folderName);
-							
-							log.info("download folder " + folderName);
-
-							ZipEntry folderEntry = new ZipEntry(folderName);
-							try {
-								out.putNextEntry(folderEntry);
-							} catch (IOException e) {
-								String ioError = "zipSiteContent: problem closing zip entry "
-										+ folderName + " " + e;
-								log.error(ioError);
-								itemStatus.append(ioError + Utils.LINE_BREAK);
 							}
 						}
 
@@ -1589,7 +1577,7 @@ class MigrationTaskService {
 						itemStatus.append(zipFileStatus);
 					}
 				}
-				
+
 				MigrationFileItem fileItem = new MigrationFileItem(contentUrl,
 						title, itemStatus.toString());
 
