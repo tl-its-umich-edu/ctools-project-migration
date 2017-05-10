@@ -1553,14 +1553,14 @@ class MigrationTaskService {
 							if (folderNameMap.containsKey(folderName)) {
 									folderName = folderNameMap.get(folderName);
 							}
+							
 							// deal with special characters
 							folderName = Utils.sanitizeName(folderName);
 							
 							log.info("download folder " + folderName);
 
 							ZipEntry folderEntry = new ZipEntry(folderName);
-							try 
-							{
+							try {
 								out.putNextEntry(folderEntry);
 							} catch (IOException e) {
 								String ioError = "zipSiteContent: problem closing zip entry "
