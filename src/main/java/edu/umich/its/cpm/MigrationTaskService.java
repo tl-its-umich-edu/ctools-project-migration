@@ -1650,50 +1650,18 @@ class MigrationTaskService {
 
 					log.info("download file " + fileName + " type=" + type);
 
-					if (Utils.isOfURLMIMEType(type)) {
-						if (webLinkUrl == null || webLinkUrl.isEmpty())
-						{
-							zipFileStatus.append("Link "+ title + " could not be migrated due to empty URL link. ");
-						}
-						else
-						{
-							try {
-								// get the html file content first
-								String webLinkContent = Utils.getWebLinkContent(title,
-										webLinkUrl);
-	
-								ZipEntry fileEntry = new ZipEntry(fileName);
-								out.putNextEntry(fileEntry);
-								out.write(webLinkContent.getBytes());
-							}  catch (Exception e) {
-								// return status with error message
-								String errorMessage = e.getMessage() + "Link " + title
-										+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.";
-								zipFileStatus.append(errorMessage);
-								log.error(errorMessage);
-							}
-						}
-					} else {
-
-						ZipEntry fileEntry = new ZipEntry(fileName);
-						out.putNextEntry(fileEntry);
-						int bCount = -1;
-
-						bContent = new BufferedInputStream(content);
-						while ((bCount = bContent.read(data)) != -1) {
-							out.write(data, 0, bCount);
-							length = length + bCount;
-						}
+					ZipEntry fileEntry = Utils.zipEntryWithValidName(fileName);
+					if (fileEntry == null)
+					{
+						// folder name too long, log error
+						zipFileStatus.append(Utils.ERROR_MESSAGE_ZIP_ENTRY_TOO_LONG_NAME_FILE + fileName);
 					}
-					out.flush();
-
-					try {
-						out.closeEntry(); // The zip entry need to be closed
-					} catch (IOException ioException) {
-						String ioExceptionString = "zipFiles: problem closing zip entry "
-								+ fileName + " " + ioException;
-						log.error(ioExceptionString);
-						zipFileStatus.append(ioExceptionString + Utils.LINE_BREAK);
+					else
+					{
+						// put file content into ZipEntry
+						bContent = zipFileContent(type, fileName, title,
+								webLinkUrl, out, zipFileStatus, content,
+								length, data, bContent, fileEntry);
 					}
 				} catch (IllegalArgumentException iException) {
 					String IAExceptionString = "zipFiles: problem creating BufferedInputStream with content and length "
@@ -1752,6 +1720,73 @@ class MigrationTaskService {
 			}
 
 			return zipFileStatus.toString();
+		}
+
+		/**
+		 * stream file content into ZipEntry
+		 * @param type
+		 * @param fileName
+		 * @param title
+		 * @param webLinkUrl
+		 * @param out
+		 * @param zipFileStatus
+		 * @param content
+		 * @param length
+		 * @param data
+		 * @param bContent
+		 * @param fileEntry
+		 * @return
+		 * @throws IOException
+		 */
+		private BufferedInputStream zipFileContent(String type,
+				String fileName, String title, String webLinkUrl,
+				ZipOutputStream out, StringBuffer zipFileStatus,
+				InputStream content, int length, byte[] data,
+				BufferedInputStream bContent, ZipEntry fileEntry)
+				throws IOException {
+			if (Utils.isOfURLMIMEType(type)) {
+				if (webLinkUrl == null || webLinkUrl.isEmpty())
+				{
+					zipFileStatus.append("Link "+ title + " could not be migrated due to empty URL link. ");
+				}
+				else
+				{
+					try {
+						// get the html file content first
+						String webLinkContent = Utils.getWebLinkContent(title,
+								webLinkUrl);
+						
+						out.putNextEntry(fileEntry);
+						out.write(webLinkContent.getBytes());
+					}  catch (IOException e) {
+						// return status with error message
+						String errorMessage = e.getMessage() + "Link " + title
+								+ " could not be migrated due to exception " + e.getMessage() + ". Please change the link name to be the complete URL and migrate the site again.";
+						zipFileStatus.append(errorMessage);
+						log.error(errorMessage);
+					}
+				}
+			} else {
+				out.putNextEntry(fileEntry);
+				int bCount = -1;
+
+				bContent = new BufferedInputStream(content);
+				while ((bCount = bContent.read(data)) != -1) {
+					out.write(data, 0, bCount);
+					length = length + bCount;
+				}
+			}
+			out.flush();
+
+			try {
+				out.closeEntry(); // The zip entry need to be closed
+			} catch (IOException ioException) {
+				String ioExceptionString = "zipFiles: problem closing zip entry "
+						+ fileName + " " + ioException;
+				log.error(ioExceptionString);
+				zipFileStatus.append(ioExceptionString + Utils.LINE_BREAK);
+			}
+			return bContent;
 		}
 
 		/**

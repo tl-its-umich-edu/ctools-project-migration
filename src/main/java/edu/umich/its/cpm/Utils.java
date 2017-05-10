@@ -931,5 +931,24 @@ class Utils {
         return (new JSONObject(statusMap)).toString();
     }
 
+	// max length for valid zip entry name
+	public static int ZIP_ENTRY_NAME_MAX_LENGTH = 255;
+
+	// error message for long zip entry name
+	public static String ERROR_MESSAGE_ZIP_ENTRY_TOO_LONG_NAME_FILE = "Name too long for Zip file: ";
+
+	/**
+	 * return new ZipEntry object if the name given is within allowed length
+	 * return null otherwise
+	 * @param entryName
+	 */
+	public static java.util.zip.ZipEntry zipEntryWithValidName(String entryName)
+	{
+		if (entryName != null && entryName.length() <= ZIP_ENTRY_NAME_MAX_LENGTH)
+		{
+			return new java.util.zip.ZipEntry(entryName);
+		}
+		return null;
+	}
 
 }
