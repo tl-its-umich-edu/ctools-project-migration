@@ -1349,7 +1349,6 @@ class MigrationTaskService {
 					response.setCharacterEncoding("UTF-8");
 
 					String zipFileName = generateResourcesZipFileName(request.getParameterMap().get("site_name")[0]);
-
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
@@ -1364,8 +1363,10 @@ class MigrationTaskService {
 						out.setLevel(Integer.parseInt(compressionLevel.trim()));
 					}
 
+					// remove the ".zip" suffix
+					String zipFileNamePrefix = zipFileName.substring(0, zipFileName.length() - 4);
 					// prepare zip entry for site content objects
-					itemStatus = zipSiteContent(httpContext, siteResourceJson,
+					itemStatus = zipSiteContent(zipFileNamePrefix, httpContext, siteResourceJson,
 							sessionId, out);
 
 					out.flush();
@@ -1473,7 +1474,7 @@ class MigrationTaskService {
 		/**
 		 * create zip entry for folders and files
 		 */
-		private List<MigrationFileItem> zipSiteContent(HttpContext httpContext,
+		private List<MigrationFileItem> zipSiteContent(String zipFileNamePrefix, HttpContext httpContext,
 				String siteResourceJson, String sessionId, ZipOutputStream out) {
 			// the return list of MigrationFileItem objects, with migration status
 			// recorded
@@ -1556,6 +1557,16 @@ class MigrationTaskService {
 							if (folderNameMap.containsKey(folderName)) {
 									folderName = folderNameMap.get(folderName);
 							}
+							
+							ZipEntry folderEntry = new ZipEntry(folderName);
+							try {
+								out.putNextEntry(folderEntry);
+							} catch (IOException e) {
+								String ioError = "zipSiteContent: problem closing zip entry "
+										+ folderName + " " + e;
+								log.error(ioError);
+								itemStatus.append(ioError + Utils.LINE_BREAK);
+							}
 						}
 
 					} else {
@@ -1571,7 +1582,7 @@ class MigrationTaskService {
 								CONTENT_JSON_ATTR_WEB_LINK_URL);
 
 						// Call the zipFiles method for creating a zip stream.
-						String zipFileStatus = zipFiles(type, httpContext,
+						String zipFileStatus = zipFiles(zipFileNamePrefix, type, httpContext,
 								zipFileName, title, webLinkUrl, contentAccessUrl,
 								sessionId, out, folderNameMap);
 						itemStatus.append(zipFileStatus);
@@ -1605,7 +1616,7 @@ class MigrationTaskService {
 		/**
 		 * create zip entry for files
 		 */
-		private String zipFiles(String type, HttpContext httpContext,
+		private String zipFiles(String zipFileNamePrefix, String type, HttpContext httpContext,
 				String fileName, String title, String webLinkUrl,
 				String fileAccessUrl, String sessionId, ZipOutputStream out,
 				HashMap<String, String> folderNameUpdates) {
@@ -1650,7 +1661,7 @@ class MigrationTaskService {
 
 					log.info("download file " + fileName + " type=" + type);
 
-					ZipEntry fileEntry = Utils.zipEntryWithValidName(fileName, env);
+					ZipEntry fileEntry = Utils.zipEntryWithValidName(zipFileNamePrefix, fileName, env);
 					if (fileEntry == null)
 					{
 						// folder name too long, log error
@@ -2605,8 +2616,9 @@ class MigrationTaskService {
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
 					response.setCharacterEncoding("UTF-8");
-
-					String zipFileName = generateMailArchiveName(site_name, destination_type)+".zip";
+					
+					String zipFileNamePrefix = generateMailArchiveName(site_name, destination_type);
+					String zipFileName = zipFileNamePrefix + ".zip";
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
@@ -2621,7 +2633,7 @@ class MigrationTaskService {
 					}
 
 					log.info("Starting mail archive download for site " + site_id);
-					downloadStatus = getMailArchiveZipContent(env, site_id, downloadStatus,
+					downloadStatus = getMailArchiveZipContent(zipFileNamePrefix + "/", env, site_id, downloadStatus,
 							sessionId, httpContext, out, request,migrationId);
 
 					out.flush();
@@ -2693,6 +2705,7 @@ class MigrationTaskService {
 
 	/**
 		 * get MailArchive message content into ZipOutputStream
+		 * @param zipFileNamePrefix
 		 * @param env
 		 * @param site_id
 		 * @param downloadStatus
@@ -2702,7 +2715,8 @@ class MigrationTaskService {
 		 * @return
 		 * @throws IOException
 		 */
-		private JSONObject getMailArchiveZipContent(Environment env, String site_id,
+		private JSONObject getMailArchiveZipContent(String zipFileNamePrefix, 
+				Environment env, String site_id,
 				JSONObject downloadStatus, String sessionId,
 				HttpContext httpContext, ZipOutputStream out, HttpServletRequest request, String migrationId) throws IOException {
 
@@ -2773,7 +2787,7 @@ class MigrationTaskService {
 
 						// 2. get attachments, if any
 						if (report.getStatus() != Utils.REPORT_STATUS_ERROR) {
-							report = handleMailArchiveMessageAttachments(
+							report = handleMailArchiveMessageAttachments(zipFileNamePrefix,
 									sessionId, httpContext, out, message, messageFolderName, report);
 						}
 						singleMailZipMsgStatus.put(Utils.REPORT_ATTR_ITEM_ID, report.getId());
@@ -2948,6 +2962,7 @@ class MigrationTaskService {
 
 	/**
 		 * put mail message attachments into zip
+		 * @param zipFileNamePrefix
 		 * @param sessionId
 		 * @param httpContext
 		 * @param out
@@ -2955,7 +2970,7 @@ class MigrationTaskService {
 		 * @param messageFolderName
 		 * @return
 		 */
-		private StatusReport handleMailArchiveMessageAttachments(String sessionId,
+		private StatusReport handleMailArchiveMessageAttachments(String zipFileNamePrefix, String sessionId,
 				HttpContext httpContext, ZipOutputStream out, JSONObject message,
 				String messageFolderName, StatusReport sr) {
 			JSONArray attachments = message.getJSONArray(Utils.JSON_ATTR_MAIL_ATTACHMENTS);
@@ -2968,7 +2983,7 @@ class MigrationTaskService {
 				String name = attachment.has(Utils.JSON_ATTR_MAIL_NAME) ? attachment.getString(Utils.JSON_ATTR_MAIL_NAME) : "";
 				String url = attachment.has(Utils.JSON_ATTR_MAIL_URL) ? attachment.getString(Utils.JSON_ATTR_MAIL_URL) : "";
 				// Call the zipFiles method for creating a zip stream.
-				String fileStatus = zipFiles(type, httpContext,
+				String fileStatus = zipFiles(zipFileNamePrefix, type, httpContext,
 						messageFolderName + name, name, "", url,
 						sessionId, out, new HashMap<String, String>());
 				sr.addAllAttachmnts(name);
