@@ -932,7 +932,9 @@ class Utils {
     }
 
 	// max length for valid zip entry name
-	public static int ZIP_ENTRY_NAME_MAX_LENGTH = 255;
+	public static String ZIP_ENTRY_NAME_MAX_LENGTH_NAME = "zip_entry_name_max_length_name";
+	// default value for max length for valid zip entry name
+	public static int ZIP_ENTRY_NAME_MAX_LENGTH_NAME_VALUE = 255;
 
 	// error message for long zip entry name
 	public static String ERROR_MESSAGE_ZIP_ENTRY_TOO_LONG_NAME_FILE = "Name too long for Zip file: ";
@@ -942,12 +944,31 @@ class Utils {
 	 * return null otherwise
 	 * @param entryName
 	 */
-	public static java.util.zip.ZipEntry zipEntryWithValidName(String entryName)
+	public static java.util.zip.ZipEntry zipEntryWithValidName(String entryName, Environment env)
 	{
-		if (entryName != null && entryName.length() <= ZIP_ENTRY_NAME_MAX_LENGTH)
+		// the default length for max Zip file entry
+		int maxZipPathLength = ZIP_ENTRY_NAME_MAX_LENGTH_NAME_VALUE;
+		
+		// override the default from the setting inside property file
+		String lengthString = env.getProperty(Utils.ENV_PROPERTY_USERNAME);
+		if (lengthString != null)
+		{
+			try
+			{
+				maxZipPathLength = Integer.parseInt(lengthString);
+			}
+			catch (NumberFormatException e)
+			{
+				log.error("Problem parsing " + ZIP_ENTRY_NAME_MAX_LENGTH_NAME_VALUE + " setting value to integer: "  + lengthString);
+			}
+		}
+		
+		// test whether the zip entry name is longer than the max length allowed
+		if (entryName != null && entryName.length() <= maxZipPathLength)
 		{
 			return new java.util.zip.ZipEntry(entryName);
 		}
+		
 		return null;
 	}
 
