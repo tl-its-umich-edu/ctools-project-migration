@@ -944,13 +944,13 @@ class Utils {
 	 * return null otherwise
 	 * @param entryName
 	 */
-	public static java.util.zip.ZipEntry zipEntryWithValidName(String entryName, Environment env)
+	public static java.util.zip.ZipEntry zipEntryWithValidName(String zipFileName, String entryName, Environment env)
 	{
 		// the default length for max Zip file entry
 		int maxZipPathLength = ZIP_ENTRY_NAME_MAX_LENGTH_NAME_VALUE;
 		
 		// override the default from the setting inside property file
-		String lengthString = env.getProperty(Utils.ENV_PROPERTY_USERNAME);
+		String lengthString = env.getProperty(Utils.ZIP_ENTRY_NAME_MAX_LENGTH_NAME);
 		if (lengthString != null)
 		{
 			try
@@ -964,7 +964,7 @@ class Utils {
 		}
 		
 		// test whether the zip entry name is longer than the max length allowed
-		if (entryName != null && entryName.length() <= maxZipPathLength)
+		if (zipFileName != null && entryName != null && zipFileName.concat(entryName).length() <= maxZipPathLength)
 		{
 			return new java.util.zip.ZipEntry(entryName);
 		}
