@@ -1650,7 +1650,7 @@ class MigrationTaskService {
 
 					log.info("download file " + fileName + " type=" + type);
 
-					ZipEntry fileEntry = Utils.zipEntryWithValidName(fileName);
+					ZipEntry fileEntry = Utils.zipEntryWithValidName(fileName, env);
 					if (fileEntry == null)
 					{
 						// folder name too long, log error
