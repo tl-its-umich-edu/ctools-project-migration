@@ -1347,8 +1347,11 @@ class MigrationTaskService {
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP);
 					response.setCharacterEncoding("UTF-8");
-
-					String zipFileName = generateResourcesZipFileName(request.getParameterMap().get("site_name")[0]);
+					// Since the site_name value has been called with encodeURIComponent() in Javascript
+					// it needs to be decode here
+					String siteName = URLDecoder.decode(request.getParameterMap().get("site_name")[0], "UTF-8");
+					String zipFileName = generateResourcesZipFileName(siteName);
+					log.info("site name=" + siteName + " zip file name=" + zipFileName);
 					response.setHeader("Content-Disposition",
 							"attachment;filename=\"" + zipFileName + "\"");
 
