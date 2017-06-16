@@ -33,6 +33,7 @@ import javax.naming.NamingEnumeration;
 import javax.naming.NamingException;
 import javax.naming.directory.*;
 import javax.servlet.http.HttpServletRequest;
+
 import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URLDecoder;
@@ -972,4 +973,22 @@ class Utils {
 		return null;
 	}
 
+	/**
+	 * return the decoded value
+	 * @param value
+	 * @return
+	 */
+	public static String decodeEncodedUrlValue(String value) {
+		// Since the value String has been encoded before
+		// we need to decode it here
+		try
+		{
+			value = URLDecoder.decode(value, "UTF-8");
+		}
+		catch (UnsupportedEncodingException e)
+		{
+			log.warn("UnSupportedEncodingException for decoding in UTF-8 format for value = " + value + ". Original value is used.");
+		}
+		return value;
+	}
 }

@@ -26,6 +26,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.ByteArrayInputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URLEncoder;
 import java.net.URLDecoder;
 import java.sql.Timestamp;
 import java.util.ArrayList;
@@ -1345,12 +1346,12 @@ class MigrationTaskService {
 					// the browser to show a dialog that will let user
 					// choose what action will he do to the sent content.
 					//
-					response.setContentType(Utils.MIME_TYPE_ZIP);
+					response.setContentType(Utils.MIME_TYPE_ZIP + "; charset=UTF-8");
 					response.setCharacterEncoding("UTF-8");
-
-					String zipFileName = generateResourcesZipFileName(request.getParameterMap().get("site_name")[0]);
-					response.setHeader("Content-Disposition",
-							"attachment;filename=\"" + zipFileName + "\"");
+					String siteName = Utils.decodeEncodedUrlValue(request.getParameterMap().get("site_name")[0]);
+					String zipFileName = generateResourcesZipFileName(siteName);
+					log.info("site name=" + siteName + " zip file name=" + zipFileName);
+					response.setHeader("Content-Disposition", contentDispositionString(zipFileName));
 
 					ZipOutputStream out = new ZipOutputStream(
 							response.getOutputStream());
@@ -1454,7 +1455,32 @@ class MigrationTaskService {
 			site_name = Utils.sanitizeName(site_name);
 			String zipFileName = site_name + "_content.zip";
 			log.debug("resourceZipFileName: [{}]",zipFileName);
+			
 			return zipFileName;
+		}
+		/**
+		 * construct the Content-Disposition String based on fileName
+		 * ready to be included in the response header
+		 * @param fileName
+		 * @return
+		 */
+		private String contentDispositionString(String fileName)
+		{
+			// if the fileName contains characters other than ASCII printable characters, we need to encode it
+			if (!org.apache.commons.lang3.StringUtils.isAsciiPrintable(fileName))
+			{
+				try
+				{
+					fileName = URLEncoder.encode(fileName, "UTF-8");
+				}
+				catch (UnsupportedEncodingException e)
+				{
+					log.warn("UnsupportedExcodingException for UTF-8, and original file name will be used: " + fileName);
+				}
+			}
+			
+			// construct the string value according to https://tools.ietf.org/html/rfc6266
+			return "attachment;filename=\"" + fileName + "\"; filename*=utf-8''" + fileName;
 		}
 
 		/**
@@ -2599,7 +2625,7 @@ class MigrationTaskService {
 
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
-			String site_name = parameterMap.get("site_name")[0];
+			String site_name = Utils.decodeEncodedUrlValue(parameterMap.get("site_name")[0]);
 			JSONObject downloadStatus = Utils.migrationStatusObject(destination_type);
 			// login to CTools and get sessionId
 			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
@@ -2619,8 +2645,7 @@ class MigrationTaskService {
 					
 					String zipFileNamePrefix = generateMailArchiveName(site_name, destination_type);
 					String zipFileName = zipFileNamePrefix + ".zip";
-					response.setHeader("Content-Disposition",
-							"attachment;filename=\"" + zipFileName + "\"");
+					response.setHeader("Content-Disposition", contentDispositionString(zipFileName));
 
 					ZipOutputStream out = new ZipOutputStream(response.getOutputStream());
 					String compressionLevel = env.getProperty(Utils.ENV_PROPERTY_ZIP_COMPRESSSION_LEVEL);
@@ -2798,7 +2823,7 @@ class MigrationTaskService {
 					}
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
-					String site_name = request.getParameterMap().get("site_name")[0];
+					String site_name = Utils.decodeEncodedUrlValue(request.getParameterMap().get("site_name")[0]);
 					String messageFolderName = getMailArchiveMboxMessageFolderName(site_name,destination_type);
 					ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
 					out.putNextEntry(fileEntry);

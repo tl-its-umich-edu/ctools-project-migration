@@ -842,7 +842,7 @@ public class MigrationController implements ErrorController {
 		// get parameters
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
-		String siteName = parameterMap.get("site_name")[0];
+		String siteName = Utils.decodeEncodedUrlValue(parameterMap.get("site_name")[0]);
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = parameterMap.get("destination_type")[0];
