@@ -1466,8 +1466,8 @@ class MigrationTaskService {
 		 */
 		private String contentDispositionString(String fileName)
 		{
-			// if the fileName contains non-ASCII characters, we need to encode it
-			if (!isASCII(fileName))
+			// if the fileName contains characters other than ASCII printable characters, we need to encode it
+			if (!org.apache.commons.lang3.StringUtils.isAsciiPrintable(fileName))
 			{
 				try
 				{
@@ -1475,28 +1475,12 @@ class MigrationTaskService {
 				}
 				catch (UnsupportedEncodingException e)
 				{
-					log.warn("Cannot URLEncode ZipFileName " + fileName);
+					log.warn("UnsupportedExcodingException for UTF-8, and original file name will be used: " + fileName);
 				}
 			}
 			
 			// construct the string value according to https://tools.ietf.org/html/rfc6266
 			return "attachment;filename=\"" + fileName + "\"; filename*=utf-8''" + fileName;
-		}
-
-		/**
-		 * check whether sValue contains only ASCII characters
-		 * @param sValue
-		 * @return true if there is 
-		 */
-		private boolean isASCII(String sValue) {
-			// if sValue contains all ASCII characters
-			for (int i = 0; i < sValue.length(); i++) {
-				if (sValue.charAt(i) > 127)
-				{
-					return false;
-				}
-			}
-			return true;
 		}
 
 		/**

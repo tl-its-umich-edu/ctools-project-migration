@@ -987,7 +987,7 @@ class Utils {
 		}
 		catch (UnsupportedEncodingException e)
 		{
-			log.error("Problem decode to UTF-8 for site name = " + value);
+			log.warn("UnSupportedEncodingException for decoding in UTF-8 format for value = " + value + ". Original value is used.");
 		}
 		return value;
 	}
