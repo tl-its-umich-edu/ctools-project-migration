@@ -8,7 +8,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
     $scope.migratingProjects = [];
     $scope.migratedProjects = [];
     $scope.boxAuthorized = false;
-    $scope.isAdminUser = false;
     $scope.selectionIsMade = false;
 
     if ($('#sserve-lite').length) {
@@ -22,19 +21,6 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
       if(result.data.status ==='DOWN'){
         $scope.ctoolsDown = true;
       }
-    });
-
-    // whether the current user is a member of the admin group or n0t
-    var checkIsAdminUserUrl = $rootScope.urls.checkIsAdminUser;
-    Projects.checkIsAdminUser(checkIsAdminUserUrl + window.location.search).then(function(result) {
-      $timeout(function() {
-        if (result.data.isAdmin) {
-          $scope.isAdminUser = true;
-        } else {
-          $scope.isAdminUser = false;
-        }
-        $log.info(' - - - - User is admin: ' + result.data);
-      });
     });
     // GET the project list
     var projectsUrl = $rootScope.urls.projectsUrl;
