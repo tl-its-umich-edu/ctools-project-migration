@@ -44,22 +44,35 @@ class StatusEndpoint implements Endpoint<String>, ServletContextAware{
 		
 		// Custom logic to build the output
 		try {
-			// maven build has put the git version information into MANIFEST.MF FILE
-			Properties props = new Properties();
-			props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
 			// output the git version, CTools and Box url 
 			HashMap<String, Object> statusMap = new HashMap<String, Object>();
+			
 			// all information related to GIT build
 			HashMap<String, Object> buildMap = new HashMap<String, Object>();
-			buildMap.put("project", "CTool Project Migration");
-			buildMap.put("GIT URL", (String) props.get("git_url"));
-			buildMap.put("GIT branch", (String) props.get("git_branch"));
-			buildMap.put("GIT commit", (String) props.get("git_commit"));
-			buildMap.put("Jenkins Build ID", (String) props.get("build_id"));
-			buildMap.put("Jenkins Build Number", (String) props.get("build_number"));
-			buildMap.put("Jenkins Build URL", (String) props.get("build_url"));
-			buildMap.put("Jenkins Build Tag", (String) props.get("build_tag"));
-			
+			// check to see whether there are OpenShift-related environment variables
+			// which contains the build information
+			if (env.containsProperty(Utils.OPENSHIFT_BUILD_NAMESPACE))
+			{
+				buildMap.put("project", "CTool Project Migration");
+				buildMap.put(Utils.OPENSHIFT_BUILD_NAMESPACE, (String) env.getProperty(Utils.OPENSHIFT_BUILD_NAMESPACE));
+				buildMap.put(Utils.OPENSHIFT_BUILD_NAME, (String) env.getProperty(Utils.OPENSHIFT_BUILD_NAME));
+				buildMap.put(Utils.OPENSHIFT_BUILD_SOURCE, (String) env.getProperty(Utils.OPENSHIFT_BUILD_SOURCE));
+				buildMap.put(Utils.OPENSHIFT_BUILD_COMMIT, (String) env.getProperty(Utils.OPENSHIFT_BUILD_COMMIT));
+			}
+			else 
+			{
+				// maven build has put the git version information into MANIFEST.MF FILE
+				Properties props = new Properties();
+				props.load(servletContext.getResourceAsStream("/META-INF/MANIFEST.MF"));
+				buildMap.put("project", "CTool Project Migration");
+				buildMap.put("GIT URL", (String) props.get("git_url"));
+				buildMap.put("GIT branch", (String) props.get("git_branch"));
+				buildMap.put("GIT commit", (String) props.get("git_commit"));
+				buildMap.put("Jenkins Build ID", (String) props.get("build_id"));
+				buildMap.put("Jenkins Build Number", (String) props.get("build_number"));
+				buildMap.put("Jenkins Build URL", (String) props.get("build_url"));
+				buildMap.put("Jenkins Build Tag", (String) props.get("build_tag"));
+			}
 			statusMap.put("build", buildMap);
 
 			// all external links

@@ -223,6 +223,12 @@ class Utils {
 	
 	public static final String BOX_BULK_UPLOAD_SEPARATOR = ";";
 	
+	// OpenShift build related attributes
+	public static final String OPENSHIFT_BUILD_NAMESPACE = "OPENSHIFT_BUILD_NAMESPACE";
+	public static final String OPENSHIFT_BUILD_SOURCE = "OPENSHIFT_BUILD_SOURCE";
+	public static final String OPENSHIFT_BUILD_NAME = "OPENSHIFT_BUILD_NAME";
+	public static final String OPENSHIFT_BUILD_COMMIT = "OPENSHIFT_BUILD_COMMIT";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
