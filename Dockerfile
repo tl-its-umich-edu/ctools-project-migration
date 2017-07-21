@@ -14,7 +14,7 @@ COPY . /tmp
 
 # Build CCM and place the resulting war in the tomcat dir.
 RUN mvn clean install \
-	&& mv ./target/ctools-project-migration-0.1.0.war /usr/local/tomcat/webapps/cpm.war
+	&& mv ./target/ctools-project-migration-0.1.0.war /usr/local/tomcat/webapps/ROOT.war
 
 # Remove unnecessary build dependencies.
 RUN apt-get remove -y maven openjdk-8-jdk git \
