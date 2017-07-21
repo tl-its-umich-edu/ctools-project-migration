@@ -22,11 +22,14 @@ RUN apt-get remove -y maven openjdk-8-jdk git \
 
 WORKDIR /usr/local/tomcat/webapps
 
+RUN rm -rf ROOT docs examples host-manager manager
+
 EXPOSE 8080
 EXPOSE 8009
 
 RUN mkdir /usr/local/tomcat/home/
 
 # Launch Tomcat
-CMD cp /tmp/cpm-props/* /usr/local/tomcat/home/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
+CMD cp /tmp/cpm-props/*.properties /usr/local/tomcat/home/; cp /tmp/cpm-props/server.xml /usr/local/tomcat/conf/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
+#CMD cp /tmp/cpm-props/* /usr/local/tomcat/home/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
 #CMD /bin/bash
