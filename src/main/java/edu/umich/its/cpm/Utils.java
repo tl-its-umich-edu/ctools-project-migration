@@ -120,7 +120,7 @@ class Utils {
 	// Specify characters that can't appear in folder / file names
 	// Need lots and lots of backslashes to correctly quote backslashes used for escaping regex characters.
 	// Will handle trailing forward slash as a special case.
-	public static final String SANITIZE_CHARACTERS = ":/><*\\\\\"|\\?";
+	public static final String SANITIZE_CHARACTERS = ",:/><*\\\\\"|\\?";
 	public static final String SANITIZE_CHARACTERS_REGEX = "["+SANITIZE_CHARACTERS+"]";
 	public static Pattern SANITIZE_CHARACTERS_PATTERN = Pattern.compile(Utils.SANITIZE_CHARACTERS_REGEX);
 	public static final String SANITIZE_SPACES = "\t";
