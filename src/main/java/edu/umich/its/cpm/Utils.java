@@ -690,6 +690,22 @@ class Utils {
 
 		return name;
 	}
+	
+    /**
+     * Extra sanitize step needed for file name string:
+     * replacing empty space with underscore character
+     * @param name
+     * @return
+     */
+       public static String sanitizeFileName(String name) {
+
+               name = sanitizeName(name);
+
+               // take extra step to replace all empty space into underscore
+               name = name.replaceAll(" ", "_");
+
+               return name;
+       }
 
 	/**
 	 * If file extension is missing, look up the extension by file MIME type and

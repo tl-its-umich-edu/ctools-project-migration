@@ -1452,7 +1452,7 @@ class MigrationTaskService {
 		}
 
 		private String generateResourcesZipFileName(String site_name) {
-			site_name = Utils.sanitizeName(site_name);
+			site_name = Utils.sanitizeFileName(site_name);
 			String zipFileName = site_name + "_content.zip";
 			log.debug("resourceZipFileName: [{}]",zipFileName);
 			
@@ -2711,7 +2711,7 @@ class MigrationTaskService {
 				formatText = "_mbox";
 			}
 
-			String zipFileName = Utils.sanitizeName(String.format("%s_mailarchive%s",site_name,formatText));
+			String zipFileName = Utils.sanitizeFileName(String.format("%s_mailarchive%s",site_name,formatText));
 
 			log.info("*** This is Mail Archive Zip Download name: [{}]",zipFileName);
 			return zipFileName;
