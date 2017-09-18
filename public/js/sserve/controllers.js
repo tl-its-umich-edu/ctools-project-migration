@@ -107,7 +107,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         project.processing = false;
       }, 10000);
 
-      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&site_name=' + encodeURIComponent(project.site_name) + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
+      var migrationUrl ='/migrationMailArchiveZip?site_id=' + project.site_id  + '&tool_id=' + project.tool_id  + '&tool_name=' + project.tool_name + '&destination_type=' + destinationType;
       $log.info('Posting request for ' + destinationType + ' with a POST to:  ' + migrationUrl);
        ProjectsLite.startMigrationEmail(migrationUrl).then(function(result) {
          project.makeDisabled = false;
@@ -142,7 +142,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
         // attach variables to it
         if (destinationType == 'Box') {
           // migrate to Box
-          migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&site_name=' + encodeURIComponent(siteName) + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id + '&box_folder_name=' + $scope.sourceProjects[targetProjPos].boxFolder.name;
+          migrationUrl = migrationBoxUrl + '?site_id=' + projectId + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + 'Box&box_folder_id=' + $scope.sourceProjects[targetProjPos].boxFolder.id + '&box_folder_name=' + $scope.sourceProjects[targetProjPos].boxFolder.name;
           $log.info("box " + migrationUrl);
           // use promise factory
           // to execute the post
@@ -156,7 +156,7 @@ projectMigrationApp.controller('projectMigrationController', ['Projects','Projec
           });
         } else {
           // download locally
-          migrationUrl = migrationZipUrl + '?site_id=' + projectId + '&site_name=' + encodeURIComponent(siteName) + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + destinationType;
+          migrationUrl = migrationZipUrl + '?site_id=' + projectId + '&tool_id=' + value.tool_id + '&tool_name=' + value.tool_name + '&destination_type=' + destinationType;
           $log.info("zip " + migrationUrl);
           // use promise factory
           // to execute the post

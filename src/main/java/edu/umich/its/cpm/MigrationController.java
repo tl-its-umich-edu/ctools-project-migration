@@ -842,7 +842,7 @@ public class MigrationController implements ErrorController {
 		// get parameters
 		Map<String, String[]> parameterMap = request.getParameterMap();
 		String siteId = parameterMap.get("site_id")[0];
-		String siteName = Utils.decodeEncodedUrlValue(parameterMap.get("site_name")[0]);
+		String siteName = migrationTaskService.getSiteName(siteId, sessionId);
 		String toolId = parameterMap.get("tool_id")[0];
 		String toolName = parameterMap.get("tool_name")[0];
 		String destinationType = parameterMap.get("destination_type")[0];
@@ -1279,32 +1279,6 @@ public class MigrationController implements ErrorController {
 	void handleServerError(HttpServletResponse response) throws IOException {
 		log.debug("in exception handler: "+response.getStatus());
 		response.sendError(HttpStatus.BAD_GATEWAY.value(),"Upstream server failed to respond correctly");
-	}
-
-	// Get the json version of the site info.
-	protected JSONObject getSiteInfoJson(String sessionId, String siteId) {
-
-		log.debug("enter getSiteInfoJson: "+siteId);
-
-		// get the site info from ctools
-		JSONObject siteJSONObject = null;
-
-		// get site info for site as json.
-		RestTemplate restTemplate = new RestTemplate();
-		// the url should be in the format of
-		// "https://server/direct/site/<siteId>.json?_sessionId=<sessionId>"
-		String requestUrl = Utils.directCallUrl(env, "site/" + siteId + ".json?", sessionId);
-		log.info("siteInfo url: " + requestUrl);
-		try {
-			String siteJson = restTemplate.getForObject(requestUrl,
-					String.class);
-			siteJSONObject = new JSONObject(siteJson);
-		} catch (RestClientException e) {
-			log.error(requestUrl + e.getMessage());
-			// Don't hide the error.
-			throw e;
-		}
-		return siteJSONObject;
 	}
 
 	/******************* migration choices ********************/
