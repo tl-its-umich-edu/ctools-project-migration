@@ -294,7 +294,7 @@ class MigrationTaskService {
 	 * use CTools entity feed to get site information based on site id
 	 * 
 	 */
-	private String getSiteName(String siteId, String sessionId) {
+	public String getSiteName(String siteId, String sessionId) {
 		String siteName = null;
 		RestTemplate restTemplate = new RestTemplate();
 		// the url should be in the format of
@@ -305,7 +305,7 @@ class MigrationTaskService {
 			String siteJson = restTemplate.getForObject(requestUrl,
 					String.class);
 			JSONObject siteJSONObject = new JSONObject(siteJson);
-			siteName = (String) siteJSONObject.get("title");
+			siteName = siteJSONObject.has("title") ? (String) siteJSONObject.get("title") : Utils.DEFAULT_SITE_NAME;
 		} catch (RestClientException e) {
 			log.error(requestUrl + e.getMessage());
 		}
@@ -1348,7 +1348,10 @@ class MigrationTaskService {
 					//
 					response.setContentType(Utils.MIME_TYPE_ZIP + "; charset=UTF-8");
 					response.setCharacterEncoding("UTF-8");
-					String siteName = Utils.decodeEncodedUrlValue(request.getParameterMap().get("site_name")[0]);
+					
+					// get site name
+					String siteName = getSiteName(site_id, sessionId);
+					
 					String zipFileName = generateResourcesZipFileName(siteName);
 					log.info("site name=" + siteName + " zip file name=" + zipFileName);
 					response.setHeader("Content-Disposition", contentDispositionString(zipFileName));
@@ -2625,11 +2628,13 @@ class MigrationTaskService {
 
 			Map<String, String[]> parameterMap = request.getParameterMap();
 			String destination_type = parameterMap.get("destination_type")[0];
-			String site_name = Utils.decodeEncodedUrlValue(parameterMap.get("site_name")[0]);
 			JSONObject downloadStatus = Utils.migrationStatusObject(destination_type);
 			// login to CTools and get sessionId
 			if (sessionAttributes.containsKey(Utils.SESSION_ID)) {
 				String sessionId = (String) sessionAttributes.get(Utils.SESSION_ID);
+				
+				String site_name = getSiteName(site_id, sessionId);
+				
 				HttpContext httpContext = (HttpContext) sessionAttributes
 						.get("httpContext");
 				try {
@@ -2823,7 +2828,7 @@ class MigrationTaskService {
 					}
 
 				} else if (Utils.isItMailArchiveMbox(destination_type)) {
-					String site_name = Utils.decodeEncodedUrlValue(request.getParameterMap().get("site_name")[0]);
+					String site_name = getSiteName(site_id, sessionId);
 					String messageFolderName = getMailArchiveMboxMessageFolderName(site_name,destination_type);
 					ZipEntry fileEntry = new ZipEntry(messageFolderName + Utils.MAIL_MBOX_MESSAGE_FILE_NAME);
 					out.putNextEntry(fileEntry);
@@ -3633,5 +3638,6 @@ class MigrationTaskService {
 		}
 		return msg.substring(i + 8);
 	}
+
 
 }

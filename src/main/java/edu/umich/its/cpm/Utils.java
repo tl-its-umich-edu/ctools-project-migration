@@ -229,6 +229,9 @@ class Utils {
 	public static final String OPENSHIFT_BUILD_NAME = "OPENSHIFT_BUILD_NAME";
 	public static final String OPENSHIFT_BUILD_COMMIT = "OPENSHIFT_BUILD_COMMIT";
 	
+	// use the default site name string if nothing returned from site API call
+	public static final String DEFAULT_SITE_NAME = "default_site_name";
+	
 	/**
 	 * login into CTools and become user with sessionId
 	 */
@@ -993,24 +996,5 @@ class Utils {
 		}
 		
 		return null;
-	}
-
-	/**
-	 * return the decoded value
-	 * @param value
-	 * @return
-	 */
-	public static String decodeEncodedUrlValue(String value) {
-		// Since the value String has been encoded before
-		// we need to decode it here
-		try
-		{
-			value = URLDecoder.decode(value, "UTF-8");
-		}
-		catch (UnsupportedEncodingException e)
-		{
-			log.warn("UnSupportedEncodingException for decoding in UTF-8 format for value = " + value + ". Original value is used.");
-		}
-		return value;
 	}
 }
