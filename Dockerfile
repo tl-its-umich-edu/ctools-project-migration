@@ -30,6 +30,6 @@ EXPOSE 8009
 RUN mkdir /usr/local/tomcat/home/
 
 # Launch Tomcat
-CMD cp /tmp/cpm-props/*.properties /usr/local/tomcat/home/; cp /tmp/cpm-props/server.xml /usr/local/tomcat/conf/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
+CMD cp /tmp/cpm-props/*.properties /usr/local/tomcat/home/; cp /tmp/tomcat/server.xml /usr/local/tomcat/conf/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
 #CMD cp /tmp/cpm-props/* /usr/local/tomcat/home/; cp /tmp/jdbc-driver/* /usr/local/tomcat/lib/; catalina.sh run
 #CMD /bin/bash
