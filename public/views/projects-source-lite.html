@@ -84,7 +84,7 @@
           <br>
           <div class="row">
             <div class="col-md-12 col-lg-12 col-sm-12 col-xs-12">
-              <div ng-hide="project.deleteStatus || project.type ==='myworkspace'">
+              <div ng-hide="project.deleteStatus || project.type ==='myworkspace' || project.type ==='myworkspace_secure'">
                 <input ng-change="updateProjectListCheck()" ng-model="project.deleteProject" type="checkbox" name="name" value="" ng-model="project.deleteProject" id="deleteCheck{{project.site_id}}"> <label for="deleteCheck{{project.site_id}}">Delete site <span class="sr-only"> {{project.site_name}}</span></label>
                 <small ng-if="project.deleteProject"> - (do not forget to click <strong>Save changes</strong> at the top)</small>
               </div>
