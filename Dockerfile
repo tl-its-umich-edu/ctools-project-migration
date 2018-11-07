@@ -30,13 +30,14 @@ EXPOSE 8009
 RUN mkdir /usr/local/tomcat/home/
 
 ### change directory owner, as openshift user is in root group.
-RUN chown -R root:root /usr/local/tomcat/logs /usr/local/tomcat/home \
-	/var/lock /var/run/lock
+RUN chown -R root:root /usr/local/tomcat/lib /usr/local/tomcat/logs \
+	/usr/local/tomcat/home /var/lock /var/run/lock
 
 ### Modify perms for the openshift user, who is not root, but part of root group.
 #RUN chmod 777 /usr/local/tomcat/conf /usr/local/tomcat/conf/webapps
 RUN chmod g+rw /usr/local/tomcat/conf /usr/local/tomcat/logs /usr/local/tomcat/webapps \
-        /usr/local/tomcat/home /usr/local/tomcat/conf/server.xml /var/lock /var/run/lock
+        /usr/local/tomcat/home /usr/local/tomcat/lib \
+	/usr/local/tomcat/conf/server.xml /var/lock /var/run/lock
 
 ### Start script incorporates config files and sends logs to stdout ###
 COPY start.sh /usr/local/bin
