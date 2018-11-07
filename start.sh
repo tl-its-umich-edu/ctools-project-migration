@@ -3,7 +3,7 @@
 # copy app/tomcat config files from secret volumes to a location that can be written to.
 if [ -e /mnt/app ];
 then
-    cp /mnt/app/* /usr/local/tomcat/conf/.
+    cp /mnt/app/* /usr/local/tomcat/home/.
 fi
 
 if [ -e /mnt/tomcat ];
