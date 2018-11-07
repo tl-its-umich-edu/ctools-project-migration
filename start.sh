@@ -11,6 +11,13 @@ then
     cp /mnt/tomcat/* /usr/local/tomcat/conf/.
 fi
 
+# Oracle JDBC driver should be in persistent volume
+# Copy to $CATALINA_HOME/lib at run-time
+if [ -e /mnt/oracle ];
+then
+    cp /mnt/oracle/* /usr/local/tomcat/lib/.
+fi
+
 # If it exists, include local.start.sh
 
 if [ -f /mnt/local/local.start.sh ]
