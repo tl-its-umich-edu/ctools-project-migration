@@ -243,25 +243,46 @@ public class MigrationController implements ErrorController {
 		String errorMessage = "";
 		String requestUrl = "";
 
-		// get all sites that user is of Owner role
+		// First, get all sites that user is of Owner role
+		JSONArray sitesJSONArray = getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_OWNER);
+		// Then append all sites that user is of Instructor role
+		sitesJSONArray.put(getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_INSTRUCTOR));
+
+		JSONObject sitesJSONObject = new JSONObject();
+		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, sitesJSONArray);
+
+		rv.put("projectsString", sitesJSONObject.toString());
+		rv.put("errorMessage", errorMessage);
+		rv.put("requestUrl", requestUrl);
+		return rv;
+	}
+
+	/**
+	 * Util class used for get site JSONArray based on role specified
+	 * @param currentUserId
+	 * @param sessionId
+	 * @param allowedSiteTypes
+	 * @param role
+	 * @return
+	 */
+	private JSONArray getSitesJSONArray(String currentUserId, String sessionId, List<String> allowedSiteTypes, String role) {
+		String requestUrl;
+		String errorMessage;
+		JSONArray sitesJSONArray = new JSONArray();
 		RestTemplate restTemplate = new RestTemplate();
-		requestUrl = Utils.directCallUrl(env, "membership.json?role=" + Utils.ROLE_OWNER + "&", sessionId);
+		requestUrl = Utils.directCallUrl(env, "membership.json?role=" + role + "&", sessionId);
 		log.info(this + " get_user_sites " + requestUrl);
 		try {
 			String membershipString = restTemplate.getForObject(requestUrl,
 					String.class);
 
-			// update the projectString by filtering based on site Owner role
-			projectsString = filterSites(membershipString, currentUserId, sessionId, allowedSiteTypes);
+			// update the projectString by filtering based on site role type
+			sitesJSONArray = filterSites(membershipString, currentUserId, sessionId, allowedSiteTypes);
 		} catch (RestClientException e) {
 			errorMessage = e.getMessage();
 			log.error(requestUrl + errorMessage);
 		}
-
-		rv.put("projectsString", projectsString);
-		rv.put("errorMessage", errorMessage);
-		rv.put("requestUrl", requestUrl);
-		return rv;
+		return sitesJSONArray;
 	}
 
 	/**
@@ -271,8 +292,8 @@ public class MigrationController implements ErrorController {
 	 * @param currentUserId
 	 * @return
 	 */
-	private String filterSites(String membershipString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
-		JSONArray ownerSitesJSONArray = new JSONArray();
+	private JSONArray filterSites(String membershipString, String currentUserId, String sessionId, List<String> allowedSiteTypes) {
+		JSONArray sitesJSONArray = new JSONArray();
 		JSONObject membershipsObject = new JSONObject();
 		try {
 			membershipsObject = new JSONObject(membershipString);
@@ -282,7 +303,7 @@ public class MigrationController implements ErrorController {
 			// "membership_collection": <the sites that user is member of>
 		} catch (JSONException e) {
 			log.error(this + " error parsing sites JSON value " + membershipString);
-			return "";
+			return sitesJSONArray;
 		}
 			
 		// get site array
@@ -330,12 +351,10 @@ public class MigrationController implements ErrorController {
 				continue;
 			
 			// keep the site JSON if current user has Owner role in this site
-			ownerSitesJSONArray.put(siteJSON);
+			sitesJSONArray.put(siteJSON);
 		}
 		
-		JSONObject sitesJSONObject = new JSONObject();
-		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, ownerSitesJSONArray);
-		return sitesJSONObject.toString();
+		return sitesJSONArray;
 	}
 
 	/**
