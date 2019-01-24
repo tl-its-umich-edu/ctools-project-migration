@@ -276,7 +276,7 @@ public class MigrationController implements ErrorController {
 			String membershipString = restTemplate.getForObject(requestUrl,
 					String.class);
 
-			// update the projectString by filtering based on site Owner role
+			// update the projectString by filtering based on site role type
 			sitesJSONArray = filterSites(membershipString, currentUserId, sessionId, allowedSiteTypes);
 		} catch (RestClientException e) {
 			errorMessage = e.getMessage();
