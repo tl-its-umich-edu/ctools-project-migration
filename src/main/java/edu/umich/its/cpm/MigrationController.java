@@ -246,7 +246,11 @@ public class MigrationController implements ErrorController {
 		// First, get all sites that user is of Owner role
 		JSONArray sitesJSONArray = getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_OWNER);
 		// Then append all sites that user is of Instructor role
-		sitesJSONArray.put(getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_INSTRUCTOR));
+		JSONArray instructorSitesJSONArray = getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_INSTRUCTOR);
+		if (instructorSitesJSONArray.length() > 0) {
+			// append non-empty course site array
+			sitesJSONArray.put(instructorSitesJSONArray);
+		}
 
 		JSONObject sitesJSONObject = new JSONObject();
 		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, sitesJSONArray);
