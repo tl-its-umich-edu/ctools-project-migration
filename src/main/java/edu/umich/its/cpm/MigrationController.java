@@ -247,9 +247,16 @@ public class MigrationController implements ErrorController {
 		JSONArray sitesJSONArray = getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_OWNER);
 		// Then append all sites that user is of Instructor role
 		JSONArray instructorSitesJSONArray = getSitesJSONArray(currentUserId, sessionId, allowedSiteTypes, Utils.ROLE_INSTRUCTOR);
-		if (instructorSitesJSONArray.length() > 0) {
-			// append non-empty course site array
-			sitesJSONArray.put(instructorSitesJSONArray);
+		for (int i = 0; i < instructorSitesJSONArray.length(); i++) {
+			try {
+				JSONObject siteJSON = instructorSitesJSONArray.getJSONObject(i);
+				sitesJSONArray.put(siteJSON);
+			} catch (JSONException e)
+			{
+				log.error("Cannot find siteJSON object at index " + i + " within instructorSitesJSONArray " + instructorSitesJSONArray.toString());
+			}
+
+
 		}
 
 		JSONObject sitesJSONObject = new JSONObject();
@@ -275,7 +282,7 @@ public class MigrationController implements ErrorController {
 		JSONArray sitesJSONArray = new JSONArray();
 		RestTemplate restTemplate = new RestTemplate();
 		requestUrl = Utils.directCallUrl(env, "membership.json?role=" + role + "&", sessionId);
-		log.info(this + " get_user_sites " + requestUrl);
+		log.info(requestUrl);
 		try {
 			String membershipString = restTemplate.getForObject(requestUrl,
 					String.class);
