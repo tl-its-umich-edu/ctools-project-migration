@@ -296,11 +296,10 @@ public class MigrationController implements ErrorController {
 				try {
 					valA = (String) a.get(KEY_NAME);
 					valB = (String) b.get(KEY_NAME);
-
-					log.info("valA=" + valA + " valB=" + valB);
 				}
 				catch (JSONException e) {
 					//exception
+					log.error("Cannot get element " + KEY_NAME + " from JSONObject " + valA + " or " + valB);
 				}
 				if (SORT_ORDER) {
 					return valA.compareTo(valB);
