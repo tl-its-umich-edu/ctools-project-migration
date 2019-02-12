@@ -34,6 +34,8 @@ import javax.ws.rs.Produces;
 import javax.ws.rs.core.MediaType;
 import javax.ws.rs.core.Response;
 
+import java.util.Comparator;
+import java.util.Collections;
 import java.util.Arrays;
 import java.util.Map;
 import java.util.HashMap;
@@ -255,17 +257,61 @@ public class MigrationController implements ErrorController {
 			{
 				log.error("Cannot find siteJSON object at index " + i + " within instructorSitesJSONArray " + instructorSitesJSONArray.toString());
 			}
-
-
 		}
 
 		JSONObject sitesJSONObject = new JSONObject();
-		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, sitesJSONArray);
+		// sort JSONArray by "title" element
+		sitesJSONObject.put(JSON_ATTR_SITE_COLLECTION, sort(sitesJSONArray, "title", true));
 
 		rv.put("projectsString", sitesJSONObject.toString());
 		rv.put("errorMessage", errorMessage);
 		rv.put("requestUrl", requestUrl);
 		return rv;
+	}
+
+	/**
+	 * function for sorting JSONArray object
+	 * @param jsonArr
+	 * @param sortBy
+	 * @param sortOrder
+	 * @return
+	 */
+	private JSONArray sort(JSONArray jsonArr, String sortBy, boolean sortOrder) {
+		JSONArray sortedJsonArray = new JSONArray();
+
+		List<JSONObject> jsonValues = new ArrayList<JSONObject>();
+		for (int i = 0; i < jsonArr.length(); i++) {
+
+			log.info(jsonArr.getJSONObject(i).toString());
+			jsonValues.add(jsonArr.getJSONObject(i));
+		}
+		final String KEY_NAME = sortBy;
+		final Boolean SORT_ORDER = sortOrder;
+		Collections.sort( jsonValues, new Comparator<JSONObject>() {
+
+			@Override
+			public int compare(JSONObject a, JSONObject b) {
+				String valA = new String();
+				String valB = new String();
+				try {
+					valA = (String) a.get(KEY_NAME);
+					valB = (String) b.get(KEY_NAME);
+				}
+				catch (JSONException e) {
+					//exception
+					log.error("Cannot get element " + KEY_NAME + " from JSONObject " + valA + " or " + valB);
+				}
+				if (SORT_ORDER) {
+					return valA.compareTo(valB);
+				} else {
+					return -valA.compareTo(valB);
+				}
+			}
+		});
+		for (int i = 0; i < jsonValues.size(); i++) {
+			sortedJsonArray.put(jsonValues.get(i));
+		}
+		return sortedJsonArray;
 	}
 
 	/**
