@@ -5,7 +5,7 @@ MAINTAINER Teaching and Learning <its.tl.dev@umich.edu>
 RUN apt-get update \
  && apt-get install -y maven openjdk-8-jdk git
 
-ENV JAVA_HOME=/usr/local/openjdk-8/bin/java
+ENV JAVA_HOME=/usr/local/openjdk-8
 
 WORKDIR /tmp
 
