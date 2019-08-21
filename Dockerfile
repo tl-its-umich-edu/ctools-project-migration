@@ -1,18 +1,18 @@
-FROM tomcat:7-jre8
+FROM tomcat:7-jdk8
 
 MAINTAINER Teaching and Learning <its.tl.dev@umich.edu>
 
 RUN apt-get update \
  && apt-get install -y maven openjdk-8-jdk git
 
-ENV JAVA_HOME=/usr/lib/jvm/java-8-openjdk-amd64
+ENV JAVA_HOME=/usr/local/openjdk-8/bin/java
 
 WORKDIR /tmp
 
-# Copy CCM code to local directory for building
+# Copy CPM code to local directory for building
 COPY . /tmp
 
-# Build CCM and place the resulting war in the tomcat dir.
+# Build CPM and place the resulting war in the tomcat dir.
 RUN mvn clean install \
 	&& mv ./target/ctools-project-migration-0.1.0.war /usr/local/tomcat/webapps/ROOT.war
 
