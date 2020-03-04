@@ -1,4 +1,4 @@
-FROM tomcat:7-jdk8
+FROM tomcat:8.5-jdk8
 
 MAINTAINER Teaching and Learning <its.tl.dev@umich.edu>
 
